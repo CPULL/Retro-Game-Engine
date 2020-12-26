@@ -12,4 +12,4 @@
  The hardware specification and the software structure  is inspired by old computers consoles (like C64, Genesys, and Super NES.) but with a modern touch you find in contemporary game engines.
 
 
-![RGE Logo](/Assets/Graphic/RGE logo.png)
+![RGE Logo](https://github.com/CPULL/Retro-Game-Engine/blob/main/Assets/Graphic/RGE%20logo.png?raw=true)
