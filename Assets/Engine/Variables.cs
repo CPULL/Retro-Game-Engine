@@ -1,20 +1,6 @@
-﻿
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 public class Variables {
-
-  /*
-   SList with all the allocated ones
-  To access to one specific we will use an index (the old Reg char in CodeNode)
-  Funciton to check if one is available (?needed?)
-  Function to add a new variable
-   
-  In case they are temporary we may need something to allocate and deallocate them, to remove the "new Register" we are using now
-
-  The values will be struct, so to deallocate one we neeed a specific function to this class
-   */
-
   private Value[] vars = new Value[32];
   private int count = 0;
   private Dictionary<string, int> pointers = new Dictionary<string, int>();

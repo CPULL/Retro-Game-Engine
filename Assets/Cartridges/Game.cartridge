@@ -1,25 +1,12 @@
  Name: Pong (actually squash)
 Start {
-abc=10
-cde="text"
-fgh=3.1415926
-	clr(c003)
-	write("debug", 10, 10, c330)
-	write(abc, 10, 20, c330)
-	write(cde, 10, 30, c330)
-	write(fgh, 10, 40, c330)
-}
-
-
-
-aStart {
 	clr(c003)
 	x = 256
 	y = 160
 	f=0
 }
 
-aUpdate {
+Update {
 	clr(c003)
 	Write(x+","+y + " / " + f, 4, 4, c300)
 	box(100, 100, 160, 140, c330, c030)

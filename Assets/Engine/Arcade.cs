@@ -240,10 +240,10 @@ public class Arcade : MonoBehaviour {
 
     int size = sw * sh * 4;
     for (int i = 0; i < size; i+=4) {
-      raw[0] = r;
-      raw[1] = g;
-      raw[2] = b;
-      raw[3] = 255;
+      raw[i + 0] = r;
+      raw[i + 1] = g;
+      raw[i + 2] = b;
+      raw[i + 3] = 255;
     }
     texture.LoadRawTextureData(raw);
   }
@@ -413,6 +413,19 @@ public class Arcade : MonoBehaviour {
         case BNF.ASSIGNor:
         case BNF.ASSIGNxor: {
           Value r = Evaluate(n.Second);
+          // Calculate the actual operation on r
+          Value l = Evaluate(n.First);
+          switch(n.type) {
+            case BNF.ASSIGNsum: r = l.Sum(r); break;
+            case BNF.ASSIGNsub: r = l.Sub(r); break;
+            case BNF.ASSIGNmul: r = l.Mul(r); break;
+            case BNF.ASSIGNdiv: r = l.Div(r); break;
+            case BNF.ASSIGNmod: r = l.Mod(r); break;
+            case BNF.ASSIGNand: r = l.And(r); break;
+            case BNF.ASSIGNor: r = l.Or(r); break;
+            case BNF.ASSIGNxor: r = l.Xor(r); break;
+          }
+
           if (n.First.type == BNF.REG) {
             variables.Set(n.First.Reg, r);
           }
@@ -874,8 +887,6 @@ public class ExecStack {
 
   FOR
 
-  Replace Lists with SList
-  replace registers with variables, and remove the "new register"
   Implement shifts and rols
   Implement Labels
 

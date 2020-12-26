@@ -19,9 +19,35 @@ public class CodeParser : MonoBehaviour {
     "line",
     "box",
     "circle",
-    "key",
     "dateTime",
     "clr",
+    "keyl",
+    "keyr",
+    "keyu",
+    "keyd",
+    "keya",
+    "keyb",
+    "keyc",
+    "keyf",
+    "keye",
+    "keylu",
+    "keyru",
+    "keyuu",
+    "keydu",
+    "keyau",
+    "keybu",
+    "keycu",
+    "keyfu",
+    "keyeu",
+    "keyld",
+    "keyrd",
+    "keyud",
+    "keydd",
+    "keyad",
+    "keybd",
+    "keycd",
+    "keyfd",
+    "keyed",
     "",
     "",
     "",
@@ -38,7 +64,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgBlockStart = new Regex(".*\\{[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgBlockEnd = new Regex("[\\s]*\\}[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgVar = new Regex("(?<=[^a-z0-9`]|^)([a-z][0-9a-z]{0,7})(?:[^a-z0-9¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgVar = new Regex("(?<=[^a-z0-9`]|^)([a-z][0-9a-z]{0,7})([^a-z0-9¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgHex = new Regex("0x([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgCol = new Regex("c([0-3])([0-3])([0-3])", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgString = new Regex("((?<![\\\\])\")((?:.(?!(?<![\\\\])\\1))*.?)\\1", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -558,7 +584,7 @@ public class CodeParser : MonoBehaviour {
 
     // [REG]=a-z
     if (expected.IsGood(Expected.Val.MemReg) && rgVar.IsMatch(line)) {
-      string var = rgVar.Match(line).Value.ToLowerInvariant();
+      string var = rgVar.Match(line).Groups[1].Value.ToLowerInvariant();
       if (!reserverdKeywords.Contains(var)) {
         CodeNode node = new CodeNode(BNF.REG) { Reg = vars.Add(var) };
         parent.Add(node);
@@ -643,13 +669,13 @@ public class CodeParser : MonoBehaviour {
 
     // Replace REG => `RGx (I cannot find a Regex to match single letters, so here I will do it by code)
     line = rgVar.Replace(line, m => {
-      string var = m.Value.ToLowerInvariant();
+      string var = m.Groups[1].Value.ToLowerInvariant();
       if (!reserverdKeywords.Contains(var)) {
         CodeNode n = new CodeNode(BNF.REG, GenId("RG")) {
-          Reg = vars.Add(m.Value)
+          Reg = vars.Add(var)
         };
         nodes[n.id] = n;
-        return n.id;
+        return n.id + m.Groups[2].Value;
       }
       return m.Value;
     });
