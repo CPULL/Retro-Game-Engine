@@ -1,4 +1,4 @@
-Name: Pong (actually squash)
+ Name: Pong (actually squash)
 Start {
 	clr(c003)
 	Write("Pong RGE", 10, 10, c310)
@@ -51,37 +51,11 @@ Update {
 		h=-h
 	}
 	
-	c = c023
 	if (x<20) {
 		c = 48
 	}
+	else {
+		c = c023
+	}
 	circle(x, y, 5, 4, c113, c)
-}
-
-BounceStart {
-	clr(c003)
-	x = 0
-	y = 0
-	h = 1
-	v = 1
-}
-
-BounceUpdate {
-	clr(c003)
-	
-	x+=h
-	y+=v
-	if (x>256-16) {
-		h=-h
-	}
-	if (y>160-10) {
-		v=-v
-	}
-	if (x<0) {
-		h=-h
-	}
-	if (y<0) {
-		v=-v
-	}
-	box(x,y, x+16,y+10, c320, c330)
 }

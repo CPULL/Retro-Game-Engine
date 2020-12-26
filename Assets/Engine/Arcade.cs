@@ -601,7 +601,6 @@ public class Arcade : MonoBehaviour {
             return true;
           }
           else if (n.children.Count > 2) {
-            Debug.Log("Executing ELSE");
             stacks.Add(new ExecStack { node = n.Third, step = 0 });
             return true;
           }

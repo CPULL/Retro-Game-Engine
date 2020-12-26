@@ -470,8 +470,7 @@ public class CodeParser : MonoBehaviour {
       for (int li = pos; li < lines.Length; li++) {
         string l = lines[li].Trim(' ', '\n', '}');
         if (string.IsNullOrEmpty(l)) continue;
-        if (rgElse.IsMatch(l)) {
-
+        else if (rgElse.IsMatch(l)) {
           CodeNode nElse = new CodeNode(BNF.IFelse);
           m = rgElse.Match(line);
 
@@ -487,6 +486,7 @@ public class CodeParser : MonoBehaviour {
           Debug.Log("match else: " + line + " <=> " + node);
           break;
         }
+        else break;
       }
 
       return num + 1;
@@ -555,31 +555,6 @@ public class CodeParser : MonoBehaviour {
       Debug.Log("match Mem: " + line + " <=> " + node);
       return 1;
     }
-
-
-    // [CND] = [EXP] [COMP] [EXP] | [EXP]
-    // [COMP] = == | != | < | <= | > | >=
-    // [STATEMENT] = [ASS] | [IND] | [BLOCK] | [IF] | [WHILE] | [CLR] | [WRITE] | [SPRITE] | [SPEN] | [SPOS] | [SPIX] | [GPIX] | [LINE] | [BOX] | [CIR] | [FRAME]
-    // [IND] = [REG]++ | [REG]-- | [MEM]++ | [MEM]--
-    // [BLOCK] = { [STATEMENT]+ }
-    // [IF] = if ([EXP]) [BLOCK] | if ([EXP]) [BLOCK] else [BLOCK]
-    // [WHILE] = while ([EXP]) [BLOCK]
-    // [FOR] = for([ASS], [CND], [ASS]|[IND]) [BLOCK]
-    // [CLR] = clr([EXP])
-    // [WRITE] = write([STR], [EXP], [EXP], [EXP])
-    // [SPRITE] = sprite([INT],[INT],[INT],[MEM])
-    // [SPEN] = spen([INT],[CND])
-    // [SPOS] = spos([INT],[EXP],[EXP])
-    // [SPIX] = setpixel([EXP], [EXP], [EXP])
-    // [GPIX] = getpixel([EXP], [EXP])
-    // [LINE] = line([EXP], [EXP], [EXP], [EXP], [EXP])
-    // [BOX] = box([EXP], [EXP], [EXP], [EXP], [EXP], [CND])
-    // [CIR] = circle([EXP], [EXP], [EXP], [EXP], [EXP], [CND])
-    // [FRAME] = frame
-    // [DTIME] = dateTime,
-    // [DISP] = [INT] + [REG]
-
-    // FIX the replaced symbols
 
     throw new Exception("Invalid code at " + (linenum - 1) + "\n" + line);
   }
