@@ -367,8 +367,8 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.FRAME: {
-          texture.Apply(); // Technically we should exit the update and continue next cycle
-          return true;
+          texture.Apply();
+          return true; // We will skip to the next frame
         }
 
         case BNF.WRITE: {
@@ -674,11 +674,16 @@ public class Arcade : MonoBehaviour {
       case BNF.OPmul: return (new Register(Evaluate(n.First))).Mul(Evaluate(n.Second));
       case BNF.OPdiv: return (new Register(Evaluate(n.First))).Div(Evaluate(n.Second));
       case BNF.OPmod: return (new Register(Evaluate(n.First))).Mod(Evaluate(n.Second));
+      case BNF.OPand: return (new Register(Evaluate(n.First))).And(Evaluate(n.Second));
+      case BNF.OPor: return (new Register(Evaluate(n.First))).Or(Evaluate(n.Second));
+      case BNF.OPxor: return (new Register(Evaluate(n.First))).Xor(Evaluate(n.Second));
 
       case BNF.LEN: 
         return new Register(Evaluate(n.First).ToString().Length);
 
-      case BNF.UOsub: return Evaluate(n.First).Neg();
+      case BNF.UOsub: return Evaluate(n.First).Sub();
+      case BNF.UOinv: return Evaluate(n.First).Inv();
+      case BNF.UOneg: return Evaluate(n.First).Neg();
 
       case BNF.COMPeq:
       case BNF.COMPne:
@@ -689,11 +694,6 @@ public class Arcade : MonoBehaviour {
         return new Register(Evaluate(n.First).Compare(Evaluate(n.Second), n.type));
 
       case BNF.EXP:
-      case BNF.OPand:
-      case BNF.OPor:
-      case BNF.OPxor:
-      case BNF.UOinv:
-      case BNF.UOneg:
         throw new Exception("Not yet implemented: " + n.type);
     }
     throw new Exception("Invalid node to evaluate: " + n.type);
@@ -812,10 +812,10 @@ public class ExecStack {
 
   FOR
   WHILE
-  Read/Write memory
-  And, Or, Xor
-  !, ~
-  assign on mem
+
+  Replace Lists with SList
+  replace registers with variables
+  add casting of variables (@) ?
 
   Implement shifts and rols
   Implement Labels
@@ -825,7 +825,7 @@ public class ExecStack {
   Add priority byte to sprites and tilemaps
   Add sprites
   Tiles
-  Add "rom" and "ram" sizes on the "boot screen"
+  Add "rom" and "ram" sizes on the "boot screen" (we have to calculate them)
   Add the 4 colors lines as logo in the home screen as default sprite (copy the logo of the C65)
   Sounds
 

@@ -407,12 +407,56 @@ public class Register {
     return this;
   }
 
-  internal Register Neg() {
+  internal Register And(Register s) {
+    if (type != VT.Int || s.type != VT.Int) {
+      if (s.ToInt() == 0) {
+        iVal = 0;
+        type = VT.Int;
+      }
+      return this;
+    }
+
+    iVal &= s.ToInt();
+    return this;
+  }
+
+  internal Register Or(Register s) {
+    if (type != VT.Int || s.type != VT.Int) return this;
+
+    iVal |= s.ToInt();
+    return this;
+  }
+
+  internal Register Xor(Register s) {
+    if (type != VT.Int || s.type != VT.Int) return this;
+
+    iVal ^= s.ToInt();
+    return this;
+  }
+
+
+  internal Register Sub() {
     if (type == VT.Int) return new Register(-iVal);
     if (type == VT.Float) return new Register(-fVal);
     if (type == VT.None || sVal == null) return new Register('\0');
     if (float.TryParse(sVal, out float f)) return new Register(-f);
     if (int.TryParse(sVal, out int i)) return new Register(-i);
+    return new Register('\0');
+  }
+
+  internal Register Neg() {
+    if (type == VT.Int) return new Register(iVal == 0 ? -1 : 0);
+    if (type == VT.Float) return new Register(fVal == 0 ? -1 : 0);
+    if (type == VT.String) return new Register(string.IsNullOrEmpty(sVal) ? "-1" : "");
+    if (type == VT.None) return new Register(-1);
+    return new Register('\0');
+  }
+
+  internal Register Inv() {
+    if (type == VT.Int) return new Register(~iVal);
+    if (type == VT.Float) return new Register(0);
+    if (type == VT.String) return new Register("");
+    if (type == VT.None) return new Register(-1);
     return new Register('\0');
   }
 
