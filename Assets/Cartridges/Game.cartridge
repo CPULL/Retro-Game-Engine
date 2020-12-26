@@ -1,0 +1,42 @@
+Name: Arcade test bouncing
+Start {
+	clr(c003)
+}
+
+Update {
+clr(c003)
+[0] += 1
+[10@i] += 1
+[20@f] += 0.025
+write([0] + " <= mem as byte [<exp>]", 0, 10, c330)
+write([10@i] + " <= mem as int [<exp>@i]", 0, 20, c330)
+write([20@f] + " <= mem as float [<exp>@f]", 0, 30, c330)
+}
+
+BounceStart {
+	clr(c003)
+	x = 0
+	y = 0
+	h = 1
+	v = 1
+}
+
+BounceUpdate {
+	clr(c003)
+	
+	x+=h
+	y+=v
+	if (x>256-16) {
+		h=-h
+	}
+	if (y>160-10) {
+		v=-v
+	}
+	if (x<0) {
+		h=-h
+	}
+	if (y<0) {
+		v=-v
+	}
+	box(x,y, x+16,y+10, c320, c330)
+}
