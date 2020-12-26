@@ -6,8 +6,29 @@ using UnityEngine;
 public class CodeParser : MonoBehaviour {
   Dictionary<string, CodeNode> nodes = null;
   int idcount = 0;
-  int regcount = 0; // FIXME it will be used to ttrack the variables
-  Expected expected = new Expected();
+  Variables vars = null;
+  readonly Expected expected = new Expected();
+  readonly List<string> reserverdKeywords = new List<string> {
+    "if",
+    "else",
+    "for",
+    "while",
+    "frame",
+    "screen",
+    "write",
+    "line",
+    "box",
+    "circle",
+    "key",
+    "dateTime",
+    "clr",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  };
 
   #region Regex
 
@@ -17,6 +38,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgBlockStart = new Regex(".*\\{[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgBlockEnd = new Regex("[\\s]*\\}[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
+  readonly Regex rgVar = new Regex("(?<=[^a-z0-9`]|^)([a-z][0-9a-z]{0,7})(?:[^a-z0-9¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgHex = new Regex("0x([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgCol = new Regex("c([0-3])([0-3])([0-3])", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgString = new Regex("((?<![\\\\])\")((?:.(?!(?<![\\\\])\\1))*.?)\\1", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -100,11 +122,12 @@ public class CodeParser : MonoBehaviour {
 
   #endregion Regex
 
-  public CodeNode Parse(string file) {
+  public CodeNode Parse(string file, Variables variables) {
     file = file.Trim().Replace("\r", "").Replace("\t", " ");
     idcount = 0;
     CodeNode res = new CodeNode(BNF.Program);
     nodes = new Dictionary<string, CodeNode>();
+    vars = variables;
 
     int pos = file.IndexOf("name:", System.StringComparison.CurrentCultureIgnoreCase);
     if (pos != -1) {
@@ -192,7 +215,6 @@ public class CodeParser : MonoBehaviour {
     });
     clean = rgMLComment.Replace(clean, "");
     clean = rgMLBacktick.Replace(clean, "'");
-
     string[] parts = clean.Split('\n');
 
     // Follow the BNF rules to get the elements, one line at time
@@ -535,29 +557,10 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [REG]=a-z
-    if (expected.IsGood(Expected.Val.MemReg)) {
-      // Check that we have single letters
-      char reg = '\0';
-      bool foundletter = false;
-      string part = line.Trim().ToUpperInvariant();
-      foreach (char c in line) {
-        if ((int)c >= 'a' && (int)c < 'z') {
-          if (foundletter) {
-            reg = '\0';
-            break;
-          }
-          else {
-            foundletter = true;
-            reg = c;
-          }
-        }
-        else if (c != ' ') {
-          reg = '\0';
-          break;
-        }
-      }
-      if (reg != '\0') {
-        CodeNode node = new CodeNode(BNF.REG) { Reg = reg };
+    if (expected.IsGood(Expected.Val.MemReg) && rgVar.IsMatch(line)) {
+      string var = rgVar.Match(line).Value.ToLowerInvariant();
+      if (!reserverdKeywords.Contains(var)) {
+        CodeNode node = new CodeNode(BNF.REG) { Reg = vars.Add(var) };
         parent.Add(node);
         return 1;
       }
@@ -639,24 +642,18 @@ public class CodeParser : MonoBehaviour {
     });
 
     // Replace REG => `RGx (I cannot find a Regex to match single letters, so here I will do it by code)
-    string altered = "";
-    string lcase = line.ToLowerInvariant();
-    for (int i = 0; i < line.Length; i++) {
-      char c = lcase[i];
-      if ((c >= 'a' && c <= 'z') &&
-          (i == 0 || (lcase[i - 1] != '@' && lcase[i - 1] != '_' && (lcase[i - 1] < 'a' || lcase[i - 1] > 'z'))) && // Previous
-          (i == line.Length - 1 || lcase[i + 1] < 'a' || lcase[i + 1] > 'z')) { // Next 
-
+    line = rgVar.Replace(line, m => {
+      string var = m.Value.ToLowerInvariant();
+      if (!reserverdKeywords.Contains(var)) {
         CodeNode n = new CodeNode(BNF.REG, GenId("RG")) {
-          Reg = c
+          Reg = vars.Add(m.Value)
         };
-        altered += n.id;
         nodes[n.id] = n;
+        return n.id;
       }
-      else
-        altered += line[i];
-    }
-    line = altered;
+      return m.Value;
+    });
+
 
     // Now the expression is somewhat simpler, because we have only specific terms. Now parse the operators
 
@@ -758,7 +755,7 @@ public class CodeParser : MonoBehaviour {
 
       // ~
       // Replace UOinv => `UIx
-      Match minv = rgUOneg.Match(line);
+      Match minv = rgUOinv.Match(line);
       while (minv.Success) {
         atLeastOneReplacement = true;
         string toReplace = minv.Captures[0].Value.Trim();

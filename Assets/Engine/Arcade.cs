@@ -17,8 +17,8 @@ public class Arcade : MonoBehaviour {
   int sh = 160;
   int wm1 = 255;
   int hm1 = 156;
-  public Register[] regs;
-  public byte[] mem;
+  readonly Variables variables = new Variables();
+  byte[] mem;
 
   float updateDelay = -1;
   bool startCompleted = false;
@@ -55,7 +55,6 @@ public class Arcade : MonoBehaviour {
         ExecStack stack = stacks[stacks.Count - 1];
         while (stack.step < stack.node.children.Count) {
           CodeNode n = stack.node.children[stack.step];
-          something = true;
           stack.step++;
           if (Execute(n)) return; // Skip the execution for now so Unity can actually draw the frame
         }
@@ -64,7 +63,6 @@ public class Arcade : MonoBehaviour {
         }
         else
           stacks.RemoveAt(stacks.Count - 1);
-        if (something) texture.Apply();
       }
 
       while (pc < startCode.children.Count) {
@@ -97,7 +95,6 @@ public class Arcade : MonoBehaviour {
       }
       else
         stacks.RemoveAt(stacks.Count - 1);
-      if (something) texture.Apply();
     }
 
     while (pc < updateCode.children.Count) {
@@ -112,10 +109,6 @@ public class Arcade : MonoBehaviour {
   }
 
   private void Start() {
-    regs = new Register[26];
-    for (int i = 0; i < 26; i++)
-      regs[i] = new Register((char)(97 + i));
-
     cp = GetComponent<CodeParser>();
     texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
       filterMode = FilterMode.Point
@@ -138,7 +131,7 @@ public class Arcade : MonoBehaviour {
     }
 
     try {
-      CodeNode res = cp.Parse(codefile);
+      CodeNode res = cp.Parse(codefile, variables);
       Write("Cartridge:", 4, 39, 0b001011);
       if (res.sVal == null)
         Write("<no name>", 88, 39, 0b1001000);
@@ -178,7 +171,7 @@ public class Arcade : MonoBehaviour {
       Write("Screen: " + sw + " x " + sh, 10, 100, 0b001110);
       Write("Memory: " + (mem.Length / 1024) + "k (" + mem.Length + ")" , 10, 110, 0b001110);
 
-      updateDelay = 2.5f; // FIXME
+      updateDelay = .5f; // FIXME
 
     } catch (Exception e) {
       Write(e.Message, 4, 48, 48);
@@ -372,7 +365,7 @@ public class Arcade : MonoBehaviour {
     try {
       switch (n.type) {
         case BNF.CLR: {
-          Register tmp = Evaluate(n.First);
+          Value tmp = Evaluate(n.First);
           Clear(tmp.ToByte());
         }
         break;
@@ -383,28 +376,30 @@ public class Arcade : MonoBehaviour {
         }
 
         case BNF.WRITE: {
-          Register a = Evaluate(n.First);
-          Register b = Evaluate(n.children[1]);
-          Register c = Evaluate(n.children[2]);
-          Register d = Evaluate(n.children[3]);
+          Value a = Evaluate(n.First);
+          Value b = Evaluate(n.children[1]);
+          Value c = Evaluate(n.children[2]);
+          Value d = Evaluate(n.children[3]);
           if (n.children.Count == 5) {
-            Register e = Evaluate(n.children[4]);
-            Write(a.ToString(), b.ToInt(), c.ToInt(), d.ToByte(), e.ToByte());
+            Value e = Evaluate(n.children[4]);
+            Write(a.ToStr(), b.ToInt(), c.ToInt(), d.ToByte(), e.ToByte());
           }
           else
-            Write(a.ToString(), b.ToInt(), c.ToInt(), d.ToByte());
+            Write(a.ToStr(), b.ToInt(), c.ToInt(), d.ToByte());
         }
         break;
 
         case BNF.Inc: {
-          Register a = Evaluate(n.First);
-          a.Incr();
+          Value a = Evaluate(n.First);
+          if (a.IsReg()) variables.Incr(a.idx);
+          if (a.IsMem()) mem[a.ToInt()]++;
         }
         break;
 
         case BNF.Dec: {
-          Register a = Evaluate(n.First);
-          a.Decr();
+          Value a = Evaluate(n.First);
+          if (a.IsReg()) variables.Decr(a.idx);
+          if (a.IsMem()) mem[a.ToInt()]--;
         }
         break;
 
@@ -417,10 +412,9 @@ public class Arcade : MonoBehaviour {
         case BNF.ASSIGNand:
         case BNF.ASSIGNor:
         case BNF.ASSIGNxor: {
-          Register r = Evaluate(n.Second);
+          Value r = Evaluate(n.Second);
           if (n.First.type == BNF.REG) {
-            Register a = Evaluate(n.First);
-            a.Set(r, n.type);
+            variables.Set(n.First.Reg, r);
           }
           else if (n.First.type == BNF.MEM) {
             int pos = Evaluate(n.First.First).ToInt();
@@ -471,19 +465,19 @@ public class Arcade : MonoBehaviour {
             else if (r.type == VT.Float) {
               float val = BitConverter.ToSingle(mem, pos);
               switch (n.type) {
-                case BNF.ASSIGN: val = r.ToFloat(); break;
-                case BNF.ASSIGNsum: val += r.ToFloat(); break;
-                case BNF.ASSIGNsub: val -= r.ToFloat(); break;
-                case BNF.ASSIGNmul: val *= r.ToFloat(); break;
-                case BNF.ASSIGNdiv: val /= r.ToFloat(); break;
-                case BNF.ASSIGNmod: val %= r.ToFloat(); break;
+                case BNF.ASSIGN: val = r.ToFlt(); break;
+                case BNF.ASSIGNsum: val += r.ToFlt(); break;
+                case BNF.ASSIGNsub: val -= r.ToFlt(); break;
+                case BNF.ASSIGNmul: val *= r.ToFlt(); break;
+                case BNF.ASSIGNdiv: val /= r.ToFlt(); break;
+                case BNF.ASSIGNmod: val %= r.ToFlt(); break;
               }
               byte[] vals = BitConverter.GetBytes(val);
               for (int i = 0; i < vals.Length; i++)
                 mem[pos + i] = vals[i];
             }
             else if (r.type == VT.String) {
-              byte[] vals = System.Text.Encoding.UTF8.GetBytes(r.ToString());
+              byte[] vals = System.Text.Encoding.UTF8.GetBytes(r.ToStr());
               for (int i = 0; i < vals.Length; i++) {
                 mem[pos + i + 2] = vals[i];
               }
@@ -530,12 +524,12 @@ public class Arcade : MonoBehaviour {
             if (pos < 0 || pos > mem.Length) throw new Exception("Memory violation:" + pos + "from:" + n);
             float val = BitConverter.ToSingle(mem, pos);
             switch (n.type) {
-              case BNF.ASSIGN: val = r.ToFloat(); break;
-              case BNF.ASSIGNsum: val += r.ToFloat(); break;
-              case BNF.ASSIGNsub: val -= r.ToFloat(); break;
-              case BNF.ASSIGNmul: val *= r.ToFloat(); break;
-              case BNF.ASSIGNdiv: val /= r.ToFloat(); break;
-              case BNF.ASSIGNmod: val %= r.ToFloat(); break;
+              case BNF.ASSIGN: val = r.ToFlt(); break;
+              case BNF.ASSIGNsum: val += r.ToFlt(); break;
+              case BNF.ASSIGNsub: val -= r.ToFlt(); break;
+              case BNF.ASSIGNmul: val *= r.ToFlt(); break;
+              case BNF.ASSIGNdiv: val /= r.ToFlt(); break;
+              case BNF.ASSIGNmod: val %= r.ToFlt(); break;
             }
             byte[] vals = BitConverter.GetBytes(val);
             for (int i = 0; i < vals.Length; i++)
@@ -544,7 +538,7 @@ public class Arcade : MonoBehaviour {
           else if (n.First.type == BNF.MEMlongs) {
             int pos = Evaluate(n.First.First).ToInt();
             if (pos < 0 || pos > mem.Length) throw new Exception("Memory violation:" + pos + "from:" + n);
-            byte[] vals = System.Text.Encoding.UTF8.GetBytes(r.ToString());
+            byte[] vals = System.Text.Encoding.UTF8.GetBytes(r.ToStr());
             for (int i = 0; i < vals.Length; i++) {
               mem[pos + i + 2] = vals[i];
             }
@@ -555,23 +549,23 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.LINE: {
-          Register x1 = Evaluate(n.children[0]);
-          Register y1 = Evaluate(n.children[1]);
-          Register x2 = Evaluate(n.children[2]);
-          Register y2 = Evaluate(n.children[3]);
-          Register col = Evaluate(n.children[4]);
+          Value x1 = Evaluate(n.children[0]);
+          Value y1 = Evaluate(n.children[1]);
+          Value x2 = Evaluate(n.children[2]);
+          Value y2 = Evaluate(n.children[3]);
+          Value col = Evaluate(n.children[4]);
           Line(x1.ToInt(), y1.ToInt(), x2.ToInt(), y2.ToInt(), col.ToByte());
         }
         break;
 
         case BNF.BOX: {
-          Register x1 = Evaluate(n.children[0]);
-          Register y1 = Evaluate(n.children[1]);
-          Register x2 = Evaluate(n.children[2]);
-          Register y2 = Evaluate(n.children[3]);
-          Register col = Evaluate(n.children[4]);
+          Value x1 = Evaluate(n.children[0]);
+          Value y1 = Evaluate(n.children[1]);
+          Value x2 = Evaluate(n.children[2]);
+          Value y2 = Evaluate(n.children[3]);
+          Value col = Evaluate(n.children[4]);
           if (n.children.Count > 5) {
-            Register back = Evaluate(n.children[5]);
+            Value back = Evaluate(n.children[5]);
             Box(x1.ToInt(), y1.ToInt(), x2.ToInt(), y2.ToInt(), col.ToByte(), back.ToByte());
           }
           else
@@ -580,22 +574,22 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.CIRCLE: {
-          Register cx = Evaluate(n.children[0]);
-          Register cy = Evaluate(n.children[1]);
-          Register rx = Evaluate(n.children[2]);
-          Register ry = Evaluate(n.children[3]);
-          Register col = Evaluate(n.children[4]);
+          Value cx = Evaluate(n.children[0]);
+          Value cy = Evaluate(n.children[1]);
+          Value rx = Evaluate(n.children[2]);
+          Value ry = Evaluate(n.children[3]);
+          Value col = Evaluate(n.children[4]);
           if (n.children.Count > 5) {
-            Register back = Evaluate(n.children[5]);
-            Circle(cx.ToFloat(), cy.ToFloat(), rx.ToFloat(), ry.ToFloat(), col.ToByte(), back.ToByte());
+            Value back = Evaluate(n.children[5]);
+            Circle(cx.ToFlt(), cy.ToFlt(), rx.ToFlt(), ry.ToFlt(), col.ToByte(), back.ToByte());
           }
           else
-            Circle(cx.ToFloat(), cy.ToFloat(), rx.ToFloat(), ry.ToFloat(), col.ToByte());
+            Circle(cx.ToFlt(), cy.ToFlt(), rx.ToFlt(), ry.ToFlt(), col.ToByte());
         }
         break;
 
         case BNF.IF: {
-          Register cond = Evaluate(n.First);
+          Value cond = Evaluate(n.First);
           if (cond.ToInt() != 0) {
             stacks.Add(new ExecStack { node = n.Second, step = 0 });
             return true;
@@ -608,7 +602,7 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.WHILE: {
-          Register cond = Evaluate(n.First);
+          Value cond = Evaluate(n.First);
           if (cond.ToInt() != 0) {
             Debug.Log("Executing IF");
             stacks.Add(new ExecStack { node = n.Second, cond = n.First, step = 0 });
@@ -656,73 +650,60 @@ public class Arcade : MonoBehaviour {
     return false;
   }
 
-  private Register Evaluate(CodeNode n) {
-    if (n == null) return new Register(0);
+  private Value Evaluate(CodeNode n) {
+    if (n == null) return new Value();
     if (!n.Evaluable()) throw new Exception("Not evaluable node: " + n);
 
     switch (n.type) {
-      case BNF.REG: return regs[(int)n.Reg - 97];
+      case BNF.REG: return variables.Get(n.Reg); // Change to the Variables and store the index instead of the Reg char
 
       case BNF.MEM:
       case BNF.MEMlongb: {
         int pos = Evaluate(n.First).ToInt();
         if (pos < 0 || pos > mem.Length) throw new Exception("Memory violation:" + pos + "from:" + n);
-        return new Register((int)mem[pos]);
+        return new Value((int)mem[pos]);
       }
 
       case BNF.MEMlong:
       case BNF.MEMlongi: {
         int pos = Evaluate(n.First).ToInt();
-        return new Register(BitConverter.ToInt32(mem, pos));
+        return new Value(BitConverter.ToInt32(mem, pos));
       }
 
       case BNF.MEMlongf: {
         int pos = Evaluate(n.First).ToInt();
-        return new Register(BitConverter.ToSingle(mem, pos));
+        return new Value(BitConverter.ToSingle(mem, pos));
       }
 
       case BNF.MEMlongs: {
         int pos = Evaluate(n.First).ToInt();
         int len = (mem[pos] << 80) + mem[pos + 1];
-        return new Register(System.Text.Encoding.UTF8.GetString(mem, pos+2, len));
+        return new Value(System.Text.Encoding.UTF8.GetString(mem, pos+2, len));
       }
 
-      case BNF.INT: return new Register(n.iVal);
-      case BNF.FLT: return new Register(n.fVal);
-      case BNF.COL: return new Register(n.iVal);
-      case BNF.HEX: return new Register(n.iVal);
-      case BNF.STR: return new Register(n.sVal);
-      case BNF.STRcnst: return new Register(n.sVal);
+      case BNF.INT: return new Value(n.iVal);
+      case BNF.FLT: return new Value(n.fVal);
+      case BNF.COL: return new Value(n.iVal);
+      case BNF.HEX: return new Value(n.iVal);
+      case BNF.STR: return new Value(n.sVal);
+      case BNF.STRcnst: return new Value(n.sVal);
 
-      case BNF.Inc: {
-        CodeNode exp = n.First;
-        Register r = Evaluate(exp);
-        r.Incr();
-        return r;
-      }
-      case BNF.Dec: {
-        CodeNode exp = n.First;
-        Register r = Evaluate(exp);
-        r.Decr();
-        return r;
-      }
-
-      case BNF.DTIME: return new Register(Time.deltaTime);
+      case BNF.DTIME: return new Value(Time.deltaTime);
       case BNF.OPpar: return Evaluate(n.First);
-      case BNF.OPsum: return (new Register(Evaluate(n.First))).Sum(Evaluate(n.Second));
-      case BNF.OPsub: return (new Register(Evaluate(n.First))).Sub(Evaluate(n.Second));
-      case BNF.OPmul: return (new Register(Evaluate(n.First))).Mul(Evaluate(n.Second));
-      case BNF.OPdiv: return (new Register(Evaluate(n.First))).Div(Evaluate(n.Second));
-      case BNF.OPmod: return (new Register(Evaluate(n.First))).Mod(Evaluate(n.Second));
-      case BNF.OPand: return (new Register(Evaluate(n.First))).And(Evaluate(n.Second));
-      case BNF.OPor: return (new Register(Evaluate(n.First))).Or(Evaluate(n.Second));
-      case BNF.OPxor: return (new Register(Evaluate(n.First))).Xor(Evaluate(n.Second));
+      case BNF.OPsum: return Evaluate(n.First).Sum(Evaluate(n.Second));
+      case BNF.OPsub: return Evaluate(n.First).Sub(Evaluate(n.Second));
+      case BNF.OPmul: return Evaluate(n.First).Mul(Evaluate(n.Second));
+      case BNF.OPdiv: return Evaluate(n.First).Div(Evaluate(n.Second));
+      case BNF.OPmod: return Evaluate(n.First).Mod(Evaluate(n.Second));
+      case BNF.OPand: return Evaluate(n.First).And(Evaluate(n.Second));
+      case BNF.OPor: return Evaluate(n.First).Or(Evaluate(n.Second));
+      case BNF.OPxor: return Evaluate(n.First).Xor(Evaluate(n.Second));
 
       case BNF.LEN: 
-        return new Register(Evaluate(n.First).ToString().Length);
+        return new Value(Evaluate(n.First).ToStr().Length);
 
       case BNF.PLEN: 
-        return new Register(System.Text.Encoding.UTF8.GetByteCount(Evaluate(n.First).ToString()) + 2);
+        return new Value(System.Text.Encoding.UTF8.GetByteCount(Evaluate(n.First).ToStr()) + 2);
 
       case BNF.UOsub: return Evaluate(n.First).Sub();
       case BNF.UOinv: return Evaluate(n.First).Inv();
@@ -733,17 +714,13 @@ public class Arcade : MonoBehaviour {
       case BNF.COMPgt:
       case BNF.COMPge:
       case BNF.COMPlt:
-      case BNF.COMPle: {
-        Register left = Evaluate(n.First);
-        Register right = Evaluate(n.Second);
-        int val = left.Compare(right, n.type);
-        return new Register(val);
-      }
+      case BNF.COMPle:
+        return new Value(Evaluate(n.First).Compare(Evaluate(n.Second), n.type));
 
-      case BNF.CASTb: return new Register(Evaluate(n.First).ToByte());
-      case BNF.CASTi: return new Register(Evaluate(n.First).ToInt());
-      case BNF.CASTf: return new Register(Evaluate(n.First).ToFloat());
-      case BNF.CASTs: return new Register(Evaluate(n.First).ToString());
+      case BNF.CASTb: return new Value(Evaluate(n.First).ToByte());
+      case BNF.CASTi: return new Value(Evaluate(n.First).ToInt());
+      case BNF.CASTf: return new Value(Evaluate(n.First).ToFlt());
+      case BNF.CASTs: return new Value(Evaluate(n.First).ToStr());
 
 
       case BNF.KEYl:
@@ -769,13 +746,13 @@ public class Arcade : MonoBehaviour {
           case BNF.KEYf: k1 = KeyCode.Space; k2 = KeyCode.Return; k3 = KeyCode.Return; break;
           case BNF.KEYe: k1 = KeyCode.Escape; break;
         }
-        if (n.First == null) return new Register(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3));
-        if (Evaluate(n.First).ToInt() == 0) return new Register(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3));
-        return new Register(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3));
+        if (n.First == null) return new Value(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3) ? -1 : 0);
+        if (Evaluate(n.First).ToInt() == 0) return new Value(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3) ? -1 : 0);
+        return new Value(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3) ? -1 : 0);
       }
 
-      case BNF.KEYx: return new Register(Input.GetAxis("Horixontal"));
-      case BNF.KEYy: return new Register(Input.GetAxis("Vertical"));
+      case BNF.KEYx: return new Value(Input.GetAxis("Horixontal"));
+      case BNF.KEYy: return new Value(Input.GetAxis("Vertical"));
 
       case BNF.EXP:
         throw new Exception("Not yet implemented: " + n.type);

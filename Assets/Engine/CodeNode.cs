@@ -8,7 +8,7 @@ public class CodeNode {
   public int iVal;
   public float fVal;
   public string sVal;
-  public char Reg;
+  public int Reg;
   public VT valType;
   internal CodeNode First { get { return children?[0]; } }
   internal CodeNode Second { get { return children != null && children.Count > 1 ? children[1] : null; } }
@@ -451,4 +451,10 @@ public enum VT {
   Int,
   Float,
   String
+}
+
+public enum MD {
+  Dir,
+  Reg,
+  Mem
 }

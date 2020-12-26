@@ -1,218 +1,177 @@
-﻿using System;
+﻿
+using System;
+using System.Collections.Generic;
 
-[System.Serializable]
-public class Register {
+public class Variables {
+
+  /*
+   SList with all the allocated ones
+  To access to one specific we will use an index (the old Reg char in CodeNode)
+  Funciton to check if one is available (?needed?)
+  Function to add a new variable
+   
+  In case they are temporary we may need something to allocate and deallocate them, to remove the "new Register" we are using now
+
+  The values will be struct, so to deallocate one we neeed a specific function to this class
+   */
+
+  private Value[] vars = new Value[32];
+  private int count = 0;
+  private Dictionary<string, int> pointers = new Dictionary<string, int>();
+
+  public int Add(string name) {
+    name = name.ToLowerInvariant();
+    if (pointers.ContainsKey(name)) return pointers[name];
+
+    if (count == vars.Length) {
+      Value[] vars2 = new Value[vars.Length + 32];
+      for (int i = 0; i < vars.Length; i++)
+        vars2[i] = vars[i];
+      vars = vars2;
+    }
+
+    vars[count] = new Value(MD.Reg) { idx = count };
+    pointers[name] = count;
+    count++;
+    return count - 1;
+  }
+
+  internal Value Get(int reg) {
+    return vars[reg];
+  }
+
+  internal void Set(int reg, int v) {
+    vars[reg].type = VT.Int;
+    vars[reg].iVal = v;
+  }
+  internal void Set(int reg, float v) {
+    vars[reg].type = VT.Float;
+    vars[reg].fVal = v;
+  }
+  internal void Set(int reg, string v) {
+    vars[reg].type = VT.String;
+    vars[reg].sVal = v;
+  }
+  internal void Set(int reg, Value v) {
+    vars[reg].type = v.type;
+    vars[reg].iVal = v.iVal;
+    vars[reg].fVal = v.fVal;
+    vars[reg].sVal = v.sVal;
+  }
+
+  internal void Incr(int idx) {
+    if (vars[idx].type == VT.Int) vars[idx].iVal++;
+    if (vars[idx].type == VT.Float) vars[idx].fVal += 1;
+  }
+  internal void Decr(int idx) {
+    if (vars[idx].type == VT.Int) vars[idx].iVal--;
+    if (vars[idx].type == VT.Float) vars[idx].fVal -= 1;
+  }
+}
+
+
+
+public struct Value {
+  public MD mode;
+  public int idx; // Used for reg and mem
+
   public VT type;
   public int iVal;
   public float fVal;
   public string sVal;
-  public char Reg;
 
-  public Register(char r) {
-    Reg = r;
+  public Value(MD m) {
+    mode = m;
+    idx = 0;
+    type = VT.None;
     iVal = 0;
     fVal = 0;
     sVal = null;
-    type = VT.None;
   }
-
-  public Register(bool b) {
-    Reg = '\0';
-    iVal = b ? -1 : 0;
-    fVal = 0;
-    sVal = null;
-    type = VT.Int;
-  }
-
-  public Register(Register src) {
-    type = src.type;
-    iVal = src.iVal;
-    fVal = src.fVal;
-    sVal = src.sVal;
-    Reg = src.Reg;
-  }
-
-  public Register(int i) {
+  public Value(int i) {
+    mode = MD.Dir;
+    idx = 0;
     type = VT.Int;
     iVal = i;
     fVal = 0;
     sVal = null;
-    Reg = '\0';
   }
-
-  public Register(float f) {
+  public Value(float f) {
+    mode = MD.Dir;
+    idx = 0;
     type = VT.Float;
     iVal = 0;
     fVal = f;
     sVal = null;
-    Reg = '\0';
   }
-  public Register(string s) {
+  public Value(string s) {
+    mode = MD.Dir;
+    idx = 0;
     type = VT.String;
     iVal = 0;
     fVal = 0;
     sVal = s;
-    Reg = '\0';
+  }
+
+  public byte ToByte() {
+    if (type == VT.None) return 0;
+    if (type == VT.Int) return (byte)(iVal & 255);
+    if (type == VT.Float) return (byte)((int)fVal & 255);
+    if (string.IsNullOrEmpty(sVal)) return 0;
+    if (float.TryParse(sVal, out float f)) return (byte)((int)f & 255);
+    if (int.TryParse(sVal, out int i)) return (byte)(i & 255);
+    return 0;
+  }
+  public int ToInt() {
+    if (type == VT.None) return 0;
+    if (type == VT.Int) return iVal;
+    if (type == VT.Float) return (int)fVal;
+    if (string.IsNullOrEmpty(sVal)) return 0;
+    if (float.TryParse(sVal, out float f)) return (int)f;
+    if (int.TryParse(sVal, out int i)) return i;
+    return 0;
+  }
+  public float ToFlt() {
+    if (type == VT.None) return 0;
+    if (type == VT.Int) return iVal;
+    if (type == VT.Float) return fVal;
+    if (string.IsNullOrEmpty(sVal)) return 0;
+    if (float.TryParse(sVal, out float f)) return f;
+    if (int.TryParse(sVal, out int i)) return i;
+    return 0;
+  }
+  public string ToStr() {
+    if (type == VT.None) return "";
+    if (type == VT.Int) return iVal.ToString();
+    if (type == VT.Float) return fVal.ToString("F3");
+    if (string.IsNullOrEmpty(sVal)) return "";
+    return sVal;
   }
 
   public override string ToString() {
-    if (type == VT.Int) return iVal.ToString();
-    if (type == VT.Float) return fVal.ToString();
-    if (type == VT.String) return sVal??"";
-    return "";
+    string res = "[" + mode + "," + type + "]";
+    if (type == VT.None) return res + "<none>";
+    if (type == VT.Int) return res + iVal;
+    if (type == VT.Float) return res + fVal.ToString("F3");
+    if (type == VT.String) return res + sVal;
+    return "<unknown>";
   }
 
-  internal int ToInt() {
-    if (type == VT.Int) return iVal;
-    if (type == VT.Float) return (int)fVal;
-    if (type == VT.String) {
-      if (int.TryParse(sVal, out int res)) return res;
-      try {
-        res = Convert.ToInt32(sVal, 16);
-        return res;
-      } catch (Exception) { }
-      if (float.TryParse(sVal, out float resf)) return (int)resf;
-    }
-    return 0;
+  internal bool IsReg() {
+    return mode == MD.Reg;
+  }
+  internal bool IsMem() {
+    return mode == MD.Mem;
   }
 
-  internal float ToFloat() {
-    if (type == VT.Int) return iVal;
-    if (type == VT.Float) return (float)fVal;
-    if (type == VT.String) {
-      if (int.TryParse(sVal, out int res)) return res;
-      try {
-        res = Convert.ToInt32(sVal, 16);
-        return res;
-      } catch (Exception) { }
-      if (float.TryParse(sVal, out float resf)) return resf;
-    }
-    return 0;
-  }
-
-  internal byte ToByte() {
-    if (type == VT.Int) return (byte)(iVal & 255);
-    if (type == VT.Float) return (byte)(((int)fVal) & 255);
-    if (type == VT.String) {
-      if (int.TryParse(sVal, out int res)) return (byte)(res & 255);
-      try {
-        res = Convert.ToInt32(sVal, 16);
-        return (byte)(res & 255);
-      } catch (Exception) { }
-      if (float.TryParse(sVal, out float resf)) return (byte)(int)resf;
-    }
-    return 0;
-  }
-
-  internal void Incr() {
-    if (type == VT.None) { type = VT.Int; iVal = 0; }
-    if (type == VT.Int) iVal++;
-    if (type == VT.Float) fVal += 1;
-  }
-  internal void Decr() {
-    if (type == VT.None) { type = VT.Int; iVal = 0; }
-    if (type == VT.Int) iVal--;
-    if (type == VT.Float) fVal -= 1;
-  }
-
-  private VT GetType(VT l, VT r, BNF mode) {
-    if (mode == BNF.ASSIGN || l == VT.None) return r;
-    if (mode == BNF.ASSIGNsum || mode == BNF.ASSIGNmul) {
-      if (l == VT.Int && r == VT.None) return VT.Int;
-      if (l == VT.Int && r == VT.Int) return VT.Int;
-      if (l == VT.Int && r == VT.Float) return VT.Float;
-      if (l == VT.Int && r == VT.String) return VT.String;
-      if (l == VT.Float && r == VT.String) return VT.String;
-      if (l == VT.Float) return VT.Float;
-      if ((l == VT.String || r == VT.String)) return VT.String;
-    }
-    if (mode == BNF.ASSIGNsub || mode == BNF.ASSIGNdiv || mode == BNF.ASSIGNmod) {
-      if (l == VT.Int && r == VT.None) return VT.Int;
-      if (l == VT.Int && r == VT.Int) return VT.Int;
-      if (l == VT.Int && r == VT.Float) return VT.Float;
-      if (l == VT.Int && r == VT.String) return VT.Int;
-      if (l == VT.Float && r == VT.String) return VT.Float;
-      if (l == VT.Float) return VT.Float;
-      if ((l == VT.String || r == VT.String)) return VT.None;
-    }
-    if (mode == BNF.ASSIGNand || mode == BNF.ASSIGNor || mode == BNF.ASSIGNxor) {
-      if (l != VT.Int || r != VT.Int) return VT.None;
-      return VT.Int;
-    }
-
-    return VT.None;
-  }
-
-  internal void Set(Register r, BNF mode) {
-    VT nt = GetType(type, r.type, mode);
-    if (nt != type) {
-      if (nt == VT.Int) iVal = ToInt();
-      else if (nt == VT.Float) fVal = ToFloat();
-      else if (nt == VT.String) sVal = ToString();
-      type = nt;
-    }
-
-    switch (mode) {
-      case BNF.ASSIGN:
-        if (type == VT.Int) iVal = r.ToInt();
-        else if (type == VT.Float) fVal = r.ToFloat();
-        else if (type == VT.String) sVal = r.ToString();
-        break;
-
-      case BNF.ASSIGNsum:
-        if (type == VT.Int) iVal += r.ToInt();
-        else if (type == VT.Float) fVal += r.ToFloat();
-        else if (type == VT.String) sVal += r.ToString();
-        break;
-
-      case BNF.ASSIGNsub:
-        if (type == VT.Int) iVal -= r.ToInt();
-        else if (type == VT.Float) fVal -= r.ToFloat();
-        else throw new Exception("- cannot be used for strings");
-        break;
-
-      case BNF.ASSIGNmul:
-        if (type == VT.Int) iVal *= r.ToInt();
-        else if (type == VT.Float) fVal *= r.ToFloat();
-        else if (type == VT.String) sVal += r.ToString();
-        break;
-
-      case BNF.ASSIGNdiv:
-        if (type == VT.Int) iVal /= r.ToInt();
-        else if (type == VT.Float) fVal /= r.ToFloat();
-        else throw new Exception("/ cannot be used for strings");
-        break;
-
-      case BNF.ASSIGNmod:
-        if (type == VT.Int) iVal %= r.ToInt();
-        else if (type == VT.Float) fVal %= r.ToFloat();
-        else throw new Exception("% cannot be used for strings");
-        break;
-
-      case BNF.ASSIGNand:
-        if (r.type == VT.Int) iVal &= r.ToInt();
-        else throw new Exception("AND requires integers");
-        break;
-
-      case BNF.ASSIGNor:
-        if (r.type == VT.Int) iVal |= r.ToInt();
-        else throw new Exception("OR requires integers");
-        break;
-
-      case BNF.ASSIGNxor:
-        if (r.type == VT.Int) iVal ^= r.ToInt();
-        else throw new Exception("XOR requires integers");
-        break;
-    }
-  }
-
-  internal Register Sum(Register s) {
+  internal Value Sum(Value s) {
+    mode = MD.Dir;
     if (type == VT.None && s.type == VT.None) return this;
     if (type == VT.Int && s.type == VT.None) return this;
     if (type == VT.Float && s.type == VT.None) return this;
     if (type == VT.String && s.type == VT.None) return this;
 
-    if ((type == VT.None && s.type == VT.Int) || (type == VT.None && s.type == VT.Float) || (type == VT.None && s.type == VT.String)) { Set(s, BNF.ASSIGN); return this; }
+    if ((type == VT.None && s.type == VT.Int) || (type == VT.None && s.type == VT.Float) || (type == VT.None && s.type == VT.String)) { return s; }
 
     if (type == VT.Int && s.type == VT.Int) { iVal += s.iVal; return this; }
     if (type == VT.Int && s.type == VT.Float) { type = VT.Float; fVal = iVal + s.fVal; return this; }
@@ -229,7 +188,8 @@ public class Register {
     return this;
   }
 
-  internal Register Sub(Register s) {
+  internal Value Sub(Value s) {
+    mode = MD.Dir;
     if (type == VT.None && s.type == VT.None) return this;
 
     if (type == VT.None) {
@@ -251,7 +211,7 @@ public class Register {
           iVal = -i;
         }
       }
-      return this; 
+      return this;
     }
 
     if (type == VT.Int && s.type == VT.Int) { iVal -= s.iVal; return this; }
@@ -276,14 +236,14 @@ public class Register {
       else if (int.TryParse(s.sVal, out int i)) {
         iVal -= i;
       }
-      return this; 
+      return this;
     }
 
     return this;
   }
 
-
-  internal Register Mul(Register s) {
+  internal Value Mul(Value s) {
+    mode = MD.Dir;
     if (type == VT.None || s.type == VT.None) return this;
 
     if (type == VT.Int && s.type == VT.Int) { iVal *= s.iVal; return this; }
@@ -329,7 +289,8 @@ public class Register {
     return this;
   }
 
-  internal Register Div(Register s) {
+  internal Value Div(Value s) {
+    mode = MD.Dir;
     if (type == VT.None || s.type == VT.None) return this;
 
     if (type == VT.Int && s.type == VT.Int) { iVal /= s.iVal; return this; }
@@ -375,7 +336,8 @@ public class Register {
     return this;
   }
 
-  internal Register Mod(Register s) {
+  internal Value Mod(Value s) {
+    mode = MD.Dir;
     if (type == VT.None || s.type == VT.None) return this;
 
     if (type == VT.Int && s.type == VT.Int) { iVal %= s.iVal; return this; }
@@ -421,7 +383,8 @@ public class Register {
     return this;
   }
 
-  internal Register And(Register s) {
+  internal Value And(Value s) {
+    mode = MD.Dir;
     if (type != VT.Int || s.type != VT.Int) {
       if (s.ToInt() == 0) {
         iVal = 0;
@@ -434,14 +397,16 @@ public class Register {
     return this;
   }
 
-  internal Register Or(Register s) {
+  internal Value Or(Value s) {
+    mode = MD.Dir;
     if (type != VT.Int || s.type != VT.Int) return this;
 
     iVal |= s.ToInt();
     return this;
   }
 
-  internal Register Xor(Register s) {
+  internal Value Xor(Value s) {
+    mode = MD.Dir;
     if (type != VT.Int || s.type != VT.Int) return this;
 
     iVal ^= s.ToInt();
@@ -449,81 +414,82 @@ public class Register {
   }
 
 
-  internal Register Sub() {
-    if (type == VT.Int) return new Register(-iVal);
-    if (type == VT.Float) return new Register(-fVal);
-    if (type == VT.None || sVal == null) return new Register('\0');
-    if (float.TryParse(sVal, out float f)) return new Register(-f);
-    if (int.TryParse(sVal, out int i)) return new Register(-i);
-    return new Register('\0');
+  internal Value Sub() {
+    mode = MD.Dir;
+    if (type == VT.Int) iVal = -iVal;
+    if (type == VT.Float) fVal = -fVal;
+    if (type == VT.None || sVal == null) return this;
+    if (float.TryParse(sVal, out float f)) fVal = -f;
+    if (int.TryParse(sVal, out int i)) iVal = -i;
+    return this;
   }
 
-  internal Register Neg() {
-    if (type == VT.Int) return new Register(iVal == 0 ? -1 : 0);
-    if (type == VT.Float) return new Register(fVal == 0 ? -1 : 0);
-    if (type == VT.String) return new Register(string.IsNullOrEmpty(sVal) ? "-1" : "");
-    if (type == VT.None) return new Register(-1);
-    return new Register('\0');
+  internal Value Neg() {
+    mode = MD.Dir;
+    if (type == VT.Int) return new Value(iVal == 0 ? -1 : 0);
+    if (type == VT.Float) return new Value(fVal == 0 ? -1 : 0);
+    if (type == VT.String) return new Value(string.IsNullOrEmpty(sVal) ? "-1" : "");
+    if (type == VT.None) return new Value(-1);
+    return new Value(MD.Dir);
   }
 
-  internal Register Inv() {
-    if (type == VT.Int) return new Register(~iVal);
-    if (type == VT.Float) return new Register(0);
-    if (type == VT.String) return new Register("");
-    if (type == VT.None) return new Register(-1);
-    return new Register('\0');
+  internal Value Inv() {
+    mode = MD.Dir;
+    if (type == VT.Int) return new Value(~iVal);
+    return new Value();
   }
 
-  internal int Compare(Register r, BNF mode) {
-    switch(mode) {
+  internal int Compare(Value r, BNF mode) {
+    switch (mode) {
       case BNF.COMPeq:
         if (type == VT.None) return r.type == VT.None ? -1 : 0;
         if (type == VT.Int) return iVal == r.ToInt() ? -1 : 0;
         if (type == VT.Float) {
-          float diff = fVal - r.ToFloat();
+          float diff = fVal - r.ToFlt();
           return (diff < .01f && diff > -.01f) ? -1 : 0;
         }
-        if (type == VT.String) return sVal == r.ToString() ? -1 : 0;
+        if (type == VT.String) return sVal == r.ToStr() ? -1 : 0;
         break;
 
       case BNF.COMPne:
         if (type == VT.None) return r.type == VT.None ? 0 : -1;
         if (type == VT.Int) return iVal == r.ToInt() ? 0 : -1;
         if (type == VT.Float) {
-          float diff = fVal - r.ToFloat();
+          float diff = fVal - r.ToFlt();
           return (diff < .01f && diff > -.01f) ? 0 : -1;
         }
-        if (type == VT.String) return sVal == r.ToString() ? 0 : -1;
+        if (type == VT.String) return sVal == r.ToStr() ? 0 : -1;
         break;
 
       case BNF.COMPlt:
         if (type == VT.None) return 0;
         if (type == VT.Int) return iVal < r.ToInt() ? -1 : 0;
-        if (type == VT.Float) return fVal < r.ToFloat() ? -1 : 0;
-        if (type == VT.String) return sVal.CompareTo(r.ToString()) < 0 ? -1 : 0;
+        if (type == VT.Float) return fVal < r.ToFlt() ? -1 : 0;
+        if (type == VT.String) return sVal.CompareTo(r.ToStr()) < 0 ? -1 : 0;
         break;
 
       case BNF.COMPle:
         if (type == VT.None) return 0;
         if (type == VT.Int) return iVal <= r.ToInt() ? -1 : 0;
-        if (type == VT.Float) return fVal <= r.ToFloat() ? -1 : 0;
-        if (type == VT.String) return sVal.CompareTo(r.ToString()) <= 0 ? -1 : 0;
+        if (type == VT.Float) return fVal <= r.ToFlt() ? -1 : 0;
+        if (type == VT.String) return sVal.CompareTo(r.ToStr()) <= 0 ? -1 : 0;
         break;
 
       case BNF.COMPgt:
         if (type == VT.None) return 0;
         if (type == VT.Int) return iVal > r.ToInt() ? -1 : 0;
-        if (type == VT.Float) return fVal > r.ToFloat() ? -1 : 0;
-        if (type == VT.String) return sVal.CompareTo(r.ToString()) > 0 ? -1 : 0;
+        if (type == VT.Float) return fVal > r.ToFlt() ? -1 : 0;
+        if (type == VT.String) return sVal.CompareTo(r.ToStr()) > 0 ? -1 : 0;
         break;
 
       case BNF.COMPge:
         if (type == VT.None) return 0;
         if (type == VT.Int) return iVal >= r.ToInt() ? -1 : 0;
-        if (type == VT.Float) return fVal >= r.ToFloat() ? -1 : 0;
-        if (type == VT.String) return sVal.CompareTo(r.ToString()) >= 0 ? -1 : 0;
+        if (type == VT.Float) return fVal >= r.ToFlt() ? -1 : 0;
+        if (type == VT.String) return sVal.CompareTo(r.ToStr()) >= 0 ? -1 : 0;
         break;
     }
     return 0;
   }
+
 }
