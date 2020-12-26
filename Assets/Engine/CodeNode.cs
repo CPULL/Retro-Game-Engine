@@ -181,6 +181,7 @@ public class CodeNode {
 
         case BNF.IF: res += (sameLine ? "" : id) + "if (" + children[0].ToString(indent, true) + ") { ..." + (children.Count - 1) + "... }"; break;
         case BNF.IFelse: res += (sameLine ? "" : id) + "else { ..." + (children.Count - 1) + "... }"; break;
+        case BNF.WHILE: res += (sameLine ? "" : id) + "while (" + children[0].ToString(indent, true) + ") { ..." + (children.Count - 1) + "... }"; break;
 
         case BNF.BLOCK: {
           res = "{ ";
@@ -199,7 +200,6 @@ public class CodeNode {
         case BNF.STATEMENT:
         case BNF.STATEMENTlst:
         case BNF.INCDED:
-        case BNF.WHILE:
         case BNF.FOR:
         case BNF.SPRITE:
         case BNF.SPEN:

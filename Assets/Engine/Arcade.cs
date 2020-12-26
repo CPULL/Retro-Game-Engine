@@ -59,7 +59,11 @@ public class Arcade : MonoBehaviour {
           stack.step++;
           if (Execute(n)) return; // Skip the execution for now so Unity can actually draw the frame
         }
-        stacks.RemoveAt(stacks.Count - 1);
+        if (stack.cond != null && Evaluate(stack.cond).ToInt() != 0) {
+          stack.step = 0;
+        }
+        else
+          stacks.RemoveAt(stacks.Count - 1);
         if (something) texture.Apply();
       }
 
@@ -88,7 +92,11 @@ public class Arcade : MonoBehaviour {
         stack.step++;
         if (Execute(n)) return; // Skip the execution for now so Unity can actually draw the frame
       }
-      stacks.RemoveAt(stacks.Count - 1);
+      if (stack.cond != null && Evaluate(stack.cond).ToInt() != 0) {
+        stack.step = 0;
+      }
+      else
+        stacks.RemoveAt(stacks.Count - 1);
       if (something) texture.Apply();
     }
 
@@ -598,6 +606,16 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
+        case BNF.WHILE: {
+          Register cond = Evaluate(n.First);
+          if (cond.ToInt() != 0) {
+            Debug.Log("Executing IF");
+            stacks.Add(new ExecStack { node = n.Second, cond = n.First, step = 0 });
+            return true;
+          }
+        }
+        break;
+
         default: {
           Clear(0b010000);
           Write("Not handled code:\n " + n.type + "\n" + n, 2, 2, 0b111100);
@@ -805,6 +823,7 @@ public class Arcade : MonoBehaviour {
 
 public class ExecStack {
   public CodeNode node;
+  public CodeNode cond;
   public int step;
 }
 

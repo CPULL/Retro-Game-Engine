@@ -6,10 +6,12 @@ using UnityEngine;
 public class CodeParser : MonoBehaviour {
   Dictionary<string, CodeNode> nodes = null;
   int idcount = 0;
+  int regcount = 0; // FIXME it will be used to ttrack the variables
 
   readonly Regex rgMLBacktick = new Regex("`", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgSLComment = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgMLComment = new Regex("/\\*[^(\\*/)]*\\*/", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgBlockStart = new Regex(".*\\{[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgBlockEnd = new Regex("[\\s]*\\}[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
   readonly Regex rgHex = new Regex("0x([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
@@ -18,7 +20,6 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgDeltat = new Regex("deltatime", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFloat = new Regex("[0-9]+\\.[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgInt = new Regex("[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex NOTWORKINGrgRegister = new Regex("([^a-z][a-z][^a-z]|^[a-z][^a-z]|[^a-z][a-z]$|[a-z])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgPars = new Regex("\\([\\s]*`[a-z]{3,}¶[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMem = new Regex("\\[[\\s]*`[a-z]{3,}¶[\\s]*]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -69,6 +70,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgDec = new Regex("(.*)\\-\\-", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgIf = new Regex("[\\s]*if[\\s]*\\(([^{}]+)\\)[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgElse = new Regex("[\\s]*else[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(([^{}]+)\\)[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgCMPeq = new Regex("==", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPneq = new Regex("!=", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -446,9 +448,12 @@ public class CodeParser : MonoBehaviour {
       node.Add(b);
 
       string block = "";
-      for (int i = lineidx+1; i < lines.Length; i++) {
+      int numBrackets = 1;
+      for (int i = lineidx + 1; i < lines.Length; i++) {
         block += lines[i] + "\n";
-        if (rgBlockEnd.IsMatch(lines[i])) break;
+        if (rgBlockStart.IsMatch(lines[i])) numBrackets++;
+        if (rgBlockEnd.IsMatch(lines[i])) numBrackets--;
+        if (numBrackets == 0) break;
       }
       block = " " + block.Trim(' ', '{', '}', '\n') + " ";
       int num = ParseBlock(block, 1, block.Length  -1, b, linenum+1);
@@ -481,6 +486,32 @@ public class CodeParser : MonoBehaviour {
 
       return num + 1;
     }
+
+    // [WHILE] ([CND]) {[BLOCK]}
+    if (expected.IsGood(BNF.WHILE, BNF.STATEMENT, BNF.STATEMENTlst) && rgWhile.IsMatch(line)) {
+      CodeNode node = new CodeNode(BNF.WHILE);
+      Match m = rgWhile.Match(line);
+      string exp = m.Groups[1].Value;
+      node.Add(ParseExpression(exp, 0, linenum));
+      CodeNode b = new CodeNode(BNF.BLOCK);
+      node.Add(b);
+
+      string block = "";
+      int numBrackets = 1;
+      for (int i = lineidx + 1; i < lines.Length; i++) {
+        block += lines[i] + "\n";
+        if (rgBlockStart.IsMatch(lines[i])) numBrackets++;
+        if (rgBlockEnd.IsMatch(lines[i])) numBrackets--;
+        if (numBrackets == 0) break;
+      }
+      block = " " + block.Trim(' ', '{', '}', '\n') + " ";
+      int num = ParseBlock(block, 1, block.Length - 1, b, linenum + 1);
+      parent.Add(node);
+      Debug.Log("match while: " + line + " <=> " + node);
+
+      return num + 1;
+    }
+
 
     // [REG]=a-z
     if (expected.IsGood(BNF.REG)) {

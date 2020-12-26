@@ -1,16 +1,20 @@
 Name: Arcade test bouncing
 Start {
 	clr(c003)
+	b = 1
 }
 
 Update {
-clr(c003)
-[0] += 1
-[10@i] += 1
-[20@f] += 0.025
-write([0] + " <= mem as byte [<exp>]", 0, 10, c330)
-write([10@i] + " <= mem as int [<exp>@i]", 0, 20, c330)
-write([20@f] + " <= mem as float [<exp>@f]", 0, 30, c330)
+	if (b == 1) {
+		a = 10
+		while (a > 0) {
+			write(a + " <=", 0, 10 * a, c330)
+			a--
+		}
+		
+		write("Completed!", 50, 5, c300)
+		b = 0
+	}
 }
 
 BounceStart {
