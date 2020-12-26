@@ -1,4 +1,4 @@
-# Retro Game Engine
+# Retro Game Engine ![RGE Logo](https://github.com/CPULL/Retro-Game-Engine/blob/main/Assets/Graphic/RGE%20logo.png?raw=true)
  A Unity Arcade VM with specific hardware and programming logic.
  
  
