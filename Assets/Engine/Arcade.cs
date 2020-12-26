@@ -187,6 +187,7 @@ public class Arcade : MonoBehaviour {
     texture.Apply();
   }
 
+  #region Drawing functions
 
   void SetPixel(int x, int y, byte col) {
     if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
@@ -364,6 +365,8 @@ public class Arcade : MonoBehaviour {
       }
     }
   }
+
+  #endregion Drawing functions
 
   bool Execute(CodeNode n) {
     try {
@@ -699,6 +702,9 @@ public class Arcade : MonoBehaviour {
       case BNF.LEN: 
         return new Register(Evaluate(n.First).ToString().Length);
 
+      case BNF.PLEN: 
+        return new Register(System.Text.Encoding.UTF8.GetByteCount(Evaluate(n.First).ToString()) + 2);
+
       case BNF.UOsub: return Evaluate(n.First).Sub();
       case BNF.UOinv: return Evaluate(n.First).Inv();
       case BNF.UOneg: return Evaluate(n.First).Neg();
@@ -710,6 +716,11 @@ public class Arcade : MonoBehaviour {
       case BNF.COMPlt:
       case BNF.COMPle:
         return new Register(Evaluate(n.First).Compare(Evaluate(n.Second), n.type));
+
+      case BNF.CASTb: return new Register(Evaluate(n.First).ToByte());
+      case BNF.CASTi: return new Register(Evaluate(n.First).ToInt());
+      case BNF.CASTf: return new Register(Evaluate(n.First).ToFloat());
+      case BNF.CASTs: return new Register(Evaluate(n.First).ToString());
 
       case BNF.EXP:
         throw new Exception("Not yet implemented: " + n.type);
@@ -830,15 +841,21 @@ public class ExecStack {
 /*  TODO
 
   FOR
-  WHILE
 
   Replace Lists with SList
   replace registers with variables
-  add casting of variables (@) ?
+  .plen for strings to return the physiccal number of bytes they will need
 
   Implement shifts and rols
   Implement Labels
   inputX, inputY, inputF, inputEsc, inputA, inputB, inputC, inputD
+
+--- To decide ----
+  key("key") -> key is pressed
+  key("key",1) -> key is down
+  key("key",0) -> key is up
+  keys -> U, D, L, R, A, B, C, D, Fire, Esc
+------------------
 
   Add Screenmodes (w,h,number of tilemaps, filter)
   Add priority byte to sprites and tilemaps
@@ -847,6 +864,7 @@ public class ExecStack {
   Add "rom" and "ram" sizes on the "boot screen" (we have to calculate them)
   Add the 4 colors lines as logo in the home screen as default sprite (copy the logo of the C65)
   Sounds
+  functions
 
   pure background color?
   border size on circles?

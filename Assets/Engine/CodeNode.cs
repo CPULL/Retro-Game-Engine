@@ -250,12 +250,17 @@ public class CodeNode {
       case BNF.Dec:
       case BNF.DTIME:
       case BNF.LEN:
+      case BNF.PLEN:
       case BNF.COMPeq:
       case BNF.COMPne:
       case BNF.COMPgt:
       case BNF.COMPge:
       case BNF.COMPlt:
       case BNF.COMPle:
+      case BNF.CASTb:
+      case BNF.CASTi:
+      case BNF.CASTf:
+      case BNF.CASTs:
         return true;
     }
     return false;
@@ -387,6 +392,10 @@ public enum BNF {
   OPand,
   OPor,
   OPxor,
+  CASTb,
+  CASTi,
+  CASTf,
+  CASTs,
   UO,
   UOneg,
   UOinv,
@@ -432,6 +441,7 @@ public enum BNF {
   FRAME,
   DTIME,
   LEN,
+  PLEN,
 }
 
 public enum VT {

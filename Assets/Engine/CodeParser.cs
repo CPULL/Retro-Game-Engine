@@ -8,6 +8,8 @@ public class CodeParser : MonoBehaviour {
   int idcount = 0;
   int regcount = 0; // FIXME it will be used to ttrack the variables
 
+  #region Regex
+
   readonly Regex rgMLBacktick = new Regex("`", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgSLComment = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgMLComment = new Regex("/\\*[^(\\*/)]*\\*/", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
@@ -42,7 +44,12 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgAnd = new Regex("(`[a-z]{3,}¶)([\\s]*&[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgOr = new Regex("(`[a-z]{3,}¶)([\\s]*\\|[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgXor = new Regex("(`[a-z]{3,}¶)([\\s]*\\^[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCastB = new Regex("(`[a-z]{3,}¶)_b", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCastI = new Regex("(`[a-z]{3,}¶)_i", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCastF = new Regex("(`[a-z]{3,}¶)_f", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCastS = new Regex("(`[a-z]{3,}¶)_s", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgLen = new Regex("([\\s]*`[a-z]{3,}¶)\\.len[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgPLen = new Regex("([\\s]*`[a-z]{3,}¶)\\.plen[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgTag = new Regex("([\\s]*`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
@@ -89,7 +96,7 @@ public class CodeParser : MonoBehaviour {
   Regex rgExp = new Regex("x[0-9a-f]+", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
 
 
-
+  #endregion Regex
 
   public CodeNode Parse(string file) {
     file = file.Trim().Replace("\r", "").Replace("\t", " ");
@@ -660,7 +667,7 @@ public class CodeParser : MonoBehaviour {
     for (int i = 0; i < line.Length; i++) {
       char c = lcase[i];
       if ((c >= 'a' && c <= 'z') &&
-          (i == 0 || (lcase[i - 1] != '@' && (lcase[i - 1] < 'a' || lcase[i - 1] > 'z'))) && // Previous
+          (i == 0 || (lcase[i - 1] != '@' && lcase[i - 1] != '_' && (lcase[i - 1] < 'a' || lcase[i - 1] > 'z'))) && // Previous
           (i == line.Length - 1 || lcase[i + 1] < 'a' || lcase[i + 1] > 'z')) { // Next 
 
         CodeNode n = new CodeNode(BNF.REG, GenId("RG")) {
@@ -698,6 +705,19 @@ public class CodeParser : MonoBehaviour {
         atLeastOneReplacement = true;
         CodeNode n = new CodeNode(BNF.LEN, GenId("LN"));
         if (m.Groups.Count < 2) throw new Exception("Unhandled LEN case: " + m.Groups.Count + " Line:" + linenum);
+        string left = m.Groups[1].Value.Trim();
+        n.Add(nodes[left]);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue; // Not needed right now
+
+      // STR.plen
+      // Replace LEN => `PLx
+      line = rgPLen.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.PLEN, GenId("PL"));
+        if (m.Groups.Count < 2) throw new Exception("Unhandled PLEN case: " + m.Groups.Count + " Line:" + linenum);
         string left = m.Groups[1].Value.Trim();
         n.Add(nodes[left]);
         nodes[n.id] = n;
@@ -859,6 +879,50 @@ public class CodeParser : MonoBehaviour {
       line = rgXor.Replace(line, m => {
         atLeastOneReplacement = true;
         return HandleOperand(BNF.OPor, "XO", "XOR", linenum, m);
+      });
+      if (atLeastOneReplacement) continue; // Not needed right now
+
+      // _i => QI
+      line = rgCastI.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.CASTi, GenId("QI"));
+        string child = m.Groups[1].Value.Trim();
+        n.Add(nodes[child]);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue; // Not needed right now
+
+      // _i => QB
+      line = rgCastB.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.CASTb, GenId("QB"));
+        string child = m.Groups[1].Value.Trim();
+        n.Add(nodes[child]);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue; // Not needed right now
+
+      // _i => QI
+      line = rgCastF.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.CASTf, GenId("QF"));
+        string child = m.Groups[1].Value.Trim();
+        n.Add(nodes[child]);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue; // Not needed right now
+
+      // _s => QS
+      line = rgCastS.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.CASTs, GenId("QS"));
+        string child = m.Groups[1].Value.Trim();
+        n.Add(nodes[child]);
+        nodes[n.id] = n;
+        return n.id;
       });
       if (atLeastOneReplacement) continue; // Not needed right now
 

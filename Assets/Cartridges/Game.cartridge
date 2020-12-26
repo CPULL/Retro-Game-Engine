@@ -1,20 +1,15 @@
 Name: Arcade test bouncing
 Start {
 	clr(c003)
-	b = 1
+	a = 10
+	write(a, 50, 5, c300)
+	a = a * 0.25
+	write(a, 50, 15, c300)
+	a = a_i
+	write(a, 50, 25, c300)
 }
 
 Update {
-	if (b == 1) {
-		a = 10
-		while (a > 0) {
-			write(a + " <=", 0, 10 * a, c330)
-			a--
-		}
-		
-		write("Completed!", 50, 5, c300)
-		b = 0
-	}
 }
 
 BounceStart {
