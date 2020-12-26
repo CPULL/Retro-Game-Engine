@@ -78,6 +78,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgIf = new Regex("[\\s]*if[\\s]*\\(([^{}]+)\\)[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgElse = new Regex("[\\s]*else[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(([^{}]+)\\)[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgScreen = new Regex("[\\s]*screen[\\s]*\\(([^,]*),([^,]*)(,([^,]*)){0,1}(,([^,]*)){0,1}\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgCMPeq = new Regex("==", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPneq = new Regex("!=", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -421,6 +422,19 @@ public class CodeParser : MonoBehaviour {
       }
     }
 
+    // [SCREEN] width, heigth, tiles, filter
+    if (expected.IsGood(BNF.SCREEN, BNF.STATEMENT, BNF.STATEMENTlst) && rgScreen.IsMatch(line)) {
+      Match m = rgScreen.Match(line);
+      if (m.Groups.Count < 3) throw new Exception("Invalid rgScreen() command. Line: " + linenum);
+      CodeNode node = new CodeNode(BNF.SCREEN);
+      node.Add(ParseExpression(m.Groups[1].Value, 0, linenum));
+      node.Add(ParseExpression(m.Groups[2].Value, 0, linenum));
+      if (m.Groups.Count > 4 && !string.IsNullOrEmpty(m.Groups[4].Value)) node.Add(ParseExpression(m.Groups[4].Value, 0, linenum));
+      if (m.Groups.Count > 6 && !string.IsNullOrEmpty(m.Groups[6].Value)) node.Add(ParseExpression(m.Groups[6].Value, 0, linenum));
+      parent.Add(node);
+      return 1;
+    }
+
     // [FRAME]
     if (expected.IsGood(BNF.FRAME, BNF.STATEMENT, BNF.STATEMENTlst) && rgFrame.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.FRAME);
@@ -719,29 +733,46 @@ public class CodeParser : MonoBehaviour {
 
       // !
       // Replace UOneg => `UNx
-      line = rgUOneg.Replace(line, m => {
-        atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.UOneg, GenId("UN"));
-        string child = m.Value.Trim();
-        n.Add(nodes[child]);
-        nodes[n.id] = n;
-        return n.id;
-      });
-      if (atLeastOneReplacement) continue;
 
+      Match mneg = rgUOneg.Match(line);
+      while (mneg.Success) {
+        atLeastOneReplacement = true;
+        string toReplace = mneg.Captures[0].Value.Trim();
+        if (toReplace[0] != '!') {
+          for (int i = 0; i < mneg.Groups.Count; i++) {
+            toReplace = mneg.Groups[i].Value.Trim();
+            if (toReplace[0] == '!') break;
+          }
+          if (toReplace[0] != '!') throw new Exception("Invalid negation");
+        }
+        CodeNode n = new CodeNode(BNF.UOneg, GenId("UN"));
+        n.Add(nodes[toReplace.Substring(1)]);
+        nodes[n.id] = n;
+        line = line.Replace(toReplace, n.id);
+        mneg = rgUOsub.Match(line);
+      }
+      if (atLeastOneReplacement) continue;
 
       // ~
       // Replace UOinv => `UIx
-      line = rgUOinv.Replace(line, m => {
+      Match minv = rgUOneg.Match(line);
+      while (minv.Success) {
         atLeastOneReplacement = true;
+        string toReplace = minv.Captures[0].Value.Trim();
+        if (toReplace[0] != '~') {
+          for (int i = 0; i < minv.Groups.Count; i++) {
+            toReplace = minv.Groups[i].Value.Trim();
+            if (toReplace[0] == '~') break;
+          }
+          if (toReplace[0] != '~') throw new Exception("Invalid one complement");
+        }
         CodeNode n = new CodeNode(BNF.UOinv, GenId("UI"));
-        string child = m.Value.Trim();
-        n.Add(nodes[child]);
+        n.Add(nodes[toReplace.Substring(1)]);
         nodes[n.id] = n;
-        return n.id;
-      });
+        line = line.Replace(toReplace, n.id);
+        minv = rgUOsub.Match(line);
+      }
       if (atLeastOneReplacement) continue;
-
 
       // *
       // Replace OPmul => `MLx
@@ -784,7 +815,7 @@ public class CodeParser : MonoBehaviour {
       if (atLeastOneReplacement) continue;
 
       // - (unary)
-      // Replace UOsub => `USx (but we need to replace only the 3rd capture)
+      // Replace UOsub => `USx
       Match msub = rgUOsub.Match(line);
       while (msub.Success) {
         atLeastOneReplacement = true;
@@ -796,11 +827,9 @@ public class CodeParser : MonoBehaviour {
           }
           if (toReplace[0] != '-') throw new Exception("Invalid negative value");
         }
-
-        CodeNode n = new CodeNode(BNF.UOsub, GenId("UI"));
+        CodeNode n = new CodeNode(BNF.UOsub, GenId("US"));
         n.Add(nodes[toReplace.Substring(1)]);
         nodes[n.id] = n;
-
         line = line.Replace(toReplace, n.id);
         msub = rgUOsub.Match(line);
       }

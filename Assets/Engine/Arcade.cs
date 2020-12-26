@@ -13,10 +13,10 @@ public class Arcade : MonoBehaviour {
   public int x, y;
   public int numPx = 16;
   CodeParser cp;
-  const int w = 256;
-  const int h = 160;
-  const int wm1 = 255;
-  const int hm1 = 159;
+  int sw = 256;
+  int sh = 160;
+  int wm1 = 255;
+  int hm1 = 156;
   public Register[] regs;
   public byte[] mem;
 
@@ -33,12 +33,12 @@ public class Arcade : MonoBehaviour {
       updateDelay -= Time.deltaTime;
 
       if (updateDelay > 0) {
-        int num = (int)(w * updateDelay * .5f);
+        int num = (int)(sw * updateDelay * .5f);
         for (int i = 0; i < num; i++) {
           SetPixel(i, hm1 - 1, 0b111111);
           SetPixel(i, hm1, 0b111111);
         }
-        for (int i = num; i < w; i++) {
+        for (int i = num; i < sw; i++) {
           SetPixel(i, hm1 - 1, 0);
           SetPixel(i, hm1, 0);
         }
@@ -117,12 +117,12 @@ public class Arcade : MonoBehaviour {
       regs[i] = new Register((char)(97 + i));
 
     cp = GetComponent<CodeParser>();
-    texture = new Texture2D(w, h, TextureFormat.RGBA32, false) {
+    texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
       filterMode = FilterMode.Point
     };
     Screen.texture = texture;
     pixels = texture.GetPixels32();
-    raw = new byte[w * h * 4];
+    raw = new byte[sw * sh * 4];
 
     Clear(0);
     Write("--- MMM Arcade RGE ---", 35, 8, 60);
@@ -175,7 +175,7 @@ public class Arcade : MonoBehaviour {
         mem = new byte[256 * 1024];
       }
 
-      Write("Screen: " + w + " x " + h, 10, 100, 0b001110);
+      Write("Screen: " + sw + " x " + sh, 10, 100, 0b001110);
       Write("Memory: " + (mem.Length / 1024) + "k (" + mem.Length + ")" , 10, 110, 0b001110);
 
       updateDelay = 2.5f; // FIXME
@@ -191,7 +191,7 @@ public class Arcade : MonoBehaviour {
 
   void SetPixel(int x, int y, byte col) {
     if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
-    Color32 pixel = pixels[x + w * y];
+    Color32 pixel = pixels[x + sw * y];
     pixel.r = (byte)(((col & 0b00110000) >> 4) * 85);
     pixel.g = (byte)(((col & 0b00001100) >> 2) * 85);
     pixel.b = (byte)(((col & 0b00000011) >> 0) * 85);
@@ -200,7 +200,7 @@ public class Arcade : MonoBehaviour {
 
   void SetPixel(int x, int y, byte r, byte g, byte b) {
     if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
-    Color32 pixel = pixels[x + w * y];
+    Color32 pixel = pixels[x + sw * y];
     pixel.r = r;
     pixel.g = g;
     pixel.b = b;
@@ -245,7 +245,7 @@ public class Arcade : MonoBehaviour {
     byte g = (byte)(((col & 0b1100) >> 2) * (1 + 4 + 16 + 64));
     byte b = (byte)((col & 0b11) * (1 + 4 + 16 + 64));
 
-    int size = w * h * 4;
+    int size = sw * sh * 4;
     for (int i = 0; i < size; i+=4) {
       raw[0] = r;
       raw[1] = g;
@@ -617,6 +617,26 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
+        case BNF.SCREEN: {
+          sw = Evaluate(n.First).ToInt();
+          if (sw < 128) sw = 128;
+          if (sw > 320) sw = 320;
+          sh = Evaluate(n.Second).ToInt();
+          if (sh < 100) sh = 100;
+          if (sh > 256) sh = 256;
+          wm1 = sw - 1;
+          hm1 = sh - 1;
+
+          texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
+            filterMode = Evaluate(n.Third).ToInt() != 0 ? FilterMode.Bilinear : FilterMode.Point
+          };
+          Screen.texture = texture;
+          pixels = texture.GetPixels32();
+          raw = new byte[sw * sh * 4];
+        }
+        break;
+
+
         default: {
           Clear(0b010000);
           Write("Not handled code:\n " + n.type + "\n" + n, 2, 2, 0b111100);
@@ -637,6 +657,7 @@ public class Arcade : MonoBehaviour {
   }
 
   private Register Evaluate(CodeNode n) {
+    if (n == null) return new Register(0);
     if (!n.Evaluable()) throw new Exception("Not evaluable node: " + n);
 
     switch (n.type) {
@@ -734,21 +755,23 @@ public class Arcade : MonoBehaviour {
       case BNF.KEYc:
       case BNF.KEYf:
       case BNF.KEYe: {
-        KeyCode k = KeyCode.Escape;
+        KeyCode k1 = KeyCode.None;
+        KeyCode k2 = KeyCode.None;
+        KeyCode k3 = KeyCode.None;
         switch(n.type) {
-          case BNF.KEYl: k = KeyCode.A; break;
-          case BNF.KEYr: k = KeyCode.D; break;
-          case BNF.KEYu: k = KeyCode.W; break;
-          case BNF.KEYd: k = KeyCode.S; break;
-          case BNF.KEYa: k = KeyCode.I; break;
-          case BNF.KEYb: k = KeyCode.O; break;
-          case BNF.KEYc: k = KeyCode.P; break;
-          case BNF.KEYf: k = KeyCode.Space; break;
-          case BNF.KEYe: k = KeyCode.Escape; break;
+          case BNF.KEYl: k1 = KeyCode.A; k2 = KeyCode.Q; k3 = KeyCode.LeftArrow; break;
+          case BNF.KEYr: k1 = KeyCode.D; k3 = KeyCode.RightArrow; break;
+          case BNF.KEYu: k1 = KeyCode.W; k2 = KeyCode.Z; k3 = KeyCode.UpArrow; break;
+          case BNF.KEYd: k1 = KeyCode.S; k3 = KeyCode.DownArrow; break;
+          case BNF.KEYa: k1 = KeyCode.I; break;
+          case BNF.KEYb: k1 = KeyCode.O; break;
+          case BNF.KEYc: k1 = KeyCode.P; break;
+          case BNF.KEYf: k1 = KeyCode.Space; k2 = KeyCode.Return; break;
+          case BNF.KEYe: k1 = KeyCode.Escape; break;
         }
-        if (n.First == null) return new Register(Input.GetKey(k));
-        if (Evaluate(n.First).ToInt() == 0) return new Register(Input.GetKeyUp(k));
-        return new Register(Input.GetKeyDown(k));
+        if (n.First == null) return new Register(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3));
+        if (Evaluate(n.First).ToInt() == 0) return new Register(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3));
+        return new Register(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3));
       }
 
       case BNF.KEYx: return new Register(Input.GetAxis("Horixontal"));
@@ -875,7 +898,7 @@ public class ExecStack {
   FOR
 
   Replace Lists with SList
-  replace registers with variables
+  replace registers with variables, and remove the "new register"
 
   Implement shifts and rols
   Implement Labels
@@ -904,4 +927,7 @@ public class ExecStack {
 
 FUTURE: graph editor
 FUTURE: step by step debugger
+
+
+
  */

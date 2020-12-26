@@ -183,6 +183,16 @@ public class CodeNode {
         case BNF.IFelse: res += (sameLine ? "" : id) + "else { ..." + (children.Count - 1) + "... }"; break;
         case BNF.WHILE: res += (sameLine ? "" : id) + "while (" + children[0].ToString(indent, true) + ") { ..." + (children.Count - 1) + "... }"; break;
 
+        case BNF.SCREEN: {
+          res += (sameLine ? "" : id) + "screen(" + 
+            children[0].ToString(indent, true) + ", " +
+            children[1].ToString(indent, true);
+            if (children.Count > 2) res += ", " + children[2].ToString(indent, true);
+            if (children.Count > 3) res += ", " + children[3].ToString(indent, true);
+          res += ")";
+        }
+        break;
+
         case BNF.BLOCK: {
           res = "{ ";
           if (children == null) res += "[[empty]]";
@@ -440,6 +450,7 @@ public enum BNF {
   FOR,
   CLR,
   WRITE,
+  SCREEN,
   SPRITE,
   SPEN,
   SPOS,
