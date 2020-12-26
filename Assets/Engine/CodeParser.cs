@@ -142,7 +142,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgCMPgtTag = new  Regex("(`[a-z]{3,}¶)([\\s]*`LT[a-z]+¶[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPgeqTag = new Regex("(`[a-z]{3,}¶)([\\s]*`LE[a-z]+¶[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgKey = new Regex("[\\s]*key([udlrabcdfexyhv]|fire|esc)\\((`[a-z]{3,}¶)?\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgKey = new Regex("[\\s]*key([udlrabcfexyhv]|fire|esc)([ud]?)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   //   keys -> U, D, L, R, A, B, C, D, X, Y, H, V, Fire, Esc
 
 
@@ -976,21 +976,30 @@ public class CodeParser : MonoBehaviour {
       line = rgKey.Replace(line, m => {
         atLeastOneReplacement = true;
         char type = m.Groups[1].Value.Trim().ToLowerInvariant()[0];
-        string exp = m.Groups[2].Value.Trim();
+        string mode = m.Groups[2].Value.Trim();
+        int pos = string.IsNullOrEmpty(mode) ? 0 : (mode.ToLowerInvariant()[0] == 'd' ? 1 : 2);
         CodeNode n;
-        if (type == 'l') n = new CodeNode(BNF.KEYl, GenId("KL"));
-        else if (type == 'r') n = new CodeNode(BNF.KEYr, GenId("KR"));
-        else if (type == 'u') n = new CodeNode(BNF.KEYu, GenId("KU"));
-        else if (type == 'd') n = new CodeNode(BNF.KEYd, GenId("KD"));
-        else if (type == 'a') n = new CodeNode(BNF.KEYa, GenId("KA"));
-        else if (type == 'b') n = new CodeNode(BNF.KEYb, GenId("KB"));
-        else if (type == 'c') n = new CodeNode(BNF.KEYc, GenId("KC"));
-        else if (type == 'f') n = new CodeNode(BNF.KEYf, GenId("KF"));
-        else if (type == 'e') n = new CodeNode(BNF.KEYe, GenId("KE"));
-        else if (type == 'x') n = new CodeNode(BNF.KEYx, GenId("KX"));
-        else if (type == 'y') n = new CodeNode(BNF.KEYy, GenId("KY"));
-        else throw new Exception("Invalid Key at " + linenum + "\n" + line);
-        if (!string.IsNullOrEmpty(exp)) n.Add(nodes[exp]);
+        switch (type) {
+          case 'l': pos += 0; break;
+          case 'r': pos += 3; break;
+          case 'u': pos += 6; break;
+          case 'd': pos += 9; break;
+          case 'a': pos += 12; break;
+          case 'b': pos += 15; break;
+          case 'c': pos += 18; break;
+          case 'f': pos += 21; break;
+          case 'e': pos += 24; break;
+          case 'x': 
+            n = new CodeNode(BNF.KEYx, GenId("KX"));
+            nodes[n.id] = n;
+            return n.id;
+          case 'y': 
+            n = new CodeNode(BNF.KEYy, GenId("KY"));
+            nodes[n.id] = n;
+            return n.id;
+          default: throw new Exception("Invalid Key at " + linenum + "\n" + line);
+        }
+        n = new CodeNode(BNF.KEY, GenId("KK")) { iVal = pos };
         nodes[n.id] = n;
         return n.id;
       });

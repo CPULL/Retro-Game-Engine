@@ -6,12 +6,10 @@ using UnityEngine.UI;
 
 public class Arcade : MonoBehaviour {
   public RawImage Screen;
-  public Text text;
+  public Text FPS;
   Texture2D texture;
   Color32[] pixels;
   byte[] raw;
-  public int x, y;
-  public int numPx = 16;
   CodeParser cp;
   int sw = 256;
   int sh = 160;
@@ -26,6 +24,20 @@ public class Arcade : MonoBehaviour {
   CodeNode updateCode;
   int pc = 0;
   readonly List<ExecStack> stacks = new List<ExecStack>();
+  int fpsFrames = 0;
+  float fpsTime = 0;
+  readonly bool[] inputs = new bool[27];
+  public enum Keys {
+    L = 0,  Lu = 1,  Ld = 2,
+    R = 3,  Ru = 4,  Rd = 5,
+    U = 6,  Uu = 7,  Ud = 8,
+    D = 9,  Du = 10, Dd = 11,
+    A = 12, Au = 13, Ad = 14,
+    B = 15, Bu = 16, Bd = 17,
+    C = 18, Cu = 19, Cd = 20,
+    F = 21, Fu = 22, Fd = 23,
+    E = 24, Eu = 25, Ed = 26
+  }
 
   private void Update() {
     if (updateDelay < 0) return;
@@ -48,6 +60,53 @@ public class Arcade : MonoBehaviour {
       updateDelay = 0;
     }
 
+    fpsTime += Time.deltaTime;
+    if (fpsTime > 1f) {
+      fpsTime -= 1f;
+      FPS.text = fpsFrames.ToString();
+      fpsFrames = 0;
+    }
+    fpsFrames++;
+
+    #region Key input
+    for (int i = 0; i < inputs.Length; i++) inputs[i] = false;
+    inputs[(int)Keys.U] = (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.Z) || Input.GetKey(KeyCode.UpArrow));
+    inputs[(int)Keys.Uu] = (Input.GetKeyUp(KeyCode.W) || Input.GetKeyUp(KeyCode.Z) || Input.GetKeyUp(KeyCode.UpArrow));
+    inputs[(int)Keys.Ud] = (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.Z) || Input.GetKeyDown(KeyCode.UpArrow));
+
+    inputs[(int)Keys.D] = (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow));
+    inputs[(int)Keys.Du] = (Input.GetKeyUp(KeyCode.S) || Input.GetKeyUp(KeyCode.DownArrow));
+    inputs[(int)Keys.Dd] = (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow));
+
+    inputs[(int)Keys.L] = (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.LeftArrow));
+    inputs[(int)Keys.Lu] = (Input.GetKeyUp(KeyCode.A) || Input.GetKeyUp(KeyCode.Q) || Input.GetKeyUp(KeyCode.LeftArrow));
+    inputs[(int)Keys.Ld] = (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.LeftArrow));
+
+    inputs[(int)Keys.R] = (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow));
+    inputs[(int)Keys.Ru] = (Input.GetKeyUp(KeyCode.D) || Input.GetKeyUp(KeyCode.RightArrow));
+    inputs[(int)Keys.Rd] = (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow));
+
+    inputs[(int)Keys.F] = (Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.Return));
+    inputs[(int)Keys.Fu] = (Input.GetKeyUp(KeyCode.Space) || Input.GetKeyUp(KeyCode.Return));
+    inputs[(int)Keys.Fd] = (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return));
+
+    inputs[(int)Keys.A] = (Input.GetKey(KeyCode.I));
+    inputs[(int)Keys.Au] = (Input.GetKeyUp(KeyCode.I));
+    inputs[(int)Keys.Ad] = (Input.GetKeyDown(KeyCode.I));
+
+    inputs[(int)Keys.B] = (Input.GetKey(KeyCode.O));
+    inputs[(int)Keys.Bu] = (Input.GetKeyUp(KeyCode.O));
+    inputs[(int)Keys.Bd] = (Input.GetKeyDown(KeyCode.O));
+
+    inputs[(int)Keys.C] = (Input.GetKey(KeyCode.P));
+    inputs[(int)Keys.Cu] = (Input.GetKeyUp(KeyCode.P));
+    inputs[(int)Keys.Cd] = (Input.GetKeyDown(KeyCode.P));
+
+    inputs[(int)Keys.E] = (Input.GetKey(KeyCode.Escape));
+    inputs[(int)Keys.Eu] = (Input.GetKeyUp(KeyCode.Escape));
+    inputs[(int)Keys.Ed] = (Input.GetKeyDown(KeyCode.Escape));
+
+    #endregion
 
     bool something = false;
     if (!startCompleted && startCode != null) {
@@ -736,34 +795,7 @@ public class Arcade : MonoBehaviour {
       case BNF.CASTs: return new Value(Evaluate(n.First).ToStr());
 
 
-      case BNF.KEYl:
-      case BNF.KEYr:
-      case BNF.KEYu:
-      case BNF.KEYd:
-      case BNF.KEYa:
-      case BNF.KEYb:
-      case BNF.KEYc:
-      case BNF.KEYf:
-      case BNF.KEYe: {
-        KeyCode k1 = KeyCode.None;
-        KeyCode k2 = KeyCode.None;
-        KeyCode k3 = KeyCode.None;
-        switch(n.type) {
-          case BNF.KEYl: k1 = KeyCode.A; k2 = KeyCode.Q; k3 = KeyCode.LeftArrow; break;
-          case BNF.KEYr: k1 = KeyCode.D; k2 = KeyCode.D; k3 = KeyCode.RightArrow; break;
-          case BNF.KEYu: k1 = KeyCode.W; k2 = KeyCode.Z; k3 = KeyCode.UpArrow; break;
-          case BNF.KEYd: k1 = KeyCode.S; k2 = KeyCode.S; k3 = KeyCode.DownArrow; break;
-          case BNF.KEYa: k1 = KeyCode.I; k2 = KeyCode.I; k3 = KeyCode.I; break;
-          case BNF.KEYb: k1 = KeyCode.O; k2 = KeyCode.O; k3 = KeyCode.O; break;
-          case BNF.KEYc: k1 = KeyCode.P; k2 = KeyCode.P; k3 = KeyCode.P; break;
-          case BNF.KEYf: k1 = KeyCode.Space; k2 = KeyCode.Return; k3 = KeyCode.Return; break;
-          case BNF.KEYe: k1 = KeyCode.Escape; break;
-        }
-        if (n.First == null) return new Value(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3) ? -1 : 0);
-        if (Evaluate(n.First).ToInt() == 0) return new Value(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3) ? -1 : 0);
-        return new Value(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3) ? -1 : 0);
-      }
-
+      case BNF.KEY: return new Value(inputs[n.iVal] ? -1 : 0);
       case BNF.KEYx: return new Value(Input.GetAxis("Horixontal"));
       case BNF.KEYy: return new Value(Input.GetAxis("Vertical"));
 

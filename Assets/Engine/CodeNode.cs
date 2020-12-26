@@ -271,15 +271,7 @@ public class CodeNode {
       case BNF.CASTi:
       case BNF.CASTf:
       case BNF.CASTs:
-      case BNF.KEYl:
-      case BNF.KEYr:
-      case BNF.KEYu:
-      case BNF.KEYd:
-      case BNF.KEYa:
-      case BNF.KEYb:
-      case BNF.KEYc:
-      case BNF.KEYf:
-      case BNF.KEYe:
+      case BNF.KEY:
       case BNF.KEYx:
       case BNF.KEYy:
         return true;
@@ -433,15 +425,7 @@ public enum BNF {
   DTIME,
   LEN,
   PLEN,
-  KEYl,
-  KEYr,
-  KEYu,
-  KEYd,
-  KEYa,
-  KEYb,
-  KEYc,
-  KEYf,
-  KEYe,
+  KEY,
   KEYx,
   KEYy,
 }
