@@ -760,13 +760,13 @@ public class Arcade : MonoBehaviour {
         KeyCode k3 = KeyCode.None;
         switch(n.type) {
           case BNF.KEYl: k1 = KeyCode.A; k2 = KeyCode.Q; k3 = KeyCode.LeftArrow; break;
-          case BNF.KEYr: k1 = KeyCode.D; k3 = KeyCode.RightArrow; break;
+          case BNF.KEYr: k1 = KeyCode.D; k2 = KeyCode.D; k3 = KeyCode.RightArrow; break;
           case BNF.KEYu: k1 = KeyCode.W; k2 = KeyCode.Z; k3 = KeyCode.UpArrow; break;
-          case BNF.KEYd: k1 = KeyCode.S; k3 = KeyCode.DownArrow; break;
-          case BNF.KEYa: k1 = KeyCode.I; break;
-          case BNF.KEYb: k1 = KeyCode.O; break;
-          case BNF.KEYc: k1 = KeyCode.P; break;
-          case BNF.KEYf: k1 = KeyCode.Space; k2 = KeyCode.Return; break;
+          case BNF.KEYd: k1 = KeyCode.S; k2 = KeyCode.S; k3 = KeyCode.DownArrow; break;
+          case BNF.KEYa: k1 = KeyCode.I; k2 = KeyCode.I; k3 = KeyCode.I; break;
+          case BNF.KEYb: k1 = KeyCode.O; k2 = KeyCode.O; k3 = KeyCode.O; break;
+          case BNF.KEYc: k1 = KeyCode.P; k2 = KeyCode.P; k3 = KeyCode.P; break;
+          case BNF.KEYf: k1 = KeyCode.Space; k2 = KeyCode.Return; k3 = KeyCode.Return; break;
           case BNF.KEYe: k1 = KeyCode.Escape; break;
         }
         if (n.First == null) return new Register(Input.GetKeyDown(k1) || Input.GetKeyDown(k2) || Input.GetKeyDown(k3));
@@ -899,10 +899,10 @@ public class ExecStack {
 
   Replace Lists with SList
   replace registers with variables, and remove the "new register"
-
   Implement shifts and rols
   Implement Labels
 
+Key is really inefficient.
 --- Input ----
   key("key") -> key is pressed
   key("key",1) -> key is down
@@ -910,10 +910,9 @@ public class ExecStack {
   keys -> U, D, L, R, A, B, C, D, Fire, Esc
 ------------------
 
-  Add Screenmodes (w,h,number of tilemaps, filter)
-  Add priority byte to sprites and tilemaps
   Add sprites
   Tiles
+  Add priority byte to sprites and tilemaps
   Add "rom" and "ram" sizes on the "boot screen" (we have to calculate them)
   Add the 4 colors lines as logo in the home screen as default sprite (copy the logo of the C65)
   Sounds
@@ -923,7 +922,7 @@ public class ExecStack {
   border size on circles?
   FPS on topleft as TextMesh?
 
-  Add configs to start the machine. For example to map keys
+  Add configs to start the machine. For example to map keys and screen mode
 
 FUTURE: graph editor
 FUTURE: step by step debugger

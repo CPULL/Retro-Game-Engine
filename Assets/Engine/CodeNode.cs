@@ -332,54 +332,23 @@ public class CodeNode {
 
 public class Expected {
   private ulong val = 0;
-  private BNF mEM;
-  private BNF rEG;
 
   public Expected() {
     val = 0;
   }
-  public Expected(BNF bnf1) {
-    val = 0;
-    Add(bnf1);
+  public void Set(Val v) {
+    if (v == Val.None) val = 0;
+    if (v == Val.Statement) val = 1;
+    if (v == Val.MemReg) val = 2;
   }
-  public Expected(BNF bnf1, BNF bnf2) {
-    val = 0;
-    Add(bnf1, bnf2);
-  }
-  public Expected(BNF bnf1, BNF bnf2, BNF bnf3) {
-    val = 0;
-    Add(bnf1, bnf2, bnf3);
+  public bool IsGood(Val v) {
+    if (val == 0) return v == Val.None;
+    if (val == 1) return v == Val.Statement;
+    if (val == 2) return v == Val.MemReg;
+    return false;
   }
 
-
-  public void Clear() { val = 0; }
-  public void Add(BNF bnf) {
-    val |= (1ul << (int)bnf);
-  }
-  public void Add(BNF bnf1, BNF bnf2) {
-    val |= (1ul << (int)bnf1);
-    val |= (1ul << (int)bnf2);
-  }
-  public void Add(BNF bnf1, BNF bnf2, BNF bnf3) {
-    val |= (1ul << (int)bnf1);
-    val |= (1ul << (int)bnf2);
-    val |= (1ul << (int)bnf3);
-  }
-  public void Remove(BNF bnf) {
-    val &= ~(1ul << (int)bnf);
-  }
-  public bool IsGood(BNF bnf) {
-    return (val & (1ul << (int)bnf)) != 0;
-  }
-  public bool IsGood(BNF bnf1, BNF bnf2) {
-    return (val & (1ul << (int)bnf1)) != 0 || (val & (1ul << (int)bnf2)) != 0;
-  }
-  public bool IsGood(BNF bnf1, BNF bnf2, BNF bnf3) {
-    return (val & (1ul << (int)bnf1)) != 0 || (val & (1ul << (int)bnf2)) != 0 || (val & (1ul << (int)bnf3)) != 0;
-  }
-  public bool IsGood(BNF bnf1, BNF bnf2, BNF bnf3, BNF bnf4) {
-    return (val & (1ul << (int)bnf1)) != 0 || (val & (1ul << (int)bnf2)) != 0 || (val & (1ul << (int)bnf3)) != 0 || (val & (1ul << (int)bnf4)) != 0;
-  }
+  public enum Val { None, Statement, MemReg };
 }
 
 

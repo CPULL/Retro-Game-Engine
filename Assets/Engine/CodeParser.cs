@@ -7,6 +7,7 @@ public class CodeParser : MonoBehaviour {
   Dictionary<string, CodeNode> nodes = null;
   int idcount = 0;
   int regcount = 0; // FIXME it will be used to ttrack the variables
+  Expected expected = new Expected();
 
   #region Regex
 
@@ -193,13 +194,13 @@ public class CodeParser : MonoBehaviour {
     clean = rgMLBacktick.Replace(clean, "'");
 
     string[] parts = clean.Split('\n');
-    Expected exp = new Expected(BNF.STATEMENTlst, BNF.STATEMENT);
 
     // Follow the BNF rules to get the elements, one line at time
     for (int lineidx = 0; lineidx < parts.Length; lineidx++) {
       linenum++;
       if (string.IsNullOrWhiteSpace(parts[lineidx])) continue;
-      int step = ParseLine(parent, parts, lineidx, exp, linenum);
+      expected.Set(Expected.Val.Statement);
+      int step = ParseLine(parent, parts, lineidx, linenum);
       lineidx += step - 1;
       linenum += step - 1;
     }
@@ -212,12 +213,13 @@ public class CodeParser : MonoBehaviour {
     string[] dests = new string[] { dest };
     string val = line.Substring(line.IndexOf(match) + 2);
     CodeNode node = new CodeNode(bnf);
-    ParseLine(node, dests, 0, new Expected(BNF.MEM, BNF.REG), linenum);
+    expected.Set(Expected.Val.MemReg);
+    ParseLine(node, dests, 0, linenum);
     parent.Add(node);
     node.Add(ParseExpression(val, 0, linenum));
   }
 
-  int ParseLine(CodeNode parent, string[] lines, int lineidx, Expected expected, int linenum) {
+  int ParseLine(CodeNode parent, string[] lines, int lineidx, int linenum) {
     string line = lines[lineidx].Trim(' ', '\t', '\r');
 
     if (rgBlockEnd.IsMatch(line)) return 1;
@@ -255,66 +257,67 @@ public class CodeParser : MonoBehaviour {
     // Check what we have. Pick something in line with what is expected
 
     // [ASSp] = [MEM] += [EXPR] | [REG] += [EXP]
-    if (expected.IsGood(BNF.ASSIGN, BNF.STATEMENT, BNF.STATEMENTlst) && rgAssSum.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgAssSum.IsMatch(line)) {
       ParseAssignment(line, linenum, parent, BNF.ASSIGNsum, "+=");
       return 1;
     }
 
     // [ASSs] = [MEM] -= [EXPR] | [REG] -= [EXP]
-    if (expected.IsGood(BNF.ASSIGN, BNF.STATEMENT, BNF.STATEMENTlst) && rgAssSub.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgAssSub.IsMatch(line)) {
       ParseAssignment(line, linenum, parent, BNF.ASSIGNsub, "-=");
       return 1;
     }
 
     // [ASSm] = [MEM] *= [EXPR] | [REG] *= [EXP]
-    if (expected.IsGood(BNF.ASSIGN, BNF.STATEMENT, BNF.STATEMENTlst) && rgAssMul.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgAssMul.IsMatch(line)) {
       ParseAssignment(line, linenum, parent, BNF.ASSIGNmul, "*=");
       return 1;
     }
 
     // [ASSd] = [MEM] /= [EXPR] | [REG] /= [EXP]
-    if (expected.IsGood(BNF.ASSIGN, BNF.STATEMENT, BNF.STATEMENTlst) && rgAssDiv.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgAssDiv.IsMatch(line)) {
       ParseAssignment(line, linenum, parent, BNF.ASSIGNdiv, "/=");
       return 1;
     }
 
     // [ASSmod] = [MEM] %= [EXPR] | [REG] %= [EXP]
-    if (expected.IsGood(BNF.ASSIGN, BNF.STATEMENT, BNF.STATEMENTlst) && rgAssMod.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgAssMod.IsMatch(line)) {
       ParseAssignment(line, linenum, parent, BNF.ASSIGNmod, "%=");
       return 1;
     }
 
     // [ASSand] = [MEM] &= [EXPR] | [REG] &= [EXP]
-    if (expected.IsGood(BNF.ASSIGN, BNF.STATEMENT, BNF.STATEMENTlst) && rgAssAnd.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgAssAnd.IsMatch(line)) {
       ParseAssignment(line, linenum, parent, BNF.ASSIGNand, "&=");
       return 1;
     }
 
     // [ASSor] = [MEM] %= [EXPR] | [REG] %= [EXP]
-    if (expected.IsGood(BNF.ASSIGN, BNF.STATEMENT, BNF.STATEMENTlst) && rgAssOr.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgAssOr.IsMatch(line)) {
       ParseAssignment(line, linenum, parent, BNF.ASSIGNmod, "|=");
       return 1;
     }
 
     // [ASSxor] = [MEM] ^= [EXPR] | [REG] ^= [EXP]
-    if (expected.IsGood(BNF.ASSIGN, BNF.STATEMENT, BNF.STATEMENTlst) && rgAssXor.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgAssXor.IsMatch(line)) {
       ParseAssignment(line, linenum, parent, BNF.ASSIGNmod, "^=");
       return 1;
     }
 
     // [ASS] = [MEM] = [EXPR] | [REG] = [EXP]
-    if (expected.IsGood(BNF.ASSIGN, BNF.STATEMENT, BNF.STATEMENTlst) && rgAssign.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgAssign.IsMatch(line)) {
       string[] dests = new string[] { line.Substring(0, line.IndexOf('=')) };
       string val = line.Substring(line.IndexOf('=') + 1);
       CodeNode node = new CodeNode(BNF.ASSIGN);
-      ParseLine(node, dests, 0, new Expected(BNF.MEM, BNF.REG), linenum);
+      expected.Set(Expected.Val.MemReg);
+      ParseLine(node, dests, 0, linenum);
       parent.Add(node);
       node.Add(ParseExpression(val, 0, linenum));
       return 1;
     }
 
     // [CLR] = clr([EXPR])
-    if (expected.IsGood(BNF.STATEMENT, BNF.STATEMENTlst) && rgClr.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgClr.IsMatch(line)) {
       Match m = rgClr.Match(line);
       if (m.Groups.Count < 2) throw new Exception("Invalid Clr() command. Line: " + linenum);
       CodeNode node = new CodeNode(BNF.CLR);
@@ -324,7 +327,7 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [WRITE] = write([EXPR], [EXPR], [EXPR], [EXPR], [EXPR]) ; text, x, y, col(front), col(back)
-    if (expected.IsGood(BNF.WRITE, BNF.STATEMENT, BNF.STATEMENTlst)) {
+    if (expected.IsGood(Expected.Val.Statement)) {
       if (rgWrite2.IsMatch(line)) {
         Match m = rgWrite2.Match(line);
         if (m.Groups.Count < 7) throw new Exception("Invalid Write() command. Line: " + linenum);
@@ -351,7 +354,7 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [LINE] = line([EXPR], [EXPR], [EXPR], [EXPR], [EXPR])
-    if (expected.IsGood(BNF.LINE, BNF.STATEMENT, BNF.STATEMENTlst) && rgLine.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgLine.IsMatch(line)) {
       Match m = rgLine.Match(line);
       if (m.Groups.Count < 7) throw new Exception("Invalid Line() command. Line: " + linenum);
       CodeNode node = new CodeNode(BNF.LINE);
@@ -365,7 +368,7 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [BOX] = box([EXP], [EXP], [EXP], [EXP], [EXP], [[EXP]])
-    if (expected.IsGood(BNF.BOX, BNF.STATEMENT, BNF.STATEMENTlst)) {
+    if (expected.IsGood(Expected.Val.Statement)) {
       if (rgBox2.IsMatch(line)) {
         Match m = rgBox2.Match(line);
         if (m.Groups.Count < 8) throw new Exception("Invalid Box() command. Line: " + linenum);
@@ -394,7 +397,7 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [CIRCLE] = circle([EXP], [EXP], [EXP], [EXP], [EXP], [[EXP]])
-    if (expected.IsGood(BNF.CIRCLE, BNF.STATEMENT, BNF.STATEMENTlst)) {
+    if (expected.IsGood(Expected.Val.Statement)) {
       if (rgCircle2.IsMatch(line)) {
         Match m = rgCircle2.Match(line);
         if (m.Groups.Count < 8) throw new Exception("Invalid Circle() command. Line: " + linenum);
@@ -423,7 +426,7 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [SCREEN] width, heigth, tiles, filter
-    if (expected.IsGood(BNF.SCREEN, BNF.STATEMENT, BNF.STATEMENTlst) && rgScreen.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgScreen.IsMatch(line)) {
       Match m = rgScreen.Match(line);
       if (m.Groups.Count < 3) throw new Exception("Invalid rgScreen() command. Line: " + linenum);
       CodeNode node = new CodeNode(BNF.SCREEN);
@@ -436,14 +439,14 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [FRAME]
-    if (expected.IsGood(BNF.FRAME, BNF.STATEMENT, BNF.STATEMENTlst) && rgFrame.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgFrame.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.FRAME);
       parent.Add(node);
       return 1;
     }
 
     // [Inc]
-    if (expected.IsGood(BNF.INCDED, BNF.Inc, BNF.STATEMENT, BNF.STATEMENTlst) && rgInc.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgInc.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.Inc);
       node.Add(ParseExpression(rgInc.Match(line).Groups[1].Value, 0, linenum));
       parent.Add(node);
@@ -451,7 +454,7 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [Dec]
-    if (expected.IsGood(BNF.INCDED, BNF.Dec, BNF.STATEMENT, BNF.STATEMENTlst) && rgDec.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgDec.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.Dec);
       node.Add(ParseExpression(rgDec.Match(line).Groups[1].Value, 0, linenum));
       parent.Add(node);
@@ -459,7 +462,7 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [IF] ([EXP]) {[BLOCK]}
-    if (expected.IsGood(BNF.IF, BNF.STATEMENT, BNF.STATEMENTlst) && rgIf.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgIf.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.IF);
       Match m = rgIf.Match(line);
       string exp = m.Groups[1].Value;
@@ -507,7 +510,7 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [WHILE] ([EXP]) {[BLOCK]}
-    if (expected.IsGood(BNF.WHILE, BNF.STATEMENT, BNF.STATEMENTlst) && rgWhile.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgWhile.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.WHILE);
       Match m = rgWhile.Match(line);
       string exp = m.Groups[1].Value;
@@ -532,7 +535,7 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [REG]=a-z
-    if (expected.IsGood(BNF.REG)) {
+    if (expected.IsGood(Expected.Val.MemReg)) {
       // Check that we have single letters
       char reg = '\0';
       bool foundletter = false;
@@ -561,7 +564,7 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [MEM]= \[<exp>\] | \[<exp>@<exp>\]
-    if (expected.IsGood(BNF.MEM) && rgMemUnparsed.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.MemReg) && rgMemUnparsed.IsMatch(line)) {
       CodeNode node = ParseExpression(rgMemUnparsed.Match(line).Value, 0, linenum);
       if (node.type != BNF.MEM && node.type != BNF.MEMlong && node.type != BNF.MEMlongb && node.type != BNF.MEMlongi && node.type != BNF.MEMlongf && node.type != BNF.MEMlongs)
         throw new Exception("Expected Memory,\nfound " + node.type + "  at line: " + linenum);
