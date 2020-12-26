@@ -92,8 +92,8 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgCMPgtTag = new  Regex("(`[a-z]{3,}¶)([\\s]*`LT[a-z]+¶[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPgeqTag = new Regex("(`[a-z]{3,}¶)([\\s]*`LE[a-z]+¶[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-
-  Regex rgExp = new Regex("x[0-9a-f]+", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
+  readonly Regex rgKey = new Regex("[\\s]*key([udlrabcdfexyhv]|fire|esc)\\((`[a-z]{3,}¶)?\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  //   keys -> U, D, L, R, A, B, C, D, X, Y, H, V, Fire, Esc
 
 
   #endregion Regex
@@ -214,7 +214,6 @@ public class CodeParser : MonoBehaviour {
     ParseLine(node, dests, 0, new Expected(BNF.MEM, BNF.REG), linenum);
     parent.Add(node);
     node.Add(ParseExpression(val, 0, linenum));
-    Debug.Log("match " + match + ": " + line + " <=> " + node);
   }
 
   int ParseLine(CodeNode parent, string[] lines, int lineidx, Expected expected, int linenum) {
@@ -445,7 +444,7 @@ public class CodeParser : MonoBehaviour {
       return 1;
     }
 
-    // [IF] ([CND]) {[BLOCK]}
+    // [IF] ([EXP]) {[BLOCK]}
     if (expected.IsGood(BNF.IF, BNF.STATEMENT, BNF.STATEMENTlst) && rgIf.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.IF);
       Match m = rgIf.Match(line);
@@ -465,7 +464,6 @@ public class CodeParser : MonoBehaviour {
       block = " " + block.Trim(' ', '{', '}', '\n') + " ";
       int num = ParseBlock(block, 1, block.Length  -1, b, linenum+1);
       parent.Add(node);
-      Debug.Log("match if: " + line + " <=> " + node);
 
       // Is the next non-empty line an "else"?
       int pos = lineidx + num + 1;
@@ -494,7 +492,7 @@ public class CodeParser : MonoBehaviour {
       return num + 1;
     }
 
-    // [WHILE] ([CND]) {[BLOCK]}
+    // [WHILE] ([EXP]) {[BLOCK]}
     if (expected.IsGood(BNF.WHILE, BNF.STATEMENT, BNF.STATEMENTlst) && rgWhile.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.WHILE);
       Match m = rgWhile.Match(line);
@@ -518,7 +516,6 @@ public class CodeParser : MonoBehaviour {
 
       return num + 1;
     }
-
 
     // [REG]=a-z
     if (expected.IsGood(BNF.REG)) {
@@ -560,18 +557,6 @@ public class CodeParser : MonoBehaviour {
     }
 
 
-
-    // [EXP]= [EXP] [OP] [EXP] | [PAR] | [REG] | [INT] | [FLT] | [MEM] | [UO] | [LEN] | deltaTime
-    if (expected.IsGood(BNF.EXP) && rgExp.IsMatch(line)) {
-      // Check the parts of the line.
-      CodeNode node = ParseExpression(line, 0, linenum);
-      if (node != null) {
-        parent.Add(node);
-        Debug.Log("match EXP: " + line + " <=> " + node);
-      }
-      return 1;
-    }
-
     // [CND] = [EXP] [COMP] [EXP] | [EXP]
     // [COMP] = == | != | < | <= | > | >=
     // [STATEMENT] = [ASS] | [IND] | [BLOCK] | [IF] | [WHILE] | [CLR] | [WRITE] | [SPRITE] | [SPEN] | [SPOS] | [SPIX] | [GPIX] | [LINE] | [BOX] | [CIR] | [FRAME]
@@ -596,7 +581,7 @@ public class CodeParser : MonoBehaviour {
 
     // FIX the replaced symbols
 
-    throw new Exception("Not valid code at line: " + (linenum - 1) + "\n" + line);
+    throw new Exception("Invalid code at " + (linenum - 1) + "\n" + line);
   }
 
   // [EXP] [OP] [EXP] | [PAR] | [REG] | [INT] | [FLT] | [MEM] | [UO] | [LEN] | deltaTime
@@ -687,18 +672,6 @@ public class CodeParser : MonoBehaviour {
     while (atLeastOneReplacement) {
       atLeastOneReplacement = false;
 
-      // PAR
-      // Replace PAR => `PRx
-      line = rgPars.Replace(line, m => { 
-        atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.OPpar, GenId("PR"));
-        string child = m.Value.Trim(' ', '(', ')');
-        n.Add(nodes[child]);
-        nodes[n.id] = n;
-        return n.id; 
-      });
-      if (atLeastOneReplacement) continue;
-
       // STR.len
       // Replace LEN => `LNx
       line = rgLen.Replace(line, m => {
@@ -710,7 +683,7 @@ public class CodeParser : MonoBehaviour {
         nodes[n.id] = n;
         return n.id;
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
 
       // STR.plen
       // Replace LEN => `PLx
@@ -723,7 +696,7 @@ public class CodeParser : MonoBehaviour {
         nodes[n.id] = n;
         return n.id;
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
 
 
       // MEM
@@ -880,7 +853,7 @@ public class CodeParser : MonoBehaviour {
         atLeastOneReplacement = true;
         return HandleOperand(BNF.OPor, "XO", "XOR", linenum, m);
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
 
       // _i => QI
       line = rgCastI.Replace(line, m => {
@@ -891,7 +864,7 @@ public class CodeParser : MonoBehaviour {
         nodes[n.id] = n;
         return n.id;
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
 
       // _i => QB
       line = rgCastB.Replace(line, m => {
@@ -902,7 +875,7 @@ public class CodeParser : MonoBehaviour {
         nodes[n.id] = n;
         return n.id;
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
 
       // _i => QI
       line = rgCastF.Replace(line, m => {
@@ -913,7 +886,7 @@ public class CodeParser : MonoBehaviour {
         nodes[n.id] = n;
         return n.id;
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
 
       // _s => QS
       line = rgCastS.Replace(line, m => {
@@ -924,7 +897,7 @@ public class CodeParser : MonoBehaviour {
         nodes[n.id] = n;
         return n.id;
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
 
 
       // [CMPeq] == => `EQx¶
@@ -932,49 +905,86 @@ public class CodeParser : MonoBehaviour {
         atLeastOneReplacement = true;
         return HandleComparator("==", linenum, m);
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
 
       // [CMPneq] == => `NQx¶
       line = rgCMPneqTag.Replace(line, m => {
         atLeastOneReplacement = true;
         return HandleComparator("!=", linenum, m);
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
 
       // [CMPgt] == => `GTx¶
       line = rgCMPgtTag.Replace(line, m => {
         atLeastOneReplacement = true;
         return HandleComparator(">", linenum, m);
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
 
       // [CMPgte] == => `GEx¶
       line = rgCMPgeqTag.Replace(line, m => {
         atLeastOneReplacement = true;
         return HandleComparator(">=", linenum, m);
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
 
       // [CMPlt] == => `LTx¶
       line = rgCMPltTag.Replace(line, m => {
         atLeastOneReplacement = true;
         return HandleComparator("<", linenum, m);
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
 
       // [CMPleq] == => `LEx¶
       line = rgCMPleqTag.Replace(line, m => {
         atLeastOneReplacement = true;
         return HandleComparator("<=", linenum, m);
       });
-      if (atLeastOneReplacement) continue; // Not needed right now
+      if (atLeastOneReplacement) continue;
+
+      // [KEY] ([EXP])
+      line = rgKey.Replace(line, m => {
+        atLeastOneReplacement = true;
+        char type = m.Groups[1].Value.Trim().ToLowerInvariant()[0];
+        string exp = m.Groups[2].Value.Trim();
+        CodeNode n;
+        if (type == 'l') n = new CodeNode(BNF.KEYl, GenId("KL"));
+        else if (type == 'r') n = new CodeNode(BNF.KEYr, GenId("KR"));
+        else if (type == 'u') n = new CodeNode(BNF.KEYu, GenId("KU"));
+        else if (type == 'd') n = new CodeNode(BNF.KEYd, GenId("KD"));
+        else if (type == 'a') n = new CodeNode(BNF.KEYa, GenId("KA"));
+        else if (type == 'b') n = new CodeNode(BNF.KEYb, GenId("KB"));
+        else if (type == 'c') n = new CodeNode(BNF.KEYc, GenId("KC"));
+        else if (type == 'f') n = new CodeNode(BNF.KEYf, GenId("KF"));
+        else if (type == 'e') n = new CodeNode(BNF.KEYe, GenId("KE"));
+        else if (type == 'x') n = new CodeNode(BNF.KEYx, GenId("KX"));
+        else if (type == 'y') n = new CodeNode(BNF.KEYy, GenId("KY"));
+        else throw new Exception("Invalid Key at " + linenum + "\n" + line);
+        if (!string.IsNullOrEmpty(exp)) n.Add(nodes[exp]);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // PAR
+      // Replace PAR => `PRx
+      line = rgPars.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.OPpar, GenId("PR"));
+        string child = m.Value.Trim(' ', '(', ')');
+        n.Add(nodes[child]);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
 
     }
 
     line = line.Trim(' ', '\t', '\r');
     if (!nodes.ContainsKey(line)) {
       line = rgTag.Replace(line, "").Trim();
-      throw new Exception("Invalid expression at line: " + (linenum - 1) + "\n" + line);
+      throw new Exception("Invalid expression at " + (linenum - 1) + "\n" + line);
     }
     return nodes[line];
   }

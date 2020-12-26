@@ -16,6 +16,14 @@ public class Register {
     type = VT.None;
   }
 
+  public Register(bool b) {
+    Reg = '\0';
+    iVal = b ? -1 : 0;
+    fVal = 0;
+    sVal = null;
+    type = VT.Int;
+  }
+
   public Register(Register src) {
     type = src.type;
     iVal = src.iVal;
@@ -136,7 +144,13 @@ public class Register {
   }
 
   internal void Set(Register r, BNF mode) {
-    type = GetType(type, r.type, mode);
+    VT nt = GetType(type, r.type, mode);
+    if (nt != type) {
+      if (nt == VT.Int) iVal = ToInt();
+      else if (nt == VT.Float) fVal = ToFloat();
+      else if (nt == VT.String) sVal = ToString();
+      type = nt;
+    }
 
     switch (mode) {
       case BNF.ASSIGN:

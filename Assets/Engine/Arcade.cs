@@ -178,7 +178,7 @@ public class Arcade : MonoBehaviour {
       Write("Screen: " + w + " x " + h, 10, 100, 0b001110);
       Write("Memory: " + (mem.Length / 1024) + "k (" + mem.Length + ")" , 10, 110, 0b001110);
 
-      updateDelay = 2.5f;
+      updateDelay = 2.5f; // FIXME
 
     } catch (Exception e) {
       Write(e.Message, 4, 48, 48);
@@ -597,7 +597,6 @@ public class Arcade : MonoBehaviour {
         case BNF.IF: {
           Register cond = Evaluate(n.First);
           if (cond.ToInt() != 0) {
-            Debug.Log("Executing IF");
             stacks.Add(new ExecStack { node = n.Second, step = 0 });
             return true;
           }
@@ -714,13 +713,47 @@ public class Arcade : MonoBehaviour {
       case BNF.COMPgt:
       case BNF.COMPge:
       case BNF.COMPlt:
-      case BNF.COMPle:
-        return new Register(Evaluate(n.First).Compare(Evaluate(n.Second), n.type));
+      case BNF.COMPle: {
+        Register left = Evaluate(n.First);
+        Register right = Evaluate(n.Second);
+        int val = left.Compare(right, n.type);
+        return new Register(val);
+      }
 
       case BNF.CASTb: return new Register(Evaluate(n.First).ToByte());
       case BNF.CASTi: return new Register(Evaluate(n.First).ToInt());
       case BNF.CASTf: return new Register(Evaluate(n.First).ToFloat());
       case BNF.CASTs: return new Register(Evaluate(n.First).ToString());
+
+
+      case BNF.KEYl:
+      case BNF.KEYr:
+      case BNF.KEYu:
+      case BNF.KEYd:
+      case BNF.KEYa:
+      case BNF.KEYb:
+      case BNF.KEYc:
+      case BNF.KEYf:
+      case BNF.KEYe: {
+        KeyCode k = KeyCode.Escape;
+        switch(n.type) {
+          case BNF.KEYl: k = KeyCode.A; break;
+          case BNF.KEYr: k = KeyCode.D; break;
+          case BNF.KEYu: k = KeyCode.W; break;
+          case BNF.KEYd: k = KeyCode.S; break;
+          case BNF.KEYa: k = KeyCode.I; break;
+          case BNF.KEYb: k = KeyCode.O; break;
+          case BNF.KEYc: k = KeyCode.P; break;
+          case BNF.KEYf: k = KeyCode.Space; break;
+          case BNF.KEYe: k = KeyCode.Escape; break;
+        }
+        if (n.First == null) return new Register(Input.GetKey(k));
+        if (Evaluate(n.First).ToInt() == 0) return new Register(Input.GetKeyUp(k));
+        return new Register(Input.GetKeyDown(k));
+      }
+
+      case BNF.KEYx: return new Register(Input.GetAxis("Horixontal"));
+      case BNF.KEYy: return new Register(Input.GetAxis("Vertical"));
 
       case BNF.EXP:
         throw new Exception("Not yet implemented: " + n.type);
@@ -844,13 +877,11 @@ public class ExecStack {
 
   Replace Lists with SList
   replace registers with variables
-  .plen for strings to return the physiccal number of bytes they will need
 
   Implement shifts and rols
   Implement Labels
-  inputX, inputY, inputF, inputEsc, inputA, inputB, inputC, inputD
 
---- To decide ----
+--- Input ----
   key("key") -> key is pressed
   key("key",1) -> key is down
   key("key",0) -> key is up
@@ -869,6 +900,8 @@ public class ExecStack {
   pure background color?
   border size on circles?
   FPS on topleft as TextMesh?
+
+  Add configs to start the machine. For example to map keys
 
 FUTURE: graph editor
 FUTURE: step by step debugger
