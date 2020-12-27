@@ -1,25 +1,19 @@
- Name: Screen resizing
+Name: Basic config and rom
 Start {
-	Write("Nothing here", 124, 120, c300)
+	a = [sprite1:]
+
+	Write("Nothing here", 80, 140, c300)
+	Write(sprite1:, 80, 150, c300)
+	Write([sprite1:+2], 80, 160, c300)
+	
 }
 
 
 
 Data {
-	config(320,256,f)
-	ram(1536k)
+	screen(320,256,f)
+	ram(4k)
 	
-	sprite1:	
-		b101110110
-		342
-	0x4f4f4f4f 0xff 0xcace
-	
-		0x4f4f4f4f, 0x4f4f4f4f,
-		0x80000000, 0x00000001,
-		0x80000000, 0x00000001,
-		0x80000000, 0x00000001,
-		0x80000000, 0x00000001,
-		0x80000000, 0x00000001,
-		0x80000000, 0x00000001,
-		0x4f4f4f4f, 0x4f4f4f4f
+sprite1:
+	17
 }

@@ -150,7 +150,10 @@ public class CodeParser : MonoBehaviour {
 
   readonly Regex rgKey = new Regex("[\\s]*key([udlrabcfexyhv]|fire|esc)([ud]?)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   //   keys -> U, D, L, R, A, B, C, D, X, Y, H, V, Fire, Esc
-  readonly Regex rgLabel = new Regex("[\\s]*[a-z]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgLabel = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
+  Regex rgConfScreen = new Regex("screen[\\s]*\\([\\s]*([0-9]+)[\\s]*,[\\s]*([0-9]+)[\\s]*(,[\\s]*[fn])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  Regex rgRam = new Regex("ram[\\s]*\\([\\s]*([0-9]+)[\\s]*([bkm])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   #endregion Regex
 
@@ -196,7 +199,6 @@ public class CodeParser : MonoBehaviour {
 
       FindBlock(file, pos + 4, out int bstart, out int bend);
       ParseData(file, bstart + 1, bend - 1, data);
-      FixDataArrays(data);
     }
 
     return res;
@@ -661,17 +663,16 @@ public class CodeParser : MonoBehaviour {
       return n.id;
     });
 
-    // Replace INT => `INx
-    line = rgInt.Replace(line, m => {
-      int.TryParse(m.Value, out int iVal);
-      CodeNode n = new CodeNode(BNF.INT, GenId("IN")) {
-        iVal = iVal
+    // LAB
+    line = rgLabel.Replace(line, m => {
+      CodeNode n = new CodeNode(BNF.LAB, GenId("LB")) {
+        sVal = m.Value.Trim().ToLowerInvariant()
       };
       nodes[n.id] = n;
       return n.id;
     });
 
-    // Replace REG => `RGx (I cannot find a Regex to match single letters, so here I will do it by code)
+    // Replace REG => `RGx
     line = rgVar.Replace(line, m => {
       string var = m.Groups[1].Value.ToLowerInvariant();
       if (!reserverdKeywords.Contains(var)) {
@@ -682,6 +683,16 @@ public class CodeParser : MonoBehaviour {
         return n.id + m.Groups[2].Value;
       }
       return m.Value;
+    });
+
+    // Replace INT => `INx
+    line = rgInt.Replace(line, m => {
+      int.TryParse(m.Value, out int iVal);
+      CodeNode n = new CodeNode(BNF.INT, GenId("IN")) {
+        iVal = iVal
+      };
+      nodes[n.id] = n;
+      return n.id;
     });
 
 
@@ -1036,16 +1047,6 @@ public class CodeParser : MonoBehaviour {
       });
       if (atLeastOneReplacement) continue;
 
-
-      // LAB
-      line = rgLabel.Replace(line, m => {
-        atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.LAB, GenId("LB"));
-        n.sVal = m.Value.Trim();
-        nodes[n.id] = n;
-        return n.id;
-      });
-      if (atLeastOneReplacement) continue;
     }
 
     line = line.Trim(' ', '\t', '\r');
@@ -1144,11 +1145,11 @@ public class CodeParser : MonoBehaviour {
       string line = clean.Substring(0, pos).Trim(' ', '\n', ',').ToLowerInvariant();
 
       // config(w,h,t)
-      if (line.IndexOf("config") != -1) { // Config ***************************************************************** Config
+      if (line.IndexOf("screen") != -1) { // ScreenCfg ***************************************************************** ScreenCfg
         pos = clean.IndexOf(")");
         line = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
 
-        Match m = rgConfig.Match(line);
+        Match m = rgConfScreen.Match(line);
         int.TryParse(m.Groups[1].Value.Trim(), out int w);
         int.TryParse(m.Groups[2].Value.Trim(), out int h);
 
@@ -1180,6 +1181,7 @@ public class CodeParser : MonoBehaviour {
         Debug.Log("Label = " + line);
 
         lastDataLabel = new CodeNode(BNF.Label) { bVal = new byte[1024], iVal = 0, sVal = line };
+        parent.Add(lastDataLabel);
 
         clean = clean.Substring(pos + 1).Trim(' ', '\n');
       }
@@ -1187,7 +1189,6 @@ public class CodeParser : MonoBehaviour {
         if (lastDataLabel == null) throw new Exception("Found data without a label defined: " + line);
         Match m = rgBin.Match(line);
         string bin = m.Value.Trim(' ', '\n');
-        Debug.Log(bin);
 
         int b = Convert.ToInt32(bin.Substring(1), 2);
         if (bin.Length < 10) {
@@ -1218,7 +1219,6 @@ public class CodeParser : MonoBehaviour {
         if (lastDataLabel == null) throw new Exception("Found data without a label defined: " + line);
         Match m = rgHex.Match(line);
         string hex = m.Value.Trim(' ', '\n');
-        Debug.Log(hex);
 
         int hx = Convert.ToInt32(hex.Substring(2), 16);
         if (hex.Length < 4) {
@@ -1249,7 +1249,6 @@ public class CodeParser : MonoBehaviour {
         if (lastDataLabel == null) throw new Exception("Found data without a label defined: " + line);
         Match m = rgInt.Match(line);
         string num = m.Value.Trim(' ', '\n');
-        Debug.Log(num);
 
         int.TryParse(num, out int val);
         if (val < 256 && num.Length < 4) {
@@ -1283,25 +1282,6 @@ public class CodeParser : MonoBehaviour {
       // hex (1, 2, 4 bytes)
       // binary (1, 2, 4 bytes)
     }
-
-
   }
 
-  private void FixDataArrays(CodeNode data) {
-    if (data.children == null) return;
-    foreach(CodeNode n in data.children) {
-      if (n.type == BNF.Label) {
-        byte[] bytes = new byte[n.iVal];
-        for (int i = 0; i < n.iVal; i++)
-          bytes[i] = n.bVal[i];
-        n.bVal = bytes;
-      }
-    }
-    
-
-  }
-
-
-  Regex rgConfig = new Regex("config[\\s]*\\([\\s]*([0-9]+)[\\s]*,[\\s]*([0-9]+)[\\s]*(,[\\s]*[fn])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  Regex rgRam = new Regex("ram[\\s]*\\([\\s]*([0-9]+)[\\s]*([bkm])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 }
