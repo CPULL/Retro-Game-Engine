@@ -1,85 +1,25 @@
  Name: Screen resizing
 Start {
-	clr(c003)
-	
-	a = 1
-	b = 1
-	a = a << b
-	Write("<< " + b + " = " + a, 4, 10, c300)
-	a = a << b
-	Write("<< " + b + " = " + a, 4, 20, c300)
-	a = a << b
-	Write("<< " + b + " = " + a, 4, 30, c300)
-	a = a << b
-	Write("<< " + b + " = " + a, 4, 40, c300)
-	a = a << b
-	Write("<< " + b + " = " + a, 4, 50, c300)
-	a = a << b
-	Write("<< " + b + " = " + a, 4, 60, c300)
-
-	a = 412723
-	Write(" = " + a, 124, 10, c300)
-	a = a >> b
-	Write(">> " + b + " = " + a, 124, 20, c300)
-	a = a >> b
-	Write(">> " + b + " = " + a, 124, 30, c300)
-	a = a >> b
-	Write(">> " + b + " = " + a, 124, 40, c300)
-	a = a >> b
-	Write(">> " + b + " = " + a, 124, 50, c300)
-	a = a >> b
-	Write(">> " + b + " = " + a, 124, 60, c300)
-
-	
-}
-
-aUpdate {
-	clr(c003)
-	box(x/2-32, y/2-16, x/2+32, y/2+16, c330, c030)
-	
-	if (keyLd & x>160) {
-		x-=8
-		screen(x,y,f)
-	}
-	if (keyRd & x < 320) {
-		x+=8
-		screen(x,y,f)
-	}
-	if (keyDd & y>100) {
-		y-=8
-		screen(x,y,f)
-	}
-	if (keyUd & y<256) {
-		y+=8
-		screen(x,y,f)
-	}
-	if (keyAd) {
-		f=!f
-		if (f) {
-			filter = "Filtered"
-		}
-		else {
-			filter = "Not filtered"
-		}
-		screen(x,y,f)
-	}
+	Write("Nothing here", 124, 120, c300)
 }
 
 
 
-
-
-
-
-
-
-
-Direct values
-Variables
-Memory
-
-int, float, string
-
-Operations on dirvals will only later the current value
-Operations on variables should affect the referenced variable
-Operations on memory should affect the memory
+Data {
+	config(320,256,f)
+	ram(1536k)
+	
+	sprite1:	
+		b101110110
+		342
+	0x4f4f4f4f 0xff 0xcace
+	
+		0x4f4f4f4f, 0x4f4f4f4f,
+		0x80000000, 0x00000001,
+		0x80000000, 0x00000001,
+		0x80000000, 0x00000001,
+		0x80000000, 0x00000001,
+		0x80000000, 0x00000001,
+		0x80000000, 0x00000001,
+		0x4f4f4f4f, 0x4f4f4f4f
+}

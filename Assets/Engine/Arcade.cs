@@ -197,6 +197,57 @@ public class Arcade : MonoBehaviour {
       else
         Write(res.sVal, 88, 39, 0b1001000);
 
+      if (res.HasNode(BNF.Data)) {
+        Write("Data:   Yes", 4, 48 + 18, 0b001011);
+        //FIXME read the values from the Data node and use defaults when needed
+
+        // Screen ************************************************************************************************************** Screen
+        CodeNode conf = res.Get(BNF.Data).Get(BNF.Config);
+        if (conf != null) {
+          sw = (int)conf.fVal;
+          sh = conf.iVal;
+          if (sw < 160) sw = 160;
+          if (sw > 320) sw = 320;
+          if (sh < 100) sh = 100;
+          if (sh > 256) sh = 256;
+          wm1 = sw - 1;
+          hm1 = sh - 1;
+          texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
+            filterMode = conf.sVal == "*" ? FilterMode.Bilinear : FilterMode.Point
+          };
+          Screen.texture = texture;
+          pixels = texture.GetPixels32();
+          raw = new byte[sw * sh * 4];
+          // Redraw
+          Clear(0);
+          Write("--- MMM Arcade RGE ---", (sw - 23 * 8) / 2, 8, 60);
+          Write("virtual machine", (sw - 16 * 8) / 2, 14 + 4, 0b011010);
+          Write("Retro Game Engine", (sw - 18 * 8) / 2, 14 + 9, 0b011110);
+          Write("Cartridge:", 4, 39, 0b001011);
+          if (res.sVal == null)
+            Write("<no name>", 88, 39, 0b1001000);
+          else
+            Write(res.sVal, 88, 39, 0b1001000);
+          Write("Data:   Yes", 4, 48 + 18, 0b001011);
+        }
+
+        // Memory ************************************************************************************************************** Memory
+        CodeNode memdef = res.Get(BNF.Data).Get(BNF.Ram);
+        if (memdef != null) {
+          if (memdef.iVal < 4096) memdef.iVal = 4096;
+          if (memdef.iVal > 4096 * 1024) memdef.iVal = 4096 * 1024;
+          mem = new byte[memdef.iVal];
+        }
+        else {
+          mem = new byte[256 * 1024];
+        }
+      }
+      else {
+        Write("Data:   ", 4, 48 + 18, 0b001011);
+        Write("<missing>", 68, 48 + 18, 0b1001000);
+        mem = new byte[256 * 1024];
+      }
+
       startCode = res.Get(BNF.Start);
       if (startCode != null && startCode.children != null && startCode.children.Count > 0) {
         Write("Start:  Yes", 4, 48, 0b001011);
@@ -217,18 +268,18 @@ public class Arcade : MonoBehaviour {
         updateCode = null;
       }
 
-      if (res.HasNode(BNF.Data)) {
-        Write("Data:   Yes", 4, 48 + 18, 0b001011);
-        //FIXME
-      }
-      else {
-        Write("Data:   ", 4, 48 + 18, 0b001011);
-        Write("<missing>", 68, 48 + 18, 0b1001000);
-        mem = new byte[256 * 1024];
-      }
-
       Write("Screen: " + sw + " x " + sh, 10, 100, 0b001110);
-      Write("Memory: " + (mem.Length / 1024) + "k (" + mem.Length + ")" , 10, 110, 0b001110);
+      string m = mem.Length.ToString();
+      if (mem.Length < 1024 * 1024)
+        m = (mem.Length / 1024) + "k (" + mem.Length + ")";
+      else {
+        float mb = mem.Length / (1024 * 1024.0f);
+        if (mb != Mathf.Floor(mb))
+          m = ((int)(mb * 10) / 10.0) + "m (" + mem.Length + ")";
+        else
+          m = (int)mb + "m (" + mem.Length + ")";
+      }
+      Write("Memory: " + m, 10, 110, 0b001110);
 
       updateDelay = .5f; // FIXME
 

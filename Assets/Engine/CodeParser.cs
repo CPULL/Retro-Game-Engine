@@ -71,6 +71,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgDeltat = new Regex("deltatime", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFloat = new Regex("[0-9]+\\.[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgInt = new Regex("[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgBin = new Regex("b([0-1]{1,31})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
   readonly Regex rgPars = new Regex("\\([\\s]*`[a-z]{3,}¶[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMem = new Regex("\\[[\\s]*`[a-z]{3,}¶[\\s]*]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -149,7 +150,7 @@ public class CodeParser : MonoBehaviour {
 
   readonly Regex rgKey = new Regex("[\\s]*key([udlrabcfexyhv]|fire|esc)([ud]?)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   //   keys -> U, D, L, R, A, B, C, D, X, Y, H, V, Fire, Esc
-
+  readonly Regex rgLabel = new Regex("[\\s]*[a-z]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   #endregion Regex
 
@@ -194,7 +195,8 @@ public class CodeParser : MonoBehaviour {
       res.Add(data);
 
       FindBlock(file, pos + 4, out int bstart, out int bend);
-      ParseBlock(file, bstart + 1, bend - 1, data);
+      ParseData(file, bstart + 1, bend - 1, data);
+      FixDataArrays(data);
     }
 
     return res;
@@ -260,17 +262,6 @@ public class CodeParser : MonoBehaviour {
     return parts.Length;
   }
 
-
-  void ParseAssignment(string line, int linenum, CodeNode parent, BNF bnf, string match) {
-    string dest = line.Substring(0, line.IndexOf(match));
-    string[] dests = new string[] { dest };
-    string val = line.Substring(line.IndexOf(match) + 2);
-    CodeNode node = new CodeNode(bnf);
-    expected.Set(Expected.Val.MemReg);
-    ParseLine(node, dests, 0, linenum);
-    parent.Add(node);
-    node.Add(ParseExpression(val, linenum));
-  }
 
   string origForException = "";
   int ParseLine(CodeNode parent, string[] lines, int lineidx, int linenum) {
@@ -1046,6 +1037,15 @@ public class CodeParser : MonoBehaviour {
       if (atLeastOneReplacement) continue;
 
 
+      // LAB
+      line = rgLabel.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.LAB, GenId("LB"));
+        n.sVal = m.Value.Trim();
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
     }
 
     line = line.Trim(' ', '\t', '\r');
@@ -1054,6 +1054,17 @@ public class CodeParser : MonoBehaviour {
       throw new Exception("Invalid expression at " + (linenum - 1) + "\n" + origForException + "\n" + line);
     }
     return nodes[line];
+  }
+
+  void ParseAssignment(string line, int linenum, CodeNode parent, BNF bnf, string match) {
+    string dest = line.Substring(0, line.IndexOf(match));
+    string[] dests = new string[] { dest };
+    string val = line.Substring(line.IndexOf(match) + 2);
+    CodeNode node = new CodeNode(bnf);
+    expected.Set(Expected.Val.MemReg);
+    ParseLine(node, dests, 0, linenum);
+    parent.Add(node);
+    node.Add(ParseExpression(val, linenum));
   }
 
   private string ParseMem(BNF bnf, string id, Match m) {
@@ -1104,6 +1115,193 @@ public class CodeParser : MonoBehaviour {
     return "`" + tag + res + "¶";
   }
 
+  private void ParseData(string file, int start, int end, CodeNode parent, int linenum = 1) {
+    CodeNode lastDataLabel = null;
+
+    // Find at what line this starts
+    for (int i = 0; i < start; i++)
+      if (file[i] == '\n') linenum++;
+
+    // Remove the comments and some unwanted chars
+    string clean = file.Substring(start, end - start).Trim(' ', '\t', '\r');
+    clean = rgSLComment.Replace(clean, m => {
+      if (m.Groups.Count > 1) return m.Groups[1].Value;
+      return m.Value;
+    });
+    clean = rgMLComment.Replace(clean, "");
+    clean = rgMLBacktick.Replace(clean, "'");
+    clean = clean.Trim(' ', '\n');
 
 
+    // Until the block is empty, get the possible parts
+    while (clean.Length > 0) {
+      int poss = clean.IndexOf(' ');
+      int posn = clean.IndexOf('\n');
+
+      int pos = poss < posn ? poss : posn;
+      if (pos == -1) pos = clean.Length;
+      if (pos == 0) return;
+      string line = clean.Substring(0, pos).Trim(' ', '\n', ',').ToLowerInvariant();
+
+      // config(w,h,t)
+      if (line.IndexOf("config") != -1) { // Config ***************************************************************** Config
+        pos = clean.IndexOf(")");
+        line = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
+
+        Match m = rgConfig.Match(line);
+        int.TryParse(m.Groups[1].Value.Trim(), out int w);
+        int.TryParse(m.Groups[2].Value.Trim(), out int h);
+
+        bool filter = (!string.IsNullOrEmpty(m.Groups[3].Value) && m.Groups[3].Value.IndexOf('f') != -1);
+
+        Debug.Log(w + "," + h + (filter ? " filter" : ""));
+        CodeNode n = new CodeNode(BNF.Config) { fVal = w, iVal = h, sVal = (filter ? "*" : "") };
+        parent.Add(n);
+
+        clean = clean.Substring(pos + 1).Trim(' ', '\n');
+      }
+      else if (line.IndexOf("ram") != -1) { // RAM ****************************************************************** RAM
+        pos = clean.IndexOf(")");
+        line = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
+        Match m = rgRam.Match(line);
+        int.TryParse(m.Groups[1].Value.Trim(), out int size);
+        char unit = (m.Groups[2].Value.Trim().ToLowerInvariant() + " ")[0];
+        if (unit == 'k') size *= 1024;
+        if (unit == 'm') size *= 1024 * 1024;
+
+        CodeNode n = new CodeNode(BNF.Ram) { iVal = size };
+        parent.Add(n);
+
+        clean = clean.Substring(pos + 1).Trim(' ', '\n');
+      }
+      else if (line.IndexOf(':') != -1) { // Label ****************************************************************** Label
+        pos = clean.IndexOf(':');
+        line = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
+        Debug.Log("Label = " + line);
+
+        lastDataLabel = new CodeNode(BNF.Label) { bVal = new byte[1024], iVal = 0, sVal = line };
+
+        clean = clean.Substring(pos + 1).Trim(' ', '\n');
+      }
+      else if (rgBin.IsMatch(line)) { // Bin ************************************************************************ Bin
+        if (lastDataLabel == null) throw new Exception("Found data without a label defined: " + line);
+        Match m = rgBin.Match(line);
+        string bin = m.Value.Trim(' ', '\n');
+        Debug.Log(bin);
+
+        int b = Convert.ToInt32(bin.Substring(1), 2);
+        if (bin.Length < 10) {
+          if (lastDataLabel.iVal == lastDataLabel.bVal.Length) {
+            byte[] bytes = new byte[1024 + lastDataLabel.bVal.Length];
+            for (int i = 0; i < lastDataLabel.bVal.Length; i++)
+              bytes[i] = lastDataLabel.bVal[i];
+            lastDataLabel.bVal = bytes;
+          }
+          lastDataLabel.bVal[lastDataLabel.iVal] = (byte)(b & 0xff);
+        }
+        else {
+          if (lastDataLabel.iVal >= lastDataLabel.bVal.Length - 3) {
+            byte[] bytes = new byte[1024 + lastDataLabel.bVal.Length];
+            for (int i = 0; i < lastDataLabel.bVal.Length; i++)
+              bytes[i] = lastDataLabel.bVal[i];
+            lastDataLabel.bVal = bytes;
+          }
+          byte[] vals = BitConverter.GetBytes(b);
+          for (int i = 0; i < vals.Length; i++) {
+            lastDataLabel.bVal[lastDataLabel.iVal++] = vals[i];
+          }
+        }
+
+        clean = clean.Substring(bin.Length).Trim(' ', '\n', ',');
+      }
+      else if (rgHex.IsMatch(line)) { // Hex ************************************************************************ Hex
+        if (lastDataLabel == null) throw new Exception("Found data without a label defined: " + line);
+        Match m = rgHex.Match(line);
+        string hex = m.Value.Trim(' ', '\n');
+        Debug.Log(hex);
+
+        int hx = Convert.ToInt32(hex.Substring(2), 16);
+        if (hex.Length < 4) {
+          if (lastDataLabel.iVal == lastDataLabel.bVal.Length) {
+            byte[] bytes = new byte[1024 + lastDataLabel.bVal.Length];
+            for (int i = 0; i < lastDataLabel.bVal.Length; i++)
+              bytes[i] = lastDataLabel.bVal[i];
+            lastDataLabel.bVal = bytes;
+          }
+          lastDataLabel.bVal[lastDataLabel.iVal] = (byte)(hx & 0xff);
+        }
+        else {
+          if (lastDataLabel.iVal >= lastDataLabel.bVal.Length - 3) {
+            byte[] bytes = new byte[1024 + lastDataLabel.bVal.Length];
+            for (int i = 0; i < lastDataLabel.bVal.Length; i++)
+              bytes[i] = lastDataLabel.bVal[i];
+            lastDataLabel.bVal = bytes;
+          }
+          byte[] vals = BitConverter.GetBytes(hx);
+          for (int i = 0; i < vals.Length; i++) {
+            lastDataLabel.bVal[lastDataLabel.iVal++] = vals[i];
+          }
+        }
+
+        clean = clean.Substring(hex.Length).Trim(' ', '\n', ',');
+      }
+      else if (rgInt.IsMatch(line)) { // Int ************************************************************************ Int
+        if (lastDataLabel == null) throw new Exception("Found data without a label defined: " + line);
+        Match m = rgInt.Match(line);
+        string num = m.Value.Trim(' ', '\n');
+        Debug.Log(num);
+
+        int.TryParse(num, out int val);
+        if (val < 256 && num.Length < 4) {
+          if (lastDataLabel.iVal == lastDataLabel.bVal.Length) {
+            byte[] bytes = new byte[1024 + lastDataLabel.bVal.Length];
+            for (int i = 0; i < lastDataLabel.bVal.Length; i++)
+              bytes[i] = lastDataLabel.bVal[i];
+            lastDataLabel.bVal = bytes;
+          }
+          lastDataLabel.bVal[lastDataLabel.iVal] = (byte)(val & 0xff);
+        }
+        else {
+          if (lastDataLabel.iVal >= lastDataLabel.bVal.Length - 3) {
+            byte[] bytes = new byte[1024 + lastDataLabel.bVal.Length];
+            for (int i = 0; i < lastDataLabel.bVal.Length; i++)
+              bytes[i] = lastDataLabel.bVal[i];
+            lastDataLabel.bVal = bytes;
+          }
+          byte[] vals = BitConverter.GetBytes(val);
+          for (int i = 0; i < vals.Length; i++) {
+            lastDataLabel.bVal[lastDataLabel.iVal++] = vals[i];
+          }
+        }
+
+        clean = clean.Substring(num.Length).Trim(' ', '\n', ',');
+      }
+      else
+        throw new Exception("Invalid DATA from line: " + 0 + "\n" + clean);
+      // label:
+      // num (1 or 4 bytes)
+      // hex (1, 2, 4 bytes)
+      // binary (1, 2, 4 bytes)
+    }
+
+
+  }
+
+  private void FixDataArrays(CodeNode data) {
+    if (data.children == null) return;
+    foreach(CodeNode n in data.children) {
+      if (n.type == BNF.Label) {
+        byte[] bytes = new byte[n.iVal];
+        for (int i = 0; i < n.iVal; i++)
+          bytes[i] = n.bVal[i];
+        n.bVal = bytes;
+      }
+    }
+    
+
+  }
+
+
+  Regex rgConfig = new Regex("config[\\s]*\\([\\s]*([0-9]+)[\\s]*,[\\s]*([0-9]+)[\\s]*(,[\\s]*[fn])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  Regex rgRam = new Regex("ram[\\s]*\\([\\s]*([0-9]+)[\\s]*([bkm])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 }

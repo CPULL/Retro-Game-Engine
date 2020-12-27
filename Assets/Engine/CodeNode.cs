@@ -8,6 +8,7 @@ public class CodeNode {
   public int iVal;
   public float fVal;
   public string sVal;
+  public byte[] bVal = null;
   public int Reg;
   public VT valType;
   internal CodeNode First { get { return children?[0]; } }
@@ -356,6 +357,9 @@ public enum BNF {
   Start,
   Update,
   Data,
+  Config,
+  Ram,
+  Label, // This is used to store the data
   REG,
   INT, 
   FLT,
@@ -382,7 +386,7 @@ public enum BNF {
   OPxor,
   OPlsh,
   OPrsh,
-  LAB,
+  LAB, // This is used to reference some data
   CASTb,
   CASTi,
   CASTf,
