@@ -1047,6 +1047,9 @@ public class ExecStack {
 
   FOR
 
+  SDIR num, dir, flip -> Sprite direction
+
+
   Implement Labels
 
   remove BNFs that are not used
@@ -1060,7 +1063,6 @@ Key is really inefficient.
   keys -> U, D, L, R, A, B, C, D, Fire, Esc
 ------------------
 
-  Add sprites
   Tiles
   Add priority byte to sprites and tilemaps
   Add "rom" and "ram" sizes on the "boot screen" (we have to calculate them)
