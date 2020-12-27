@@ -399,6 +399,22 @@ public struct Value {
     return this;
   }
 
+  internal Value Lsh(Value s) {
+    mode = MD.Dir;
+    if (type != VT.Int) return this;
+    iVal <<= s.ToInt();
+    return this;
+  }
+
+  internal Value Rsh(Value s) {
+    mode = MD.Dir;
+    if (type != VT.Int) return this;
+    iVal >>= s.ToInt();
+    return this;
+  }
+
+
+
 
   internal Value Sub() {
     mode = MD.Dir;

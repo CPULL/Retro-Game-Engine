@@ -253,6 +253,12 @@ public class CodeNode {
       case BNF.OPand:
       case BNF.OPor:
       case BNF.OPxor:
+
+      case BNF.OPlsh:
+      case BNF.OPrsh:
+      case BNF.LAB:
+
+
       case BNF.UOneg:
       case BNF.UOinv:
       case BNF.UOsub:
@@ -374,6 +380,9 @@ public enum BNF {
   OPand,
   OPor,
   OPxor,
+  OPlsh,
+  OPrsh,
+  LAB,
   CASTb,
   CASTi,
   CASTf,

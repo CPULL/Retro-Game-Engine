@@ -770,6 +770,8 @@ public class Arcade : MonoBehaviour {
       case BNF.OPand: return Evaluate(n.First).And(Evaluate(n.Second));
       case BNF.OPor: return Evaluate(n.First).Or(Evaluate(n.Second));
       case BNF.OPxor: return Evaluate(n.First).Xor(Evaluate(n.Second));
+      case BNF.OPlsh: return Evaluate(n.First).Lsh(Evaluate(n.Second));
+      case BNF.OPrsh: return Evaluate(n.First).Rsh(Evaluate(n.Second));
 
       case BNF.LEN: 
         return new Value(Evaluate(n.First).ToStr().Length);
@@ -919,8 +921,10 @@ public class ExecStack {
 
   FOR
 
-  Implement shifts and rols
   Implement Labels
+
+  remove BNFs that are not used
+once parser is completed use as keys shorter strings, removing the first two characters
 
 Key is really inefficient.
 --- Input ----
@@ -938,15 +942,16 @@ Key is really inefficient.
   Sounds
   functions
 
-  pure background color?
   border size on circles?
-  FPS on topleft as TextMesh?
 
   Add configs to start the machine. For example to map keys and screen mode
 
 FUTURE: graph editor
 FUTURE: step by step debugger
 
+
+  have a frame with list of found carts, one can be selected and then run normally or in debug mode
+  have something to edit characters and sprites
 
 
  */
