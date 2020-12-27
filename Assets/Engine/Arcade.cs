@@ -15,6 +15,8 @@ public class Arcade : MonoBehaviour {
   int sh = 160;
   int wm1 = 255;
   int hm1 = 156;
+  float scaleW = 1920f / 256;
+  float scaleH = 1080f / 160;
   bool useFilter = false;
   readonly Variables variables = new Variables();
   int memsize = 256 * 1024;
@@ -219,6 +221,8 @@ public class Arcade : MonoBehaviour {
           if (sh > 256) sh = 256;
           wm1 = sw - 1;
           hm1 = sh - 1;
+          scaleW = 1920f / sw;
+          scaleH = 1080f / sh;
           useFilter = conf.sVal == "*";
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
             filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
@@ -524,12 +528,12 @@ public class Arcade : MonoBehaviour {
 
   void Sprite(int num, int sx, int sy, int pointer, bool filter = false) {
     if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
-    sprites[num].Set(sx, sy, mem, pointer, sw, sh, filter);
+    sprites[num].Set(sx, sy, mem, pointer, scaleW, scaleH, filter);
   }
   
   void SpritePos(int num, int x, int y, bool enable = true) {
     if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
-    sprites[num].Pos(x, y, sw, sh, enable);
+    sprites[num].Pos(x, y, scaleW, scaleH, enable);
   }
   
   #endregion Sprites
@@ -806,7 +810,8 @@ public class Arcade : MonoBehaviour {
           if (sh > 256) sh = 256;
           wm1 = sw - 1;
           hm1 = sh - 1;
-
+          scaleW = 1920f / sw;
+          scaleH = 1080f / sh;
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
             filterMode = Evaluate(n.Third).ToInt() != 0 ? FilterMode.Bilinear : FilterMode.Point
           };

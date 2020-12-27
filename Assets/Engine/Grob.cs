@@ -12,10 +12,9 @@ public class Grob {
     rt = img.GetComponent<RectTransform>();
     texture = (Texture2D)img.texture;
     rt.sizeDelta = new Vector2(32 * 1920f / sw, 32 * 1080f / sh);
-    // FIXME save them to calculate correctly the size of the sprite
   }
 
-  public void Set(int w, int h, byte[] data, int pos, int sw, int sh, bool filter) {
+  public void Set(int w, int h, byte[] data, int pos, float scaleW, float scaleH, bool filter) {
     if (w < 8) w = 8;
     if (w > 32) w = 32;
     if (h < 8) h = 8;
@@ -32,48 +31,28 @@ public class Grob {
         int p = pos + x + w * y;
         if (p >= limit) continue;
         byte col = data[p];
-        raw[dst + 0] = (byte)(((col & 0b00110000) >> 4) * 85);
-        raw[dst + 1] = (byte)(((col & 0b00001100) >> 2) * 85);
-        raw[dst + 2] = (byte)(((col & 0b00000011) >> 0) * 85);
-        raw[dst + 3] = (byte)(255 - ((col & 0b11000000) >> 6) * 85);
+        byte a = (byte)(255 - ((col & 0b11000000) >> 6) * 85);
+        byte r = (byte)(((col & 0b00110000) >> 4) * 85);
+        byte g = (byte)(((col & 0b00001100) >> 2) * 85);
+        byte b = (byte)(((col & 0b00000011) >> 0) * 85);
+        if (a == 0 && (r != 0 || g != 0 || b != 0)) a = 40;
+        raw[dst + 0] = r;
+        raw[dst + 1] = g;
+        raw[dst + 2] = b;
+        raw[dst + 3] = a;
         dst+=4;
       }
     }
-
     texture.LoadRawTextureData(raw);
     texture.Apply();
     sprite.texture = texture;
-    rt.sizeDelta = new Vector2(w * 1920f / sw, h * 1080f / sh);
+    rt.sizeDelta = new Vector2(w * scaleW, h * scaleH);
   }
 
-  internal void Pos(int x, int y, int sw, int sh, bool enable) {
-
-    /*
-
-    1920
-
-    0->0
-    8->75
-
-    f(w, 1920, 0) -> 0
-    f(w, 1920, 8) -> 75
-
-
-    f(256, 1920, 0) -> 0
-    f(256, 1920, 8) -> 75
-
-    y = (1920/sw)*x
-
-    8-> -74.25
-    64 -> -452.25
-    120 -> -830.25
-
-    y = -(1080/160)*x-20.25
-
-    */
-    rt.anchoredPosition = new Vector2((1920f / sw) * x, -(1080f / sh) * y - 20.25f);
+  internal void Pos(int x, int y, float scaleW, float scaleH, bool enable) {
+    rt.anchoredPosition = new Vector2(scaleW * x, -scaleH * y - 20.25f);
     sprite.enabled = enable;
   }
-  // y8 -> -74.25
+
 }
 
