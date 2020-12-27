@@ -130,6 +130,9 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(([^{}]+)\\)[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgScreen = new Regex("[\\s]*screen[\\s]*\\(([^,]*),([^,]*)(,([^,]*)){0,1}(,([^,]*)){0,1}\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
+  readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*),([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(([^,]*),([^,]*),([^,]*)(,([^,]*))?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
   readonly Regex rgCMPeq = new Regex("==", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPneq = new Regex("!=", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPlt = new Regex("\\<", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -482,12 +485,39 @@ public class CodeParser : MonoBehaviour {
     // [SCREEN] width, heigth, tiles, filter
     if (expected.IsGood(Expected.Val.Statement) && rgScreen.IsMatch(line)) {
       Match m = rgScreen.Match(line);
-      if (m.Groups.Count < 3) throw new Exception("Invalid rgScreen() command. Line: " + linenum);
+      if (m.Groups.Count < 3) throw new Exception("Invalid Screen() command. Line: " + linenum);
       CodeNode node = new CodeNode(BNF.SCREEN);
       node.Add(ParseExpression(m.Groups[1].Value, linenum));
       node.Add(ParseExpression(m.Groups[2].Value, linenum));
       if (m.Groups.Count > 4 && !string.IsNullOrEmpty(m.Groups[4].Value)) node.Add(ParseExpression(m.Groups[4].Value, linenum));
       if (m.Groups.Count > 6 && !string.IsNullOrEmpty(m.Groups[6].Value)) node.Add(ParseExpression(m.Groups[6].Value, linenum));
+      parent.Add(node);
+      return 1;
+    }
+
+    // [SPRITE] num, width, heigth, pointer[, filter]
+    if (expected.IsGood(Expected.Val.Statement) && rgSprite.IsMatch(line)) {
+      Match m = rgSprite.Match(line);
+      if (m.Groups.Count < 4) throw new Exception("Invalid Sprite() command. Line: " + linenum);
+      CodeNode node = new CodeNode(BNF.SPRITE);
+      node.Add(ParseExpression(m.Groups[1].Value, linenum));
+      node.Add(ParseExpression(m.Groups[2].Value, linenum));
+      node.Add(ParseExpression(m.Groups[3].Value, linenum));
+      node.Add(ParseExpression(m.Groups[4].Value, linenum));
+      if (m.Groups.Count > 5 && !string.IsNullOrEmpty(m.Groups[5].Value)) node.sVal = "*";
+      parent.Add(node);
+      return 1;
+    }
+
+    // [SPOS] num, x, y[, enble]
+    if (expected.IsGood(Expected.Val.Statement) && rgSpos.IsMatch(line)) {
+      Match m = rgSpos.Match(line);
+      if (m.Groups.Count < 4) throw new Exception("Invalid Sprite() command. Line: " + linenum);
+      CodeNode node = new CodeNode(BNF.SPOS);
+      node.Add(ParseExpression(m.Groups[1].Value, linenum));
+      node.Add(ParseExpression(m.Groups[2].Value, linenum));
+      node.Add(ParseExpression(m.Groups[3].Value, linenum));
+      if (m.Groups.Count > 4 && !string.IsNullOrEmpty(m.Groups[4].Value)) node.Add(ParseExpression(m.Groups[3].Value, linenum));
       parent.Add(node);
       return 1;
     }
@@ -1169,20 +1199,15 @@ public class CodeParser : MonoBehaviour {
         char unit = (m.Groups[2].Value.Trim().ToLowerInvariant() + " ")[0];
         if (unit == 'k') size *= 1024;
         if (unit == 'm') size *= 1024 * 1024;
-
         CodeNode n = new CodeNode(BNF.Ram) { iVal = size };
         parent.Add(n);
-
         clean = clean.Substring(pos + 1).Trim(' ', '\n');
       }
       else if (line.IndexOf(':') != -1) { // Label ****************************************************************** Label
         pos = clean.IndexOf(':');
         line = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
-        Debug.Log("Label = " + line);
-
         lastDataLabel = new CodeNode(BNF.Label) { bVal = new byte[1024], iVal = 0, sVal = line };
         parent.Add(lastDataLabel);
-
         clean = clean.Substring(pos + 1).Trim(' ', '\n');
       }
       else if (rgBin.IsMatch(line)) { // Bin ************************************************************************ Bin
@@ -1198,7 +1223,7 @@ public class CodeParser : MonoBehaviour {
               bytes[i] = lastDataLabel.bVal[i];
             lastDataLabel.bVal = bytes;
           }
-          lastDataLabel.bVal[lastDataLabel.iVal] = (byte)(b & 0xff);
+          lastDataLabel.bVal[lastDataLabel.iVal++] = (byte)(b & 0xff);
         }
         else {
           if (lastDataLabel.iVal >= lastDataLabel.bVal.Length - 3) {
@@ -1221,14 +1246,14 @@ public class CodeParser : MonoBehaviour {
         string hex = m.Value.Trim(' ', '\n');
 
         int hx = Convert.ToInt32(hex.Substring(2), 16);
-        if (hex.Length < 4) {
+        if (hex.Length < 5) {
           if (lastDataLabel.iVal == lastDataLabel.bVal.Length) {
             byte[] bytes = new byte[1024 + lastDataLabel.bVal.Length];
             for (int i = 0; i < lastDataLabel.bVal.Length; i++)
               bytes[i] = lastDataLabel.bVal[i];
             lastDataLabel.bVal = bytes;
           }
-          lastDataLabel.bVal[lastDataLabel.iVal] = (byte)(hx & 0xff);
+          lastDataLabel.bVal[lastDataLabel.iVal++] = (byte)(hx & 0xff);
         }
         else {
           if (lastDataLabel.iVal >= lastDataLabel.bVal.Length - 3) {
@@ -1258,7 +1283,7 @@ public class CodeParser : MonoBehaviour {
               bytes[i] = lastDataLabel.bVal[i];
             lastDataLabel.bVal = bytes;
           }
-          lastDataLabel.bVal[lastDataLabel.iVal] = (byte)(val & 0xff);
+          lastDataLabel.bVal[lastDataLabel.iVal++] = (byte)(val & 0xff);
         }
         else {
           if (lastDataLabel.iVal >= lastDataLabel.bVal.Length - 3) {

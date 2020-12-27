@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 public class Variables {
   private Value[] vars = new Value[32];
@@ -132,6 +133,10 @@ public struct Value {
     if (type == VT.Float) return fVal.ToString("F3");
     if (string.IsNullOrEmpty(sVal)) return "";
     return sVal;
+  }
+
+  public bool ToBool() {
+    return ToInt() != 0;
   }
 
   public override string ToString() {

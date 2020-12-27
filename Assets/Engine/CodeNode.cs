@@ -14,6 +14,8 @@ public class CodeNode {
   internal CodeNode First { get { return children?[0]; } }
   internal CodeNode Second { get { return children != null && children.Count > 1 ? children[1] : null; } }
   internal CodeNode Third { get { return children != null && children.Count > 2 ? children[2] : null; } }
+  internal CodeNode Fourth { get { return children != null && children.Count > 3 ? children[3] : null; } }
+  internal CodeNode Fifth { get { return children != null && children.Count > 4 ? children[4] : null; } }
 
   public CodeNode(BNF bnf) {
     type = bnf;

@@ -15,11 +15,14 @@ public class Arcade : MonoBehaviour {
   int sh = 160;
   int wm1 = 255;
   int hm1 = 156;
+  bool useFilter = false;
   readonly Variables variables = new Variables();
   int memsize = 256 * 1024;
   int romsize = 0;
   byte[] mem;
   Dictionary<string, int> labels = new Dictionary<string, int>();
+  public RawImage[] spriteImgs;
+  Grob[] sprites;
 
   float updateDelay = -1;
   bool startCompleted = false;
@@ -216,8 +219,9 @@ public class Arcade : MonoBehaviour {
           if (sh > 256) sh = 256;
           wm1 = sw - 1;
           hm1 = sh - 1;
+          useFilter = conf.sVal == "*";
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
-            filterMode = conf.sVal == "*" ? FilterMode.Bilinear : FilterMode.Point
+            filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
           };
           Screen.texture = texture;
           pixels = texture.GetPixels32();
@@ -309,6 +313,13 @@ public class Arcade : MonoBehaviour {
       Write(e.Message, 4, 48, 48);
       Debug.Log("!!!!!!!! " + e.Message + "\n" + e.StackTrace);
     }
+
+    sprites = new Grob[spriteImgs.Length];
+    for (int i = 0; i < spriteImgs.Length; i++) {
+      sprites[i] = new Grob(spriteImgs[i], sw, sh, useFilter);
+      // FIXME spriteImgs[i].enabled = false;
+    }
+
     texture.Apply();
   }
 
@@ -328,7 +339,7 @@ public class Arcade : MonoBehaviour {
     return m;
   }
 
-  #region Drawing functions
+  #region Drawing functions ****************************************************************************************************************************************************************************************************
 
   void SetPixel(int x, int y, byte col) {
     if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
@@ -508,6 +519,20 @@ public class Arcade : MonoBehaviour {
   }
 
   #endregion Drawing functions
+
+  #region Sprites ****************************************************************************************************************************************************************************************************
+
+  void Sprite(int num, int sx, int sy, int pointer, bool filter = false) {
+    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
+    sprites[num].Set(sx, sy, mem, pointer, sw, sh, filter);
+  }
+  
+  void SpritePos(int num, int x, int y, bool enable = true) {
+    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
+    sprites[num].Pos(x, y, sw, sh, enable);
+  }
+  
+  #endregion Sprites
 
   bool Execute(CodeNode n) {
     try {
@@ -791,6 +816,9 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
+        case BNF.SPRITE: Sprite(Evaluate(n.First).ToInt(), Evaluate(n.Second).ToInt(), Evaluate(n.Third).ToInt(), Evaluate(n.Fourth).ToInt(), Evaluate(n.Fifth).ToBool()); break;
+
+        case BNF.SPOS: SpritePos(Evaluate(n.First).ToInt(), Evaluate(n.Second).ToInt(), Evaluate(n.Third).ToInt(), n.Fourth == null ? true : Evaluate(n.Fourth).ToBool()); break;
 
         default: {
           Clear(0b010000);
