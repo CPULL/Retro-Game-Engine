@@ -318,6 +318,24 @@ public class CodeNode {
     return false;
   }
 
+  internal bool IsAtomic() {
+    switch(type) {
+      case BNF.INT:
+      case BNF.FLT:
+      case BNF.STR:
+      case BNF.LAB:
+      case BNF.DTIME:
+      case BNF.KEY:
+      case BNF.KEYx:
+      case BNF.KEYy:
+      case BNF.OPpar:
+      case BNF.UOinv:
+      case BNF.UOneg:
+      case BNF.UOsub:
+        return true;
+    }
+    return false;
+  }
 }
 
 

@@ -74,7 +74,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgInt = new Regex("[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBin = new Regex("b([0-1]{1,31})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgPars = new Regex("\\([\\s]*`[a-z]{3,}¶[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgPars = new Regex("\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMem = new Regex("\\[[\\s]*`[a-z]{3,}¶[\\s]*]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMemL = new Regex("\\[[\\s]*(`[a-z]{3,}¶)[\\s]*@[\\s]*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMemB = new Regex("\\[[\\s]*(`[a-z]{3,}¶)[\\s]*@b[\\s]*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -768,6 +768,19 @@ public class CodeParser : MonoBehaviour {
     while (atLeastOneReplacement) {
       atLeastOneReplacement = false;
 
+      // PAR
+      // Replace PAR => `PRx
+      line = rgPars.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.OPpar, GenId("PR"));
+        string inner = m.Value.Trim();
+        inner = inner.Substring(1, inner.Length - 2);
+        n.Add(ParseExpression(inner, linenum));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
       // STR.len
       // Replace LEN => `LNx
       line = rgLen.Replace(line, m => {
@@ -835,6 +848,39 @@ public class CodeParser : MonoBehaviour {
       line = rgMemS.Replace(line, m => {
         atLeastOneReplacement = true;
         return ParseMem(BNF.MEMlongs, "MD", m);
+      });
+      if (atLeastOneReplacement) continue;
+
+      // [KEY] ([EXP])
+      line = rgKey.Replace(line, m => {
+        atLeastOneReplacement = true;
+        char type = m.Groups[1].Value.Trim().ToLowerInvariant()[0];
+        string mode = m.Groups[2].Value.Trim();
+        int pos = string.IsNullOrEmpty(mode) ? 0 : (mode.ToLowerInvariant()[0] == 'd' ? 1 : 2);
+        CodeNode n;
+        switch (type) {
+          case 'l': pos += 0; break;
+          case 'r': pos += 3; break;
+          case 'u': pos += 6; break;
+          case 'd': pos += 9; break;
+          case 'a': pos += 12; break;
+          case 'b': pos += 15; break;
+          case 'c': pos += 18; break;
+          case 'f': pos += 21; break;
+          case 'e': pos += 24; break;
+          case 'x':
+            n = new CodeNode(BNF.KEYx, GenId("KX"));
+            nodes[n.id] = n;
+            return n.id;
+          case 'y':
+            n = new CodeNode(BNF.KEYy, GenId("KY"));
+            nodes[n.id] = n;
+            return n.id;
+          default: throw new Exception("Invalid Key at " + linenum + "\n" + line);
+        }
+        n = new CodeNode(BNF.KEY, GenId("KK")) { iVal = pos };
+        nodes[n.id] = n;
+        return n.id;
       });
       if (atLeastOneReplacement) continue;
 
@@ -1004,52 +1050,6 @@ public class CodeParser : MonoBehaviour {
       });
       if (atLeastOneReplacement) continue;
 
-
-      // [KEY] ([EXP])
-      line = rgKey.Replace(line, m => {
-        atLeastOneReplacement = true;
-        char type = m.Groups[1].Value.Trim().ToLowerInvariant()[0];
-        string mode = m.Groups[2].Value.Trim();
-        int pos = string.IsNullOrEmpty(mode) ? 0 : (mode.ToLowerInvariant()[0] == 'd' ? 1 : 2);
-        CodeNode n;
-        switch (type) {
-          case 'l': pos += 0; break;
-          case 'r': pos += 3; break;
-          case 'u': pos += 6; break;
-          case 'd': pos += 9; break;
-          case 'a': pos += 12; break;
-          case 'b': pos += 15; break;
-          case 'c': pos += 18; break;
-          case 'f': pos += 21; break;
-          case 'e': pos += 24; break;
-          case 'x': 
-            n = new CodeNode(BNF.KEYx, GenId("KX"));
-            nodes[n.id] = n;
-            return n.id;
-          case 'y': 
-            n = new CodeNode(BNF.KEYy, GenId("KY"));
-            nodes[n.id] = n;
-            return n.id;
-          default: throw new Exception("Invalid Key at " + linenum + "\n" + line);
-        }
-        n = new CodeNode(BNF.KEY, GenId("KK")) { iVal = pos };
-        nodes[n.id] = n;
-        return n.id;
-      });
-      if (atLeastOneReplacement) continue;
-
-      // PAR
-      // Replace PAR => `PRx
-      line = rgPars.Replace(line, m => {
-        atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.OPpar, GenId("PR"));
-        string child = m.Value.Trim(' ', '(', ')');
-        n.Add(nodes[child]);
-        nodes[n.id] = n;
-        return n.id;
-      });
-      if (atLeastOneReplacement) continue;
-
     }
 
     line = line.Trim(' ', '\t', '\r');
@@ -1081,25 +1081,68 @@ public class CodeParser : MonoBehaviour {
     return n.id;
   }
 
-  private string HandleComparator(string name, int linenum, Match m) {
-    CodeNode n = nodes[m.Groups[2].Value.Trim()];
+  private string HandleOperand(BNF bnf, string code, string name, int linenum, Match m) {
     if (m.Groups.Count < 4) throw new Exception("Unhandled " + name + " case: " + m.Groups.Count + " Line:" + linenum);
-    string left = m.Groups[1].Value.Trim();
-    string right = m.Groups[3].Value.Trim();
-    n.Add(nodes[left]);
-    n.Add(nodes[right]);
+    CodeNode left = nodes[m.Groups[1].Value.Trim()];
+    CodeNode right = nodes[m.Groups[3].Value.Trim()];
+    if ((left.type == BNF.INT || left.type == BNF.FLT || left.type == BNF.OPpar) && (right.type == BNF.INT || right.type == BNF.FLT || right.type == BNF.OPpar)) {
+      CodeNode s = SimplifyNode(left, right, bnf);
+      if (s != null) return s.id;
+    }
+
+    CodeNode n = new CodeNode(bnf, GenId(code));
+    n.Add(left);
+    n.Add(right);
+    nodes[n.id] = n;
     return n.id;
   }
 
-  private string HandleOperand(BNF bnf, string code, string name, int linenum, Match m) {
-    CodeNode n = new CodeNode(bnf, GenId(code));
-    if (m.Groups.Count < 4) throw new Exception("Unhandled " + name + " case: " + m.Groups.Count + " Line:" + linenum);
-    string left = m.Groups[1].Value.Trim();
-    string right = m.Groups[3].Value.Trim();
-    n.Add(nodes[left]);
-    n.Add(nodes[right]);
-    nodes[n.id] = n;
-    return n.id;
+  CodeNode SimplifyNode(CodeNode l, CodeNode r, BNF op) {
+    while (l.type == BNF.OPpar && (l.First.type == BNF.INT || l.First.type == BNF.FLT || l.First.type == BNF.OPpar)) l = l.First;
+    while (r.type == BNF.OPpar && (r.First.type == BNF.INT || r.First.type == BNF.FLT || r.First.type == BNF.OPpar)) r = r.First;
+
+    bool lf = l.type == BNF.FLT;
+    bool rf = r.type == BNF.FLT;
+
+    switch(op) {
+      case BNF.OPsum: {
+        if (lf && rf)   { l.type = BNF.FLT; l.fVal += r.fVal; }
+        if (!lf && rf)  { l.type = BNF.FLT; l.fVal = l.iVal + r.fVal; }
+        if (lf && !rf)  { l.type = BNF.FLT; l.fVal += r.iVal; }
+        if (!lf && !rf) { l.type = BNF.INT; l.iVal += r.iVal; }
+      }
+      break;
+      case BNF.OPsub: {
+        if (lf && rf)   { l.type = BNF.FLT; l.fVal -= r.fVal; }
+        if (!lf && rf)  { l.type = BNF.FLT; l.fVal = l.iVal - r.fVal; }
+        if (lf && !rf)  { l.type = BNF.FLT; l.fVal -= r.iVal; }
+        if (!lf && !rf) { l.type = BNF.INT; l.iVal -= r.iVal; }
+      }
+      break;
+      case BNF.OPmul: {
+        if (lf && rf)   { l.type = BNF.FLT; l.fVal *= r.fVal; }
+        if (!lf && rf)  { l.type = BNF.FLT; l.fVal = l.iVal * r.fVal; }
+        if (lf && !rf)  { l.type = BNF.FLT; l.fVal *= r.iVal; }
+        if (!lf && !rf) { l.type = BNF.INT; l.iVal *= r.iVal; }
+      }
+      break;
+      case BNF.OPdiv: {
+        if (lf && rf)   { l.type = BNF.FLT; l.fVal *= r.fVal; }
+        if (!lf && rf)  { l.type = BNF.FLT; l.fVal = l.iVal / r.fVal; }
+        if (lf && !rf)  { l.type = BNF.FLT; l.fVal *= r.iVal; }
+        if (!lf && !rf) { l.type = BNF.INT; l.iVal *= r.iVal; }
+      }
+      break;
+      case BNF.OPmod: {
+        if (lf && rf)   { l.type = BNF.FLT; l.fVal %= r.fVal; }
+        if (!lf && rf)  { l.type = BNF.FLT; l.fVal = l.iVal % r.fVal; }
+        if (lf && !rf)  { l.type = BNF.FLT; l.fVal %= r.iVal; }
+        if (!lf && !rf) { l.type = BNF.INT; l.iVal %= r.iVal; }
+      }
+      break;
+      default: return null;
+    }
+    return l;
   }
 
   string GenId(string tag) {
