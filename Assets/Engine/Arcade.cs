@@ -1069,6 +1069,10 @@ public class ExecStack {
 
 /*  TODO
 
+  precalculate textures on labels
+  fix single negations
+  fix priority of comparisons
+
   FOR
 
   SDIR num, dir, flip -> Sprite direction

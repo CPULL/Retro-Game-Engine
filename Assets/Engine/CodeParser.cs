@@ -48,8 +48,8 @@ public class CodeParser : MonoBehaviour {
     "keycd",
     "keyfd",
     "keyed",
-    "",
-    "",
+    "sprite",
+    "spo",
     "",
     "",
     "",
@@ -82,9 +82,9 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgMemS = new Regex("\\[[\\s]*(`[a-z]{3,}¶)[\\s]*@s[\\s]*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMemUnparsed = new Regex("[\\s]*\\[.+\\][\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgUOneg = new Regex("!`[a-z]{3,}¶", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgUOinv = new Regex("~`[a-z]{3,}¶", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgUOsub = new Regex("([^0-9\\s]+[\\s]*(\\-[\\s]*`[a-z]{3,}¶))|(^[\\s]*(\\-[\\s]*`[a-z]{3,}¶))", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOneg = new Regex("(?<=([^\\*/\\<\\>\\=&\\|\\^a-z0-9]+)|^)(\\![\\s]*[a-z0-9\\.]+)($|[\\+\\-\\*/&\\|^\\s:\\)])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOinv = new Regex("(?<=([^\\*/\\<\\>\\=&\\|\\^a-z0-9]+)|^)(\\~[\\s]*[a-z0-9\\.]+)($|[\\+\\-\\*/&\\|^\\s:\\)])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOsub = new Regex("(?<=([^\\*/\\<\\>\\=&\\|\\^a-z0-9]+)|^)(\\-[\\s]*[a-z0-9\\.]+)($|[\\+\\-\\*/&\\|^\\s:\\)])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgMul = new Regex("(`[a-z]{3,}¶)([\\s]*\\*[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDiv = new Regex("(`[a-z]{3,}¶)([\\s]*/[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -161,50 +161,55 @@ public class CodeParser : MonoBehaviour {
   #endregion Regex
 
   public CodeNode Parse(string file, Variables variables) {
-    file = file.Trim().Replace("\r", "").Replace("\t", " ");
-    idcount = 0;
-    CodeNode res = new CodeNode(BNF.Program);
-    nodes = new Dictionary<string, CodeNode>();
-    vars = variables;
+    try {
+      file = file.Trim().Replace("\r", "").Replace("\t", " ");
+      idcount = 0;
+      CodeNode res = new CodeNode(BNF.Program);
+      nodes = new Dictionary<string, CodeNode>();
+      vars = variables;
 
-    int pos = file.IndexOf("name:", System.StringComparison.CurrentCultureIgnoreCase);
-    if (pos != -1) {
-      int end = file.IndexOf('\n', pos);
-      if (end != -1 && (pos == 0 || file[pos - 1] == '\n')) res.sVal = file.Substring(pos + 5, end - pos - 5).Trim(' ', '\n');
+      int pos = file.IndexOf("name:", System.StringComparison.CurrentCultureIgnoreCase);
+      if (pos != -1) {
+        int end = file.IndexOf('\n', pos);
+        if (end != -1 && (pos == 0 || file[pos - 1] == '\n')) res.sVal = file.Substring(pos + 5, end - pos - 5).Trim(' ', '\n');
+      }
+
+
+      // find the Start
+      pos = file.IndexOf("start", System.StringComparison.CurrentCultureIgnoreCase);
+      if (pos != -1 && (pos == 0 || file[pos - 1] == '\n')) {
+        CodeNode start = new CodeNode(BNF.Start);
+        res.Add(start);
+
+        FindBlock(file, pos + 5, out int bstart, out int bend);
+        ParseBlock(file, bstart + 1, bend - 1, start);
+      }
+
+      // find the Update
+      pos = file.IndexOf("update", System.StringComparison.CurrentCultureIgnoreCase);
+      if (pos != -1 && (pos == 0 || file[pos - 1] == '\n')) {
+        CodeNode update = new CodeNode(BNF.Update);
+        res.Add(update);
+
+        FindBlock(file, pos + 6, out int bstart, out int bend);
+        ParseBlock(file, bstart + 1, bend - 1, update);
+      }
+
+      // find the Data
+      pos = file.IndexOf("data", System.StringComparison.CurrentCultureIgnoreCase);
+      if (pos != -1 && (pos == 0 || file[pos - 1] == '\n')) {
+        CodeNode data = new CodeNode(BNF.Data);
+        res.Add(data);
+
+        FindBlock(file, pos + 4, out int bstart, out int bend);
+        ParseData(file, bstart + 1, bend - 1, data);
+      }
+
+      return res;
+    } catch (Exception e) {
+      Debug.Log(e.Message);
+      return null;
     }
-
-
-    // find the Start
-    pos = file.IndexOf("start", System.StringComparison.CurrentCultureIgnoreCase);
-    if (pos != -1 && (pos == 0 || file[pos - 1] == '\n')) {
-      CodeNode start = new CodeNode(BNF.Start);
-      res.Add(start);
-
-      FindBlock(file, pos + 5, out int bstart, out int bend);
-      ParseBlock(file, bstart + 1, bend - 1, start);
-    }
-
-    // find the Update
-    pos = file.IndexOf("update", System.StringComparison.CurrentCultureIgnoreCase);
-    if (pos != -1 && (pos == 0 || file[pos - 1] == '\n')) {
-      CodeNode update = new CodeNode(BNF.Update);
-      res.Add(update);
-
-      FindBlock(file, pos + 6, out int bstart, out int bend);
-      ParseBlock(file, bstart + 1, bend - 1, update);
-    }
-
-    // find the Data
-    pos = file.IndexOf("data", System.StringComparison.CurrentCultureIgnoreCase);
-    if (pos != -1 && (pos == 0 || file[pos - 1] == '\n')) {
-      CodeNode data = new CodeNode(BNF.Data);
-      res.Add(data);
-
-      FindBlock(file, pos + 4, out int bstart, out int bend);
-      ParseData(file, bstart + 1, bend - 1, data);
-    }
-
-    return res;
   }
 
   private void FindBlock(string file, int from, out int bstart, out int bend) {
@@ -649,6 +654,54 @@ public class CodeParser : MonoBehaviour {
     // Then parse the structure (recursive)
     // Then build the final CodeNode
 
+    // - (unary)
+    line = rgUOsub.Replace(line, m => {
+      string toReplace = m.Captures[0].Value.Trim();
+      toReplace.Trim();
+      if (toReplace[0] != '-') throw new Exception("Invalid negative value: " + toReplace);
+      toReplace = toReplace.Substring(1).Trim();
+      CodeNode n = new CodeNode(BNF.UOsub, GenId("US"));
+      CodeNode exp = ParseExpression(toReplace, linenum);
+      if (exp.type == BNF.INT) {
+        n = exp;
+        n.iVal = -n.iVal;
+      }
+      else if (exp.type == BNF.FLT) {
+        n = exp;
+        n.fVal = -n.fVal;
+      }
+      else
+        n.Add(exp);
+      nodes[n.id] = n;
+      return n.id;
+    });
+        
+    // !
+    line = rgUOneg.Replace(line, m => {
+      string toReplace = m.Captures[0].Value.Trim();
+      toReplace.Trim();
+      if (toReplace[0] != '!') throw new Exception("Invalid negation: " + toReplace);
+      toReplace = toReplace.Substring(1).Trim();
+      CodeNode n = new CodeNode(BNF.UOsub, GenId("US"));
+      CodeNode exp = ParseExpression(toReplace, linenum);
+      n.Add(exp);
+      nodes[n.id] = n;
+      return n.id;
+    });
+
+    // ~
+    line = rgUOinv.Replace(line, m => {
+      string toReplace = m.Captures[0].Value.Trim();
+      toReplace.Trim();
+      if (toReplace[0] != '~') throw new Exception("Invalid unary complement: " + toReplace);
+      toReplace = toReplace.Substring(1).Trim();
+      CodeNode n = new CodeNode(BNF.UOsub, GenId("US"));
+      CodeNode exp = ParseExpression(toReplace, linenum);
+      n.Add(exp);
+      nodes[n.id] = n;
+      return n.id;
+    });
+
     // Replace DTIME => `DTx
     line = rgDeltat.Replace(line, m => {
       CodeNode n = new CodeNode(BNF.DTIME, GenId("DT"));
@@ -802,49 +855,6 @@ public class CodeParser : MonoBehaviour {
       });
       if (atLeastOneReplacement) continue;
 
-      // !
-      // Replace UOneg => `UNx
-
-      Match mneg = rgUOneg.Match(line);
-      while (mneg.Success) {
-        atLeastOneReplacement = true;
-        string toReplace = mneg.Captures[0].Value.Trim();
-        if (toReplace[0] != '!') {
-          for (int i = 0; i < mneg.Groups.Count; i++) {
-            toReplace = mneg.Groups[i].Value.Trim();
-            if (toReplace[0] == '!') break;
-          }
-          if (toReplace[0] != '!') throw new Exception("Invalid negation");
-        }
-        CodeNode n = new CodeNode(BNF.UOneg, GenId("UN"));
-        n.Add(nodes[toReplace.Substring(1)]);
-        nodes[n.id] = n;
-        line = line.Replace(toReplace, n.id);
-        mneg = rgUOsub.Match(line);
-      }
-      if (atLeastOneReplacement) continue;
-
-      // ~
-      // Replace UOinv => `UIx
-      Match minv = rgUOinv.Match(line);
-      while (minv.Success) {
-        atLeastOneReplacement = true;
-        string toReplace = minv.Captures[0].Value.Trim();
-        if (toReplace[0] != '~') {
-          for (int i = 0; i < minv.Groups.Count; i++) {
-            toReplace = minv.Groups[i].Value.Trim();
-            if (toReplace[0] == '~') break;
-          }
-          if (toReplace[0] != '~') throw new Exception("Invalid one complement");
-        }
-        CodeNode n = new CodeNode(BNF.UOinv, GenId("UI"));
-        n.Add(nodes[toReplace.Substring(1)]);
-        nodes[n.id] = n;
-        line = line.Replace(toReplace, n.id);
-        minv = rgUOsub.Match(line);
-      }
-      if (atLeastOneReplacement) continue;
-
       // *
       // Replace OPmul => `MLx
       line = rgMul.Replace(line, m => {
@@ -885,27 +895,6 @@ public class CodeParser : MonoBehaviour {
         atLeastOneReplacement = true;
         return HandleOperand(BNF.OPsum, "AD", "addition", linenum, m);
       });
-      if (atLeastOneReplacement) continue;
-
-      // - (unary)
-      // Replace UOsub => `USx
-      Match msub = rgUOsub.Match(line);
-      while (msub.Success) {
-        atLeastOneReplacement = true;
-        string toReplace = msub.Captures[0].Value.Trim();
-        if (toReplace[0] != '-') {
-          for (int i = 0; i < msub.Groups.Count; i++) {
-            toReplace = msub.Groups[i].Value.Trim();
-            if (toReplace[0] == '-') break;
-          }
-          if (toReplace[0] != '-') throw new Exception("Invalid negative value");
-        }
-        CodeNode n = new CodeNode(BNF.UOsub, GenId("US"));
-        n.Add(nodes[toReplace.Substring(1).Trim()]);
-        nodes[n.id] = n;
-        line = line.Replace(toReplace, n.id);
-        msub = rgUOsub.Match(line);
-      }
       if (atLeastOneReplacement) continue;
 
       // &

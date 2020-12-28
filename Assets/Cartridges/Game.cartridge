@@ -1,5 +1,9 @@
 Name: Pong with sprites
 Start {
+	a *= -2 * 5
+}
+
+aStart {
 	clr(c001)
 	sprite(0, 8, 32,Paddle:)
 	sprite(1, 12, 12,Ball:)
@@ -15,7 +19,7 @@ Start {
 	score = 0
 }
 
-Update() {
+aUpdate() {
 	write("Score: " + score, 200, 0, c330, 1)
 
 	x += vx
