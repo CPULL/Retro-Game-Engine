@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class Grob {
@@ -6,6 +7,7 @@ public class Grob {
   RectTransform rt;
   Texture2D texture;
   byte[] raw;
+  public bool notDefined = true;
 
   public Grob(RawImage img, int sw, int sh) {
     sprite = img;
@@ -14,7 +16,8 @@ public class Grob {
     rt.sizeDelta = new Vector2(32 * 1920f / sw, 32 * 1080f / sh);
   }
 
-  public void Set(int w, int h, byte[] data, int pos, float scaleW, float scaleH, bool filter) {
+  public Texture2D Set(int w, int h, byte[] data, int pos, float scaleW, float scaleH, bool filter) {
+    notDefined = false;
     if (w < 8) w = 8;
     if (w > 32) w = 32;
     if (h < 8) h = 8;
@@ -47,7 +50,20 @@ public class Grob {
     texture.Apply();
     sprite.texture = texture;
     rt.sizeDelta = new Vector2(w * scaleW, h * scaleH);
+    return texture;
   }
+
+  internal void Set(int w, int h, Texture2D texture2D, float scaleW, float scaleH, bool filter) {
+    if (w < 8) w = 8;
+    if (w > 32) w = 32;
+    if (h < 8) h = 8;
+    if (h > 32) h = 32;
+    texture = texture2D;
+    texture.filterMode = filter ? FilterMode.Bilinear : FilterMode.Point;
+    sprite.texture = texture;
+    rt.sizeDelta = new Vector2(w * scaleW, h * scaleH);
+  }
+
 
   internal void Pos(int x, int y, float scaleW, float scaleH, bool enable) {
     rt.anchoredPosition = new Vector2(scaleW * x, -scaleH * y - 20.25f);
@@ -60,5 +76,6 @@ public class Grob {
     rt.sizeDelta = new Vector2(16 * scalew, 16 * scaleh);
     Pos(x, y, scalew, scaleh, true);
   }
+
 }
 

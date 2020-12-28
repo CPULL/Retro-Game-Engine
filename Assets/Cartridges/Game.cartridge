@@ -1,13 +1,12 @@
 Name: Pong with sprites
-Start {
-	a *= -2 * 5
-}
 
-aStart {
+Start {
+	if (1) {
+	}
+
 	clr(c001)
 	sprite(0, 8, 32,Paddle:)
 	sprite(1, 12, 12,Ball:)
-	sprite(2, 12, 12,BallHit:)
 	p = 90
 	Spos(0, 32, 90, 1)
 	x = 160
@@ -15,16 +14,15 @@ aStart {
 	vx = 2.2
 	vy = 1.8
 	Spos(1, x, y, 1)
-	ball = 1
 	score = 0
 }
 
-aUpdate() {
+Update() {
 	write("Score: " + score, 200, 0, c330, 1)
 
 	x += vx
 	y += vy
-	Spos(ball, x, y)
+	Spos(1, x, y)
 	frame
 
 	if (keyU & p > 1) {
@@ -56,17 +54,13 @@ aUpdate() {
 		x = 2
 		vx = -vx
 		vx *= 1.01
-		score--
+		score-=2
 	}
 	if (x < 32) {
-		Spos(1, x, y, 0)
-		ball = 2
-		Spos(2, x, y, 1)
+		sprite(1, 12, 12,BallHit:)
 	}
 	else {
-		Spos(2, x, y, 0)
-		ball = 1
-		Spos(1, x, y, 1)
+		sprite(1, 12, 12,Ball:)
 	}
 	
 	if ((x < 40) & (y > p) & (y < p + 32) & (vx < 0)) {

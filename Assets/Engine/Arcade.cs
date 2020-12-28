@@ -23,6 +23,7 @@ public class Arcade : MonoBehaviour {
   int romsize = 0;
   byte[] mem;
   Dictionary<string, int> labels = new Dictionary<string, int>();
+  Dictionary<int, Texture2D> labelTextures = new Dictionary<int, Texture2D>();
   public RawImage[] spriteImgs;
   Grob[] sprites;
 
@@ -541,11 +542,18 @@ public class Arcade : MonoBehaviour {
 
   void Sprite(int num, int sx, int sy, int pointer, bool filter = false) {
     if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
-    sprites[num].Set(sx, sy, mem, pointer, scaleW, scaleH, filter);
+
+    if (labelTextures.ContainsKey(pointer)) {
+      sprites[num].Set(sx, sy, labelTextures[pointer], scaleW, scaleH, filter);
+    }
+    else {
+      labelTextures.Add(pointer, sprites[num].Set(sx, sy, mem, pointer, scaleW, scaleH, filter));
+    }
   }
   
   void SpritePos(int num, int x, int y, bool enable = true) {
     if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
+    if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined"); 
     sprites[num].Pos(x, y, scaleW, scaleH, enable);
   }
   
@@ -794,10 +802,12 @@ public class Arcade : MonoBehaviour {
         case BNF.IF: {
           Value cond = Evaluate(n.First);
           if (cond.ToInt() != 0) {
+            if (n.Second.type == BNF.BLOCK && (n.Second.children == null || n.Second.children.Count == 0)) return true;
             stacks.Add(new ExecStack { node = n.Second, step = 0 });
             return true;
           }
           else if (n.children.Count > 2) {
+            if (n.Third.type == BNF.BLOCK && (n.Third.children == null || n.Third.children.Count == 0)) return true;
             stacks.Add(new ExecStack { node = n.Third, step = 0 });
             return true;
           }
@@ -1067,13 +1077,20 @@ public class ExecStack {
   public int step;
 }
 
+
 /*  TODO
 
-  precalculate textures on labels
-  fix single negations
   fix priority of comparisons
+  precalculate textures on labels
+  disable sprites and tilemaps on errors?
 
+add a way to reset a texture Destroy(<exp>)
+  Wait
   FOR
+ELSEIF
+IF with single statement
+ELSE with single statement
+ELSEIF with single statement
 
   SDIR num, dir, flip -> Sprite direction
 
@@ -1084,13 +1101,6 @@ public class ExecStack {
   remove BNFs that are not used
 once parser is completed use as keys shorter strings, removing the first two characters
 
-Key is really inefficient.
---- Input ----
-  key("key") -> key is pressed
-  key("key",1) -> key is down
-  key("key",0) -> key is up
-  keys -> U, D, L, R, A, B, C, D, Fire, Esc
-------------------
 
   Tiles
   Add priority byte to sprites and tilemaps
@@ -1110,7 +1120,5 @@ FUTURE: step by step debugger
   have a frame with list of found carts, one can be selected and then run normally or in debug mode
   have something to edit characters and sprites
 
-empty if statements are a problem
-priority of expressions with conditional is strange
 
  */
