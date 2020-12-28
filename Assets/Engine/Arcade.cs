@@ -1100,7 +1100,6 @@ public class ExecStack {
 
 /*  TODO
 
-  fix priority of comparisons
   disable sprites and tilemaps on errors?
 
 add a way to reset a texture Destroy(<exp>)
@@ -1113,31 +1112,18 @@ ELSEIF with single statement
 
   SDIR num, dir, flip -> Sprite direction
 
-  use SPRITE num, pointer to do the same with an extra byte telling the size
-
-  Implement Labels
-
   remove BNFs that are not used
 once parser is completed use as keys shorter strings, removing the first two characters
 
-
   Tiles
   Add priority byte to sprites and tilemaps
-  Add "rom" and "ram" sizes on the "boot screen" (we have to calculate them)
-  Add the 4 colors lines as logo in the home screen as default sprite (copy the logo of the C65)
   Sounds
   functions
 
   border size on circles?
 
-  Add configs to start the machine. For example to map keys and screen mode
-
 FUTURE: graph editor
 FUTURE: step by step debugger
-
-
-  have a frame with list of found carts, one can be selected and then run normally or in debug mode
-  have something to edit characters and sprites
-
+FUTURE: map keys
 
  */

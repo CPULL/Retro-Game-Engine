@@ -1,9 +1,10 @@
 Name: Pong with sprites
 
 Start {
-	if (1) {
-	}
+a = 5 < 10 & 6 + 9 >= 10 | "str".len != 3
+}
 
+aStart {
 	clr(c001)
 	sprite(0, PaddleSize:)
 	sprite(1, 12, 12,Ball:, f)
@@ -17,7 +18,7 @@ Start {
 	score = 0
 }
 
-Update() {
+aUpdate() {
 	write("Score: " + score, 200, 0, c330, 1)
 
 	x += vx

@@ -21,6 +21,7 @@ public class CodeParser : MonoBehaviour {
     "circle",
     "dateTime",
     "clr",
+    "len",
     "keyl",
     "keyr",
     "keyu",
@@ -82,9 +83,9 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgMemS = new Regex("\\[[\\s]*(`[a-z]{3,}¶)[\\s]*@s[\\s]*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMemUnparsed = new Regex("[\\s]*\\[.+\\][\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgUOneg = new Regex("(?<=([^\\*/\\<\\>\\=&\\|\\^a-z0-9]+)|^)(\\![\\s]*[a-z0-9\\.]+)($|[\\+\\-\\*/&\\|^\\s:\\)])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgUOinv = new Regex("(?<=([^\\*/\\<\\>\\=&\\|\\^a-z0-9]+)|^)(\\~[\\s]*[a-z0-9\\.]+)($|[\\+\\-\\*/&\\|^\\s:\\)])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgUOsub = new Regex("(?<=([^\\*/\\<\\>\\=&\\|\\^a-z0-9]+)|^)(\\-[\\s]*[a-z0-9\\.]+)($|[\\+\\-\\*/&\\|^\\s:\\)])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOneg = new Regex("(^([^0-9a-z\\*/\\<\\>\\)\\=&\\|\\^]*))(\\![\\s]*[a-z0-9\\.]+)($|[\\+\\-\\*/&\\|^\\s:\\)])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOinv = new Regex("(^([^0-9a-z\\*/\\<\\>\\)\\=&\\|\\^]*))(\\~[\\s]*[a-z0-9\\.]+)($|[\\+\\-\\*/&\\|^\\s:\\)])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOsub = new Regex("(^([^0-9a-z\\*/\\<\\>\\)\\=&\\|\\^]*))(\\-[\\s]*[a-z0-9\\.]+)($|[\\+\\-\\*/&\\|^\\s:\\)])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgMul = new Regex("(`[a-z]{3,}¶)([\\s]*\\*[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDiv = new Regex("(`[a-z]{3,}¶)([\\s]*/[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -134,23 +135,15 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*),([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(([^,]*),([^,]*),([^,]*)(,([^,]*))?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgCMPeq = new Regex("==", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCMPneq = new Regex("!=", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCMPlt = new Regex("\\<", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCMPleq = new Regex("\\<\\=", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCMPgt = new Regex("\\>", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCMPgeq = new Regex("\\>=", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCMPeqTag = new  Regex("(`[a-z]{3,}¶)([\\s]*`EQ[a-z]+¶[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCMPneqTag = new Regex("(`[a-z]{3,}¶)([\\s]*`NQ[a-z]+¶[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCMPltTag = new  Regex("(`[a-z]{3,}¶)([\\s]*`GT[a-z]+¶[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCMPleqTag = new Regex("(`[a-z]{3,}¶)([\\s]*`GE[a-z]+¶[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCMPgtTag = new  Regex("(`[a-z]{3,}¶)([\\s]*`LT[a-z]+¶[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCMPgeqTag = new Regex("(`[a-z]{3,}¶)([\\s]*`LE[a-z]+¶[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCMPlt = new Regex("(`[a-z]{3,}¶)([\\s]*\\<[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCMPle = new Regex("(`[a-z]{3,}¶)([\\s]*\\<\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCMPgt = new Regex("(`[a-z]{3,}¶)([\\s]*\\>[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCMPge = new Regex("(`[a-z]{3,}¶)([\\s]*\\>\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCMPeq = new Regex("(`[a-z]{3,}¶)([\\s]*\\=\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCMPne = new Regex("(`[a-z]{3,}¶)([\\s]*\\!\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgOPlsh = new Regex("\\<\\<", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgOPlshTag = new Regex("(`[a-z]{3,}¶)([\\s]*`LS[a-z]+¶[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgOPrsh = new Regex("\\>\\>", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgOPrshTag = new Regex("(`[a-z]{3,}¶)([\\s]*`RS[a-z]+¶[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgKey = new Regex("[\\s]*key([udlrabcfexyhv]|fire|esc)([ud]?)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   //   keys -> U, D, L, R, A, B, C, D, X, Y, H, V, Fire, Esc
@@ -275,6 +268,7 @@ public class CodeParser : MonoBehaviour {
 
 
   string origForException = "";
+  string origExpForException = "";
   int ParseLine(CodeNode parent, string[] lines, int lineidx, int linenum) {
     string line = lines[lineidx].Trim(' ', '\t', '\r');
     origForException = line;
@@ -290,31 +284,6 @@ public class CodeParser : MonoBehaviour {
       nodes[n.id] = n;
       return n.id;
     });
-
-    // [OPlsh] == => `LSx¶ ==> it will be completed later, this is just to avoid the probblematic symbols
-    line = rgOPlsh.Replace(line, m => { CodeNode n = new CodeNode(BNF.OPlsh, GenId("LS")); nodes[n.id] = n; return n.id; });
-
-    // [OPrsh] == => `RSx¶ ==> it will be completed later, this is just to avoid the probblematic symbols
-    line = rgOPrsh.Replace(line, m => { CodeNode n = new CodeNode(BNF.OPrsh, GenId("RS")); nodes[n.id] = n; return n.id; });
-
-    // [CMPeq] == => `EQx¶ ==> it will be completed later, this is just to avoid the probblematic symbols
-    line = rgCMPeq.Replace(line, m => { CodeNode n = new CodeNode(BNF.COMPeq, GenId("EQ")); nodes[n.id] = n; return n.id; });
-
-    // [CMPneq] == => `NQx¶ ==> it will be completed later, this is just to avoid the probblematic symbols
-    line = rgCMPneq.Replace(line, m => { CodeNode n = new CodeNode(BNF.COMPne, GenId("NQ")); nodes[n.id] = n; return n.id; });
-
-    // [CMPgte] == => `GEx¶ ==> it will be completed later, this is just to avoid the probblematic symbols
-    line = rgCMPgeq.Replace(line, m => { CodeNode n = new CodeNode(BNF.COMPge, GenId("GE")); nodes[n.id] = n; return n.id; });
-
-    // [CMPlte] == => `LEx¶ ==> it will be completed later, this is just to avoid the probblematic symbols
-    line = rgCMPleq.Replace(line, m => { CodeNode n = new CodeNode(BNF.COMPle, GenId("LE")); nodes[n.id] = n; return n.id; });
-
-    // [CMPgt] == => `GTx¶ ==> it will be completed later, this is just to avoid the probblematic symbols
-    line = rgCMPgt.Replace(line, m => { CodeNode n = new CodeNode(BNF.COMPgt, GenId("GT")); nodes[n.id] = n; return n.id; });
-
-    // [CMPlt] == => `LTx¶ ==> it will be completed later, this is just to avoid the probblematic symbols
-    line = rgCMPlt.Replace(line, m => { CodeNode n = new CodeNode(BNF.COMPlt, GenId("LT")); nodes[n.id] = n; return n.id; });
-
 
 
     // Check what we have. Pick something in line with what is expected
@@ -662,6 +631,7 @@ public class CodeParser : MonoBehaviour {
   // [EXP] [OP] [EXP] | [PAR] | [REG] | [INT] | [FLT] | [MEM] | [UO] | [LEN] | deltaTime
   CodeNode ParseExpression(string line, int linenum) {
     line = line.Trim(' ', '\t', '\r');
+    origExpForException = line;
 
     // First get all REG, INT, FLT, MEM, DTIME, LEN and replace with specific chars
     // Then parse the structure (recursive)
@@ -868,6 +838,20 @@ public class CodeParser : MonoBehaviour {
       });
       if (atLeastOneReplacement) continue;
 
+      // [<<] == => `LSx¶
+      line = rgOPlsh.Replace(line, m => {
+        atLeastOneReplacement = true;
+        return HandleOperand(BNF.COMPne, "SL", "<<", linenum, m);
+      });
+      if (atLeastOneReplacement) continue;
+
+      // [>>] == => `RSx¶
+      line = rgOPrsh.Replace(line, m => {
+        atLeastOneReplacement = true;
+        return HandleOperand(BNF.COMPne, "SR", ">>", linenum, m);
+      });
+      if (atLeastOneReplacement) continue;
+
       // *
       // Replace OPmul => `MLx
       line = rgMul.Replace(line, m => {
@@ -892,8 +876,6 @@ public class CodeParser : MonoBehaviour {
       });
       if (atLeastOneReplacement) continue;
 
-
-
       // -
       // Replace OPsub => `SUx
       line = rgSub.Replace(line, m => {
@@ -907,30 +889,6 @@ public class CodeParser : MonoBehaviour {
       line = rgSum.Replace(line, m => {
         atLeastOneReplacement = true;
         return HandleOperand(BNF.OPsum, "AD", "addition", linenum, m);
-      });
-      if (atLeastOneReplacement) continue;
-
-      // &
-      // Replace OPand => `ANx
-      line = rgAnd.Replace(line, m => {
-        atLeastOneReplacement = true;
-        return HandleOperand(BNF.OPand, "AN", "AND", linenum, m);
-      });
-      if (atLeastOneReplacement) continue;
-
-      // |
-      // Replace OPor => `ORx
-      line = rgOr.Replace(line, m => {
-        atLeastOneReplacement = true;
-        return HandleOperand(BNF.OPor, "OR", "OR", linenum, m);
-      });
-      if (atLeastOneReplacement) continue;
-
-      // ^
-      // Replace OPxor => `XOx
-      line = rgXor.Replace(line, m => {
-        atLeastOneReplacement = true;
-        return HandleOperand(BNF.OPor, "XO", "XOR", linenum, m);
       });
       if (atLeastOneReplacement) continue;
 
@@ -979,62 +937,73 @@ public class CodeParser : MonoBehaviour {
       if (atLeastOneReplacement) continue;
 
 
-
-      // [OPlsh] == => `LSx¶
-      line = rgOPlshTag.Replace(line, m => {
+      // < => `LTx¶
+      line = rgCMPlt.Replace(line, m => {
         atLeastOneReplacement = true;
-        return HandleComparator("<<", linenum, m);
+        return HandleOperand(BNF.COMPlt, "LT", "<", linenum, m);
       });
       if (atLeastOneReplacement) continue;
 
-      // [OPrsh] == => `RSx¶
-      line = rgOPrshTag.Replace(line, m => {
+      // <= => `LEx¶
+      line = rgCMPle.Replace(line, m => {
         atLeastOneReplacement = true;
-        return HandleComparator(">>", linenum, m);
+        return HandleOperand(BNF.COMPle, "LE", "<=", linenum, m);
       });
       if (atLeastOneReplacement) continue;
 
-      // [CMPeq] == => `EQx¶
-      line = rgCMPeqTag.Replace(line, m => {
+      // < => `GTx¶
+      line = rgCMPgt.Replace(line, m => {
         atLeastOneReplacement = true;
-        return HandleComparator("==", linenum, m);
+        return HandleOperand(BNF.COMPlt, "GT", ">", linenum, m);
       });
       if (atLeastOneReplacement) continue;
 
-      // [CMPneq] == => `NQx¶
-      line = rgCMPneqTag.Replace(line, m => {
+      // <= => `GEx¶
+      line = rgCMPge.Replace(line, m => {
         atLeastOneReplacement = true;
-        return HandleComparator("!=", linenum, m);
+        return HandleOperand(BNF.COMPge, "GE", "=>", linenum, m);
       });
       if (atLeastOneReplacement) continue;
 
-      // [CMPgt] == => `GTx¶
-      line = rgCMPgtTag.Replace(line, m => {
+      // == => `EQx¶
+      line = rgCMPeq.Replace(line, m => {
         atLeastOneReplacement = true;
-        return HandleComparator(">", linenum, m);
+        return HandleOperand(BNF.COMPeq, "EQ", "==", linenum, m);
       });
       if (atLeastOneReplacement) continue;
 
-      // [CMPgte] == => `GEx¶
-      line = rgCMPgeqTag.Replace(line, m => {
+      // != => `NEx¶
+      line = rgCMPne.Replace(line, m => {
         atLeastOneReplacement = true;
-        return HandleComparator(">=", linenum, m);
+        return HandleOperand(BNF.COMPne, "NE", "!=", linenum, m);
       });
       if (atLeastOneReplacement) continue;
 
-      // [CMPlt] == => `LTx¶
-      line = rgCMPltTag.Replace(line, m => {
+
+      // &
+      // Replace OPand => `ANx
+      line = rgAnd.Replace(line, m => {
         atLeastOneReplacement = true;
-        return HandleComparator("<", linenum, m);
+        return HandleOperand(BNF.OPand, "AN", "AND", linenum, m);
       });
       if (atLeastOneReplacement) continue;
 
-      // [CMPleq] == => `LEx¶
-      line = rgCMPleqTag.Replace(line, m => {
+      // |
+      // Replace OPor => `ORx
+      line = rgOr.Replace(line, m => {
         atLeastOneReplacement = true;
-        return HandleComparator("<=", linenum, m);
+        return HandleOperand(BNF.OPor, "OR", "OR", linenum, m);
       });
       if (atLeastOneReplacement) continue;
+
+      // ^
+      // Replace OPxor => `XOx
+      line = rgXor.Replace(line, m => {
+        atLeastOneReplacement = true;
+        return HandleOperand(BNF.OPor, "XO", "XOR", linenum, m);
+      });
+      if (atLeastOneReplacement) continue;
+
 
       // [KEY] ([EXP])
       line = rgKey.Replace(line, m => {
@@ -1086,7 +1055,7 @@ public class CodeParser : MonoBehaviour {
     line = line.Trim(' ', '\t', '\r');
     if (!nodes.ContainsKey(line)) {
       line = rgTag.Replace(line, "").Trim();
-      throw new Exception("Invalid expression at " + (linenum - 1) + "\n" + origForException + "\n" + line);
+      throw new Exception("Invalid expression at " + (linenum - 1) + "\n" + origExpForException + "\n" + line);
     }
     return nodes[line];
   }
