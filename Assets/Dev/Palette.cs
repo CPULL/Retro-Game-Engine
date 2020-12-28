@@ -64,6 +64,7 @@ public class Palette : MonoBehaviour {
     byte g256 = (byte)(g * 85);
     byte b256 = (byte)(b * 85);
     byte a256 = (byte)(a * 85);
+    if (a == 0 && (r != 0 || g != 0 || b != 0)) a256 = 40;
 
     for (int i = 0; i < 4; i++) {
       colors[i + 0].Set(new Color32((byte)(255 - i * 85), g256, b256, 255));

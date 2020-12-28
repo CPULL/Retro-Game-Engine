@@ -80,7 +80,7 @@ public class CodeNode {
         }
         break;
         case BNF.Data: res = "Data:\n" + ToString(indent + 1, false); break;
-        case BNF.REG: res += (sameLine ? "" : id) + " " + Reg + (sameLine ? " " : "\n"); break;
+        case BNF.REG: res += (sameLine ? "" : id) + " R" + Reg + (sameLine ? " " : "\n"); break;
         case BNF.INT: res += (sameLine ? "" : id) + " " + iVal + (sameLine ? " " : "\n"); break;
         case BNF.COL:
           res += (sameLine ? "" : id) + " c" +
@@ -229,13 +229,12 @@ public class CodeNode {
         }
         break;
 
-        case BNF.Config: res += (sameLine ? "" : id) + "screencfg(" +
-            children[0].ToString(indent, true) +
-            children[1].ToString(indent, true) +
-            ((children.Count > 2 && !string.IsNullOrEmpty(children[2].sVal)) ? ",f" : "") +
+        case BNF.ScrConfig: res += (sameLine ? "" : id) + "screencfg(" +
+            (int)fVal + ", " + iVal +
+            (sVal == "*"  ? ",f" : "") +
             ")";
           break;
-        case BNF.Ram: res += (sameLine ? "" : id) + "ram(" + children[0].ToString(indent, true) + ")"; break;
+        case BNF.Ram: res += (sameLine ? "" : id) + "ram(" + iVal + ")"; break;
 
         case BNF.Label:
         case BNF.LAB: res += (sameLine ? "" : id) + "[" + sVal + iVal + "]"; break;
@@ -256,8 +255,8 @@ public class CodeNode {
           res += "[[Missing:" + type + "]]";
           break;
       }
-    } catch (Exception) {
-      res += "[[INVALID!!]]";
+    } catch (Exception e) {
+      res += "[[INVALID!!]]" + e.Message;
     }
 
     return res.Replace("  ", " ");
@@ -390,7 +389,7 @@ public enum BNF {
   Start,
   Update,
   Data,
-  Config,
+  ScrConfig,
   Ram,
   Label, // This is used to store the data
   REG,

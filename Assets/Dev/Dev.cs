@@ -19,6 +19,7 @@ public class Dev : MonoBehaviour {
   public Slider HeightSlider;
   public Text WidthSliderText;
   public Text HeightSliderText;
+  public InputField Values;
 
   public Image CurrentColor;
   Color32 Transparent = new Color32(0, 0, 0, 0);
@@ -56,5 +57,45 @@ public class Dev : MonoBehaviour {
     else
       pixels[pos].Set(CurrentColor.color);
   }
+
+  public void Clear() {
+    int num = (int)WidthSlider.value * (int)HeightSlider.value;
+    for (int i = 0; i < num; i++)
+      pixels[i].Set(Transparent);
+  }
+
+  public void Fill() {
+    int num = (int)WidthSlider.value * (int)HeightSlider.value;
+    for (int i = 0; i < num; i++)
+      pixels[i].Set(CurrentColor.color);
+  }
+
+  public void Save() {
+    string res = "SpriteSize:\n";
+    byte sizex = ((byte)((byte)WidthSlider.value & 31));
+    byte sizey = ((byte)((byte)HeightSlider.value & 31));
+    res += "0x" + sizex.ToString("X2") + " 0x" + sizey.ToString("X2") + "\n";
+    res += "Sprite:";
+    int num = (int)WidthSlider.value * (int)HeightSlider.value;
+    for (int i = 0; i < num; i++) {
+      if (i % sizex == 0) res += "\n";
+      Color32 c = pixels[i].img.color;
+      int r = c.r / 85;
+      int g = c.g / 85;
+      int b = c.b / 85;
+      int a = 255 - (c.a / 85); 
+      byte col = (byte)((a << 6) + (r << 4) + (g << 2) + (b << 0));
+      res += "0x" + col.ToString("X2") + " ";
+    }
+    Values.gameObject.SetActive(true);
+    Values.text = res;
+  }
+
+  public void CloseValues() {
+    Values.gameObject.SetActive(false);
+  }
+
+
+
   #endregion Sprite Editor
 }

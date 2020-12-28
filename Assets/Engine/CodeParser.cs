@@ -512,12 +512,12 @@ public class CodeParser : MonoBehaviour {
     // [SPOS] num, x, y[, enble]
     if (expected.IsGood(Expected.Val.Statement) && rgSpos.IsMatch(line)) {
       Match m = rgSpos.Match(line);
-      if (m.Groups.Count < 4) throw new Exception("Invalid Sprite() command. Line: " + linenum);
+      if (m.Groups.Count < 4) throw new Exception("Invalid SPos() command. Line: " + linenum);
       CodeNode node = new CodeNode(BNF.SPOS);
       node.Add(ParseExpression(m.Groups[1].Value, linenum));
       node.Add(ParseExpression(m.Groups[2].Value, linenum));
       node.Add(ParseExpression(m.Groups[3].Value, linenum));
-      if (m.Groups.Count > 4 && !string.IsNullOrEmpty(m.Groups[4].Value)) node.Add(ParseExpression(m.Groups[3].Value, linenum));
+      if (m.Groups.Count > 5 && !string.IsNullOrEmpty(m.Groups[5].Value)) node.Add(ParseExpression(m.Groups[5].Value, linenum));
       parent.Add(node);
       return 1;
     }
@@ -869,6 +869,8 @@ public class CodeParser : MonoBehaviour {
       });
       if (atLeastOneReplacement) continue;
 
+
+
       // -
       // Replace OPsub => `SUx
       line = rgSub.Replace(line, m => {
@@ -899,7 +901,7 @@ public class CodeParser : MonoBehaviour {
           if (toReplace[0] != '-') throw new Exception("Invalid negative value");
         }
         CodeNode n = new CodeNode(BNF.UOsub, GenId("US"));
-        n.Add(nodes[toReplace.Substring(1)]);
+        n.Add(nodes[toReplace.Substring(1).Trim()]);
         nodes[n.id] = n;
         line = line.Replace(toReplace, n.id);
         msub = rgUOsub.Match(line);
@@ -1148,6 +1150,7 @@ public class CodeParser : MonoBehaviour {
 
   private void ParseData(string file, int start, int end, CodeNode parent, int linenum = 1) {
     CodeNode lastDataLabel = null;
+    Dictionary<string, bool> labels = new Dictionary<string, bool>();
 
     // Find at what line this starts
     for (int i = 0; i < start; i++)
@@ -1186,7 +1189,7 @@ public class CodeParser : MonoBehaviour {
         bool filter = (!string.IsNullOrEmpty(m.Groups[3].Value) && m.Groups[3].Value.IndexOf('f') != -1);
 
         Debug.Log(w + "," + h + (filter ? " filter" : ""));
-        CodeNode n = new CodeNode(BNF.Config) { fVal = w, iVal = h, sVal = (filter ? "*" : "") };
+        CodeNode n = new CodeNode(BNF.ScrConfig) { fVal = w, iVal = h, sVal = (filter ? "*" : "") };
         parent.Add(n);
 
         clean = clean.Substring(pos + 1).Trim(' ', '\n');
@@ -1206,6 +1209,8 @@ public class CodeParser : MonoBehaviour {
       else if (line.IndexOf(':') != -1) { // Label ****************************************************************** Label
         pos = clean.IndexOf(':');
         line = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
+        if (labels.ContainsKey(line)) throw new Exception("Label \"" + line + "\" already defined");
+        labels.Add(line, true);
         lastDataLabel = new CodeNode(BNF.Label) { bVal = new byte[1024], iVal = 0, sVal = line };
         parent.Add(lastDataLabel);
         clean = clean.Substring(pos + 1).Trim(' ', '\n');

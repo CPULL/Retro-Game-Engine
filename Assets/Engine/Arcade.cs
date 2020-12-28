@@ -65,6 +65,7 @@ public class Arcade : MonoBehaviour {
         texture.Apply();
         return;
       }
+      sprites[0].Pos(0, 0, scaleW, scaleH, false);
       updateDelay = 0;
     }
 
@@ -189,6 +190,13 @@ public class Arcade : MonoBehaviour {
     Write(" virtual machine", 55, 14 + 4, 0b011010);
     Write(" Retro Game Engine", 45, 14 + 9, 0b011110);
 
+    sprites = new Grob[spriteImgs.Length];
+    for (int i = 0; i < spriteImgs.Length; i++) {
+      sprites[i] = new Grob(spriteImgs[i], sw, sh);
+      spriteImgs[i].enabled = false;
+    }
+    sprites[0].Init(0, 6, sw, sh);
+
     string codefile = null;
     try { codefile = File.ReadAllText(Application.dataPath + "\\Cartridges\\game.cartridge"); } catch (System.Exception) { }
     if (string.IsNullOrEmpty(codefile)) {
@@ -211,10 +219,10 @@ public class Arcade : MonoBehaviour {
         Write("Data:   Yes", 4, 48 + 18, 0b001011);
 
         // Screen ************************************************************************************************************** Screen
-        CodeNode conf = data.Get(BNF.Config);
-        if (conf != null) {
-          sw = (int)conf.fVal;
-          sh = conf.iVal;
+        CodeNode scrconf = data.Get(BNF.ScrConfig);
+        if (scrconf != null) {
+          sw = (int)scrconf.fVal;
+          sh = scrconf.iVal;
           if (sw < 160) sw = 160;
           if (sw > 320) sw = 320;
           if (sh < 100) sh = 100;
@@ -223,7 +231,7 @@ public class Arcade : MonoBehaviour {
           hm1 = sh - 1;
           scaleW = 1920f / sw;
           scaleH = 1080f / sh;
-          useFilter = conf.sVal == "*";
+          useFilter = scrconf.sVal == "*";
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
             filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
           };
@@ -246,7 +254,7 @@ public class Arcade : MonoBehaviour {
         // Memory ************************************************************************************************************** Memory
         CodeNode memdef = data.Get(BNF.Ram);
         if (memdef != null) {
-          if (memdef.iVal < 4096) memdef.iVal = 4096;
+          if (memdef.iVal < 1024) memdef.iVal = 1024;
           if (memdef.iVal > 4096 * 1024) memdef.iVal = 4096 * 1024;
           memsize = memdef.iVal;
         }
@@ -257,8 +265,7 @@ public class Arcade : MonoBehaviour {
         // ROM ****************************************************************************************************************** ROM
         foreach (CodeNode n in data.children) {
           if (n.type == BNF.Label) {
-            n.iVal++;
-            romsize = n.iVal;
+            romsize += n.iVal;
           }
         }
         mem = new byte[memsize + romsize];
@@ -311,17 +318,23 @@ public class Arcade : MonoBehaviour {
       else {
         Write("ROM:    " + MemSize(romsize), 10, 120, 0b001110);
       }
-      updateDelay = .5f; // FIXME
+      updateDelay = 2.5f; // FIXME
 
     } catch (Exception e) {
-      Write(e.Message, 4, 48, 48);
-      Debug.Log("!!!!!!!! " + e.Message + "\n" + e.StackTrace);
-    }
+      string msg = "";
+      for (int i = 0, l = 0; i < e.Message.Length; i++) {
+        char c = e.Message[i];
+        if (c == '\n') l = 0;
+        msg += c;
+        l++;
+        if (l == sw / 8 - 1) {
+          msg += "\n";
+          l = 0;
+        }
+      }
 
-    sprites = new Grob[spriteImgs.Length];
-    for (int i = 0; i < spriteImgs.Length; i++) {
-      sprites[i] = new Grob(spriteImgs[i], sw, sh, useFilter);
-      // FIXME spriteImgs[i].enabled = false;
+      Write(msg, 4, 48, 48);
+      Debug.Log("!!!!!!!! " + e.Message + "\n" + e.StackTrace);
     }
 
     texture.Apply();
@@ -836,7 +849,18 @@ public class Arcade : MonoBehaviour {
       }
     } catch (Exception e) {
       Clear(0b110000);
-      Write(e.Message, 2, 2, 0);
+      string msg = "";
+      for (int i = 0, l = 0; i < e.Message.Length; i++) {
+        char c = e.Message[i];
+        if (c == '\n') l = 0;
+        msg += c;
+        l++;
+        if (l == sw / 8 - 1) {
+          msg += "\n";
+          l = 0;
+        }
+      }
+      Write(msg, 2, 2, 0);
       updateDelay = -1;
       pc = int.MaxValue;
       texture.Apply();
@@ -1049,6 +1073,7 @@ public class ExecStack {
 
   SDIR num, dir, flip -> Sprite direction
 
+  use SPRITE num, pointer to do the same with an extra byte telling the size
 
   Implement Labels
 
@@ -1081,5 +1106,7 @@ FUTURE: step by step debugger
   have a frame with list of found carts, one can be selected and then run normally or in debug mode
   have something to edit characters and sprites
 
+empty if statements are a problem
+priority of expressions with conditional is strange
 
  */

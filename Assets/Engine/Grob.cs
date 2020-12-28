@@ -7,7 +7,7 @@ public class Grob {
   Texture2D texture;
   byte[] raw;
 
-  public Grob(RawImage img, int sw, int sh, bool filter) {
+  public Grob(RawImage img, int sw, int sh) {
     sprite = img;
     rt = img.GetComponent<RectTransform>();
     texture = (Texture2D)img.texture;
@@ -54,5 +54,11 @@ public class Grob {
     sprite.enabled = enable;
   }
 
+  internal void Init(int x, int y, int sw, int sh) {
+    float scalew = 1920f / sw;
+    float scaleh = 1080f / sh;
+    rt.sizeDelta = new Vector2(16 * scalew, 16 * scaleh);
+    Pos(x, y, scalew, scaleh, true);
+  }
 }
 
