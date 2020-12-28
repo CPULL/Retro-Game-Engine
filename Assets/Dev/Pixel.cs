@@ -8,14 +8,19 @@ public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, 
   Action<int> ClickCall;
   public Image img;
   public Image border;
-  Color32 Transparent = new Color32(0, 0, 0, 0);
   Color32 Highlight = new Color32(255, 224, 223, 220);
   Color32 Normal = new Color32(206, 224, 223, 120);
+
+  public void Init(int p, Color32 c, Action<int> cb) {
+    pos = p;
+    ClickCall = cb;
+    img.color = c;
+  }
 
   public void Init(int p, Action<int> cb) {
     pos = p;
     ClickCall = cb;
-    img.color = Transparent;
+    img = GetComponent<Image>();
   }
 
   public void Set(Color32 c) {
@@ -27,10 +32,12 @@ public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, 
   }
 
   public void OnPointerEnter(PointerEventData eventData) {
+    if (border == null) return;
     border.color = Highlight;
   }
 
   public void OnPointerExit(PointerEventData eventData) {
+    if (border == null) return;
     border.color = Normal;
   }
 }

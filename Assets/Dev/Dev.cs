@@ -12,7 +12,6 @@ public class Dev : MonoBehaviour {
 
   #region Sprite Editor ************************************************************************************************************************************************************************************
 
-  public Camera cam;
   public GameObject PixelPrefab;
   public GridLayoutGroup SpriteGrid;
   Pixel[] pixels;
@@ -21,7 +20,7 @@ public class Dev : MonoBehaviour {
   public Text WidthSliderText;
   public Text HeightSliderText;
 
-  Color32 Current = new Color32(255, 255, 0, 255);
+  public Image CurrentColor;
   Color32 Transparent = new Color32(0, 0, 0, 0);
 
   public void ChangeSpriteSize() {
@@ -41,7 +40,7 @@ public class Dev : MonoBehaviour {
       for (int i = num; i < numnow; i++) {
         Pixel pixel = Instantiate(PixelPrefab, SpriteGrid.transform).GetComponent<Pixel>();
         pixels2[i] = pixel;
-        pixel.Init(i, ClickPixel);
+        pixel.Init(i, Transparent, ClickPixel);
       }
     }
     else if (num > numnow) {
@@ -52,10 +51,10 @@ public class Dev : MonoBehaviour {
   }
 
   private void ClickPixel(int pos) {
-    if (pixels[pos].img.color == Current)
+    if (pixels[pos].img.color == CurrentColor.color)
       pixels[pos].Set(Transparent);
     else
-      pixels[pos].Set(Current);
+      pixels[pos].Set(CurrentColor.color);
   }
   #endregion Sprite Editor
 }
