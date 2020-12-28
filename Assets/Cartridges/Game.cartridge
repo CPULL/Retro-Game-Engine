@@ -5,8 +5,8 @@ Start {
 	}
 
 	clr(c001)
-	sprite(0, 8, 32,Paddle:)
-	sprite(1, 12, 12,Ball:)
+	sprite(0, PaddleSize:)
+	sprite(1, 12, 12,Ball:, f)
 	p = 90
 	Spos(0, 32, 90, 1)
 	x = 160

@@ -540,6 +540,18 @@ public class Arcade : MonoBehaviour {
 
   #region Sprites ****************************************************************************************************************************************************************************************************
 
+  void Sprite(int num, int pointer, bool filter = false) {
+    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
+    int sx = mem[pointer];
+    int sy = mem[pointer+1];
+    if (labelTextures.ContainsKey(pointer)) {
+      sprites[num].Set(sx, sy, labelTextures[pointer], scaleW, scaleH, filter);
+    }
+    else {
+      labelTextures.Add(pointer, sprites[num].Set(sx, sy, mem, pointer + 2, scaleW, scaleH, filter));
+    }
+  }
+  
   void Sprite(int num, int sx, int sy, int pointer, bool filter = false) {
     if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
 
@@ -844,7 +856,15 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
-        case BNF.SPRITE: Sprite(Evaluate(n.First).ToInt(), Evaluate(n.Second).ToInt(), Evaluate(n.Third).ToInt(), Evaluate(n.Fourth).ToInt(), Evaluate(n.Fifth).ToBool()); break;
+        case BNF.SPRITE: {
+          // Sprite(num, pointer, filter)
+          // Sprite(num, x, y, pointer, filter)
+          if (n.children.Count < 4)
+            Sprite(Evaluate(n.First).ToInt(), Evaluate(n.Second).ToInt(), Evaluate(n.Third).ToBool());
+          else
+            Sprite(Evaluate(n.First).ToInt(), Evaluate(n.Second).ToInt(), Evaluate(n.Third).ToInt(), Evaluate(n.Fourth).ToInt(), Evaluate(n.Fifth).ToBool());
+        }
+        break;
 
         case BNF.SPOS: SpritePos(Evaluate(n.First).ToInt(), Evaluate(n.Second).ToInt(), Evaluate(n.Third).ToInt(), n.Fourth == null ? true : Evaluate(n.Fourth).ToBool()); break;
 
@@ -1081,7 +1101,6 @@ public class ExecStack {
 /*  TODO
 
   fix priority of comparisons
-  precalculate textures on labels
   disable sprites and tilemaps on errors?
 
 add a way to reset a texture Destroy(<exp>)

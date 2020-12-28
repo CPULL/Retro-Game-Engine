@@ -130,6 +130,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(([^{}]+)\\)[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgScreen = new Regex("[\\s]*screen[\\s]*\\(([^,]*),([^,]*)(,([^,]*)){0,1}(,([^,]*)){0,1}\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
+  readonly Regex rgSpriteSz = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*),([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(([^,]*),([^,]*),([^,]*)(,([^,]*))?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
@@ -208,7 +209,7 @@ public class CodeParser : MonoBehaviour {
       return res;
     } catch (Exception e) {
       Debug.Log(e.Message);
-      return null;
+      throw e;
     }
   }
 
@@ -503,13 +504,25 @@ public class CodeParser : MonoBehaviour {
     // [SPRITE] num, width, heigth, pointer[, filter]
     if (expected.IsGood(Expected.Val.Statement) && rgSprite.IsMatch(line)) {
       Match m = rgSprite.Match(line);
-      if (m.Groups.Count < 4) throw new Exception("Invalid Sprite() command. Line: " + linenum);
+      if (m.Groups.Count < 5) throw new Exception("Invalid Sprite() command. Line: " + linenum);
       CodeNode node = new CodeNode(BNF.SPRITE);
       node.Add(ParseExpression(m.Groups[1].Value, linenum));
       node.Add(ParseExpression(m.Groups[2].Value, linenum));
       node.Add(ParseExpression(m.Groups[3].Value, linenum));
       node.Add(ParseExpression(m.Groups[4].Value, linenum));
       if (m.Groups.Count > 5 && !string.IsNullOrEmpty(m.Groups[5].Value)) node.sVal = "*";
+      parent.Add(node);
+      return 1;
+    }
+
+    // [SPRITE] num, pointer[, filter]
+    if (expected.IsGood(Expected.Val.Statement) && rgSpriteSz.IsMatch(line)) {
+      Match m = rgSpriteSz.Match(line);
+      if (m.Groups.Count < 3) throw new Exception("Invalid Sprite() command. Line: " + linenum);
+      CodeNode node = new CodeNode(BNF.SPRITE);
+      node.Add(ParseExpression(m.Groups[1].Value, linenum));
+      node.Add(ParseExpression(m.Groups[2].Value, linenum));
+      if (m.Groups.Count > 3 && !string.IsNullOrEmpty(m.Groups[3].Value)) node.sVal = "*";
       parent.Add(node);
       return 1;
     }
