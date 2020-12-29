@@ -11,11 +11,11 @@ public class CodeNode {
   public byte[] bVal = null;
   public int Reg;
   public VT valType;
-  internal CodeNode First { get { return children?[0]; } }
-  internal CodeNode Second { get { return children != null && children.Count > 1 ? children[1] : null; } }
-  internal CodeNode Third { get { return children != null && children.Count > 2 ? children[2] : null; } }
-  internal CodeNode Fourth { get { return children != null && children.Count > 3 ? children[3] : null; } }
-  internal CodeNode Fifth { get { return children != null && children.Count > 4 ? children[4] : null; } }
+  internal CodeNode CN1 { get { return children?[0]; } }
+  internal CodeNode CN2 { get { return children != null && children.Count > 1 ? children[1] : null; } }
+  internal CodeNode CN3 { get { return children != null && children.Count > 2 ? children[2] : null; } }
+  internal CodeNode CN4 { get { return children != null && children.Count > 3 ? children[3] : null; } }
+  internal CodeNode CN5 { get { return children != null && children.Count > 4 ? children[4] : null; } }
 
   public CodeNode(BNF bnf) {
     type = bnf;
@@ -206,7 +206,7 @@ public class CodeNode {
         case BNF.COMPge: res += "(" + children[0].ToString(indent + 1, true) + ">=" + children[1].ToString(indent + 1, true) + ")"; break;
 
         case BNF.IF: res += (sameLine ? "" : id) + "if (" + children[0].ToString(indent, true) + ") { ..." + (children.Count - 1) + "... }"; break;
-        case BNF.IFelse: res += (sameLine ? "" : id) + "else { ..." + (children.Count - 1) + "... }"; break;
+        case BNF.Else: res += (sameLine ? "" : id) + "else { ..." + (children.Count - 1) + "... }"; break;
         case BNF.WHILE: res += (sameLine ? "" : id) + "while (" + children[0].ToString(indent, true) + ") { ..." + (children.Count - 1) + "... }"; break;
 
         case BNF.SCREEN: {
@@ -386,18 +386,19 @@ public class Expected {
     val = 0;
   }
   public void Set(Val v) {
-    if (v == Val.None) val = 0;
-    if (v == Val.Statement) val = 1;
-    if (v == Val.MemReg) val = 2;
+    val = (ulong)(1 << (int)v);
+  }
+  public void Set(Val v1, Val v2) {
+    val = (ulong)(1 << (int)v1) + (ulong)(1 << (int)v2);
+  }
+  public void Set(Val v1, Val v2, Val v3) {
+    val = (ulong)(1 << (int)v1) + (ulong)(1 << (int)v2) + (ulong)(1 << (int)v3);
   }
   public bool IsGood(Val v) {
-    if (val == 0) return v == Val.None;
-    if (val == 1) return v == Val.Statement;
-    if (val == 2) return v == Val.MemReg;
-    return false;
+    return (val & (ulong)(1 << (int)v)) != 0;
   }
 
-  public enum Val { None, Statement, MemReg };
+  public enum Val { None, Statement, MemReg, Expression, Block };
 }
 
 
@@ -469,7 +470,7 @@ public enum BNF {
   Dec,
   BLOCK,
   IF,
-  IFelse,
+  Else,
   WHILE,
   FOR,
   CLR,

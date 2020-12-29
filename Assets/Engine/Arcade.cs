@@ -251,6 +251,7 @@ public class Arcade : MonoBehaviour {
             Write(res.sVal, 88, 39, 0b1001000);
           Write("Data:   Yes", 4, 48 + 18, 0b001011);
         }
+        sprites[0].Init(0, 6, sw, sh);
 
         // Memory ************************************************************************************************************** Memory
         CodeNode memdef = data.Get(BNF.Ram);
@@ -319,7 +320,7 @@ public class Arcade : MonoBehaviour {
       else {
         Write("ROM:    " + MemSize(romsize), 10, 120, 0b001110);
       }
-      updateDelay = 2.5f; // FIXME
+      updateDelay = .5f; // FIXME
 
     } catch (Exception e) {
       string msg = "";
@@ -575,7 +576,7 @@ public class Arcade : MonoBehaviour {
     try {
       switch (n.type) {
         case BNF.CLR: {
-          Value tmp = Evaluate(n.First);
+          Value tmp = Evaluate(n.CN1);
           Clear(tmp.ToByte());
         }
         break;
@@ -586,7 +587,7 @@ public class Arcade : MonoBehaviour {
         }
 
         case BNF.WRITE: {
-          Value a = Evaluate(n.First);
+          Value a = Evaluate(n.CN1);
           Value b = Evaluate(n.children[1]);
           Value c = Evaluate(n.children[2]);
           Value d = Evaluate(n.children[3]);
@@ -600,14 +601,14 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.Inc: {
-          Value a = Evaluate(n.First);
+          Value a = Evaluate(n.CN1);
           if (a.IsReg()) variables.Incr(a.idx);
           if (a.IsMem()) mem[a.ToInt()]++;
         }
         break;
 
         case BNF.Dec: {
-          Value a = Evaluate(n.First);
+          Value a = Evaluate(n.CN1);
           if (a.IsReg()) variables.Decr(a.idx);
           if (a.IsMem()) mem[a.ToInt()]--;
         }
@@ -622,9 +623,9 @@ public class Arcade : MonoBehaviour {
         case BNF.ASSIGNand:
         case BNF.ASSIGNor:
         case BNF.ASSIGNxor: {
-          Value r = Evaluate(n.Second);
+          Value r = Evaluate(n.CN2);
           // Calculate the actual operation on r
-          Value l = Evaluate(n.First);
+          Value l = Evaluate(n.CN1);
           switch(n.type) {
             case BNF.ASSIGNsum: r = l.Sum(r); break;
             case BNF.ASSIGNsub: r = l.Sub(r); break;
@@ -636,11 +637,11 @@ public class Arcade : MonoBehaviour {
             case BNF.ASSIGNxor: r = l.Xor(r); break;
           }
 
-          if (n.First.type == BNF.REG) {
-            variables.Set(n.First.Reg, r);
+          if (n.CN1.type == BNF.REG) {
+            variables.Set(n.CN1.Reg, r);
           }
-          else if (n.First.type == BNF.MEM) {
-            int pos = Evaluate(n.First.First).ToInt();
+          else if (n.CN1.type == BNF.MEM) {
+            int pos = Evaluate(n.CN1.CN1).ToInt();
             if (pos < 0 || pos > memsize) throw new Exception("Memory violation:" + pos + "\nfrom:" + n);
             switch (n.type) {
               case BNF.ASSIGN: mem[pos] = r.ToByte(); break;
@@ -654,8 +655,8 @@ public class Arcade : MonoBehaviour {
               case BNF.ASSIGNxor: mem[pos] ^= r.ToByte(); break;
             }
           }
-          else if (n.First.type == BNF.MEMlong) {
-            int pos = Evaluate(n.First.First).ToInt();
+          else if (n.CN1.type == BNF.MEMlong) {
+            int pos = Evaluate(n.CN1.CN1).ToInt();
             if (pos < 0 || pos > memsize) throw new Exception("Memory violation:" + pos + "\nfrom:" + n);
 
             // Get the value from memory, get the value from registry, do the operation, store it as sequence of bytes
@@ -708,8 +709,8 @@ public class Arcade : MonoBehaviour {
               mem[pos + 1] = (byte)(vals.Length & 0xFF);
             }
           }
-          else if (n.First.type == BNF.MEMlongb) {
-            int pos = Evaluate(n.First.First).ToInt();
+          else if (n.CN1.type == BNF.MEMlongb) {
+            int pos = Evaluate(n.CN1.CN1).ToInt();
             if (pos < 0 || pos > memsize) throw new Exception("Memory violation:" + pos + "\nfrom:" + n);
             switch (n.type) {
               case BNF.ASSIGN: mem[pos] = r.ToByte(); break;
@@ -723,8 +724,8 @@ public class Arcade : MonoBehaviour {
               case BNF.ASSIGNxor: mem[pos] ^= r.ToByte(); break;
             }
           }
-          else if (n.First.type == BNF.MEMlongi) {
-            int pos = Evaluate(n.First.First).ToInt();
+          else if (n.CN1.type == BNF.MEMlongi) {
+            int pos = Evaluate(n.CN1.CN1).ToInt();
             if (pos < 0 || pos > memsize) throw new Exception("Memory violation:" + pos + "\nfrom:" + n);
             int val = BitConverter.ToInt32(mem, pos);
             switch (n.type) {
@@ -742,8 +743,8 @@ public class Arcade : MonoBehaviour {
             for (int i = 0; i < vals.Length; i++)
               mem[pos + i] = vals[i];
           }
-          else if (n.First.type == BNF.MEMlongf) {
-            int pos = Evaluate(n.First.First).ToInt();
+          else if (n.CN1.type == BNF.MEMlongf) {
+            int pos = Evaluate(n.CN1.CN1).ToInt();
             if (pos < 0 || pos > memsize) throw new Exception("Memory violation:" + pos + "\nfrom:" + n);
             float val = BitConverter.ToSingle(mem, pos);
             switch (n.type) {
@@ -758,8 +759,8 @@ public class Arcade : MonoBehaviour {
             for (int i = 0; i < vals.Length; i++)
               mem[pos + i] = vals[i];
           }
-          else if (n.First.type == BNF.MEMlongs) {
-            int pos = Evaluate(n.First.First).ToInt();
+          else if (n.CN1.type == BNF.MEMlongs) {
+            int pos = Evaluate(n.CN1.CN1).ToInt();
             if (pos < 0 || pos > memsize) throw new Exception("Memory violation:" + pos + "\nfrom:" + n);
             byte[] vals = System.Text.Encoding.UTF8.GetBytes(r.ToStr());
             for (int i = 0; i < vals.Length; i++) {
@@ -812,35 +813,35 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.IF: {
-          Value cond = Evaluate(n.First);
+          Value cond = Evaluate(n.CN1);
           if (cond.ToInt() != 0) {
-            if (n.Second.type == BNF.BLOCK && (n.Second.children == null || n.Second.children.Count == 0)) return true;
-            stacks.Add(new ExecStack { node = n.Second, step = 0 });
+            if (n.CN2.type == BNF.BLOCK && (n.CN2.children == null || n.CN2.children.Count == 0)) return true;
+            stacks.Add(new ExecStack { node = n.CN2, step = 0 });
             return true;
           }
           else if (n.children.Count > 2) {
-            if (n.Third.type == BNF.BLOCK && (n.Third.children == null || n.Third.children.Count == 0)) return true;
-            stacks.Add(new ExecStack { node = n.Third, step = 0 });
+            if (n.CN3.type == BNF.BLOCK && (n.CN3.children == null || n.CN3.children.Count == 0)) return true;
+            stacks.Add(new ExecStack { node = n.CN3, step = 0 });
             return true;
           }
         }
         break;
 
         case BNF.WHILE: {
-          Value cond = Evaluate(n.First);
+          Value cond = Evaluate(n.CN1);
           if (cond.ToInt() != 0) {
             Debug.Log("Executing IF");
-            stacks.Add(new ExecStack { node = n.Second, cond = n.First, step = 0 });
+            stacks.Add(new ExecStack { node = n.CN2, cond = n.CN1, step = 0 });
             return true;
           }
         }
         break;
 
         case BNF.SCREEN: {
-          sw = Evaluate(n.First).ToInt();
+          sw = Evaluate(n.CN1).ToInt();
           if (sw < 128) sw = 128;
           if (sw > 320) sw = 320;
-          sh = Evaluate(n.Second).ToInt();
+          sh = Evaluate(n.CN2).ToInt();
           if (sh < 100) sh = 100;
           if (sh > 256) sh = 256;
           wm1 = sw - 1;
@@ -848,7 +849,7 @@ public class Arcade : MonoBehaviour {
           scaleW = 1920f / sw;
           scaleH = 1080f / sh;
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
-            filterMode = Evaluate(n.Third).ToInt() != 0 ? FilterMode.Bilinear : FilterMode.Point
+            filterMode = Evaluate(n.CN3).ToInt() != 0 ? FilterMode.Bilinear : FilterMode.Point
           };
           Screen.texture = texture;
           pixels = texture.GetPixels32();
@@ -860,13 +861,13 @@ public class Arcade : MonoBehaviour {
           // Sprite(num, pointer, filter)
           // Sprite(num, x, y, pointer, filter)
           if (n.children.Count < 4)
-            Sprite(Evaluate(n.First).ToInt(), Evaluate(n.Second).ToInt(), Evaluate(n.Third).ToBool());
+            Sprite(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToBool());
           else
-            Sprite(Evaluate(n.First).ToInt(), Evaluate(n.Second).ToInt(), Evaluate(n.Third).ToInt(), Evaluate(n.Fourth).ToInt(), Evaluate(n.Fifth).ToBool());
+            Sprite(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToInt(), Evaluate(n.CN4).ToInt(), Evaluate(n.CN5).ToBool());
         }
         break;
 
-        case BNF.SPOS: SpritePos(Evaluate(n.First).ToInt(), Evaluate(n.Second).ToInt(), Evaluate(n.Third).ToInt(), n.Fourth == null ? true : Evaluate(n.Fourth).ToBool()); break;
+        case BNF.SPOS: SpritePos(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToInt(), n.CN4 == null ? true : Evaluate(n.CN4).ToBool()); break;
 
         default: {
           Clear(0b010000);
@@ -907,24 +908,24 @@ public class Arcade : MonoBehaviour {
 
       case BNF.MEM:
       case BNF.MEMlongb: {
-        int pos = Evaluate(n.First).ToInt();
+        int pos = Evaluate(n.CN1).ToInt();
         if (pos < 0 || pos > mem.Length) throw new Exception("Memory violation:" + pos + "\nfrom:" + n);
         return new Value((int)mem[pos]);
       }
 
       case BNF.MEMlong:
       case BNF.MEMlongi: {
-        int pos = Evaluate(n.First).ToInt();
+        int pos = Evaluate(n.CN1).ToInt();
         return new Value(BitConverter.ToInt32(mem, pos));
       }
 
       case BNF.MEMlongf: {
-        int pos = Evaluate(n.First).ToInt();
+        int pos = Evaluate(n.CN1).ToInt();
         return new Value(BitConverter.ToSingle(mem, pos));
       }
 
       case BNF.MEMlongs: {
-        int pos = Evaluate(n.First).ToInt();
+        int pos = Evaluate(n.CN1).ToInt();
         int len = (mem[pos] << 80) + mem[pos + 1];
         return new Value(System.Text.Encoding.UTF8.GetString(mem, pos+2, len));
       }
@@ -937,27 +938,27 @@ public class Arcade : MonoBehaviour {
       case BNF.STRcnst: return new Value(n.sVal);
 
       case BNF.DTIME: return new Value(Time.deltaTime);
-      case BNF.OPpar: return Evaluate(n.First);
-      case BNF.OPsum: return Evaluate(n.First).Sum(Evaluate(n.Second));
-      case BNF.OPsub: return Evaluate(n.First).Sub(Evaluate(n.Second));
-      case BNF.OPmul: return Evaluate(n.First).Mul(Evaluate(n.Second));
-      case BNF.OPdiv: return Evaluate(n.First).Div(Evaluate(n.Second));
-      case BNF.OPmod: return Evaluate(n.First).Mod(Evaluate(n.Second));
-      case BNF.OPand: return Evaluate(n.First).And(Evaluate(n.Second));
-      case BNF.OPor: return Evaluate(n.First).Or(Evaluate(n.Second));
-      case BNF.OPxor: return Evaluate(n.First).Xor(Evaluate(n.Second));
-      case BNF.OPlsh: return Evaluate(n.First).Lsh(Evaluate(n.Second));
-      case BNF.OPrsh: return Evaluate(n.First).Rsh(Evaluate(n.Second));
+      case BNF.OPpar: return Evaluate(n.CN1);
+      case BNF.OPsum: return Evaluate(n.CN1).Sum(Evaluate(n.CN2));
+      case BNF.OPsub: return Evaluate(n.CN1).Sub(Evaluate(n.CN2));
+      case BNF.OPmul: return Evaluate(n.CN1).Mul(Evaluate(n.CN2));
+      case BNF.OPdiv: return Evaluate(n.CN1).Div(Evaluate(n.CN2));
+      case BNF.OPmod: return Evaluate(n.CN1).Mod(Evaluate(n.CN2));
+      case BNF.OPand: return Evaluate(n.CN1).And(Evaluate(n.CN2));
+      case BNF.OPor: return Evaluate(n.CN1).Or(Evaluate(n.CN2));
+      case BNF.OPxor: return Evaluate(n.CN1).Xor(Evaluate(n.CN2));
+      case BNF.OPlsh: return Evaluate(n.CN1).Lsh(Evaluate(n.CN2));
+      case BNF.OPrsh: return Evaluate(n.CN1).Rsh(Evaluate(n.CN2));
 
       case BNF.LEN: 
-        return new Value(Evaluate(n.First).ToStr().Length);
+        return new Value(Evaluate(n.CN1).ToStr().Length);
 
       case BNF.PLEN: 
-        return new Value(System.Text.Encoding.UTF8.GetByteCount(Evaluate(n.First).ToStr()) + 2);
+        return new Value(System.Text.Encoding.UTF8.GetByteCount(Evaluate(n.CN1).ToStr()) + 2);
 
-      case BNF.UOsub: return Evaluate(n.First).Sub();
-      case BNF.UOinv: return Evaluate(n.First).Inv();
-      case BNF.UOneg: return Evaluate(n.First).Neg();
+      case BNF.UOsub: return Evaluate(n.CN1).Sub();
+      case BNF.UOinv: return Evaluate(n.CN1).Inv();
+      case BNF.UOneg: return Evaluate(n.CN1).Neg();
 
       case BNF.COMPeq:
       case BNF.COMPne:
@@ -965,12 +966,12 @@ public class Arcade : MonoBehaviour {
       case BNF.COMPge:
       case BNF.COMPlt:
       case BNF.COMPle:
-        return new Value(Evaluate(n.First).Compare(Evaluate(n.Second), n.type));
+        return new Value(Evaluate(n.CN1).Compare(Evaluate(n.CN2), n.type));
 
-      case BNF.CASTb: return new Value(Evaluate(n.First).ToByte());
-      case BNF.CASTi: return new Value(Evaluate(n.First).ToInt());
-      case BNF.CASTf: return new Value(Evaluate(n.First).ToFlt());
-      case BNF.CASTs: return new Value(Evaluate(n.First).ToStr());
+      case BNF.CASTb: return new Value(Evaluate(n.CN1).ToByte());
+      case BNF.CASTi: return new Value(Evaluate(n.CN1).ToInt());
+      case BNF.CASTf: return new Value(Evaluate(n.CN1).ToFlt());
+      case BNF.CASTs: return new Value(Evaluate(n.CN1).ToStr());
 
 
       case BNF.KEY: return new Value(inputs[n.iVal] ? -1 : 0);

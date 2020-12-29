@@ -1,8 +1,11 @@
 Name: Pong with sprites
 
 Start {
-a = (5 + 10 * (6 - 2)) / 5.0 + 8
+	if (a)  Write("Works IF",0,0,63)
 
+//	else {
+//		Write("Works ELSE",0,0,63)
+//	}
 }
 
 aStart {
