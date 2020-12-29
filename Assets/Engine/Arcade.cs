@@ -844,6 +844,14 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
+        case BNF.FOR: {
+          Execute(n.CN1);
+          Value cond = Evaluate(n.CN2);
+          if (cond.ToInt() == 0) return false;
+          stacks.Add(new ExecStack { node = n.CN3, step = 0, cond = n.CN2 });
+          return true;
+        }
+
         case BNF.WAIT: {
           toWait = Evaluate(n.CN1).ToFlt();
           if (toWait > 0 && n.sVal == "*") texture.Apply();
@@ -887,6 +895,10 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.SPOS: SpritePos(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToInt(), n.CN4 == null || Evaluate(n.CN4).ToBool()); break;
+
+
+
+        case BNF.NOP: return false;
 
         default: {
           Clear(0b010000);
@@ -1120,8 +1132,8 @@ public class ExecStack {
 
 /*  TODO
 
-  FOR
   SDIR num, dir, flip -> Sprite direction
+  functions()
 
   disable sprites and tilemaps on errors?
   remove BNFs that are not used
@@ -1130,7 +1142,7 @@ public class ExecStack {
   Tiles
   Add priority byte to sprites and tilemaps
   Sounds
-  functions
+  
 
   border size on circles?
 

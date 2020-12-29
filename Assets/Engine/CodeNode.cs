@@ -98,12 +98,12 @@ public class CodeNode {
         case BNF.FLT: res += (sameLine ? "" : id) + " " + fVal + (sameLine ? " " : "\n"); break;
         case BNF.STR: res += (sameLine ? "" : id) + " \"" + sVal + (sameLine ? "\" " : "\"\n"); break;
         case BNF.STRcnst: res += "[[" + type + "]]"; break;
-        case BNF.MEM: res += (sameLine ? "" : id) + " [" + children[0].ToString(indent + 1, true) + "]" + (sameLine ? " " : "\n"); break;
-        case BNF.MEMlong: res += (sameLine ? "" : id) + " [" + children[0].ToString(indent + 1, true) + "@]" + (sameLine ? " " : "\n"); break;
-        case BNF.MEMlongb: res += (sameLine ? "" : id) + " [" + children[0].ToString(indent + 1, true) + "@b]" + (sameLine ? " " : "\n"); break;
-        case BNF.MEMlongi: res += (sameLine ? "" : id) + " [" + children[0].ToString(indent + 1, true) + "@i]" + (sameLine ? " " : "\n"); break;
-        case BNF.MEMlongf: res += (sameLine ? "" : id) + " [" + children[0].ToString(indent + 1, true) + "@f]" + (sameLine ? " " : "\n"); break;
-        case BNF.MEMlongs: res += (sameLine ? "" : id) + " [" + children[0].ToString(indent + 1, true) + "@s]" + (sameLine ? " " : "\n"); break;
+        case BNF.MEM: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "]" + (sameLine ? " " : "\n"); break;
+        case BNF.MEMlong: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@]" + (sameLine ? " " : "\n"); break;
+        case BNF.MEMlongb: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@b]" + (sameLine ? " " : "\n"); break;
+        case BNF.MEMlongi: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@i]" + (sameLine ? " " : "\n"); break;
+        case BNF.MEMlongf: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@f]" + (sameLine ? " " : "\n"); break;
+        case BNF.MEMlongs: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@s]" + (sameLine ? " " : "\n"); break;
 
         case BNF.EXP:
           res += (sameLine ? "" : id);
@@ -112,75 +112,75 @@ public class CodeNode {
           if (!sameLine) res += "\n";
           break;
         case BNF.OPpar:
-          res += "(" + children[0].ToString(indent + 1, true) + ")";
+          res += "(" + CN1.ToString(indent + 1, true) + ")";
           break;
-        case BNF.OPsum: res += "(" + children[0].ToString(indent + 1, true) + "+" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.OPsub: res += "(" + children[0].ToString(indent + 1, true) + "-" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.OPmul: res += "(" + children[0].ToString(indent + 1, true) + "*" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.OPdiv: res += "(" + children[0].ToString(indent + 1, true) + "/" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.OPmod: res += "(" + children[0].ToString(indent + 1, true) + "%" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.OPand: res += "(" + children[0].ToString(indent + 1, true) + "&" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.OPor: res += "(" + children[0].ToString(indent + 1, true) + "|" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.OPxor: res += "(" + children[0].ToString(indent + 1, true) + "^" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.OPlsh: res += "(" + children[0].ToString(indent + 1, true) + "<<" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.OPrsh: res += "(" + children[0].ToString(indent + 1, true) + ">>" + children[1].ToString(indent + 1, true) + ")"; break;
+        case BNF.OPsum: res += "(" + CN1.ToString(indent + 1, true) + "+" + CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.OPsub: res += "(" + CN1.ToString(indent + 1, true) + "-" + CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.OPmul: res += "(" + CN1.ToString(indent + 1, true) + "*" + CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.OPdiv: res += "(" + CN1.ToString(indent + 1, true) + "/" + CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.OPmod: res += "(" + CN1.ToString(indent + 1, true) + "%" + CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.OPand: res += "(" + CN1.ToString(indent + 1, true) + "&" + CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.OPor: res += "(" + CN1.ToString(indent + 1, true) + "|" + CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.OPxor: res += "(" + CN1.ToString(indent + 1, true) + "^" + CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.OPlsh: res += "(" + CN1.ToString(indent + 1, true) + "<<" + CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.OPrsh: res += "(" + CN1.ToString(indent + 1, true) + ">>" + CN2.ToString(indent + 1, true) + ")"; break;
 
-        case BNF.ASSIGN: res += children[0].ToString(indent + 1, true) + " = " + children[1].ToString(indent + 1, true); break;
-        case BNF.ASSIGNsum: res += children[0].ToString(indent + 1, true) + " += " + children[1].ToString(indent + 1, true); break;
-        case BNF.ASSIGNsub: res += children[0].ToString(indent + 1, true) + " -= " + children[1].ToString(indent + 1, true); break;
-        case BNF.ASSIGNmul: res += children[0].ToString(indent + 1, true) + " *= " + children[1].ToString(indent + 1, true); break;
-        case BNF.ASSIGNdiv: res += children[0].ToString(indent + 1, true) + " /= " + children[1].ToString(indent + 1, true); break;
-        case BNF.ASSIGNmod: res += children[0].ToString(indent + 1, true) + " %= " + children[1].ToString(indent + 1, true); break;
-        case BNF.ASSIGNand: res += children[0].ToString(indent + 1, true) + " &= " + children[1].ToString(indent + 1, true); break;
-        case BNF.ASSIGNor: res += children[0].ToString(indent + 1, true) + " |= " + children[1].ToString(indent + 1, true); break;
-        case BNF.ASSIGNxor: res += children[0].ToString(indent + 1, true) + " ^= " + children[1].ToString(indent + 1, true); break;
+        case BNF.ASSIGN: res += CN1.ToString(indent + 1, true) + " = " + CN2.ToString(indent + 1, true); break;
+        case BNF.ASSIGNsum: res += CN1.ToString(indent + 1, true) + " += " + CN2.ToString(indent + 1, true); break;
+        case BNF.ASSIGNsub: res += CN1.ToString(indent + 1, true) + " -= " + CN2.ToString(indent + 1, true); break;
+        case BNF.ASSIGNmul: res += CN1.ToString(indent + 1, true) + " *= " + CN2.ToString(indent + 1, true); break;
+        case BNF.ASSIGNdiv: res += CN1.ToString(indent + 1, true) + " /= " + CN2.ToString(indent + 1, true); break;
+        case BNF.ASSIGNmod: res += CN1.ToString(indent + 1, true) + " %= " + CN2.ToString(indent + 1, true); break;
+        case BNF.ASSIGNand: res += CN1.ToString(indent + 1, true) + " &= " + CN2.ToString(indent + 1, true); break;
+        case BNF.ASSIGNor: res += CN1.ToString(indent + 1, true) + " |= " + CN2.ToString(indent + 1, true); break;
+        case BNF.ASSIGNxor: res += CN1.ToString(indent + 1, true) + " ^= " + CN2.ToString(indent + 1, true); break;
 
-        case BNF.UOneg: res += (sameLine ? "" : id) + " !" + children[0].ToString(indent, true); break;
-        case BNF.UOinv: res += (sameLine ? "" : id) + " ~" + children[0].ToString(indent, true); break;
-        case BNF.UOsub: res += (sameLine ? "" : id) + " -" + children[0].ToString(indent, true); break;
+        case BNF.UOneg: res += (sameLine ? "" : id) + " !" + CN1.ToString(indent, true); break;
+        case BNF.UOinv: res += (sameLine ? "" : id) + " ~" + CN1.ToString(indent, true); break;
+        case BNF.UOsub: res += (sameLine ? "" : id) + " -" + CN1.ToString(indent, true); break;
 
-        case BNF.CASTb: res += (sameLine ? "" : id) + children[0].ToString(indent, true) + "_b"; break;
-        case BNF.CASTi: res += (sameLine ? "" : id) + children[0].ToString(indent, true) + "_i"; break;
-        case BNF.CASTf: res += (sameLine ? "" : id) + children[0].ToString(indent, true) + "_f"; break;
-        case BNF.CASTs: res += (sameLine ? "" : id) + children[0].ToString(indent, true) + "_s"; break;
+        case BNF.CASTb: res += (sameLine ? "" : id) + CN1.ToString(indent, true) + "_b"; break;
+        case BNF.CASTi: res += (sameLine ? "" : id) + CN1.ToString(indent, true) + "_i"; break;
+        case BNF.CASTf: res += (sameLine ? "" : id) + CN1.ToString(indent, true) + "_f"; break;
+        case BNF.CASTs: res += (sameLine ? "" : id) + CN1.ToString(indent, true) + "_s"; break;
 
-        case BNF.LEN: res += children[0].ToString(indent, true) + ".len"; break;
-        case BNF.PLEN: res += children[0].ToString(indent, true) + ".plen"; break;
-        case BNF.CLR: res += (sameLine ? "" : id) + "Clr(" + children[0].ToString(indent, true) + ")"; break;
+        case BNF.LEN: res += CN1.ToString(indent, true) + ".len"; break;
+        case BNF.PLEN: res += CN1.ToString(indent, true) + ".plen"; break;
+        case BNF.CLR: res += (sameLine ? "" : id) + "Clr(" + CN1.ToString(indent, true) + ")"; break;
         case BNF.DTIME: res += "dateTime"; break;
 
         case BNF.WRITE: {
           res += (sameLine ? "" : id) + "Write(" +
-            children[0].ToString(indent, true) + ", " +
-            children[1].ToString(indent, true) + ", " +
-            children[2].ToString(indent, true) + ", " +
-            children[3].ToString(indent, true);
-          if (children.Count > 4) res += ", " + children[4].ToString(indent, true);
+            CN1.ToString(indent, true) + ", " +
+            CN2.ToString(indent, true) + ", " +
+            CN3.ToString(indent, true) + ", " +
+            CN4.ToString(indent, true);
+          if (children.Count > 4) res += ", " + CN5.ToString(indent, true);
           res += ")";
         }
         break;
 
         case BNF.WAIT: {
-          res += (sameLine ? "" : id) + "Wait(" + children[0].ToString(indent, true) + ")";
+          res += (sameLine ? "" : id) + "Wait(" + CN1.ToString(indent, true) + ")";
         }
         break;
 
         case BNF.LINE:
           res += (sameLine ? "" : id) + "line(" +
-            children[0].ToString(indent, true) + ", " +
-            children[1].ToString(indent, true) + ", " +
-            children[2].ToString(indent, true) + ", " +
-            children[3].ToString(indent, true) + ", " +
-            children[4].ToString(indent, true) + ")";
+            CN1.ToString(indent, true) + ", " +
+            CN2.ToString(indent, true) + ", " +
+            CN3.ToString(indent, true) + ", " +
+            CN4.ToString(indent, true) + ", " +
+            CN5.ToString(indent, true) + ")";
           break;
 
         case BNF.BOX:
           res += (sameLine ? "" : id) + "line(" +
-            children[0].ToString(indent, true) + ", " +
-            children[1].ToString(indent, true) + ", " +
-            children[2].ToString(indent, true) + ", " +
-            children[3].ToString(indent, true) + ", " +
-            children[4].ToString(indent, true);
+            CN1.ToString(indent, true) + ", " +
+            CN2.ToString(indent, true) + ", " +
+            CN3.ToString(indent, true) + ", " +
+            CN4.ToString(indent, true) + ", " +
+            CN5.ToString(indent, true);
           if (children.Count > 5)
             res += children[5].ToString(indent, true) + ")";
           else
@@ -189,37 +189,37 @@ public class CodeNode {
 
         case BNF.CIRCLE:
           res += (sameLine ? "" : id) + "circle(" +
-            children[0].ToString(indent, true) + ", " +
-            children[1].ToString(indent, true) + ", " +
-            children[2].ToString(indent, true) + ", " +
-            children[3].ToString(indent, true) + ", " +
-            children[4].ToString(indent, true);
+            CN1.ToString(indent, true) + ", " +
+            CN2.ToString(indent, true) + ", " +
+            CN3.ToString(indent, true) + ", " +
+            CN4.ToString(indent, true) + ", " +
+            CN5.ToString(indent, true);
           if (children.Count > 5)
             res += children[5].ToString(indent, true) + ")";
           else
             res += ")";
           break;
 
-        case BNF.Inc: res += (sameLine ? "" : id) + children[0].ToString(indent, true) + "++"; break;
-        case BNF.Dec: res += (sameLine ? "" : id) + children[0].ToString(indent, true) + "--"; break;
+        case BNF.Inc: res += (sameLine ? "" : id) + CN1.ToString(indent, true) + "++"; break;
+        case BNF.Dec: res += (sameLine ? "" : id) + CN1.ToString(indent, true) + "--"; break;
 
-        case BNF.COMPeq: res += "(" + children[0].ToString(indent + 1, true) + "==" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.COMPne: res += "(" + children[0].ToString(indent + 1, true) + "!=" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.COMPlt: res += "(" + children[0].ToString(indent + 1, true) + "<" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.COMPle: res += "(" + children[0].ToString(indent + 1, true) + "<=" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.COMPgt: res += "(" + children[0].ToString(indent + 1, true) + ">" + children[1].ToString(indent + 1, true) + ")"; break;
-        case BNF.COMPge: res += "(" + children[0].ToString(indent + 1, true) + ">=" + children[1].ToString(indent + 1, true) + ")"; break;
+        case BNF.COMPeq: res += "(" + CN1.ToString(indent + 1, true) + "==" + CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.COMPne: res += "(" + CN1.ToString(indent + 1, true) + "!=" + CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.COMPlt: res += "(" + CN1.ToString(indent + 1, true) + "<" +  CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.COMPle: res += "(" + CN1.ToString(indent + 1, true) + "<=" + CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.COMPgt: res += "(" + CN1.ToString(indent + 1, true) + ">" +  CN2.ToString(indent + 1, true) + ")"; break;
+        case BNF.COMPge: res += "(" + CN1.ToString(indent + 1, true) + ">=" + CN2.ToString(indent + 1, true) + ")"; break;
 
-        case BNF.IF: res += (sameLine ? "" : id) + "if (" + children[0].ToString(indent, true) + ") { ..." + (children.Count - 1) + "... }"; break;
+        case BNF.IF: res += (sameLine ? "" : id) + "if (" + CN1.ToString(indent, true) + ") { ..." + (children.Count - 1) + "... }"; break;
         case BNF.Else: res += (sameLine ? "" : id) + "else { ..." + (children.Count - 1) + "... }"; break;
-        case BNF.WHILE: res += (sameLine ? "" : id) + "while (" + children[0].ToString(indent, true) + ") { ..." + (children.Count - 1) + "... }"; break;
+        case BNF.WHILE: res += (sameLine ? "" : id) + "while (" + CN1.ToString(indent, true) + ") { ..." + (children.Count - 1) + "... }"; break;
 
         case BNF.SCREEN: {
           res += (sameLine ? "" : id) + "screen(" +
-            children[0].ToString(indent, true) + ", " +
-            children[1].ToString(indent, true);
-          if (children.Count > 2) res += ", " + children[2].ToString(indent, true);
-          if (children.Count > 3) res += ", " + children[3].ToString(indent, true);
+            CN1.ToString(indent, true) + ", " +
+            CN2.ToString(indent, true);
+          if (children.Count > 2) res += ", " + CN3.ToString(indent, true);
+          if (children.Count > 3) res += ", " + CN4.ToString(indent, true);
           res += ")";
         }
         break;
@@ -250,7 +250,13 @@ public class CodeNode {
         case BNF.KEYx: res += (sameLine ? "" : id) + "keyX"; break;
         case BNF.KEYy: res += (sameLine ? "" : id) + "keyX"; break;
 
-        case BNF.FOR:
+        case BNF.FOR: {
+          return (sameLine ? "" : id) + "for(" +
+            CN1.ToString(indent, true) + ", " +
+            CN2.ToString(indent, true) + ", ..." + ")" + (sameLine ? "" : "\n") +
+            CN3.ToString(indent + 1, true);
+        }
+
         case BNF.SPRITE:
         case BNF.SPEN:
         case BNF.SPOS:
@@ -499,6 +505,7 @@ public enum BNF {
   KEY,
   KEYx,
   KEYy,
+  NOP,
 }
 
 public enum VT {

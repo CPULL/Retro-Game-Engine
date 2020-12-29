@@ -68,7 +68,8 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgVar = new Regex("(?<=[^a-z0-9`]|^)([a-z][0-9a-z]{0,7})([^a-z0-9¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgHex = new Regex("0x([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgCol = new Regex("c([0-3])([0-3])([0-3])", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgString = new Regex("((?<![\\\\])\")((?:.(?!(?<![\\\\])\\1))*.?)\\1", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgQString = new Regex("\\\\\"", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgString = new Regex("(\")([^\"]*)(\")", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDeltat = new Regex("deltatime", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFloat = new Regex("[0-9]+\\.[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgInt = new Regex("[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -129,6 +130,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgIf = new Regex("[\\s]*if[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgElse = new Regex("[\\s]*else[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(([^{}]+)\\)[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgFor = new Regex("[\\s]*for[\\s]*\\(([^,]*=[^,]*)?,([^,]*)?,([^,]*)?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgScreen = new Regex("[\\s]*screen[\\s]*\\(([^,]*),([^,]*)(,([^,]*)){0,1}(,([^,]*)){0,1}\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWait = new Regex("[\\s]*wait[\\s]*\\(([^,]+)(,[\\s]*([fn]))?\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDestroy = new Regex("[\\s]*destroy[\\s]*\\(([^,]+)\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -158,7 +160,11 @@ public class CodeParser : MonoBehaviour {
 
   public CodeNode Parse(string file, Variables variables) {
     try {
+      // Start by replacing all the problematic stuff
       file = file.Trim().Replace("\r", "").Replace("\t", " ");
+      // [QuotedStrings]
+      file = rgQString.Replace(file, "ˠ");
+
       idcount = 0;
       CodeNode res = new CodeNode(BNF.Program);
       nodes = new Dictionary<string, CodeNode>();
@@ -169,7 +175,6 @@ public class CodeParser : MonoBehaviour {
         int end = file.IndexOf('\n', pos);
         if (end != -1 && (pos == 0 || file[pos - 1] == '\n')) res.sVal = file.Substring(pos + 5, end - pos - 5).Trim(' ', '\n');
       }
-
 
       // find the Start
       pos = file.IndexOf("start", System.StringComparison.CurrentCultureIgnoreCase);
@@ -277,11 +282,11 @@ public class CodeParser : MonoBehaviour {
 
     if (rgBlockClose.IsMatch(line)) return 1;
 
-    // Start by replacing all the problematic stuff
     // [STRING] STR => `STx¶
     line = rgString.Replace(line, m => {
+      string str = m.Groups[2].Value;
       CodeNode n = new CodeNode(BNF.STR, GenId("ST")) {
-        sVal = m.Value.Substring(1, m.Value.Length - 2)
+        sVal = str.Replace("ˠ", "\"")
       };
       nodes[n.id] = n;
       return n.id;
@@ -311,6 +316,40 @@ public class CodeParser : MonoBehaviour {
       }
 
       throw new Exception("Invalid block after IF statement: " + linenum);
+    }
+
+    // [FOR] {[BLOCK]}
+    if (expected.IsGood(Expected.Val.Statement) && rgFor.IsMatch(line)) {
+      Match m = rgFor.Match(line);
+      CodeNode node = new CodeNode(BNF.FOR);
+      parent.Add(node);
+      if (!string.IsNullOrEmpty(m.Groups[1].Value.Trim())) {
+        ParseLine(node, new string[] { m.Groups[1].Value.Trim() }, 0, linenum);
+      }
+      else node.Add(new CodeNode(BNF.NOP));
+
+      if (!string.IsNullOrEmpty(m.Groups[2].Value.Trim())) {
+        node.Add(ParseExpression(m.Groups[2].Value.Trim(), linenum));
+      }
+      else throw new Exception("FOR need to have a condition to terminate: " + linenum);
+
+      int num = 1;
+      CodeNode b = new CodeNode(BNF.BLOCK);
+      string block = "";
+      for (int i = lineidx + 1; i < lines.Length; i++) {
+        num++;
+        block += lines[i] + "\n";
+        if (rgBlockClose.IsMatch(lines[i])) break;
+      }
+      block = " " + block.Trim(' ', '{', '}', '\n') + " ";
+      num += ParseBlock(block, 1, block.Length - 1, b, linenum + num - 1);
+      node.Add(b);
+
+      if (!string.IsNullOrEmpty(m.Groups[3].Value.Trim())) { // The last parst is added at the end of the block
+        ParseLine(b, new string[] { m.Groups[3].Value.Trim() }, 0, linenum);
+      }
+
+      return num;
     }
 
 
@@ -604,15 +643,16 @@ public class CodeParser : MonoBehaviour {
       return num + 1;
     }
 
+
     // [REG]=a-z
     if (expected.IsGood(Expected.Val.MemReg) && rgVar.IsMatch(line)) {
-      string var = rgVar.Match(line).Groups[1].Value.ToLowerInvariant();
-      if (!reserverdKeywords.Contains(var)) {
-        CodeNode node = new CodeNode(BNF.REG) { Reg = vars.Add(var) };
-        parent.Add(node);
-        return 1;
-      }
+    string var = rgVar.Match(line).Groups[1].Value.ToLowerInvariant();
+    if (!reserverdKeywords.Contains(var)) {
+      CodeNode node = new CodeNode(BNF.REG) { Reg = vars.Add(var) };
+      parent.Add(node);
+      return 1;
     }
+  }
 
     // [MEM]= \[<exp>\] | \[<exp>@<exp>\]
     if (expected.IsGood(Expected.Val.MemReg) && rgMemUnparsed.IsMatch(line)) {
