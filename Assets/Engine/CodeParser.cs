@@ -131,6 +131,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(([^{}]+)\\)[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgScreen = new Regex("[\\s]*screen[\\s]*\\(([^,]*),([^,]*)(,([^,]*)){0,1}(,([^,]*)){0,1}\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWait = new Regex("[\\s]*wait[\\s]*\\(([^,]+)(,[\\s]*([fn]))?\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgDestroy = new Regex("[\\s]*destroy[\\s]*\\(([^,]+)\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSpriteSz = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*),([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -553,6 +554,16 @@ public class CodeParser : MonoBehaviour {
     if (expected.IsGood(Expected.Val.Statement) && rgDec.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.Dec);
       node.Add(ParseExpression(rgDec.Match(line).Groups[1].Value, linenum));
+      parent.Add(node);
+      return 1;
+    }
+
+    // [Destroy] ([EXP])
+    if (expected.IsGood(Expected.Val.Statement) && rgDestroy.IsMatch(line)) {
+      CodeNode node = new CodeNode(BNF.DESTROY);
+      Match m = rgDestroy.Match(line);
+      string exp = m.Groups[1].Value;
+      node.Add(ParseExpression(exp, linenum));
       parent.Add(node);
       return 1;
     }

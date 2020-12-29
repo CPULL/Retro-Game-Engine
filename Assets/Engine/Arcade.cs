@@ -880,6 +880,12 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
+        case BNF.DESTROY: {
+          int pointer = Evaluate(n.CN1).ToInt();
+          if (labelTextures.ContainsKey(pointer)) labelTextures.Remove(pointer);
+        }
+        break;
+
         case BNF.SPOS: SpritePos(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToInt(), n.CN4 == null || Evaluate(n.CN4).ToBool()); break;
 
         default: {
@@ -1114,15 +1120,12 @@ public class ExecStack {
 
 /*  TODO
 
-  disable sprites and tilemaps on errors?
-
-add a way to reset a texture Destroy(<exp>)
   FOR
-
   SDIR num, dir, flip -> Sprite direction
 
+  disable sprites and tilemaps on errors?
   remove BNFs that are not used
-once parser is completed use as keys shorter strings, removing the first two characters
+  once parser is completed use as keys shorter strings, removing the first two characters
 
   Tiles
   Add priority byte to sprites and tilemaps

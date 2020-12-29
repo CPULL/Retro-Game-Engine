@@ -481,6 +481,7 @@ public enum BNF {
   CLR,
   WRITE,
   WAIT,
+  DESTROY,
   SCREEN,
   SPRITE,
   SPEN,
