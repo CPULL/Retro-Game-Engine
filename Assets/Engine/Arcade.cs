@@ -205,7 +205,12 @@ public class Arcade : MonoBehaviour {
     sprites[0].Init(0, 6, sw, sh);
 
     string codefile = null;
-    try { codefile = File.ReadAllText(Application.dataPath + "\\Cartridges\\game.cartridge"); } catch (System.Exception) { }
+    try { codefile = File.ReadAllText(Application.dataPath + "\\..\\Cartridges\\game.cartridge"); } catch (Exception) {
+      Write("No cardridge found!", 4, 40, 48);
+      WriteC("Path: " + Application.dataPath + "\\..\\Cartridges\\game.cartridge", 4, 50, 48);
+      texture.Apply();
+      return;
+    }
     if (string.IsNullOrEmpty(codefile)) {
       Write("No cardridge found!", 4, 40, 48);
       texture.Apply();
@@ -413,6 +418,42 @@ public class Arcade : MonoBehaviour {
         }
       }
       pos += 8;
+      if (pos > wm1) return;
+    }
+  }
+
+  void WriteC(string txt, int x, int y, byte col, byte back = 0) {
+    int pos = x;
+    byte r = (byte)(((col & 0b00110000) >> 4) * 85);
+    byte g = (byte)(((col & 0b00001100) >> 2) * 85);
+    byte b = (byte)(((col & 0b00000011) >> 0) * 85);
+    byte rbk = (byte)(((back & 0b00110000) >> 4) * 85);
+    byte gbk = (byte)(((back & 0b00001100) >> 2) * 85);
+    byte bbk = (byte)(((back & 0b00000011) >> 0) * 85);
+    foreach (char c in txt) {
+      if (c == '\n' || c == '\r') {
+        y += 8;
+        pos = x;
+        if (y > 127) return;
+        continue;
+      }
+      byte[] gliph;
+      if (!font.ContainsKey(c))
+        gliph = font['*'];
+      else
+        gliph = font[c];
+      for (int h = 0; h < 8; h++) {
+        for (int w = 0; w < 8; w+=2) {
+          int mr = (gliph[h] & (1 << (7 - w))) != 0 ? r : rbk;
+          int mg = (gliph[h] & (1 << (7 - w))) != 0 ? g : gbk;
+          int mb = (gliph[h] & (1 << (7 - w))) != 0 ? b : bbk;
+          mr += (gliph[h] & (1 << (6 - w))) != 0 ? r : rbk;
+          mg += (gliph[h] & (1 << (6 - w))) != 0 ? g : gbk;
+          mb += (gliph[h] & (1 << (6 - w))) != 0 ? b : bbk;
+          SetPixel(pos + w/2, y + h, (byte)(mr >> 1), (byte)(mg >> 1), (byte)(mb >> 1));
+        }
+      }
+      pos += 4;
       if (pos > wm1) return;
     }
   }
@@ -1137,19 +1178,17 @@ public class ExecStack {
 
 /*  TODO
 
-  SDIR num, dir, flip -> Sprite direction
   functions()
+  Tiles, with priority byte
+  Sounds
+  
+Get the cart file from a safer location
 
   disable sprites and tilemaps on errors?
   remove BNFs that are not used
   once parser is completed use as keys shorter strings, removing the first two characters
 
-  Tiles
-  Add priority byte to sprites and tilemaps
-  Sounds
-  
 
-  border size on circles?
 
 FUTURE: graph editor
 FUTURE: step by step debugger
