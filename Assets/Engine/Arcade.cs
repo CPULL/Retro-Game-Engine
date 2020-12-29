@@ -1189,7 +1189,6 @@ public class ExecStack {
 
 
 graph editor
-->load sprite
 ->lines
 ->box
 ->ellipse

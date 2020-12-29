@@ -1269,7 +1269,7 @@ MonoBehaviour:
   WidthSliderText: {fileID: 2100502571}
   HeightSliderText: {fileID: 321057754}
   Values: {fileID: 676328907}
-  LoadSubButton: {fileID: 0}
+  LoadSubButton: {fileID: 1649149733}
   CurrentColor: {fileID: 1343748258}
 --- !u!1 &158077849
 GameObject:
@@ -2499,7 +2499,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &676328906
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5239,7 +5239,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 148665065}
         m_TargetAssemblyTypeName: Dev, Assembly-CSharp
-        m_MethodName: CloseValues
+        m_MethodName: PostLoad
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -6767,7 +6767,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2039945243}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 148665065}
+        m_TargetAssemblyTypeName: Dev, Assembly-CSharp
+        m_MethodName: PreLoad
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &2039945243
 MonoBehaviour:
   m_ObjectHideFlags: 0

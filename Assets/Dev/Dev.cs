@@ -105,17 +105,30 @@ public class Dev : MonoBehaviour {
 
   public void PostLoad() {
     string data = Values.text.Trim();
-    data = rgComments.Replace(data, "");
-    data = rgLabels.Replace(data, "");
+    data = rgComments.Replace(data, " ");
+    data = rgLabels.Replace(data, " ");
     data = data.Replace('\n', ' ').Trim();
     while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
     data = ReadNextByte(data, out byte w);
     data = ReadNextByte(data, out byte h);
-
-    while (data.Length > 0) {
+    if (w < 8 || h < 8 || w > 32 || h > 32) {
+      Values.text = "This does not look like a sprite.\n" + Values.text;
+      return;
     }
 
+    WidthSlider.SetValueWithoutNotify(w);
+    HeightSlider.SetValueWithoutNotify(h);
+    ChangeSpriteSize();
+    for (int i = 0; i < w * h; i++) {
+      data = ReadNextByte(data, out byte col);
+
+      int r = (col & 0b110000) >> 4;
+      int g = (col & 0b001100) >> 2;
+      int b = (col & 0b000011) >> 0;
+      int a = 3 - ((col & 0b11000000) >> 6);
+      pixels[i].Set(new Color32((byte)(r * 85), (byte)(g * 85), (byte)(b * 85), (byte)(a * 85)));
+    }
 
     Values.gameObject.SetActive(false);
     LoadSubButton.enabled = false;
