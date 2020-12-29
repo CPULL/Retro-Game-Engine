@@ -27,8 +27,8 @@ public class Dev : MonoBehaviour {
   public Image CurrentColor;
   Color32 Transparent = new Color32(0, 0, 0, 0);
   Color32 BorderNormal = new Color32(206, 224, 223, 120);
-  DoLine line = DoLine.No;
-  Vector2Int lineStart = Vector2Int.zero;
+  DoShape shape = DoShape.No;
+  Vector2Int start = Vector2Int.zero;
 
   public void ChangeSpriteSize() {
     WidthSliderText.text = "Width: " + WidthSlider.value;
@@ -58,20 +58,39 @@ public class Dev : MonoBehaviour {
   }
 
   private void ClickPixel(int pos) {
-    if (line == DoLine.SetStart) {
-      lineStart.x = pos % (int)WidthSlider.value;
-      lineStart.y = (pos - lineStart.x) / (int)WidthSlider.value;
+    if (shape == DoShape.LineStart) {
+      start.x = pos % (int)WidthSlider.value;
+      start.y = (pos - start.x) / (int)WidthSlider.value;
       pixels[pos].border.color = Color.red;
-      line = DoLine.SetEnd;
+      shape = DoShape.LineEnd;
       return;
     }
-    if (line == DoLine.SetEnd) {
-      int x1 = lineStart.x;
+    if (shape == DoShape.LineEnd) {
+      int x1 = start.x;
       int x2 = pos % (int)WidthSlider.value;
-      int y1 = lineStart.y;
+      int y1 = start.y;
       int y2 = (pos - x2) / (int)WidthSlider.value;
       DrawLine(x1, y1, x2, y2, false, CurrentColor.color);
-      line = DoLine.No;
+      shape = DoShape.No;
+      for (int i = 0; i < pixels.Length; i++)
+        pixels[i].border.color = BorderNormal;
+      return;
+    }
+
+    if (shape == DoShape.BoxStart) {
+      start.x = pos % (int)WidthSlider.value;
+      start.y = (pos - start.x) / (int)WidthSlider.value;
+      pixels[pos].border.color = Color.red;
+      shape = DoShape.BoxEnd;
+      return;
+    }
+    if (shape == DoShape.BoxEnd) {
+      int x1 = start.x;
+      int x2 = pos % (int)WidthSlider.value;
+      int y1 = start.y;
+      int y2 = (pos - x2) / (int)WidthSlider.value;
+      DrawBox(x1, y1, x2, y2, false, CurrentColor.color);
+      shape = DoShape.No;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
       return;
@@ -84,14 +103,24 @@ public class Dev : MonoBehaviour {
   }
 
   private void OverPixel(int pos) {
-    if (line == DoLine.SetEnd) {
-      int x1 = lineStart.x;
+    if (shape == DoShape.LineEnd) {
+      int x1 = start.x;
       int x2 = pos % (int)WidthSlider.value;
-      int y1 = lineStart.y;
+      int y1 = start.y;
       int y2 = (pos - x2) / (int)WidthSlider.value;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
       DrawLine(x1, y1, x2, y2, true, Color.red);
+    }
+
+    if (shape == DoShape.BoxEnd) {
+      int x1 = start.x;
+      int x2 = pos % (int)WidthSlider.value;
+      int y1 = start.y;
+      int y2 = (pos - x2) / (int)WidthSlider.value;
+      for (int i = 0; i < pixels.Length; i++)
+        pixels[i].border.color = BorderNormal;
+      DrawBox(x1, y1, x2, y2, true, Color.red);
     }
 
 
@@ -106,7 +135,11 @@ public class Dev : MonoBehaviour {
   }
 
   public void Line() {
-    line = DoLine.SetStart;
+    shape = DoShape.LineStart;
+  }
+
+  public void Box() {
+    shape = DoShape.BoxStart;
   }
 
   void DrawLine(int x1, int y1, int x2, int y2, bool border, Color32 col) {
@@ -188,6 +221,35 @@ public class Dev : MonoBehaviour {
         else
           pixels[x + w * y].Set(CurrentColor.color);
       }
+    }
+  }
+
+  void DrawBox(int x1, int y1, int x2, int y2, bool border, Color32 col) {
+    int sx = x1; if (sx > x2) sx = x2;
+    int sy = y1; if (sy > y2) sy = y2;
+    int ex = x1; if (ex < x2) ex = x2;
+    int ey = y1; if (ey < y2) ey = y2;
+    int w = (int)WidthSlider.value;
+
+    for (int x = sx; x <= ex; x++) {
+      if (border)
+        pixels[x + w * y1].border.color = Color.red;
+      else
+        pixels[x + w * y1].Set(CurrentColor.color);
+      if (border)
+        pixels[x + w * y2].border.color = Color.red;
+      else
+        pixels[x + w * y2].Set(CurrentColor.color);
+    }
+    for (int y = sy; y <= ey; y++) {
+      if (border)
+        pixels[x1 + w * y].border.color = Color.red;
+      else
+        pixels[x1 + w * y].Set(CurrentColor.color);
+      if (border)
+        pixels[x2 + w * y].border.color = Color.red;
+      else
+        pixels[x2 + w * y].Set(CurrentColor.color);
     }
   }
 
@@ -291,4 +353,4 @@ public class Dev : MonoBehaviour {
   #endregion Sprite Editor
 }
 
-public enum DoLine { No, SetStart, SetEnd }
+public enum DoShape { No, LineStart, LineEnd, BoxStart, BoxEnd }
