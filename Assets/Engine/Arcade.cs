@@ -576,6 +576,13 @@ public class Arcade : MonoBehaviour {
     sprites[num].Pos(x, y, scaleW, scaleH, enable);
   }
   
+  void SpriteRot(int num, int rot, bool flip) {
+    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
+    if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined"); 
+    rot = rot & 3;
+    sprites[num].Rot(rot, flip);
+  }
+  
   #endregion Sprites
 
   bool Execute(CodeNode n) {
@@ -879,24 +886,22 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.SPRITE: {
-          // Sprite(num, pointer, filter)
-          // Sprite(num, x, y, pointer, filter)
-          if (n.children.Count < 4)
+          if (n.children.Count < 4) // Sprite(num, pointer, filter)
             Sprite(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToBool());
-          else
+          else // Sprite(num, x, y, pointer, filter)
             Sprite(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToInt(), Evaluate(n.CN4).ToInt(), Evaluate(n.CN5).ToBool());
+          return false;
         }
-        break;
 
         case BNF.DESTROY: {
           int pointer = Evaluate(n.CN1).ToInt();
           if (labelTextures.ContainsKey(pointer)) labelTextures.Remove(pointer);
+          return false;
         }
-        break;
 
-        case BNF.SPOS: SpritePos(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToInt(), n.CN4 == null || Evaluate(n.CN4).ToBool()); break;
+        case BNF.SPOS: SpritePos(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToInt(), n.CN4 == null || Evaluate(n.CN4).ToBool()); return false;
 
-
+        case BNF.SROT: SpriteRot(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToBool()); return false;
 
         case BNF.NOP: return false;
 

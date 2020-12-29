@@ -70,6 +70,26 @@ public class Grob {
     sprite.enabled = enable;
   }
 
+  internal void Rot(int rot, bool flip) {
+    switch(rot) {
+      case 0: rt.localRotation = Quaternion.Euler(0, 0, 0); break;
+      case 1: rt.localRotation = Quaternion.Euler(0, 0, 270); break;
+      case 2: rt.localRotation = Quaternion.Euler(0, 0, 180); break;
+      case 3: rt.localRotation = Quaternion.Euler(0, 0, 90); break;
+    }
+    rt.localScale = new Vector3(flip ? -1 : 1, 1, 1);
+    /*
+     n0, false   : 0 1,1
+     n0, true    : 0, -1,1
+     e1, false   : 270, 1
+     e1, true    : 270, -1
+     s2, false   : 180, 1
+     s2, true    : 180, -1
+     w3, false   : 0,0,90 1,1
+     w3, true    : 0,0,90 -1,1
+     */
+  }
+
   internal void Init(int x, int y, int sw, int sh) {
     float scalew = 1920f / sw;
     float scaleh = 1080f / sh;

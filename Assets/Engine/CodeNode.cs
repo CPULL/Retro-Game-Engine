@@ -257,12 +257,33 @@ public class CodeNode {
             CN3.ToString(indent + 1, true);
         }
 
-        case BNF.SPRITE:
+        case BNF.SPRITE: {
+          res += (sameLine ? "" : id) + "sprite(";
+          if (CN4==null) {
+            res += CN1.ToString(indent, true) + ", " +
+                   CN2.ToString(indent, true) + ", " +
+                   CN3.ToString(indent, true) + ")";
+          }
+          else {
+            res += CN1.ToString(indent, true) + ", " +
+                   CN2.ToString(indent, true) + ", " +
+                   CN3.ToString(indent, true) + ", " +
+                   CN4.ToString(indent, true) + ", " +
+                   CN5.ToString(indent, true) + ")";
+          }
+        }
+        break;
+        case BNF.DESTROY: return (sameLine ? "" : id) + "destroy(" + CN1.ToString(indent, true) + ")";
+        case BNF.SPOS: return (sameLine ? "" : id) + "SPos(" + 
+            CN1.ToString(indent, true) + ", " + CN2.ToString(indent, true) + ", " + CN3.ToString(indent, true) + 
+            (CN4 != null ? ", " + CN4.ToString(indent, true) : "") + ")";
+        case BNF.SROT: return (sameLine ? "" : id) + "SRot(" + CN1.ToString(indent, true) + ", " + CN2.ToString(indent, true) + ", " + CN3.ToString(indent, true) + ")";
+
         case BNF.SPEN:
-        case BNF.SPOS:
-        case BNF.SPIX:
-        case BNF.GPIX:
-        case BNF.CIR:
+          break;
+
+
+        default:
           res += "[[Missing:" + type + "]]";
           break;
       }
@@ -492,8 +513,7 @@ public enum BNF {
   SPRITE,
   SPEN,
   SPOS,
-  SPIX,
-  GPIX,
+  SROT,
   LINE,
   BOX,
   CIRCLE,

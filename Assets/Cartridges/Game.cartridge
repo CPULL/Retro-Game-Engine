@@ -1,10 +1,7 @@
 Name: Pong with sprites
 
 Start {
-	
-	for(str="a", str.len<5, str += "b") 
-		write(str,0,str.len*8,48)
-	write("final", 0, 0, 3)
+srot(1,u,1)
 
 }
 

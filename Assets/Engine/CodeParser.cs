@@ -137,7 +137,8 @@ public class CodeParser : MonoBehaviour {
 
   readonly Regex rgSpriteSz = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*),([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(([^,]*),([^,]*),([^,]*)(,([^,]*))?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(([^,]+),([^,]+),([^,]+)(,([^,]+))?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSrot = new Regex("[\\s]*srot[\\s]*\\(([^,]+),([^,]+),([^,]+)?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgCMPlt = new Regex("(`[a-z]{3,}¶)([\\s]*\\<[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPle = new Regex("(`[a-z]{3,}¶)([\\s]*\\<\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -570,6 +571,18 @@ public class CodeParser : MonoBehaviour {
       node.Add(ParseExpression(m.Groups[2].Value, linenum));
       node.Add(ParseExpression(m.Groups[3].Value, linenum));
       if (m.Groups.Count > 5 && !string.IsNullOrEmpty(m.Groups[5].Value)) node.Add(ParseExpression(m.Groups[5].Value, linenum));
+      parent.Add(node);
+      return 1;
+    }
+
+    // [SROT] num, dir, flip
+    if (expected.IsGood(Expected.Val.Statement) && rgSrot.IsMatch(line)) {
+      Match m = rgSrot.Match(line);
+      if (m.Groups.Count < 4) throw new Exception("Invalid SRot() command. Line: " + linenum);
+      CodeNode node = new CodeNode(BNF.SROT);
+      node.Add(ParseExpression(m.Groups[1].Value, linenum));
+      node.Add(ParseExpression(m.Groups[2].Value, linenum));
+      node.Add(ParseExpression(m.Groups[3].Value, linenum));
       parent.Add(node);
       return 1;
     }
