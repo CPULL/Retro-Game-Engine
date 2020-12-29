@@ -84,16 +84,16 @@ public class CodeNode {
         case BNF.INT: res += (sameLine ? "" : id) + " " + iVal + (sameLine ? " " : "\n"); break;
         case BNF.COL:
           res += (sameLine ? "" : id) + " c" +
-(iVal > 64 ?
-  ((iVal & 48) >> 4).ToString() +
-  ((iVal & 12) >> 2).ToString() +
-  ((iVal & 3) >> 0).ToString()
-  :
-  ((iVal & 192) >> 6).ToString() +
-  ((iVal & 48) >> 4).ToString() +
-  ((iVal & 12) >> 2).ToString() +
-  ((iVal & 3) >> 0).ToString()
-) + (sameLine ? " " : "\n"); break;
+                  (iVal > 64 ?
+                    ((iVal & 48) >> 4).ToString() +
+                    ((iVal & 12) >> 2).ToString() +
+                    ((iVal & 3) >> 0).ToString()
+                    :
+                    ((iVal & 192) >> 6).ToString() +
+                    ((iVal & 48) >> 4).ToString() +
+                    ((iVal & 12) >> 2).ToString() +
+                    ((iVal & 3) >> 0).ToString()
+                  ) + (sameLine ? " " : "\n"); break;
         case BNF.HEX: res += (sameLine ? "" : id) + " x" + iVal.ToString("X") + (sameLine ? " " : "\n"); break;
         case BNF.FLT: res += (sameLine ? "" : id) + " " + fVal + (sameLine ? " " : "\n"); break;
         case BNF.STR: res += (sameLine ? "" : id) + " \"" + sVal + (sameLine ? "\" " : "\"\n"); break;
@@ -157,6 +157,11 @@ public class CodeNode {
             children[3].ToString(indent, true);
           if (children.Count > 4) res += ", " + children[4].ToString(indent, true);
           res += ")";
+        }
+        break;
+
+        case BNF.WAIT: {
+          res += (sameLine ? "" : id) + "Wait(" + children[0].ToString(indent, true) + ")";
         }
         break;
 
@@ -475,6 +480,7 @@ public enum BNF {
   FOR,
   CLR,
   WRITE,
+  WAIT,
   SCREEN,
   SPRITE,
   SPEN,

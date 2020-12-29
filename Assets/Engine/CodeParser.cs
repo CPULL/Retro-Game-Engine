@@ -130,6 +130,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgElse = new Regex("[\\s]*else[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(([^{}]+)\\)[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgScreen = new Regex("[\\s]*screen[\\s]*\\(([^,]*),([^,]*)(,([^,]*)){0,1}(,([^,]*)){0,1}\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgWait = new Regex("[\\s]*wait[\\s]*\\(([^,]+)(,[\\s]*([fn]))?\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSpriteSz = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*),([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -556,7 +557,16 @@ public class CodeParser : MonoBehaviour {
       return 1;
     }
 
-
+    // [WAIT] ([EXP])
+    if (expected.IsGood(Expected.Val.Statement) && rgWait.IsMatch(line)) {
+      CodeNode node = new CodeNode(BNF.WAIT);
+      Match m = rgWait.Match(line);
+      string exp = m.Groups[1].Value;
+      node.Add(ParseExpression(exp, linenum));
+      if ((m.Groups[3].Value.Trim() + " ").ToLowerInvariant()[0] == 'f') node.sVal = "*";
+      parent.Add(node);
+      return 1;
+    }
 
     // [WHILE] ([EXP]) {[BLOCK]}
     if (expected.IsGood(Expected.Val.Statement) && rgWhile.IsMatch(line)) {

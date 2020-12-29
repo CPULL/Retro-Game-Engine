@@ -28,6 +28,7 @@ public class Arcade : MonoBehaviour {
   Grob[] sprites;
 
   float updateDelay = -1;
+  float toWait = 0;
   bool startCompleted = false;
   CodeNode startCode;
   CodeNode updateCode;
@@ -77,6 +78,11 @@ public class Arcade : MonoBehaviour {
       fpsFrames = 0;
     }
     fpsFrames++;
+
+    if (toWait > 0) {
+      toWait -= Time.deltaTime;
+      return;
+    }
 
     #region Key input
     for (int i = 0; i < inputs.Length; i++) inputs[i] = false;
@@ -573,6 +579,7 @@ public class Arcade : MonoBehaviour {
   #endregion Sprites
 
   bool Execute(CodeNode n) {
+    Debug.Log(n);
     try {
       switch (n.type) {
         case BNF.CLR: {
@@ -837,6 +844,12 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
+        case BNF.WAIT: {
+          toWait = Evaluate(n.CN1).ToFlt();
+          if (toWait > 0 && n.sVal == "*") texture.Apply();
+          return toWait > 0;
+        }
+
         case BNF.SCREEN: {
           sw = Evaluate(n.CN1).ToInt();
           if (sw < 128) sw = 128;
@@ -867,7 +880,7 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
-        case BNF.SPOS: SpritePos(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToInt(), n.CN4 == null ? true : Evaluate(n.CN4).ToBool()); break;
+        case BNF.SPOS: SpritePos(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToInt(), n.CN4 == null || Evaluate(n.CN4).ToBool()); break;
 
         default: {
           Clear(0b010000);
@@ -1104,7 +1117,6 @@ public class ExecStack {
   disable sprites and tilemaps on errors?
 
 add a way to reset a texture Destroy(<exp>)
-  Wait
   FOR
 
   SDIR num, dir, flip -> Sprite direction
