@@ -1,11 +1,9 @@
 Name: Pong with sprites
 
 Start {
-	if (a)  Write("Works IF",0,0,63)
-
-//	else {
-//		Write("Works ELSE",0,0,63)
-//	}
+	if (a) write("Works IF",0,0,63)
+	else Write("Works ELSE",0,0,63)
+	Write("AFTER",0,8,63)
 }
 
 aStart {

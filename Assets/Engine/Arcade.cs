@@ -1106,10 +1106,6 @@ public class ExecStack {
 add a way to reset a texture Destroy(<exp>)
   Wait
   FOR
-ELSEIF
-IF with single statement
-ELSE with single statement
-ELSEIF with single statement
 
   SDIR num, dir, flip -> Sprite direction
 

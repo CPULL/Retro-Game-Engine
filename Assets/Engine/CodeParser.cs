@@ -62,8 +62,8 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgMLBacktick = new Regex("`", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgSLComment = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgMLComment = new Regex("/\\*[^(\\*/)]*\\*/", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgBlockStart = new Regex(".*\\{[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgBlockEnd = new Regex("[\\s]*\\}[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgBlockOpen = new Regex(".*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgBlockClose = new Regex("^[\\s]*\\}[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgVar = new Regex("(?<=[^a-z0-9`]|^)([a-z][0-9a-z]{0,7})([^a-z0-9¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgHex = new Regex("0x([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
@@ -126,12 +126,10 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgCircle2 = new Regex("[\\s]*(circle\\()(.*),(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgInc = new Regex("(.*)\\+\\+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDec = new Regex("(.*)\\-\\-", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgIf = new Regex("[\\s]*if[\\s]*\\(([^{}]+)\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgElse = new Regex("[\\s]*else[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgIf = new Regex("[\\s]*if[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgElse = new Regex("[\\s]*else[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(([^{}]+)\\)[\\s]*\\{", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgScreen = new Regex("[\\s]*screen[\\s]*\\(([^,]*),([^,]*)(,([^,]*)){0,1}(,([^,]*)){0,1}\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgBlockOpen = new Regex("^[\\s]*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgBlockClose = new Regex("^[\\s]*\\}[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSpriteSz = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*),([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -275,7 +273,7 @@ public class CodeParser : MonoBehaviour {
     string line = lines[lineidx].Trim(' ', '\t', '\r');
     origForException = line;
 
-    if (rgBlockEnd.IsMatch(line)) return 1;
+    if (rgBlockClose.IsMatch(line)) return 1;
 
     // Start by replacing all the problematic stuff
     // [STRING] STR => `STx¶
@@ -289,6 +287,30 @@ public class CodeParser : MonoBehaviour {
 
 
     // Check what we have. Pick something in line with what is expected
+
+    // [IF] ([EXP]) [BLOCK]|[STATEMENT] [ [ELSE] [BLOCK]|[STATEMENT] ]
+    if (expected.IsGood(Expected.Val.Statement) && rgIf.IsMatch(line)) {
+      CodeNode node = new CodeNode(BNF.IF);
+      Match m = rgIf.Match(line);
+      string exp = m.Groups[1].Value;
+      node.Add(ParseExpression(exp, linenum));
+      parent.Add(node);
+
+      // check if we have a block just after (same line or next non-empty line)
+      string after = m.Groups[2].Value.Trim();
+      if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { //[IF] ([EXP]) [BLOCK]
+        return ParseIfBlock(node, after, lines, lineidx, linenum);
+      }
+      else if (!string.IsNullOrEmpty(after)) { // [IF] ([EXP]) [STATEMENT]
+        CodeNode b = new CodeNode(BNF.BLOCK);
+        node.Add(b);
+        ParseLine(b, new string[] { after }, 0, linenum);
+        return ParseElseBlock(node, lines, lineidx, linenum, 1, 0);
+      }
+
+      throw new Exception("Invalid block after IF statement: " + linenum);
+    }
+
 
     // [ASSp] = [MEM] += [EXPR] | [REG] += [EXP]
     if (expected.IsGood(Expected.Val.Statement) && rgAssSum.IsMatch(line)) {
@@ -534,67 +556,6 @@ public class CodeParser : MonoBehaviour {
       return 1;
     }
 
-    // [IF] ([EXP]) {[BLOCK]}
-
-    /*
-    [IF] ([EXP]) [STATEMENT]
-    [IF] ([EXP]) [BLOCK]
-    [IF] ([EXP]) [STATEMENT] [ELSE] [STATEMENT]
-    [IF] ([EXP]) [STATEMENT] [ELSE] [BLOCK]
-    [IF] ([EXP]) [BLOCK] [ELSE] [STATEMENT]
-    [IF] ([EXP]) [BLOCK] [ELSE] [BLOCK]
-     */
-
-
-    if (expected.IsGood(Expected.Val.Statement) && rgIf.IsMatch(line)) {
-      CodeNode node = new CodeNode(BNF.IF);
-      Match m = rgIf.Match(line);
-      string exp = m.Groups[1].Value;
-      node.Add(ParseExpression(exp, linenum));
-      parent.Add(node);
-
-      // check if we have a block just after (same line or next non-empty line)
-
-      string after = m.Groups[2].Value.Trim();
-      if (rgBlockOpen.IsMatch(after)) { // Same line: [IF] ([EXP]) [BLOCK]
-        Debug.Log("[IF] ([EXP]) [BLOCK]");
-        CodeNode b = new CodeNode(BNF.BLOCK);
-        node.Add(b);
-        return ParseIfBlock(node, b, lines, lineidx, linenum, 1);
-      }
-      else if (!string.IsNullOrEmpty(after)) { // Same line: [IF] ([EXP]) [STATEMENT]
-        CodeNode b = new CodeNode(BNF.BLOCK);
-        node.Add(b);
-        ParseLine(b, new string[] { after }, 0, linenum);
-
-        // FIXME we may have an else
-
-        return 1;
-      }
-
-      // Check if we have an open block in the next lines
-      bool aBlock = false;
-      int linePos = lineidx + 1;
-      while (linePos < lines.Length) {
-        string bl = lines[linePos].Trim(' ', '\t', '\r');
-        if (rgBlockOpen.IsMatch(lines[linePos].Trim(' ', '\t', '\r'))) {
-          aBlock = true;
-          break;
-        }
-        if (!string.IsNullOrEmpty(bl)) break;
-        linePos++;
-      }
-      if (aBlock) {
-        Debug.Log("[IF] ([EXP]) NL [BLOCK]");
-        CodeNode b = new CodeNode(BNF.BLOCK);
-        node.Add(b);
-        return ParseIfBlock(node, b, lines, lineidx, linenum, linePos - lineidx + 1);
-      }
-
-      // Check if the 
-
-        throw new Exception("Invalid block after IF statement: " + linenum);
-    }
 
 
     // [WHILE] ([EXP]) {[BLOCK]}
@@ -610,8 +571,8 @@ public class CodeParser : MonoBehaviour {
       int numBrackets = 1;
       for (int i = lineidx + 1; i < lines.Length; i++) {
         block += lines[i] + "\n";
-        if (rgBlockStart.IsMatch(lines[i])) numBrackets++;
-        if (rgBlockEnd.IsMatch(lines[i])) numBrackets--;
+        if (rgBlockOpen.IsMatch(lines[i])) numBrackets++;
+        if (rgBlockClose.IsMatch(lines[i])) numBrackets--;
         if (numBrackets == 0) break;
       }
       block = " " + block.Trim(' ', '{', '}', '\n') + " ";
@@ -645,41 +606,67 @@ public class CodeParser : MonoBehaviour {
     throw new Exception("Invalid code at " + (linenum - 1) + "\n" + origForException);
   }
 
-  private int ParseIfBlock(CodeNode ifNode, CodeNode blockNode, string[] lines, int lineidx, int linenum, int startOffset) {
-    string block = "";
-    int numBrackets = 1;
-    for (int i = lineidx + startOffset; i < lines.Length; i++) {
-      block += lines[i] + "\n";
-      if (rgBlockStart.IsMatch(lines[i])) numBrackets++;
-      if (rgBlockEnd.IsMatch(lines[i])) numBrackets--;
-      if (numBrackets == 0) break;
-    }
-    block = " " + block.Trim(' ', '{', '}', '\n') + " ";
-    int num = ParseBlock(block, 1, block.Length - 1, blockNode, linenum + 1);
 
+
+  private int ParseIfBlock(CodeNode ifNode, string after, string[] lines, int lineidx, int linenum) {
+    int num = 0;
+    // Block or single line?
+    if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { // [IF] [BLOCK]
+      CodeNode b = new CodeNode(BNF.BLOCK);
+      string block = "";
+      for (int i = lineidx + 1; i < lines.Length; i++) {
+        num++;
+        block += lines[i] + "\n";
+        if (rgBlockClose.IsMatch(lines[i])) break;
+      }
+      block = " " + block.Trim(' ', '{', '}', '\n') + " ";
+      num += ParseBlock(block, 1, block.Length - 1, b, linenum + num - 1);
+      ifNode.Add(b);
+    }
+    else { // [IF] [STATEMENT]
+      CodeNode b = new CodeNode(BNF.BLOCK);
+      ifNode.Add(b);
+      ParseLine(b, new string[] { after }, 0, linenum);
+      num = 1;
+    }
+    num = ParseElseBlock(ifNode, lines, lineidx, linenum, 0, num);
+    return num;
+  }
+
+
+  private int ParseElseBlock(CodeNode ifNode, string[] lines, int lineidx, int linenum, int startOffset, int num) {
     // Is the next non-empty line an "else"?
-    int pos = lineidx + startOffset + num + 1;
+    int pos = lineidx + startOffset + num;
     for (int li = pos; li < lines.Length; li++) {
       string l = lines[li].Trim(' ', '\n', '}');
       if (string.IsNullOrEmpty(l)) continue;
       else if (rgElse.IsMatch(l)) {
-        CodeNode nElse = new CodeNode(BNF.BLOCK);
-        block = "";
-        for (int i = pos + 1; i < lines.Length; i++) {
-          num++;
-          block += lines[i] + "\n";
-          if (rgBlockEnd.IsMatch(lines[i])) break;
+        // Block or single line?
+        Match m = rgElse.Match(l);
+        string after = m.Groups[1].Value.Trim();
+        if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { // [ELSE] [BLOCK]
+          CodeNode nElse = new CodeNode(BNF.BLOCK);
+          string block = "";
+          for (int i = pos + 1; i < lines.Length; i++) {
+            num++;
+            block += lines[i] + "\n";
+            if (rgBlockClose.IsMatch(lines[i])) break;
+          }
+          block = " " + block.Trim(' ', '{', '}', '\n') + " ";
+          num += ParseBlock(block, 1, block.Length - 1, nElse, linenum + num - 1);
+          ifNode.Add(nElse);
+          break;
         }
-        block = " " + block.Trim(' ', '{', '}', '\n') + " ";
-        num += ParseBlock(block, 1, block.Length - 1, nElse, linenum + num - 1);
-        ifNode.Add(nElse);
-        Debug.Log("match else: " + l + " <=> " + ifNode);
-        break;
+        else { // [ELSE] [STATEMENT]
+          CodeNode nElse = new CodeNode(BNF.BLOCK);
+          ifNode.Add(nElse);
+          ParseLine(nElse, new string[] { after }, 0, linenum);
+          return startOffset + num + 1;
+        }
       }
       else break;
     }
-
-    return num + 1;
+    return num;
   }
 
   // [EXP] [OP] [EXP] | [PAR] | [REG] | [INT] | [FLT] | [MEM] | [UO] | [LEN] | deltaTime
