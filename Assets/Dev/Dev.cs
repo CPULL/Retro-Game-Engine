@@ -26,6 +26,9 @@ public class Dev : MonoBehaviour {
 
   public Image CurrentColor;
   Color32 Transparent = new Color32(0, 0, 0, 0);
+  Color32 BorderNormal = new Color32(206, 224, 223, 120);
+  DoLine line = DoLine.No;
+  Vector2Int lineStart = Vector2Int.zero;
 
   public void ChangeSpriteSize() {
     WidthSliderText.text = "Width: " + WidthSlider.value;
@@ -44,7 +47,7 @@ public class Dev : MonoBehaviour {
       for (int i = num; i < numnow; i++) {
         Pixel pixel = Instantiate(PixelPrefab, SpriteGrid.transform).GetComponent<Pixel>();
         pixels2[i] = pixel;
-        pixel.Init(i, Transparent, ClickPixel);
+        pixel.Init(i, Transparent, ClickPixel, OverPixel);
       }
     }
     else if (num > numnow) {
@@ -55,16 +58,137 @@ public class Dev : MonoBehaviour {
   }
 
   private void ClickPixel(int pos) {
+    if (line == DoLine.SetStart) {
+      lineStart.x = pos % (int)WidthSlider.value;
+      lineStart.y = (pos - lineStart.x) / (int)WidthSlider.value;
+      pixels[pos].border.color = Color.red;
+      line = DoLine.SetEnd;
+      return;
+    }
+    if (line == DoLine.SetEnd) {
+      int x1 = lineStart.x;
+      int x2 = pos % (int)WidthSlider.value;
+      int y1 = lineStart.y;
+      int y2 = (pos - x2) / (int)WidthSlider.value;
+      DrawLine(x1, y1, x2, y2, false, CurrentColor.color);
+      line = DoLine.No;
+      for (int i = 0; i < pixels.Length; i++)
+        pixels[i].border.color = BorderNormal;
+      return;
+    }
+
     if (pixels[pos].img.color == CurrentColor.color)
       pixels[pos].Set(Transparent);
     else
       pixels[pos].Set(CurrentColor.color);
   }
 
+  private void OverPixel(int pos) {
+    if (line == DoLine.SetEnd) {
+      int x1 = lineStart.x;
+      int x2 = pos % (int)WidthSlider.value;
+      int y1 = lineStart.y;
+      int y2 = (pos - x2) / (int)WidthSlider.value;
+      for (int i = 0; i < pixels.Length; i++)
+        pixels[i].border.color = BorderNormal;
+      DrawLine(x1, y1, x2, y2, true, Color.red);
+    }
+
+
+
+
+  }
+
   public void Clear() {
     int num = (int)WidthSlider.value * (int)HeightSlider.value;
     for (int i = 0; i < num; i++)
       pixels[i].Set(Transparent);
+  }
+
+  public void Line() {
+    line = DoLine.SetStart;
+  }
+
+  void DrawLine(int x1, int y1, int x2, int y2, bool border, Color32 col) {
+    int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
+    int w = (int)WidthSlider.value;
+    dx = x2 - x1; dy = y2 - y1;
+    if (dx == 0) { // Vertical
+      if (y2 < y1) { int tmp = y1; y1 = y2; y2 = tmp; }
+      for (y = y1; y <= y2; y++)
+        if (border)
+          pixels[x1 + w * y].border.color = Color.red;
+        else
+          pixels[x1 + w * y].Set(CurrentColor.color);
+      return;
+    }
+
+    if (dy == 0) { // Horizontal
+      if (x2 < x1) { int tmp = x1; x1 = x2; x2 = tmp; }
+      for (x = x1; x <= x2; x++)
+        if (border)
+          pixels[x + w * y1].border.color = Color.red;
+        else
+          pixels[x + w * y1].Set(CurrentColor.color);
+      return;
+    }
+
+    // Diagonal
+    dx1 = dx;
+    if (dx1 < 0) dx1 = -dx1;
+    dy1 = dy;
+    if (dy1 < 0) dy1 = -dy1;
+    px = 2 * dy1 - dx1; py = 2 * dx1 - dy1;
+    if (dy1 <= dx1) {
+      if (dx >= 0) {
+        x = x1; y = y1; xe = x2;
+      }
+      else {
+        x = x2; y = y2; xe = x1;
+      }
+      if (border)
+        pixels[x + w * y].border.color = Color.red;
+      else
+        pixels[x + w * y].Set(CurrentColor.color);
+      for (i = 0; x < xe; i++) {
+        x += 1;
+        if (px < 0)
+          px += 2 * dy1;
+        else {
+          if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) y = y + 1; else y -= 1;
+          px += 2 * (dy1 - dx1);
+        }
+        if (border)
+          pixels[x + w * y].border.color = Color.red;
+        else
+          pixels[x + w * y].Set(CurrentColor.color);
+      }
+    }
+    else {
+      if (dy >= 0) {
+        x = x1; y = y1; ye = y2;
+      }
+      else {
+        x = x2; y = y2; ye = y1;
+      }
+      if (border)
+        pixels[x + w * y].border.color = Color.red;
+      else
+        pixels[x + w * y].Set(CurrentColor.color);
+      for (i = 0; y < ye; i++) {
+        y += 1;
+        if (py <= 0)
+          py += 2 * dx1;
+        else {
+          if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) x = x + 1; else x -= 1;
+          py += 2 * (dx1 - dy1);
+        }
+        if (border)
+          pixels[x + w * y].border.color = Color.red;
+        else
+          pixels[x + w * y].Set(CurrentColor.color);
+      }
+    }
   }
 
   public void Fill() {
@@ -166,3 +290,5 @@ public class Dev : MonoBehaviour {
 
   #endregion Sprite Editor
 }
+
+public enum DoLine { No, SetStart, SetEnd }

@@ -17,17 +17,17 @@ public class Palette : MonoBehaviour {
 
   private void Start() {
     for (int i = 0; i < colors.Length; i++) {
-      colors[i].Init(i, SetColor);
+      colors[i].Init(i, SetColor, null);
     }
     selected.color = Color.white;
-    BasicWhite.Init(0, SetPrimary);
-    BasicRed.Init(1, SetPrimary);
-    BasicYellow.Init(2, SetPrimary);
-    BasicGreen.Init(3, SetPrimary);
-    BasicCyan.Init(4, SetPrimary);
-    BasicBlue.Init(5, SetPrimary);
-    BasicPurple.Init(6, SetPrimary);
-    BasicBlack.Init(7, SetPrimary);
+    BasicWhite.Init(0, SetPrimary, null);
+    BasicRed.Init(1, SetPrimary, null);
+    BasicYellow.Init(2, SetPrimary, null);
+    BasicGreen.Init(3, SetPrimary, null);
+    BasicCyan.Init(4, SetPrimary, null);
+    BasicBlue.Init(5, SetPrimary, null);
+    BasicPurple.Init(6, SetPrimary, null);
+    BasicBlack.Init(7, SetPrimary, null);
   }
 
   public void SetPrimary(int pos) {
