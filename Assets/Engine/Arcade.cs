@@ -1182,15 +1182,18 @@ public class ExecStack {
   Tiles, with priority byte
   Sounds
   
-Get the cart file from a safer location
-
   disable sprites and tilemaps on errors?
   remove BNFs that are not used
   once parser is completed use as keys shorter strings, removing the first two characters
 
 
 
-FUTURE: graph editor
+graph editor
+->load sprite
+->lines
+->box
+->ellipse
+->fill
 FUTURE: step by step debugger
 FUTURE: map keys
 

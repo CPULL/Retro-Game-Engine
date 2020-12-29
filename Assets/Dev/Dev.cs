@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Text.RegularExpressions;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class Dev : MonoBehaviour {
@@ -20,6 +22,7 @@ public class Dev : MonoBehaviour {
   public Text WidthSliderText;
   public Text HeightSliderText;
   public InputField Values;
+  public Button LoadSubButton;
 
   public Image CurrentColor;
   Color32 Transparent = new Color32(0, 0, 0, 0);
@@ -91,8 +94,59 @@ public class Dev : MonoBehaviour {
     Values.text = res;
   }
 
+  public void PreLoad() {
+    Values.gameObject.SetActive(true);
+    LoadSubButton.enabled = true;
+  }
+
+  Regex rgComments = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgLabels = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgHex = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
+  public void PostLoad() {
+    string data = Values.text.Trim();
+    data = rgComments.Replace(data, "");
+    data = rgLabels.Replace(data, "");
+    data = data.Replace('\n', ' ').Trim();
+    while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
+
+    data = ReadNextByte(data, out byte w);
+    data = ReadNextByte(data, out byte h);
+
+    while (data.Length > 0) {
+    }
+
+
+    Values.gameObject.SetActive(false);
+    LoadSubButton.enabled = false;
+  }
+
+  string ReadNextByte(string data, out byte res) {
+    int pos1 = data.IndexOf(' ');
+    int pos2 = data.Length;
+    if (pos1 == -1) pos1 = int.MaxValue;
+    if (pos2 == -1) pos1 = int.MaxValue;
+    int pos = pos1;
+    if (pos > pos2) pos = pos2;
+    if (pos < 1) {
+      res = 0;
+      return "";
+    }
+
+    string part = data.Substring(0, pos);
+    Match m = rgHex.Match(part);
+    if (m.Success) {
+      res = (byte)Convert.ToInt32(m.Groups[1].Value, 16);
+      return data.Substring(pos).Trim();
+    }
+
+    res = 0;
+    return data;
+  }
+
   public void CloseValues() {
     Values.gameObject.SetActive(false);
+    LoadSubButton.enabled = false;
   }
 
 
