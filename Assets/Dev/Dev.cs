@@ -29,14 +29,17 @@ public class Dev : MonoBehaviour {
   Color32 BorderNormal = new Color32(206, 224, 223, 120);
   DoShape shape = DoShape.No;
   Vector2Int start = Vector2Int.zero;
+  int w, h;
 
   public void ChangeSpriteSize() {
     WidthSliderText.text = "Width: " + WidthSlider.value;
     HeightSliderText.text = "Height: " + HeightSlider.value;
     Rect rt = SpriteGrid.transform.GetComponent<RectTransform>().rect;
     SpriteGrid.cellSize = new Vector2(rt.width / WidthSlider.value, rt.height / HeightSlider.value);
+    w = (int)WidthSlider.value;
+    h = (int)HeightSlider.value;
 
-    int num = (int)WidthSlider.value * (int)HeightSlider.value;
+    int num = w * h;
     int numnow = num;
     Pixel[] pixels2 = new Pixel[num];
     if (pixels.Length < num) num = pixels.Length;
@@ -59,18 +62,18 @@ public class Dev : MonoBehaviour {
 
   private void ClickPixel(int pos) {
     if (shape == DoShape.LineStart) {
-      start.x = pos % (int)WidthSlider.value;
-      start.y = (pos - start.x) / (int)WidthSlider.value;
+      start.x = pos % w;
+      start.y = (pos - start.x) / w;
       pixels[pos].border.color = Color.red;
       shape = DoShape.LineEnd;
       return;
     }
     if (shape == DoShape.LineEnd) {
       int x1 = start.x;
-      int x2 = pos % (int)WidthSlider.value;
+      int x2 = pos % w;
       int y1 = start.y;
-      int y2 = (pos - x2) / (int)WidthSlider.value;
-      DrawLine(x1, y1, x2, y2, false, CurrentColor.color);
+      int y2 = (pos - x2) / w;
+      DrawLine(x1, y1, x2, y2, false);
       shape = DoShape.No;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
@@ -78,18 +81,37 @@ public class Dev : MonoBehaviour {
     }
 
     if (shape == DoShape.BoxStart) {
-      start.x = pos % (int)WidthSlider.value;
-      start.y = (pos - start.x) / (int)WidthSlider.value;
+      start.x = pos % w;
+      start.y = (pos - start.x) / w;
       pixels[pos].border.color = Color.red;
       shape = DoShape.BoxEnd;
       return;
     }
     if (shape == DoShape.BoxEnd) {
       int x1 = start.x;
-      int x2 = pos % (int)WidthSlider.value;
+      int x2 = pos % w;
       int y1 = start.y;
-      int y2 = (pos - x2) / (int)WidthSlider.value;
-      DrawBox(x1, y1, x2, y2, false, CurrentColor.color);
+      int y2 = (pos - x2) / w;
+      DrawBox(x1, y1, x2, y2, false);
+      shape = DoShape.No;
+      for (int i = 0; i < pixels.Length; i++)
+        pixels[i].border.color = BorderNormal;
+      return;
+    }
+
+    if (shape == DoShape.EllipseStart) {
+      start.x = pos % w;
+      start.y = (pos - start.x) / w;
+      pixels[pos].border.color = Color.red;
+      shape = DoShape.EllipseEnd;
+      return;
+    }
+    if (shape == DoShape.EllipseEnd) {
+      int x1 = start.x;
+      int x2 = pos % w;
+      int y1 = start.y;
+      int y2 = (pos - x2) / w;
+      DrawEllipse(x1, y1, x2, y2, false);
       shape = DoShape.No;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
@@ -105,22 +127,32 @@ public class Dev : MonoBehaviour {
   private void OverPixel(int pos) {
     if (shape == DoShape.LineEnd) {
       int x1 = start.x;
-      int x2 = pos % (int)WidthSlider.value;
+      int x2 = pos % w;
       int y1 = start.y;
-      int y2 = (pos - x2) / (int)WidthSlider.value;
+      int y2 = (pos - x2) / w;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
-      DrawLine(x1, y1, x2, y2, true, Color.red);
+      DrawLine(x1, y1, x2, y2, true);
     }
 
     if (shape == DoShape.BoxEnd) {
       int x1 = start.x;
-      int x2 = pos % (int)WidthSlider.value;
+      int x2 = pos % w;
       int y1 = start.y;
-      int y2 = (pos - x2) / (int)WidthSlider.value;
+      int y2 = (pos - x2) / w;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
-      DrawBox(x1, y1, x2, y2, true, Color.red);
+      DrawBox(x1, y1, x2, y2, true);
+    }
+
+    if (shape == DoShape.EllipseEnd) {
+      int x1 = start.x;
+      int x2 = pos % w;
+      int y1 = start.y;
+      int y2 = (pos - x2) / w;
+      for (int i = 0; i < pixels.Length; i++)
+        pixels[i].border.color = BorderNormal;
+      DrawEllipse(x1, y1, x2, y2, true);
     }
 
 
@@ -129,7 +161,7 @@ public class Dev : MonoBehaviour {
   }
 
   public void Clear() {
-    int num = (int)WidthSlider.value * (int)HeightSlider.value;
+    int num = w * h;
     for (int i = 0; i < num; i++)
       pixels[i].Set(Transparent);
   }
@@ -142,27 +174,22 @@ public class Dev : MonoBehaviour {
     shape = DoShape.BoxStart;
   }
 
-  void DrawLine(int x1, int y1, int x2, int y2, bool border, Color32 col) {
+  public void Ellipse() {
+    shape = DoShape.EllipseStart;
+  }
+
+  void DrawLine(int x1, int y1, int x2, int y2, bool border) {
     int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
-    int w = (int)WidthSlider.value;
     dx = x2 - x1; dy = y2 - y1;
     if (dx == 0) { // Vertical
       if (y2 < y1) { int tmp = y1; y1 = y2; y2 = tmp; }
-      for (y = y1; y <= y2; y++)
-        if (border)
-          pixels[x1 + w * y].border.color = Color.red;
-        else
-          pixels[x1 + w * y].Set(CurrentColor.color);
+      for (y = y1; y <= y2; y++) DrawPixel(x1, y, border);
       return;
     }
 
     if (dy == 0) { // Horizontal
       if (x2 < x1) { int tmp = x1; x1 = x2; x2 = tmp; }
-      for (x = x1; x <= x2; x++)
-        if (border)
-          pixels[x + w * y1].border.color = Color.red;
-        else
-          pixels[x + w * y1].Set(CurrentColor.color);
+      for (x = x1; x <= x2; x++) DrawPixel(x, y1, border);
       return;
     }
 
@@ -179,10 +206,7 @@ public class Dev : MonoBehaviour {
       else {
         x = x2; y = y2; xe = x1;
       }
-      if (border)
-        pixels[x + w * y].border.color = Color.red;
-      else
-        pixels[x + w * y].Set(CurrentColor.color);
+      DrawPixel(x, y, border);
       for (i = 0; x < xe; i++) {
         x += 1;
         if (px < 0)
@@ -191,10 +215,7 @@ public class Dev : MonoBehaviour {
           if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) y = y + 1; else y -= 1;
           px += 2 * (dy1 - dx1);
         }
-        if (border)
-          pixels[x + w * y].border.color = Color.red;
-        else
-          pixels[x + w * y].Set(CurrentColor.color);
+        DrawPixel(x, y, border);
       }
     }
     else {
@@ -204,10 +225,7 @@ public class Dev : MonoBehaviour {
       else {
         x = x2; y = y2; ye = y1;
       }
-      if (border)
-        pixels[x + w * y].border.color = Color.red;
-      else
-        pixels[x + w * y].Set(CurrentColor.color);
+      DrawPixel(x, y, border);
       for (i = 0; y < ye; i++) {
         y += 1;
         if (py <= 0)
@@ -216,56 +234,93 @@ public class Dev : MonoBehaviour {
           if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) x = x + 1; else x -= 1;
           py += 2 * (dx1 - dy1);
         }
-        if (border)
-          pixels[x + w * y].border.color = Color.red;
-        else
-          pixels[x + w * y].Set(CurrentColor.color);
+        DrawPixel(x, y, border);
       }
     }
   }
 
-  void DrawBox(int x1, int y1, int x2, int y2, bool border, Color32 col) {
+  void DrawBox(int x1, int y1, int x2, int y2, bool border) {
     int sx = x1; if (sx > x2) sx = x2;
     int sy = y1; if (sy > y2) sy = y2;
     int ex = x1; if (ex < x2) ex = x2;
     int ey = y1; if (ey < y2) ey = y2;
-    int w = (int)WidthSlider.value;
 
     for (int x = sx; x <= ex; x++) {
-      if (border)
-        pixels[x + w * y1].border.color = Color.red;
-      else
-        pixels[x + w * y1].Set(CurrentColor.color);
-      if (border)
-        pixels[x + w * y2].border.color = Color.red;
-      else
-        pixels[x + w * y2].Set(CurrentColor.color);
+      DrawPixel(x, y1, border);
+      DrawPixel(x, y2, border);
     }
     for (int y = sy; y <= ey; y++) {
-      if (border)
-        pixels[x1 + w * y].border.color = Color.red;
-      else
-        pixels[x1 + w * y].Set(CurrentColor.color);
-      if (border)
-        pixels[x2 + w * y].border.color = Color.red;
-      else
-        pixels[x2 + w * y].Set(CurrentColor.color);
+      DrawPixel(x1, y, border);
+      DrawPixel(x2, y, border); 
     }
   }
 
+  public Text dbg;
+
+  void DrawEllipse(int x1, int y1, int x2, int y2, bool border) {
+    if (x1 > x2) { int tmp = x1; x1 = x2; x2 = tmp; }
+    if (y1 > y2) { int tmp = y1; y1 = y2; y2 = tmp; }
+    float cx = (x1 + x2) / 2f;
+    float cy = (y1 + y2) / 2f;
+    float rx = cx - x1;
+    float ry = cy - y1;
+    if (rx < .5f) rx = .5f;
+    if (ry < .5f) ry = .5f;
+    float a2 = rx * rx;
+    float b2 = ry * ry;
+
+    for (float x = 0; x <= rx; ) {
+      float y = Mathf.Sqrt((a2 - x*x) * b2 / a2);
+      DrawPixel(Mathf.RoundToInt(cx + x), Mathf.RoundToInt(cy + y), border); 
+      DrawPixel(Mathf.RoundToInt(cx - x), Mathf.RoundToInt(cy + y), border); 
+      DrawPixel(Mathf.RoundToInt(cx + x), Mathf.RoundToInt(cy - y), border); 
+      DrawPixel(Mathf.RoundToInt(cx - x), Mathf.RoundToInt(cy - y), border);
+      // Calculate the error, new y should be the same or 1 pixel off
+      float oldx = x, oldy = y, incr = .01f;
+      while (Mathf.Abs(x - oldx) < 1f && Mathf.Abs(y - oldy) < 1f) {
+        x += incr;
+        y = Mathf.Sqrt((a2 - x * x) * b2 / a2);
+      }
+    }
+
+    for (float y = 0; y <= ry; ) {
+      float x = Mathf.Sqrt((b2 - y*y) * a2 / b2);
+      DrawPixel(Mathf.RoundToInt(cx + x), Mathf.RoundToInt(cy + y), border); 
+      DrawPixel(Mathf.RoundToInt(cx - x), Mathf.RoundToInt(cy + y), border); 
+      DrawPixel(Mathf.RoundToInt(cx + x), Mathf.RoundToInt(cy - y), border); 
+      DrawPixel(Mathf.RoundToInt(cx - x), Mathf.RoundToInt(cy - y), border);
+      // Calculate the error, new y should be the same or 1 pixel off
+      float oldx = x, oldy = y, incr = .01f;
+      while (Mathf.Abs(x - oldx) < 1f && Mathf.Abs(y - oldy) < 1f) {
+        y += incr;
+        x = Mathf.Sqrt((b2 - y * y) * a2 / b2);
+      }
+    }
+  }
+
+
+
+  void DrawPixel(int x, int y, bool border) {
+    if (x < 0 || x >= w || y < 0 || y >= h) return;
+    if (border)
+      pixels[x + w * y].border.color = Color.red;
+    else
+      pixels[x + w * y].Set(CurrentColor.color);
+  }
+
   public void Fill() {
-    int num = (int)WidthSlider.value * (int)HeightSlider.value;
+    int num = w * h;
     for (int i = 0; i < num; i++)
       pixels[i].Set(CurrentColor.color);
   }
 
   public void Save() {
     string res = "SpriteSize:\n";
-    byte sizex = ((byte)((byte)WidthSlider.value & 31));
-    byte sizey = ((byte)((byte)HeightSlider.value & 31));
+    byte sizex = ((byte)((byte)w & 31));
+    byte sizey = ((byte)((byte)h & 31));
     res += "0x" + sizex.ToString("X2") + " 0x" + sizey.ToString("X2") + "\n";
     res += "Sprite:";
-    int num = (int)WidthSlider.value * (int)HeightSlider.value;
+    int num = w * h;
     for (int i = 0; i < num; i++) {
       if (i % sizex == 0) res += "\n";
       Color32 c = pixels[i].img.color;
@@ -296,15 +351,17 @@ public class Dev : MonoBehaviour {
     data = data.Replace('\n', ' ').Trim();
     while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
-    data = ReadNextByte(data, out byte w);
-    data = ReadNextByte(data, out byte h);
-    if (w < 8 || h < 8 || w > 32 || h > 32) {
+    data = ReadNextByte(data, out byte wb);
+    data = ReadNextByte(data, out byte hb);
+    if (wb < 8 || hb < 8 || wb > 32 || hb > 32) {
       Values.text = "This does not look like a sprite.\n" + Values.text;
       return;
     }
 
-    WidthSlider.SetValueWithoutNotify(w);
-    HeightSlider.SetValueWithoutNotify(h);
+    WidthSlider.SetValueWithoutNotify(wb);
+    HeightSlider.SetValueWithoutNotify(hb);
+    w = wb;
+    h = hb;
     ChangeSpriteSize();
     for (int i = 0; i < w * h; i++) {
       data = ReadNextByte(data, out byte col);
@@ -353,4 +410,4 @@ public class Dev : MonoBehaviour {
   #endregion Sprite Editor
 }
 
-public enum DoShape { No, LineStart, LineEnd, BoxStart, BoxEnd }
+public enum DoShape { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd }
