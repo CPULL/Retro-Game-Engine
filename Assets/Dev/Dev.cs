@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
@@ -78,18 +79,21 @@ public class Dev : MonoBehaviour {
   }
 
   private void ClickPixel(int pos) {
+    int x = pos % w;
+    int y = (pos - start.x) / w;
+
     if (shape == DoShape.LineStart) {
-      start.x = pos % w;
-      start.y = (pos - start.x) / w;
+      start.x = x;
+      start.y = y;
       pixels[pos].border.color = Color.red;
       shape = DoShape.LineEnd;
       return;
     }
     if (shape == DoShape.LineEnd) {
       int x1 = start.x;
-      int x2 = pos % w;
+      int x2 = x;
       int y1 = start.y;
-      int y2 = (pos - x2) / w;
+      int y2 = y;
       DrawLine(x1, y1, x2, y2, false);
       shape = DoShape.No;
       for (int i = 0; i < pixels.Length; i++)
@@ -98,17 +102,17 @@ public class Dev : MonoBehaviour {
     }
 
     if (shape == DoShape.BoxStart) {
-      start.x = pos % w;
-      start.y = (pos - start.x) / w;
+      start.x = x;
+      start.y = y;
       pixels[pos].border.color = Color.red;
       shape = DoShape.BoxEnd;
       return;
     }
     if (shape == DoShape.BoxEnd) {
       int x1 = start.x;
-      int x2 = pos % w;
+      int x2 = x;
       int y1 = start.y;
-      int y2 = (pos - x2) / w;
+      int y2 = y;
       DrawBox(x1, y1, x2, y2, false);
       shape = DoShape.No;
       for (int i = 0; i < pixels.Length; i++)
@@ -117,21 +121,27 @@ public class Dev : MonoBehaviour {
     }
 
     if (shape == DoShape.EllipseStart) {
-      start.x = pos % w;
-      start.y = (pos - start.x) / w;
+      start.x = x;
+      start.y = y;
       pixels[pos].border.color = Color.red;
       shape = DoShape.EllipseEnd;
       return;
     }
     if (shape == DoShape.EllipseEnd) {
       int x1 = start.x;
-      int x2 = pos % w;
+      int x2 = x;
       int y1 = start.y;
-      int y2 = (pos - x2) / w;
+      int y2 = y;
       DrawEllipse(x1, y1, x2, y2, false);
       shape = DoShape.No;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
+      return;
+    }
+
+    if (shape == DoShape.Fill) {
+      Fill(x, y, CurrentColor.color);
+      shape = DoShape.No;
       return;
     }
 
@@ -324,9 +334,11 @@ public class Dev : MonoBehaviour {
   }
 
   public void Fill() {
-    int num = w * h;
-    for (int i = 0; i < num; i++)
-      pixels[i].Set(CurrentColor.color);
+    shape = DoShape.Fill;
+
+//    int num = w * h;
+//    for (int i = 0; i < num; i++)
+//      pixels[i].Set(CurrentColor.color);
   }
 
   public void Save() {
@@ -355,7 +367,7 @@ public class Dev : MonoBehaviour {
     LoadSubButton.enabled = true;
   }
 
-  Regex rgComments = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgComments = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgLabels = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgHex = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
@@ -423,6 +435,80 @@ public class Dev : MonoBehaviour {
 
 
   #endregion Sprite Editor
+
+
+  public bool ValidCoord(int x, int y) {
+    return !(x < 0 || y < 0 || x >= w || y >= h);
+  }
+
+  public void Fill(int x, int y, Color32 color) {
+    // Visited pixels array
+    bool[,] vis= new bool[w, h];
+
+    // Initialing all as zero
+    for (int i = 0; i < w; i++)
+      for (int j = 0; j < h; j++)
+        vis[i, j] = false;
+
+    Queue<Pair> obj = new Queue<Pair>();
+    Pair pq = new Pair(x, y);
+    obj.Enqueue(pq);
+
+    // Marking {x, y} as visited
+    vis[x, y] = true;
+
+    // Untill queue is emppty
+    while (obj.Count != 0) {
+      // Extrating front pair
+      Pair coord = obj.Dequeue();
+      int x1 = coord.first;
+      int y1 = coord.second;
+      Color32 preColor = pixels[x1+w*y1].img.color;
+      pixels[x1 + w * y1].Set(color);
+
+      if (ValidCoord(x1 + 1, y1) && !vis[x1 + 1, y1] && pixels[x1 + 1 + w * y1].img.color == preColor) {
+        Pair p = new Pair(x1 + 1, y1);
+        obj.Enqueue(p);
+        vis[x1 + 1, y1] = true;
+      }
+
+      if (ValidCoord(x1 - 1, y1) && !vis[x1 - 1, y1] && pixels[x1 - 1 + w * y1].img.color == preColor) {
+        Pair p = new Pair(x1 - 1, y1);
+        obj.Enqueue(p);
+        vis[x1 - 1, y1] = true;
+      }
+
+      if (ValidCoord(x1, y1 + 1) && !vis[x1, y1 + 1] && pixels[x1 + w * (y1 + 1)].img.color == preColor) {
+        Pair p = new Pair(x1, y1 + 1);
+        obj.Enqueue(p);
+        vis[x1, y1 + 1] = true;
+      }
+
+      if (ValidCoord(x1, y1 - 1) && !vis[x1, y1 - 1] && pixels[x1 + w * (y1 - 1)].img.color == preColor) {
+        Pair p = new Pair(x1, y1 - 1);
+        obj.Enqueue(p);
+        vis[x1, y1 - 1] = true;
+      }
+    }
+  }
 }
 
-public enum DoShape { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd }
+public class Pair {
+  public int first;
+  public int second;
+
+  public Pair(int first, int second) {
+    this.first = first;
+    this.second = second;
+  }
+
+  public int CompareTo(Pair o) {
+    return second - o.second;
+  }
+}
+
+public enum DoShape { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, Fill }
+
+// Right mouse should stop current op
+// Add freedraw, if rmb and overitem set pixel
+

@@ -1189,7 +1189,6 @@ public class ExecStack {
 
 
 graph editor
-->fill (real, not fill everything)
 ->undo
 FUTURE: step by step debugger
 FUTURE: map keys
