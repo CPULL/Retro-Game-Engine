@@ -465,7 +465,13 @@ public class Dev : MonoBehaviour {
     LoadSubButton.enabled = false;
   }
 
-
+  private void Update() {
+    if (Input.GetMouseButtonDown(1) && shape != DoShape.No) {
+      shape = DoShape.No;
+      for (int i = 0; i < w * h; i++)
+        pixels[i].border.color = BorderNormal;
+    }
+  }
 
   #endregion Sprite Editor
 
@@ -542,6 +548,5 @@ public class Pair {
 
 public enum DoShape { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, Fill }
 
-// Right mouse should stop current op
 // Add freedraw, if rmb and overitem set pixel
 

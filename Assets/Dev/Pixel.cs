@@ -31,7 +31,7 @@ public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, 
   }
 
   public void OnPointerClick(PointerEventData eventData) {
-    ClickCall(pos);
+    if (eventData.button == 0) ClickCall(pos);
   }
 
   public void OnPointerEnter(PointerEventData eventData) {
