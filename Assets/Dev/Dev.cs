@@ -383,6 +383,57 @@ public class Dev : MonoBehaviour {
     }
   }
 
+  public void Rotate(bool back) {
+    int max = w > h ? w : h;
+    int nw = h;
+    int nh = w;
+    // Extend to max size
+    Color32[] dst1 = new Color32[max * max];
+    Color32[] dst2 = new Color32[max * max];
+    for (int x = 0; x < w; x++) {
+      for (int y = 0; y < h; y++) {
+        dst1[x + max * y] = pixels[x + w * y].Get();
+      }
+    }
+
+    // rotate
+    for (int x = 0; x < max; x++) {
+      for (int y = 0; y < max; y++) {
+        if (back)
+          dst2[y + max * x] = dst1[x + max * (max - y - 1)];
+        else
+          dst2[x + max * (max - y - 1)] = dst1[y + max * x];
+      }
+    }
+
+    /*
+
+    00 01 02 03 04
+    10 11 12 13 14
+    20 21 22 23 24
+    30 31 32 33 34
+    40 41 42 43 44
+
+    [y][x] = [x][w-y-1]
+    [4][0] = [0][0]
+    [0][0] = [0][4]
+    [0][4] = [4][4]
+
+    */
+
+    // Re-create using actual size
+    WidthSlider.SetValueWithoutNotify(nw);
+    HeightSlider.SetValueWithoutNotify(nh);
+    ChangeSpriteSize();
+
+    for (int x = 0; x < max; x++) {
+      for (int y = 0; y < max; y++) {
+        if (x < 0 || x >= w || y < 0 || y > h) continue;
+        pixels[x + w * y].Set(dst2[x + max * y]);
+      }
+    }
+  }
+
   void DrawPixel(int x, int y, bool border) {
     if (x < 0 || x >= w || y < 0 || y >= h) return;
     if (border)
