@@ -323,7 +323,44 @@ public class Dev : MonoBehaviour {
     }
   }
 
-
+  public void Shift(int dir) {
+    if (dir == 0) {
+      for (int x = 0; x < w; x++) {
+        Color32 tmp = pixels[x + 0].img.color;
+        for (int y = 0; y < h - 1; y++) {
+          pixels[x + w * y].Set(pixels[x + w * (y + 1)].img.color);
+        }
+        pixels[x + w * (h - 1)].Set(tmp);
+      }
+    }
+    else if (dir == 2) {
+      for (int x = 0; x < w; x++) {
+        Color32 tmp = pixels[x + (h - 1)].img.color;
+        for (int y = h - 1; y > 0; y--) {
+          pixels[x + w * y].Set(pixels[x + w * (y - 1)].img.color);
+        }
+        pixels[x + w * 0].Set(tmp);
+      }
+    }
+    else if (dir == 3) {
+      for (int y = 0; y < h; y++) {
+        Color32 tmp = pixels[0 + w * y].img.color;
+        for (int x = 0; x < w - 1; x++) {
+          pixels[x + w * y].Set(pixels[x + 1 + w * y].img.color);
+        }
+        pixels[w - 1 + w * y].Set(tmp);
+      }
+    }
+    else if (dir == 1) {
+      for (int y = 0; y < h; y++) {
+        Color32 tmp = pixels[w - 1 + w * y].img.color;
+        for (int x = w - 1; x > 0; x--) {
+          pixels[x + w * y].Set(pixels[x - 1 + w * y].img.color);
+        }
+        pixels[0 + w * y].Set(tmp);
+      }
+    }
+  }
 
   void DrawPixel(int x, int y, bool border) {
     if (x < 0 || x >= w || y < 0 || y >= h) return;
@@ -335,10 +372,6 @@ public class Dev : MonoBehaviour {
 
   public void Fill() {
     shape = DoShape.Fill;
-
-//    int num = w * h;
-//    for (int i = 0; i < num; i++)
-//      pixels[i].Set(CurrentColor.color);
   }
 
   public void Save() {
