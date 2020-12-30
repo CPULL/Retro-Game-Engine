@@ -565,8 +565,6 @@ public class Dev : MonoBehaviour {
 
     WidthSlider.SetValueWithoutNotify(wb);
     HeightSlider.SetValueWithoutNotify(hb);
-    w = wb;
-    h = hb;
     ChangeSpriteSize();
     for (int i = 0; i < w * h; i++) {
       data = ReadNextByte(data, out byte col);
