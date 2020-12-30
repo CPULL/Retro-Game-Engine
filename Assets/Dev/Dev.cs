@@ -11,6 +11,7 @@ public class Dev : MonoBehaviour {
     HeightSlider.SetValueWithoutNotify(8);
     pixels = new Pixel[0];
     ChangeSpriteSize();
+    SetUndo(false);
   }
 
   #region Sprite Editor ************************************************************************************************************************************************************************************
@@ -32,10 +33,9 @@ public class Dev : MonoBehaviour {
   Vector2Int start = Vector2Int.zero;
   int w, h;
   public Sprite[] boxes;
-
-  public Text dbg; // FIXME remove
-
-
+  public Text Message;
+  readonly List<Color32[]> undo = new List<Color32[]>();
+  Color32 lastPixelColor;
 
   public void ChangeSpriteSize() {
     WidthSliderText.text = "Width: " + WidthSlider.value;
@@ -76,6 +76,7 @@ public class Dev : MonoBehaviour {
     foreach (Pixel p in oldps)
       Destroy(p.gameObject);
 
+    undo.Clear();
   }
 
   private void ClickPixel(int pos) {
@@ -149,6 +150,8 @@ public class Dev : MonoBehaviour {
       pixels[pos].Set(Transparent);
     else
       pixels[pos].Set(CurrentColor.color);
+    SetUndo(true);
+    lastPixelColor = CurrentColor.color;
   }
 
   private void OverPixel(int pos) {
@@ -188,6 +191,7 @@ public class Dev : MonoBehaviour {
   }
 
   public void Clear() {
+    SetUndo(false);
     int num = w * h;
     for (int i = 0; i < num; i++)
       pixels[i].Set(Transparent);
@@ -206,6 +210,7 @@ public class Dev : MonoBehaviour {
   }
 
   void DrawLine(int x1, int y1, int x2, int y2, bool border) {
+    if (!border) SetUndo(false);
     int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
     dx = x2 - x1; dy = y2 - y1;
     if (dx == 0) { // Vertical
@@ -267,6 +272,7 @@ public class Dev : MonoBehaviour {
   }
 
   void DrawBox(int x1, int y1, int x2, int y2, bool border) {
+    if (!border) SetUndo(false);
     int sx = x1; if (sx > x2) sx = x2;
     int sy = y1; if (sy > y2) sy = y2;
     int ex = x1; if (ex < x2) ex = x2;
@@ -283,6 +289,7 @@ public class Dev : MonoBehaviour {
   }
 
   void DrawEllipse(int x1, int y1, int x2, int y2, bool border) {
+    if (!border) SetUndo(false);
     if (x1 > x2) { int tmp = x1; x1 = x2; x2 = tmp; }
     if (y1 > y2) { int tmp = y1; y1 = y2; y2 = tmp; }
     float cx = (x1 + x2) / 2f;
@@ -324,6 +331,7 @@ public class Dev : MonoBehaviour {
   }
 
   public void Shift(int dir) {
+    SetUndo(false);
     if (dir == 0) {
       for (int x = 0; x < w; x++) {
         Color32 tmp = pixels[x + 0].Get();
@@ -363,6 +371,7 @@ public class Dev : MonoBehaviour {
   }
 
   public void Flip(bool horiz) {
+    SetUndo(false);
     if (horiz) {
       for (int y = 0; y < h; y++) {
         for (int x = 0; x < w / 2; x++) {
@@ -384,6 +393,7 @@ public class Dev : MonoBehaviour {
   }
 
   public void Rotate(bool back) {
+    SetUndo(false);
     int max = w > h ? w : h;
     int nw = h;
     int nh = w;
@@ -405,21 +415,6 @@ public class Dev : MonoBehaviour {
           dst2[x + max * (max - y - 1)] = dst1[y + max * x];
       }
     }
-
-    /*
-
-    00 01 02 03 04
-    10 11 12 13 14
-    20 21 22 23 24
-    30 31 32 33 34
-    40 41 42 43 44
-
-    [y][x] = [x][w-y-1]
-    [4][0] = [0][0]
-    [0][0] = [0][4]
-    [0][4] = [4][4]
-
-    */
 
     // Re-create using actual size
     WidthSlider.SetValueWithoutNotify(nw);
@@ -477,6 +472,7 @@ public class Dev : MonoBehaviour {
   readonly Regex rgHex = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   public void PostLoad() {
+    Message.text = "";
     string data = Values.text.Trim();
     data = rgComments.Replace(data, " ");
     data = rgLabels.Replace(data, " ");
@@ -486,7 +482,7 @@ public class Dev : MonoBehaviour {
     data = ReadNextByte(data, out byte wb);
     data = ReadNextByte(data, out byte hb);
     if (wb < 8 || hb < 8 || wb > 32 || hb > 32) {
-      Values.text = "This does not look like a sprite.\n" + Values.text;
+      Message.text = "This does not look like a sprite.";
       return;
     }
 
@@ -585,6 +581,33 @@ public class Dev : MonoBehaviour {
         vis[x1, y1 - 1] = true;
       }
     }
+  }
+
+  bool lastUndoWasPixel = false;
+  void SetUndo(bool pixel) {
+    Color32[] val = new Color32[w * h];
+    for (int x = 0; x < w; x++)
+      for (int y = 0; y < h; y++)
+        val[x + w * y] = pixels[x + w * y].Get();
+    if (pixel && lastUndoWasPixel && CurrentColor.color == lastPixelColor && undo.Count > 0)
+      undo[undo.Count - 1] = val;
+    else
+      undo.Add(val);
+    lastUndoWasPixel = pixel;
+  }
+
+  public void Undo() {
+    if (undo.Count == 0) return;
+    Color32[] val = undo[undo.Count - 1];
+    undo.RemoveAt(undo.Count - 1);
+    if (lastUndoWasPixel) {
+      val = undo[undo.Count - 1];
+      undo.RemoveAt(undo.Count - 1);
+      lastUndoWasPixel = false;
+    }
+    for (int x = 0; x < w; x++)
+      for (int y = 0; y < h; y++)
+        pixels[x + w * y].Set(val[x + w * y]);
   }
 
   private void Update() {

@@ -41,6 +41,15 @@ TextureImporter:
   - first:
       213: 9027783780077870150
     second: SpriteEditorButtons_12
+  - first:
+      213: -1458268741075219206
+    second: SpriteEditorButtons_13
+  - first:
+      213: 562597550282122441
+    second: SpriteEditorButtons_14
+  - first:
+      213: -5826286656396988549
+    second: SpriteEditorButtons_15
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -408,6 +417,69 @@ TextureImporter:
       bones: []
       spriteID: 64c13984481294d70800000000000000
       internalID: 9027783780077870150
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SpriteEditorButtons_13
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 0
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: afcc7256e4033cbe0800000000000000
+      internalID: -1458268741075219206
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SpriteEditorButtons_14
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9c42210cd7fbec700800000000000000
+      internalID: 562597550282122441
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SpriteEditorButtons_15
+      rect:
+        serializedVersion: 2
+        x: 224
+        y: 0
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b7febdda72fd42fa0800000000000000
+      internalID: -5826286656396988549
       vertices: []
       indices: 
       edges: []
