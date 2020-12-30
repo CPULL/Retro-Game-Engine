@@ -30,34 +30,51 @@ public class Dev : MonoBehaviour {
   DoShape shape = DoShape.No;
   Vector2Int start = Vector2Int.zero;
   int w, h;
+  public Sprite[] boxes;
+
+  public Text dbg; // FIXME remove
+
+
 
   public void ChangeSpriteSize() {
     WidthSliderText.text = "Width: " + WidthSlider.value;
     HeightSliderText.text = "Height: " + HeightSlider.value;
     Rect rt = SpriteGrid.transform.GetComponent<RectTransform>().rect;
     SpriteGrid.cellSize = new Vector2(rt.width / WidthSlider.value, rt.height / HeightSlider.value);
+
+    int oldw = w;
+    int oldh = h;
+    Pixel[] oldps = pixels;
+
     w = (int)WidthSlider.value;
     h = (int)HeightSlider.value;
 
     int num = w * h;
-    int numnow = num;
-    Pixel[] pixels2 = new Pixel[num];
-    if (pixels.Length < num) num = pixels.Length;
-    for (int i = 0; i < num; i++)
-      pixels2[i] = pixels[i];
-    pixels = pixels2;
-    if (num < numnow) {
-      for (int i = num; i < numnow; i++) {
-        Pixel pixel = Instantiate(PixelPrefab, SpriteGrid.transform).GetComponent<Pixel>();
-        pixels2[i] = pixel;
-        pixel.Init(i, Transparent, ClickPixel, OverPixel);
+    foreach(Transform t in SpriteGrid.transform)
+      t.SetParent(null);
+
+
+    pixels = new Pixel[num];
+    Sprite box = w <= 8 && h <= 8 ? boxes[2] : boxes[1];
+    if (w >= 24 || h >= 24) box = boxes[0];
+
+    for (int i = 0; i < num; i++) {
+      Pixel pixel = Instantiate(PixelPrefab, SpriteGrid.transform).GetComponent<Pixel>();
+      pixel.Init(i, Transparent, ClickPixel, OverPixel);
+      pixel.border.sprite = box;
+      pixels[i] = pixel;
+    }
+
+    for (int x = 0; x < w; x++) {
+      for (int y = 0; y < h; y++) {
+        if (x < oldw && y < oldh)
+          pixels[x + w * y].Set(oldps[x + oldw * y].img.color);
       }
     }
-    else if (num > numnow) {
-      for (int i = numnow; i < num; i++) {
-        Destroy(SpriteGrid.transform.GetChild(i));
-      }
-    }
+
+    foreach (Pixel p in oldps)
+      Destroy(p.gameObject);
+
   }
 
   private void ClickPixel(int pos) {
@@ -254,8 +271,6 @@ public class Dev : MonoBehaviour {
       DrawPixel(x2, y, border); 
     }
   }
-
-  public Text dbg;
 
   void DrawEllipse(int x1, int y1, int x2, int y2, bool border) {
     if (x1 > x2) { int tmp = x1; x1 = x2; x2 = tmp; }
