@@ -69,7 +69,7 @@ public class Dev : MonoBehaviour {
     for (int x = 0; x < w; x++) {
       for (int y = 0; y < h; y++) {
         if (x < oldw && y < oldh)
-          pixels[x + w * y].Set(oldps[x + oldw * y].img.color);
+          pixels[x + w * y].Set(oldps[x + oldw * y].Get());
       }
     }
 
@@ -145,7 +145,7 @@ public class Dev : MonoBehaviour {
       return;
     }
 
-    if (pixels[pos].img.color == CurrentColor.color)
+    if (pixels[pos].Get() == CurrentColor.color)
       pixels[pos].Set(Transparent);
     else
       pixels[pos].Set(CurrentColor.color);
@@ -326,38 +326,59 @@ public class Dev : MonoBehaviour {
   public void Shift(int dir) {
     if (dir == 0) {
       for (int x = 0; x < w; x++) {
-        Color32 tmp = pixels[x + 0].img.color;
+        Color32 tmp = pixels[x + 0].Get();
         for (int y = 0; y < h - 1; y++) {
-          pixels[x + w * y].Set(pixels[x + w * (y + 1)].img.color);
+          pixels[x + w * y].Set(pixels[x + w * (y + 1)].Get());
         }
         pixels[x + w * (h - 1)].Set(tmp);
       }
     }
     else if (dir == 2) {
       for (int x = 0; x < w; x++) {
-        Color32 tmp = pixels[x + (h - 1)].img.color;
+        Color32 tmp = pixels[x + (h - 1)].Get();
         for (int y = h - 1; y > 0; y--) {
-          pixels[x + w * y].Set(pixels[x + w * (y - 1)].img.color);
+          pixels[x + w * y].Set(pixels[x + w * (y - 1)].Get());
         }
         pixels[x + w * 0].Set(tmp);
       }
     }
     else if (dir == 3) {
       for (int y = 0; y < h; y++) {
-        Color32 tmp = pixels[0 + w * y].img.color;
+        Color32 tmp = pixels[0 + w * y].Get();
         for (int x = 0; x < w - 1; x++) {
-          pixels[x + w * y].Set(pixels[x + 1 + w * y].img.color);
+          pixels[x + w * y].Set(pixels[x + 1 + w * y].Get());
         }
         pixels[w - 1 + w * y].Set(tmp);
       }
     }
     else if (dir == 1) {
       for (int y = 0; y < h; y++) {
-        Color32 tmp = pixels[w - 1 + w * y].img.color;
+        Color32 tmp = pixels[w - 1 + w * y].Get();
         for (int x = w - 1; x > 0; x--) {
-          pixels[x + w * y].Set(pixels[x - 1 + w * y].img.color);
+          pixels[x + w * y].Set(pixels[x - 1 + w * y].Get());
         }
         pixels[0 + w * y].Set(tmp);
+      }
+    }
+  }
+
+  public void Flip(bool horiz) {
+    if (horiz) {
+      for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w / 2; x++) {
+          Color32 tmp = pixels[x + w * y].Get();
+          pixels[x + w * y].Set(pixels[(w - x - 1) + w * y].Get());
+          pixels[(w - x - 1) + w * y].Set(tmp);
+        }
+      }
+    }
+    else {
+      for (int x = 0; x < h; x++) {
+        for (int y = 0; y < h / 2; y++) {
+          Color32 tmp = pixels[x + w * y].Get();
+          pixels[x + w * y].Set(pixels[x + w * (h - y - 1)].Get());
+          pixels[x + w * (h - y - 1)].Set(tmp);
+        }
       }
     }
   }
@@ -383,7 +404,7 @@ public class Dev : MonoBehaviour {
     int num = w * h;
     for (int i = 0; i < num; i++) {
       if (i % sizex == 0) res += "\n";
-      Color32 c = pixels[i].img.color;
+      Color32 c = pixels[i].Get();
       int r = c.r / 85;
       int g = c.g / 85;
       int b = c.b / 85;
@@ -465,6 +486,56 @@ public class Dev : MonoBehaviour {
     LoadSubButton.enabled = false;
   }
 
+  public bool ValidCoord(int x, int y) {
+    return !(x < 0 || y < 0 || x >= w || y >= h);
+  }
+
+  public void Fill(int x, int y, Color32 color) {
+    // Visited pixels array
+    bool[,] vis = new bool[w, h];
+
+    // Initialing all as zero
+    for (int i = 0; i < w; i++)
+      for (int j = 0; j < h; j++)
+        vis[i, j] = false;
+
+    Queue<Vector2Int> obj = new Queue<Vector2Int>();
+    obj.Enqueue(new Vector2Int(x, y));
+
+    // Marking {x, y} as visited
+    vis[x, y] = true;
+
+    // Untill queue is emppty
+    while (obj.Count != 0) {
+      // Extrating front pair
+      Vector2Int coord = obj.Dequeue();
+      int x1 = coord.x;
+      int y1 = coord.y;
+      Color32 preColor = pixels[x1 + w * y1].Get();
+      pixels[x1 + w * y1].Set(color);
+
+      if (ValidCoord(x1 + 1, y1) && !vis[x1 + 1, y1] && pixels[x1 + 1 + w * y1].img.color == preColor) {
+        obj.Enqueue(new Vector2Int(x1 + 1, y1));
+        vis[x1 + 1, y1] = true;
+      }
+
+      if (ValidCoord(x1 - 1, y1) && !vis[x1 - 1, y1] && pixels[x1 - 1 + w * y1].img.color == preColor) {
+        obj.Enqueue(new Vector2Int(x1 - 1, y1));
+        vis[x1 - 1, y1] = true;
+      }
+
+      if (ValidCoord(x1, y1 + 1) && !vis[x1, y1 + 1] && pixels[x1 + w * (y1 + 1)].img.color == preColor) {
+        obj.Enqueue(new Vector2Int(x1, y1 + 1));
+        vis[x1, y1 + 1] = true;
+      }
+
+      if (ValidCoord(x1, y1 - 1) && !vis[x1, y1 - 1] && pixels[x1 + w * (y1 - 1)].img.color == preColor) {
+        obj.Enqueue(new Vector2Int(x1, y1 - 1));
+        vis[x1, y1 - 1] = true;
+      }
+    }
+  }
+
   private void Update() {
     if (Input.GetMouseButtonDown(1) && shape != DoShape.No) {
       shape = DoShape.No;
@@ -475,75 +546,6 @@ public class Dev : MonoBehaviour {
 
   #endregion Sprite Editor
 
-
-  public bool ValidCoord(int x, int y) {
-    return !(x < 0 || y < 0 || x >= w || y >= h);
-  }
-
-  public void Fill(int x, int y, Color32 color) {
-    // Visited pixels array
-    bool[,] vis= new bool[w, h];
-
-    // Initialing all as zero
-    for (int i = 0; i < w; i++)
-      for (int j = 0; j < h; j++)
-        vis[i, j] = false;
-
-    Queue<Pair> obj = new Queue<Pair>();
-    Pair pq = new Pair(x, y);
-    obj.Enqueue(pq);
-
-    // Marking {x, y} as visited
-    vis[x, y] = true;
-
-    // Untill queue is emppty
-    while (obj.Count != 0) {
-      // Extrating front pair
-      Pair coord = obj.Dequeue();
-      int x1 = coord.first;
-      int y1 = coord.second;
-      Color32 preColor = pixels[x1+w*y1].img.color;
-      pixels[x1 + w * y1].Set(color);
-
-      if (ValidCoord(x1 + 1, y1) && !vis[x1 + 1, y1] && pixels[x1 + 1 + w * y1].img.color == preColor) {
-        Pair p = new Pair(x1 + 1, y1);
-        obj.Enqueue(p);
-        vis[x1 + 1, y1] = true;
-      }
-
-      if (ValidCoord(x1 - 1, y1) && !vis[x1 - 1, y1] && pixels[x1 - 1 + w * y1].img.color == preColor) {
-        Pair p = new Pair(x1 - 1, y1);
-        obj.Enqueue(p);
-        vis[x1 - 1, y1] = true;
-      }
-
-      if (ValidCoord(x1, y1 + 1) && !vis[x1, y1 + 1] && pixels[x1 + w * (y1 + 1)].img.color == preColor) {
-        Pair p = new Pair(x1, y1 + 1);
-        obj.Enqueue(p);
-        vis[x1, y1 + 1] = true;
-      }
-
-      if (ValidCoord(x1, y1 - 1) && !vis[x1, y1 - 1] && pixels[x1 + w * (y1 - 1)].img.color == preColor) {
-        Pair p = new Pair(x1, y1 - 1);
-        obj.Enqueue(p);
-        vis[x1, y1 - 1] = true;
-      }
-    }
-  }
-}
-
-public class Pair {
-  public int first;
-  public int second;
-
-  public Pair(int first, int second) {
-    this.first = first;
-    this.second = second;
-  }
-
-  public int CompareTo(Pair o) {
-    return second - o.second;
-  }
 }
 
 public enum DoShape { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, Fill }

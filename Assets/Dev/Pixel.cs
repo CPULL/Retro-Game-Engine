@@ -29,6 +29,9 @@ public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, 
   public void Set(Color32 c) {
     img.color = c;
   }
+  public Color32 Get() {
+    return img.color;
+  }
 
   public void OnPointerClick(PointerEventData eventData) {
     if (eventData.button == 0) ClickCall(pos);
