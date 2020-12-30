@@ -29,7 +29,7 @@ public class Dev : MonoBehaviour {
   public Image CurrentColor;
   Color32 Transparent = new Color32(0, 0, 0, 0);
   Color32 BorderNormal = new Color32(206, 224, 223, 120);
-  DoShape shape = DoShape.No;
+  ActionVal action = ActionVal.No;
   Vector2Int start = Vector2Int.zero;
   int w, h;
   public Sprite[] boxes;
@@ -83,66 +83,66 @@ public class Dev : MonoBehaviour {
     int x = pos % w;
     int y = (pos - start.x) / w;
 
-    if (shape == DoShape.LineStart) {
+    if (action == ActionVal.LineStart) {
       start.x = x;
       start.y = y;
       pixels[pos].border.color = Color.red;
-      shape = DoShape.LineEnd;
+      action = ActionVal.LineEnd;
       return;
     }
-    if (shape == DoShape.LineEnd) {
+    if (action == ActionVal.LineEnd) {
       int x1 = start.x;
       int x2 = x;
       int y1 = start.y;
       int y2 = y;
       DrawLine(x1, y1, x2, y2, false);
-      shape = DoShape.No;
+      action = ActionVal.No;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
       return;
     }
 
-    if (shape == DoShape.BoxStart) {
+    if (action == ActionVal.BoxStart) {
       start.x = x;
       start.y = y;
       pixels[pos].border.color = Color.red;
-      shape = DoShape.BoxEnd;
+      action = ActionVal.BoxEnd;
       return;
     }
-    if (shape == DoShape.BoxEnd) {
+    if (action == ActionVal.BoxEnd) {
       int x1 = start.x;
       int x2 = x;
       int y1 = start.y;
       int y2 = y;
       DrawBox(x1, y1, x2, y2, false);
-      shape = DoShape.No;
+      action = ActionVal.No;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
       return;
     }
 
-    if (shape == DoShape.EllipseStart) {
+    if (action == ActionVal.EllipseStart) {
       start.x = x;
       start.y = y;
       pixels[pos].border.color = Color.red;
-      shape = DoShape.EllipseEnd;
+      action = ActionVal.EllipseEnd;
       return;
     }
-    if (shape == DoShape.EllipseEnd) {
+    if (action == ActionVal.EllipseEnd) {
       int x1 = start.x;
       int x2 = x;
       int y1 = start.y;
       int y2 = y;
       DrawEllipse(x1, y1, x2, y2, false);
-      shape = DoShape.No;
+      action = ActionVal.No;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
       return;
     }
 
-    if (shape == DoShape.Fill) {
+    if (action == ActionVal.Fill) {
       Fill(x, y, CurrentColor.color);
-      shape = DoShape.No;
+      action = ActionVal.No;
       return;
     }
 
@@ -155,7 +155,7 @@ public class Dev : MonoBehaviour {
   }
 
   private void OverPixel(int pos) {
-    if (shape == DoShape.LineEnd) {
+    if (action == ActionVal.LineEnd) {
       int x1 = start.x;
       int x2 = pos % w;
       int y1 = start.y;
@@ -165,7 +165,7 @@ public class Dev : MonoBehaviour {
       DrawLine(x1, y1, x2, y2, true);
     }
 
-    if (shape == DoShape.BoxEnd) {
+    if (action == ActionVal.BoxEnd) {
       int x1 = start.x;
       int x2 = pos % w;
       int y1 = start.y;
@@ -175,7 +175,7 @@ public class Dev : MonoBehaviour {
       DrawBox(x1, y1, x2, y2, true);
     }
 
-    if (shape == DoShape.EllipseEnd) {
+    if (action == ActionVal.EllipseEnd) {
       int x1 = start.x;
       int x2 = pos % w;
       int y1 = start.y;
@@ -185,10 +185,25 @@ public class Dev : MonoBehaviour {
       DrawEllipse(x1, y1, x2, y2, true);
     }
 
-
-
-
+    if (action == ActionVal.FreeDraw && Input.GetMouseButton(0)) {
+      pixels[pos].Set(CurrentColor.color);
+    }
   }
+
+  Color32 SelectedButton = new Color32(173, 184, 200, 255);
+  public Button[] Buttons;
+  public Sprite UISpriteSel;
+  public Sprite UISpriteNot;
+
+  void SetButtons(int num) {
+    foreach (Button b in Buttons)
+      b.image.sprite = UISpriteNot;
+    for (int i = 0; i < w * h; i++)
+      pixels[i].border.color = BorderNormal;
+    if (num != -1)
+      Buttons[num].image.sprite = UISpriteSel;
+  }
+
 
   public void Clear() {
     SetUndo(false);
@@ -197,20 +212,56 @@ public class Dev : MonoBehaviour {
       pixels[i].Set(Transparent);
   }
 
+  public void FreeDraw() {
+    if (action == ActionVal.FreeDraw) {
+      action = ActionVal.No;
+      SetButtons(-1);
+    }
+    else {
+      action = ActionVal.FreeDraw;
+      SetButtons(0);
+    }
+  }
+
   public void Line() {
-    shape = DoShape.LineStart;
+    if (action == ActionVal.LineStart) {
+      action = ActionVal.No;
+      SetButtons(-1);
+    }
+    else {
+      action = ActionVal.LineStart;
+      SetButtons(1);
+    }
   }
 
   public void Box() {
-    shape = DoShape.BoxStart;
+    if (action == ActionVal.BoxStart) {
+      action = ActionVal.No;
+      SetButtons(-1);
+    }
+    else {
+      action = ActionVal.BoxStart;
+      SetButtons(2);
+    }
   }
 
   public void Ellipse() {
-    shape = DoShape.EllipseStart;
+    if (action == ActionVal.EllipseStart) {
+      action = ActionVal.No;
+      SetButtons(-1);
+    }
+    else {
+      action = ActionVal.EllipseStart;
+      SetButtons(3);
+    }
   }
 
   void DrawLine(int x1, int y1, int x2, int y2, bool border) {
-    if (!border) SetUndo(false);
+    if (!border) {
+      SetUndo(false);
+      action = ActionVal.No;
+      SetButtons(-1);
+    }
     int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
     dx = x2 - x1; dy = y2 - y1;
     if (dx == 0) { // Vertical
@@ -272,7 +323,11 @@ public class Dev : MonoBehaviour {
   }
 
   void DrawBox(int x1, int y1, int x2, int y2, bool border) {
-    if (!border) SetUndo(false);
+    if (!border) {
+      SetUndo(false);
+      action = ActionVal.No;
+      SetButtons(-1);
+    }
     int sx = x1; if (sx > x2) sx = x2;
     int sy = y1; if (sy > y2) sy = y2;
     int ex = x1; if (ex < x2) ex = x2;
@@ -289,7 +344,12 @@ public class Dev : MonoBehaviour {
   }
 
   void DrawEllipse(int x1, int y1, int x2, int y2, bool border) {
-    if (!border) SetUndo(false);
+    if (!border) {
+      SetUndo(false);
+      action = ActionVal.No;
+      SetButtons(-1);
+    }
+
     if (x1 > x2) { int tmp = x1; x1 = x2; x2 = tmp; }
     if (y1 > y2) { int tmp = y1; y1 = y2; y2 = tmp; }
     float cx = (x1 + x2) / 2f;
@@ -331,6 +391,8 @@ public class Dev : MonoBehaviour {
   }
 
   public void Shift(int dir) {
+    action = ActionVal.No;
+    SetButtons(-1);
     SetUndo(false);
     if (dir == 0) {
       for (int x = 0; x < w; x++) {
@@ -371,6 +433,8 @@ public class Dev : MonoBehaviour {
   }
 
   public void Flip(bool horiz) {
+    action = ActionVal.No;
+    SetButtons(-1);
     SetUndo(false);
     if (horiz) {
       for (int y = 0; y < h; y++) {
@@ -393,6 +457,8 @@ public class Dev : MonoBehaviour {
   }
 
   public void Rotate(bool back) {
+    action = ActionVal.No;
+    SetButtons(-1);
     SetUndo(false);
     int max = w > h ? w : h;
     int nw = h;
@@ -438,10 +504,19 @@ public class Dev : MonoBehaviour {
   }
 
   public void Fill() {
-    shape = DoShape.Fill;
+    if (action == ActionVal.Fill) {
+      action = ActionVal.No;
+      SetButtons(-1);
+    }
+    else {
+      action = ActionVal.Fill;
+      SetButtons(3);
+    }
   }
 
   public void Save() {
+    action = ActionVal.No;
+    SetButtons(-1);
     string res = "SpriteSize:\n";
     byte sizex = ((byte)((byte)w & 31));
     byte sizey = ((byte)((byte)h & 31));
@@ -463,6 +538,8 @@ public class Dev : MonoBehaviour {
   }
 
   public void PreLoad() {
+    action = ActionVal.No;
+    SetButtons(-1);
     Values.gameObject.SetActive(true);
     LoadSubButton.enabled = true;
   }
@@ -597,6 +674,8 @@ public class Dev : MonoBehaviour {
   }
 
   public void Undo() {
+    action = ActionVal.No;
+    SetButtons(-1);
     if (undo.Count == 0) return;
     Color32[] val = undo[undo.Count - 1];
     undo.RemoveAt(undo.Count - 1);
@@ -611,10 +690,9 @@ public class Dev : MonoBehaviour {
   }
 
   private void Update() {
-    if (Input.GetMouseButtonDown(1) && shape != DoShape.No) {
-      shape = DoShape.No;
-      for (int i = 0; i < w * h; i++)
-        pixels[i].border.color = BorderNormal;
+    if (Input.GetMouseButtonDown(1) && action != ActionVal.No) {
+      action = ActionVal.No;
+      SetButtons(-1);
     }
   }
 
@@ -622,7 +700,7 @@ public class Dev : MonoBehaviour {
 
 }
 
-public enum DoShape { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, Fill }
+public enum ActionVal { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, Fill, FreeDraw }
 
 // Add freedraw, if rmb and overitem set pixel
 

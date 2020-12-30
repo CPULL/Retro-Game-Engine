@@ -1188,8 +1188,6 @@ public class ExecStack {
 
 
 
-graph editor
-->free draw
 FUTURE: step by step debugger
 FUTURE: map keys
 
