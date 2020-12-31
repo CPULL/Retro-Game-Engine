@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class Arcade : MonoBehaviour {
@@ -26,6 +27,10 @@ public class Arcade : MonoBehaviour {
   Dictionary<int, Texture2D> labelTextures = new Dictionary<int, Texture2D>();
   public RawImage[] spriteImgs;
   Grob[] sprites;
+
+  public GameObject FileSelection;
+  public Transform FileSelectionGrid;
+  public GameObject FileButtonTemplate;
 
   float updateDelay = -1;
   float toWait = 0;
@@ -203,19 +208,79 @@ public class Arcade : MonoBehaviour {
     }
     sprites[0].Init(0, 6, sw, sh);
 
+    if (SceneManager.GetActiveScene().name == "ArcadePlus") {
+      // Show cartridge selection menu
+      try {
+        string[] cards = Directory.GetFiles(Application.dataPath + "\\..\\Cartridges\\", "*.cartridge");
+        if (cards.Length == 0) throw new Exception("No cartridges in folder:\n" + Application.dataPath + "\\..\\Cartridges\\");
+        foreach(string file in cards) {
+          GameObject b = Instantiate(FileButtonTemplate, FileSelectionGrid);
+          b.SetActive(true);
+          FileInfo fi = new FileInfo(file);
+          string name = fi.Name.Substring(0, fi.Name.LastIndexOf('.'));
+          b.GetComponentInChildren<Text>().text = name;
+          if (name.Length > 35) b.GetComponentInChildren<Text>().fontSize = 12;
+          else if (name.Length > 32) b.GetComponentInChildren<Text>().fontSize = 14;
+          else if (name.Length > 29) b.GetComponentInChildren<Text>().fontSize = 16;
+          else if (name.Length > 25) b.GetComponentInChildren<Text>().fontSize = 18;
+          else if (name.Length > 16) b.GetComponentInChildren<Text>().fontSize = 20;
+
+          b.GetComponent<Button>().onClick.AddListener(
+            () => { 
+              SelectCartridge(fi.Name); 
+            }
+          );
+        }
+        FileSelection.SetActive(true);
+      } catch(Exception e) {
+        string msg = "";
+        for (int i = 0, l = 0; i < e.Message.Length; i++) {
+          char c = e.Message[i];
+          if (c == '\n') l = 0;
+          msg += c;
+          l++;
+          if (l == sw / 8 - 1) {
+            msg += "\n";
+            l = 0;
+          }
+        }
+        Write(msg, 4, 48, 48);
+        Debug.Log("!!!!!!!! " + e.Message + "\n" + e.StackTrace);
+      }
+    }
+    else {
+      // Load Game.Cartridge
+      string codefile;
+      try { codefile = File.ReadAllText(Application.dataPath + "\\..\\Cartridges\\game.cartridge"); } catch (Exception) {
+        Write("No cardridge found!", 4, 40, 48);
+        WriteC("Path: " + Application.dataPath + "\\..\\Cartridges\\game.cartridge", 4, 50, 48);
+        texture.Apply();
+        return;
+      }
+      LoadCartridge(codefile);
+
+    }
+    texture.Apply();
+  }
+
+  public void SelectCartridge(string tag) {
+    FileSelection.SetActive(false);
     string codefile;
-    try { codefile = File.ReadAllText(Application.dataPath + "\\..\\Cartridges\\game.cartridge"); } catch (Exception) {
+    try { codefile = File.ReadAllText(Application.dataPath + "\\..\\Cartridges\\" + tag); } catch (Exception) {
       Write("No cardridge found!", 4, 40, 48);
-      WriteC("Path: " + Application.dataPath + "\\..\\Cartridges\\game.cartridge", 4, 50, 48);
+      WriteC("Path: " + Application.dataPath + "\\..\\Cartridges\\" + tag, 4, 50, 48);
       texture.Apply();
       return;
     }
+    LoadCartridge(codefile);
+  }
+
+  public void LoadCartridge(string codefile) {
     if (string.IsNullOrEmpty(codefile)) {
       Write("No cardridge found!", 4, 40, 48);
       texture.Apply();
       return;
     }
-
     try {
       CodeNode res = cp.Parse(codefile, variables);
       Write("Cartridge:", 4, 39, 0b001011);
@@ -344,12 +409,9 @@ public class Arcade : MonoBehaviour {
           l = 0;
         }
       }
-
       Write(msg, 4, 48, 48);
-      Debug.Log("!!!!!!!! " + e.Message + "\n" + e.StackTrace);
+      Debug.Log("Error in loading! " + e.Message + "\n" + e.StackTrace);
     }
-
-    texture.Apply();
   }
 
   private string MemSize(int size) {

@@ -13,7 +13,7 @@ EditorBuildSettings:
     guid: 2cda990e2423bbf4892e6590ba056729
   - enabled: 1
     path: Assets/Scenes/ArcadePlus.unity
-    guid: da4f4ff49c30fbf4d879805e1d41d335
+    guid: 2a70e4e7b9267d142aade0031f357aaf
   - enabled: 1
     path: Assets/Scenes/Developer.unity
     guid: 429434838f760be499e1f50b53fc9d7d

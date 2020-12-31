@@ -1,0 +1,8 @@
+Name: Last Ninja II
+
+Start {
+	clr(1)
+	write("Last Ninja II", 0, 0, c330)
+	write("...in your dreams...", 0, 8, c300)
+}
+
