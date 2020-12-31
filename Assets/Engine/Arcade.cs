@@ -191,7 +191,6 @@ public class Arcade : MonoBehaviour {
     Screen.texture = texture;
     pixels = texture.GetPixels32();
     raw = new byte[sw * sh * 4];
-
     Clear(0);
     Write("--- MMM Arcade RGE ---", 35, 8, 60);
     Write(" virtual machine", 55, 14 + 4, 0b011010);
@@ -204,7 +203,7 @@ public class Arcade : MonoBehaviour {
     }
     sprites[0].Init(0, 6, sw, sh);
 
-    string codefile = null;
+    string codefile;
     try { codefile = File.ReadAllText(Application.dataPath + "\\..\\Cartridges\\game.cartridge"); } catch (Exception) {
       Write("No cardridge found!", 4, 40, 48);
       WriteC("Path: " + Application.dataPath + "\\..\\Cartridges\\game.cartridge", 4, 50, 48);
@@ -1181,6 +1180,7 @@ public class ExecStack {
   functions()
   Tiles, with priority byte
   Sounds
+  Documentation on the Wiki of Github
   
   disable sprites and tilemaps on errors?
   remove BNFs that are not used
