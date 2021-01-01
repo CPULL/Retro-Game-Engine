@@ -121,6 +121,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgFrame = new Regex("frame", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWrite1 = new Regex("[\\s]*(write\\()(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWrite2 = new Regex("[\\s]*(write\\()(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgWrite3 = new Regex("[\\s]*(write\\()(.*),(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgLine = new Regex("[\\s]*(line\\()(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBox1 = new Regex("[\\s]*(box\\()(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBox2 = new Regex("[\\s]*(box\\()(.*),(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -437,7 +438,20 @@ public class CodeParser : MonoBehaviour {
 
     // [WRITE] = write([EXPR], [EXPR], [EXPR], [EXPR], [EXPR]) ; text, x, y, col(front), col(back)
     if (expected.IsGood(Expected.Val.Statement)) {
-      if (rgWrite2.IsMatch(line)) {
+      if (rgWrite3.IsMatch(line)) {
+        Match m = rgWrite3.Match(line);
+        if (m.Groups.Count < 8) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
+        CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
+        node.Add(ParseExpression(m.Groups[2].Value));
+        node.Add(ParseExpression(m.Groups[3].Value));
+        node.Add(ParseExpression(m.Groups[4].Value));
+        node.Add(ParseExpression(m.Groups[5].Value));
+        node.Add(ParseExpression(m.Groups[6].Value));
+        node.Add(ParseExpression(m.Groups[7].Value));
+        parent.Add(node);
+        return;
+      }
+      else if (rgWrite2.IsMatch(line)) {
         Match m = rgWrite2.Match(line);
         if (m.Groups.Count < 7) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
         CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
@@ -449,9 +463,9 @@ public class CodeParser : MonoBehaviour {
         parent.Add(node);
         return;
       }
-      if (rgWrite1.IsMatch(line)) {
+      else if (rgWrite1.IsMatch(line)) {
         Match m = rgWrite1.Match(line);
-        if (m.Groups.Count < 5) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
+        if (m.Groups.Count < 6) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
         CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
         node.Add(ParseExpression(m.Groups[2].Value));
         node.Add(ParseExpression(m.Groups[3].Value));

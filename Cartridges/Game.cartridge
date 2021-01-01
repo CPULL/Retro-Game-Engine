@@ -1,10 +1,9 @@
 Name: Test
 
 Start {
-	while(1) {
-		write("msg", 0, 0, 48)
-//	wtop("Hello world!")
-	}
+clr(0)
+write("Full font {}[],./<>?", 0, 0, 48, 0)
+write("£¥§©«¬°µ»¿ßàáäæçèéëìíïñòóöùúü¡", 0, 10, 48, 0)
 }
 
 
