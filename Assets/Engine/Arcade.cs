@@ -460,10 +460,10 @@ public class Arcade : MonoBehaviour {
   }
 
   void Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0) {
-    if (mode == 1) WriteC(txt, x, y, col, back);
-    if (mode == 2) Write6(txt, x, y, col, back);
-    if (mode == 3) WriteC6(txt, x, y, col, back);
-    Write8(txt, x, y, col, back);
+    if (mode == 1) Write6(txt, x, y, col, back);
+    else if (mode == 2) WriteC(txt, x, y, col, back);
+    else if (mode == 3) WriteC6(txt, x, y, col, back);
+    else Write8(txt, x, y, col, back);
   }
 
   void Write8(string txt, int x, int y, byte col, byte back) {
@@ -800,7 +800,7 @@ public class Arcade : MonoBehaviour {
             Value f = Evaluate(n.children[5]);
             Write(a.ToStr(), b.ToInt(), c.ToInt(), d.ToByte(), e.ToByte(), f.ToByte());
           }
-          if (n.children.Count > 3) {
+          else if (n.children.Count > 3) {
             Value e = Evaluate(n.children[4]);
             Write(a.ToStr(), b.ToInt(), c.ToInt(), d.ToByte(), e.ToByte());
           }
