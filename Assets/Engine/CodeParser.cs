@@ -184,12 +184,25 @@ public class CodeParser : MonoBehaviour {
       });
 
       idcount = 0;
-      CodeNode res = new CodeNode(BNF.Program);
+      CodeNode res = new CodeNode(BNF.Program, null, 0);
       nodes = new Dictionary<string, CodeNode>();
       vars = variables;
 
 
       string[] lines = file.Split('\n');
+
+      // Find first all function definitions
+      for (int linenumber = 0; linenumber < lines.Length; linenumber++) {
+        string line = lines[linenumber];
+
+        Match m = rgFunction.Match(line);
+        if (m.Success) {
+          // parse the parameters, find the end of the block, and parse the result. Add it to a specific Functions node at the root
+          // FIXME
+          continue;
+        }
+      }
+
       for (int linenumber = 0; linenumber < lines.Length; linenumber++) {
         string line = lines[linenumber];
 
@@ -205,7 +218,7 @@ public class CodeParser : MonoBehaviour {
           int end = FindEndOfBlock(lines, linenumber);
           if (end == -1) throw new Exception("\"START\" section does not end");
 
-          CodeNode start = new CodeNode(BNF.Start);
+          CodeNode start = new CodeNode(BNF.Start, line, linenumber);
           res.Add(start);
           ParseBlock(lines, linenumber + 1, end, start);
           continue;
@@ -217,7 +230,7 @@ public class CodeParser : MonoBehaviour {
           int end = FindEndOfBlock(lines, linenumber);
           if (end == -1) throw new Exception("\"UPDATE\" section does not end");
 
-          CodeNode update = new CodeNode(BNF.Update);
+          CodeNode update = new CodeNode(BNF.Update, line, linenumber);
           res.Add(update);
           ParseBlock(lines, linenumber + 1, end, update);
           continue;
@@ -229,16 +242,9 @@ public class CodeParser : MonoBehaviour {
           int end = FindEndOfBlock(lines, linenumber);
           if (end == -1) throw new Exception("\"DATA\" section does not end");
 
-          CodeNode data = new CodeNode(BNF.Data);
+          CodeNode data = new CodeNode(BNF.Data, line, linenumber);
           res.Add(data);
           ParseDataBlock(lines, linenumber, end, data);
-          continue;
-        }
-
-        m = rgFunction.Match(line);
-        if (m.Success) {
-          // parse the parameters, find the end of the block, and parse the result. Add it to a specific Functions node at the root
-          // FIXME
           continue;
         }
       }
@@ -297,7 +303,7 @@ public class CodeParser : MonoBehaviour {
     // [STRING] STR => `STx¶
     line = rgString.Replace(line, m => {
       string str = m.Groups[2].Value;
-      CodeNode n = new CodeNode(BNF.STR, GenId("ST")) {
+      CodeNode n = new CodeNode(BNF.STR, GenId("ST"), line, linenumber) {
         sVal = str.Replace("ˠ", "\"")
       };
       nodes[n.id] = n;
@@ -309,7 +315,7 @@ public class CodeParser : MonoBehaviour {
 
     // [IF] ([EXP]) [BLOCK]|[STATEMENT] [ [ELSE] [BLOCK]|[STATEMENT] ]
     if (expected.IsGood(Expected.Val.Statement) && rgIf.IsMatch(line)) {
-      CodeNode node = new CodeNode(BNF.IF);
+      CodeNode node = new CodeNode(BNF.IF, line, linenumber);
       Match m = rgIf.Match(line);
       string exp = m.Groups[1].Value;
       node.Add(ParseExpression(exp));
@@ -322,7 +328,7 @@ public class CodeParser : MonoBehaviour {
         return;
       }
       else if (!string.IsNullOrEmpty(after)) { // [IF] ([EXP]) [STATEMENT]
-        CodeNode b = new CodeNode(BNF.BLOCK);
+        CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
         node.Add(b);
         ParseLine(b, new string[] { after });
         ParseElseBlock(node, lines);
@@ -335,19 +341,19 @@ public class CodeParser : MonoBehaviour {
     // [FOR] {[BLOCK]}
     if (expected.IsGood(Expected.Val.Statement) && rgFor.IsMatch(line)) {
       Match m = rgFor.Match(line);
-      CodeNode node = new CodeNode(BNF.FOR);
+      CodeNode node = new CodeNode(BNF.FOR, line, linenumber);
       parent.Add(node);
       if (!string.IsNullOrEmpty(m.Groups[1].Value.Trim())) {
         ParseLine(node, new string[] { m.Groups[1].Value.Trim() });
       }
-      else node.Add(new CodeNode(BNF.NOP));
+      else node.Add(new CodeNode(BNF.NOP, line, linenumber));
 
       if (!string.IsNullOrEmpty(m.Groups[2].Value.Trim())) {
         node.Add(ParseExpression(m.Groups[2].Value.Trim()));
       }
       else throw new Exception("FOR need to have a condition to terminate: " + (linenumber + 1));
 
-      CodeNode b = new CodeNode(BNF.BLOCK);
+      CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
       int end = FindEndOfBlock(lines, linenumber);
       if (end < 0) throw new Exception("\"FOR\" section does not end");
       ParseBlock(lines, linenumber + 1, end, b);
@@ -411,7 +417,7 @@ public class CodeParser : MonoBehaviour {
     if (expected.IsGood(Expected.Val.Statement) && rgAssign.IsMatch(line)) {
       string dests = line.Substring(0, line.IndexOf('='));
       string val = line.Substring(line.IndexOf('=') + 1);
-      CodeNode node = new CodeNode(BNF.ASSIGN);
+      CodeNode node = new CodeNode(BNF.ASSIGN, line, linenumber);
       expected.Set(Expected.Val.MemReg);
       ParseLine(node, dests, null);
       parent.Add(node);
@@ -423,7 +429,7 @@ public class CodeParser : MonoBehaviour {
     if (expected.IsGood(Expected.Val.Statement) && rgClr.IsMatch(line)) {
       Match m = rgClr.Match(line);
       if (m.Groups.Count < 2) throw new Exception("Invalid Clr() command. Line: " + (linenumber + 1));
-      CodeNode node = new CodeNode(BNF.CLR);
+      CodeNode node = new CodeNode(BNF.CLR, line, linenumber);
       node.Add(ParseExpression(m.Groups[1].Value));
       parent.Add(node);
       return;
@@ -434,7 +440,7 @@ public class CodeParser : MonoBehaviour {
       if (rgWrite2.IsMatch(line)) {
         Match m = rgWrite2.Match(line);
         if (m.Groups.Count < 7) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.WRITE);
+        CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
         node.Add(ParseExpression(m.Groups[2].Value));
         node.Add(ParseExpression(m.Groups[3].Value));
         node.Add(ParseExpression(m.Groups[4].Value));
@@ -446,7 +452,7 @@ public class CodeParser : MonoBehaviour {
       if (rgWrite1.IsMatch(line)) {
         Match m = rgWrite1.Match(line);
         if (m.Groups.Count < 5) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.WRITE);
+        CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
         node.Add(ParseExpression(m.Groups[2].Value));
         node.Add(ParseExpression(m.Groups[3].Value));
         node.Add(ParseExpression(m.Groups[4].Value));
@@ -460,7 +466,7 @@ public class CodeParser : MonoBehaviour {
     if (expected.IsGood(Expected.Val.Statement) && rgLine.IsMatch(line)) {
       Match m = rgLine.Match(line);
       if (m.Groups.Count < 7) throw new Exception("Invalid Line() command. Line: " + (linenumber + 1));
-      CodeNode node = new CodeNode(BNF.LINE);
+      CodeNode node = new CodeNode(BNF.LINE, line, linenumber);
       node.Add(ParseExpression(m.Groups[2].Value));
       node.Add(ParseExpression(m.Groups[3].Value));
       node.Add(ParseExpression(m.Groups[4].Value));
@@ -475,7 +481,7 @@ public class CodeParser : MonoBehaviour {
       if (rgBox2.IsMatch(line)) {
         Match m = rgBox2.Match(line);
         if (m.Groups.Count < 8) throw new Exception("Invalid Box() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.BOX);
+        CodeNode node = new CodeNode(BNF.BOX, line, linenumber);
         node.Add(ParseExpression(m.Groups[2].Value));
         node.Add(ParseExpression(m.Groups[3].Value));
         node.Add(ParseExpression(m.Groups[4].Value));
@@ -488,7 +494,7 @@ public class CodeParser : MonoBehaviour {
       if (rgBox1.IsMatch(line)) {
         Match m = rgBox1.Match(line);
         if (m.Groups.Count < 7) throw new Exception("Invalid Box() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.BOX);
+        CodeNode node = new CodeNode(BNF.BOX, line, linenumber);
         node.Add(ParseExpression(m.Groups[2].Value));
         node.Add(ParseExpression(m.Groups[3].Value));
         node.Add(ParseExpression(m.Groups[4].Value));
@@ -504,7 +510,7 @@ public class CodeParser : MonoBehaviour {
       if (rgCircle2.IsMatch(line)) {
         Match m = rgCircle2.Match(line);
         if (m.Groups.Count < 8) throw new Exception("Invalid Circle() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.CIRCLE);
+        CodeNode node = new CodeNode(BNF.CIRCLE, line, linenumber);
         node.Add(ParseExpression(m.Groups[2].Value));
         node.Add(ParseExpression(m.Groups[3].Value));
         node.Add(ParseExpression(m.Groups[4].Value));
@@ -517,7 +523,7 @@ public class CodeParser : MonoBehaviour {
       if (rgCircle1.IsMatch(line)) {
         Match m = rgCircle1.Match(line);
         if (m.Groups.Count < 7) throw new Exception("Invalid Circle() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.CIRCLE);
+        CodeNode node = new CodeNode(BNF.CIRCLE, line, linenumber);
         node.Add(ParseExpression(m.Groups[2].Value));
         node.Add(ParseExpression(m.Groups[3].Value));
         node.Add(ParseExpression(m.Groups[4].Value));
@@ -532,7 +538,7 @@ public class CodeParser : MonoBehaviour {
     if (expected.IsGood(Expected.Val.Statement) && rgScreen.IsMatch(line)) {
       Match m = rgScreen.Match(line);
       if (m.Groups.Count < 3) throw new Exception("Invalid Screen() command. Line: " + (linenumber + 1));
-      CodeNode node = new CodeNode(BNF.SCREEN);
+      CodeNode node = new CodeNode(BNF.SCREEN, line, linenumber);
       node.Add(ParseExpression(m.Groups[1].Value));
       node.Add(ParseExpression(m.Groups[2].Value));
       if (m.Groups.Count > 4 && !string.IsNullOrEmpty(m.Groups[4].Value)) node.Add(ParseExpression(m.Groups[4].Value));
@@ -545,7 +551,7 @@ public class CodeParser : MonoBehaviour {
     if (expected.IsGood(Expected.Val.Statement) && rgSprite.IsMatch(line)) {
       Match m = rgSprite.Match(line);
       if (m.Groups.Count < 5) throw new Exception("Invalid Sprite() command. Line: " + (linenumber + 1));
-      CodeNode node = new CodeNode(BNF.SPRITE);
+      CodeNode node = new CodeNode(BNF.SPRITE, line, linenumber);
       node.Add(ParseExpression(m.Groups[1].Value));
       node.Add(ParseExpression(m.Groups[2].Value));
       node.Add(ParseExpression(m.Groups[3].Value));
@@ -559,7 +565,7 @@ public class CodeParser : MonoBehaviour {
     if (expected.IsGood(Expected.Val.Statement) && rgSpriteSz.IsMatch(line)) {
       Match m = rgSpriteSz.Match(line);
       if (m.Groups.Count < 3) throw new Exception("Invalid Sprite() command. Line: " + (linenumber + 1));
-      CodeNode node = new CodeNode(BNF.SPRITE);
+      CodeNode node = new CodeNode(BNF.SPRITE, line, linenumber);
       node.Add(ParseExpression(m.Groups[1].Value));
       node.Add(ParseExpression(m.Groups[2].Value));
       if (m.Groups.Count > 3 && !string.IsNullOrEmpty(m.Groups[3].Value)) node.sVal = "*";
@@ -571,7 +577,7 @@ public class CodeParser : MonoBehaviour {
     if (expected.IsGood(Expected.Val.Statement) && rgSpos.IsMatch(line)) {
       Match m = rgSpos.Match(line);
       if (m.Groups.Count < 4) throw new Exception("Invalid SPos() command. Line: " + (linenumber + 1));
-      CodeNode node = new CodeNode(BNF.SPOS);
+      CodeNode node = new CodeNode(BNF.SPOS, line, linenumber);
       node.Add(ParseExpression(m.Groups[1].Value));
       node.Add(ParseExpression(m.Groups[2].Value));
       node.Add(ParseExpression(m.Groups[3].Value));
@@ -584,7 +590,7 @@ public class CodeParser : MonoBehaviour {
     if (expected.IsGood(Expected.Val.Statement) && rgSrot.IsMatch(line)) {
       Match m = rgSrot.Match(line);
       if (m.Groups.Count < 4) throw new Exception("Invalid SRot() command. Line: " + (linenumber + 1));
-      CodeNode node = new CodeNode(BNF.SROT);
+      CodeNode node = new CodeNode(BNF.SROT, line, linenumber);
       node.Add(ParseExpression(m.Groups[1].Value));
       node.Add(ParseExpression(m.Groups[2].Value));
       node.Add(ParseExpression(m.Groups[3].Value));
@@ -594,14 +600,14 @@ public class CodeParser : MonoBehaviour {
 
     // [FRAME]
     if (expected.IsGood(Expected.Val.Statement) && rgFrame.IsMatch(line)) {
-      CodeNode node = new CodeNode(BNF.FRAME);
+      CodeNode node = new CodeNode(BNF.FRAME, line, linenumber);
       parent.Add(node);
       return;
     }
 
     // [Inc]
     if (expected.IsGood(Expected.Val.Statement) && rgInc.IsMatch(line)) {
-      CodeNode node = new CodeNode(BNF.Inc);
+      CodeNode node = new CodeNode(BNF.Inc, line, linenumber);
       node.Add(ParseExpression(rgInc.Match(line).Groups[1].Value));
       parent.Add(node);
       return;
@@ -609,7 +615,7 @@ public class CodeParser : MonoBehaviour {
 
     // [Dec]
     if (expected.IsGood(Expected.Val.Statement) && rgDec.IsMatch(line)) {
-      CodeNode node = new CodeNode(BNF.Dec);
+      CodeNode node = new CodeNode(BNF.Dec, line, linenumber);
       node.Add(ParseExpression(rgDec.Match(line).Groups[1].Value));
       parent.Add(node);
       return;
@@ -617,7 +623,7 @@ public class CodeParser : MonoBehaviour {
 
     // [Destroy] ([EXP])
     if (expected.IsGood(Expected.Val.Statement) && rgDestroy.IsMatch(line)) {
-      CodeNode node = new CodeNode(BNF.DESTROY);
+      CodeNode node = new CodeNode(BNF.DESTROY, line, linenumber);
       Match m = rgDestroy.Match(line);
       string exp = m.Groups[1].Value;
       node.Add(ParseExpression(exp));
@@ -627,7 +633,7 @@ public class CodeParser : MonoBehaviour {
 
     // [WAIT] ([EXP])
     if (expected.IsGood(Expected.Val.Statement) && rgWait.IsMatch(line)) {
-      CodeNode node = new CodeNode(BNF.WAIT);
+      CodeNode node = new CodeNode(BNF.WAIT, line, linenumber);
       Match m = rgWait.Match(line);
       string exp = m.Groups[1].Value;
       node.Add(ParseExpression(exp));
@@ -638,7 +644,7 @@ public class CodeParser : MonoBehaviour {
 
     // [WHILE] ([EXP]) {[BLOCK]}
     if (expected.IsGood(Expected.Val.Statement) && rgWhile.IsMatch(line)) {
-      CodeNode node = new CodeNode(BNF.WHILE);
+      CodeNode node = new CodeNode(BNF.WHILE, line, linenumber);
       Match m = rgWhile.Match(line);
       string exp = m.Groups[1].Value;
       node.Add(ParseExpression(exp));
@@ -651,7 +657,7 @@ public class CodeParser : MonoBehaviour {
         return;
       }
       else if (!string.IsNullOrEmpty(after)) { // [WHILE] ([EXP]) [STATEMENT]
-        CodeNode b = new CodeNode(BNF.BLOCK);
+        CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
         node.Add(b);
         ParseLine(b, new string[] { after });
         return;
@@ -665,7 +671,7 @@ public class CodeParser : MonoBehaviour {
     if (expected.IsGood(Expected.Val.MemReg) && rgVar.IsMatch(line)) {
     string var = rgVar.Match(line).Groups[1].Value.ToLowerInvariant();
     if (!reserverdKeywords.Contains(var)) {
-      CodeNode node = new CodeNode(BNF.REG) { Reg = vars.Add(var) };
+      CodeNode node = new CodeNode(BNF.REG, line, linenumber) { Reg = vars.Add(var) };
       parent.Add(node);
         return;
       }
@@ -691,7 +697,7 @@ public class CodeParser : MonoBehaviour {
   void ParseIfBlock(CodeNode ifNode, string after, string[] lines) {
     // Block or single line?
     if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { // [IF] [BLOCK]
-      CodeNode b = new CodeNode(BNF.BLOCK);
+      CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
       int end = FindEndOfBlock(lines, linenumber);
       if (end < 0) throw new Exception("\"IF\" section does not end");
       ParseBlock(lines, linenumber + 1, end, b);
@@ -699,7 +705,7 @@ public class CodeParser : MonoBehaviour {
       linenumber = end + 1;
     }
     else { // [IF] [STATEMENT]
-      CodeNode b = new CodeNode(BNF.BLOCK);
+      CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
       ifNode.Add(b);
       ParseLine(b, new string[] { after });
       linenumber++;
@@ -717,7 +723,7 @@ public class CodeParser : MonoBehaviour {
       if (m.Success) {
         // Block or single line?
         string after = m.Groups[1].Value.Trim();
-        CodeNode nElse = new CodeNode(BNF.BLOCK);
+        CodeNode nElse = new CodeNode(BNF.BLOCK, after, linenumber);
 
         if (rgBlockOpen.IsMatch(after)) {  // [ELSE] {
           int end = FindEndOfBlock(lines, linenumber);
@@ -757,7 +763,7 @@ public class CodeParser : MonoBehaviour {
   void ParseWhileBlock(CodeNode ifNode, string after, string[] lines) {
     // Block or single line?
     if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { // [WHILE] [BLOCK]
-      CodeNode b = new CodeNode(BNF.BLOCK);
+      CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
       int end = FindEndOfBlock(lines, linenumber);
       if (end < 0) throw new Exception("\"WHILE\" section does not end");
       ParseBlock(lines, linenumber + 1, end, b);
@@ -765,7 +771,7 @@ public class CodeParser : MonoBehaviour {
       linenumber = end + 1;
     }
     else { // [WHILE] [STATEMENT]
-      CodeNode b = new CodeNode(BNF.BLOCK);
+      CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
       ifNode.Add(b);
       ParseLine(b, new string[] { after });
       linenumber++;
@@ -787,7 +793,7 @@ public class CodeParser : MonoBehaviour {
       toReplace.Trim();
       if (toReplace[0] != '-') throw new Exception("Invalid negative value: " + toReplace);
       toReplace = toReplace.Substring(1).Trim();
-      CodeNode n = new CodeNode(BNF.UOsub, GenId("US"));
+      CodeNode n = new CodeNode(BNF.UOsub, GenId("US"), origExpForException, linenumber);
       CodeNode exp = ParseExpression(toReplace);
       if (exp.type == BNF.INT) {
         n = exp;
@@ -809,7 +815,7 @@ public class CodeParser : MonoBehaviour {
       toReplace.Trim();
       if (toReplace[0] != '!') throw new Exception("Invalid negation: " + toReplace);
       toReplace = toReplace.Substring(1).Trim();
-      CodeNode n = new CodeNode(BNF.UOneg, GenId("US"));
+      CodeNode n = new CodeNode(BNF.UOneg, GenId("US"), origExpForException, linenumber);
       CodeNode exp = ParseExpression(toReplace);
       n.Add(exp);
       nodes[n.id] = n;
@@ -822,7 +828,7 @@ public class CodeParser : MonoBehaviour {
       toReplace.Trim();
       if (toReplace[0] != '~') throw new Exception("Invalid unary complement: " + toReplace);
       toReplace = toReplace.Substring(1).Trim();
-      CodeNode n = new CodeNode(BNF.UOinv, GenId("US"));
+      CodeNode n = new CodeNode(BNF.UOinv, GenId("US"), origExpForException, linenumber);
       CodeNode exp = ParseExpression(toReplace);
       n.Add(exp);
       nodes[n.id] = n;
@@ -831,7 +837,7 @@ public class CodeParser : MonoBehaviour {
 
     // Replace DTIME => `DTx
     line = rgDeltat.Replace(line, m => {
-      CodeNode n = new CodeNode(BNF.DTIME, GenId("DT"));
+      CodeNode n = new CodeNode(BNF.DTIME, GenId("DT"), origExpForException, linenumber);
       nodes[n.id] = n;
       return n.id;
     });
@@ -839,7 +845,7 @@ public class CodeParser : MonoBehaviour {
     // Replace FLT => `FTx
     line = rgFloat.Replace(line, m => {
       float.TryParse(m.Value, out float fVal);
-      CodeNode n = new CodeNode(BNF.FLT, GenId("FT")) {
+      CodeNode n = new CodeNode(BNF.FLT, GenId("FT"), origExpForException, linenumber) {
         fVal = fVal
       };
       nodes[n.id] = n;
@@ -848,7 +854,7 @@ public class CodeParser : MonoBehaviour {
 
     // Replace HEX => `HXx
     line = rgHex.Replace(line, m => {
-      CodeNode n = new CodeNode(BNF.HEX, GenId("HX")) {
+      CodeNode n = new CodeNode(BNF.HEX, GenId("HX"), origExpForException, linenumber) {
         iVal = Convert.ToInt32("0" + m.Value, 16)
       };
       nodes[n.id] = n;
@@ -866,7 +872,7 @@ public class CodeParser : MonoBehaviour {
       if (g > 3) g = 3;
       if (b > 3) b = 3;
       if (a > 3) a = 3;
-      CodeNode n = new CodeNode(BNF.COL, GenId("CL")) {
+      CodeNode n = new CodeNode(BNF.COL, GenId("CL"), origExpForException, linenumber) {
         iVal = a * 64 + r * 16 + g * 4 + b
       };
       nodes[n.id] = n;
@@ -875,7 +881,7 @@ public class CodeParser : MonoBehaviour {
 
     // LAB
     line = rgLabel.Replace(line, m => {
-      CodeNode n = new CodeNode(BNF.LAB, GenId("LB")) {
+      CodeNode n = new CodeNode(BNF.LAB, GenId("LB"), origExpForException, linenumber) {
         sVal = m.Value.Trim().ToLowerInvariant()
       };
       nodes[n.id] = n;
@@ -886,7 +892,7 @@ public class CodeParser : MonoBehaviour {
     line = rgVar.Replace(line, m => {
       string var = m.Groups[1].Value.ToLowerInvariant();
       if (!reserverdKeywords.Contains(var)) {
-        CodeNode n = new CodeNode(BNF.REG, GenId("RG")) {
+        CodeNode n = new CodeNode(BNF.REG, GenId("RG"), origExpForException, linenumber) {
           Reg = vars.Add(var)
         };
         nodes[n.id] = n;
@@ -898,7 +904,7 @@ public class CodeParser : MonoBehaviour {
     // Replace INT => `INx
     line = rgInt.Replace(line, m => {
       int.TryParse(m.Value, out int iVal);
-      CodeNode n = new CodeNode(BNF.INT, GenId("IN")) {
+      CodeNode n = new CodeNode(BNF.INT, GenId("IN"), origExpForException, linenumber) {
         iVal = iVal
       };
       nodes[n.id] = n;
@@ -916,7 +922,7 @@ public class CodeParser : MonoBehaviour {
       // Replace PAR => `PRx
       line = rgPars.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.OPpar, GenId("PR"));
+        CodeNode n = new CodeNode(BNF.OPpar, GenId("PR"), origExpForException, linenumber);
         string inner = m.Value.Trim();
         inner = inner.Substring(1, inner.Length - 2);
         n.Add(ParseExpression(inner));
@@ -929,7 +935,7 @@ public class CodeParser : MonoBehaviour {
       // Replace LEN => `LNx
       line = rgLen.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.LEN, GenId("LN"));
+        CodeNode n = new CodeNode(BNF.LEN, GenId("LN"), origExpForException, linenumber);
         if (m.Groups.Count < 2) throw new Exception("Unhandled LEN case: " + m.Groups.Count + " Line:" + (linenumber + 1));
         string left = m.Groups[1].Value.Trim();
         n.Add(nodes[left]);
@@ -942,7 +948,7 @@ public class CodeParser : MonoBehaviour {
       // Replace LEN => `PLx
       line = rgPLen.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.PLEN, GenId("PL"));
+        CodeNode n = new CodeNode(BNF.PLEN, GenId("PL"), origExpForException, linenumber);
         if (m.Groups.Count < 2) throw new Exception("Unhandled PLEN case: " + m.Groups.Count + " Line:" + (linenumber + 1));
         string left = m.Groups[1].Value.Trim();
         n.Add(nodes[left]);
@@ -956,42 +962,42 @@ public class CodeParser : MonoBehaviour {
       // Replace MEM => `MMx
       line = rgMem.Replace(line, m => { 
         atLeastOneReplacement = true;
-        return ParseMem(BNF.MEM, "MM", m);
+        return ParseMem(BNF.MEM, "MM", line, m);
       });
       if (atLeastOneReplacement) continue;
 
       // Replace MEM@ => `MDx
       line = rgMemL.Replace(line, m => {
         atLeastOneReplacement = true;
-        return ParseMem(BNF.MEMlong, "MD", m);
+        return ParseMem(BNF.MEMlong, "MD", line, m);
       });
       if (atLeastOneReplacement) continue;
 
       // Replace MEM@ => `MDx
       line = rgMemB.Replace(line, m => {
         atLeastOneReplacement = true;
-        return ParseMem(BNF.MEMlongb, "MD", m);
+        return ParseMem(BNF.MEMlongb, "MD", line, m);
       });
       if (atLeastOneReplacement) continue;
 
       // Replace MEM@ => `MDx
       line = rgMemI.Replace(line, m => {
         atLeastOneReplacement = true;
-        return ParseMem(BNF.MEMlongi, "MD", m);
+        return ParseMem(BNF.MEMlongi, "MD", line, m);
       });
       if (atLeastOneReplacement) continue;
 
       // Replace MEM@ => `MDx
       line = rgMemF.Replace(line, m => {
         atLeastOneReplacement = true;
-        return ParseMem(BNF.MEMlongf, "MD", m);
+        return ParseMem(BNF.MEMlongf, "MD", line, m);
       });
       if (atLeastOneReplacement) continue;
 
       // Replace MEM@ => `MDx
       line = rgMemS.Replace(line, m => {
         atLeastOneReplacement = true;
-        return ParseMem(BNF.MEMlongs, "MD", m);
+        return ParseMem(BNF.MEMlongs, "MD", line, m);
       });
       if (atLeastOneReplacement) continue;
 
@@ -1013,16 +1019,16 @@ public class CodeParser : MonoBehaviour {
           case 'f': pos += 21; break;
           case 'e': pos += 24; break;
           case 'x':
-            n = new CodeNode(BNF.KEYx, GenId("KX"));
+            n = new CodeNode(BNF.KEYx, GenId("KX"), origExpForException, linenumber);
             nodes[n.id] = n;
             return n.id;
           case 'y':
-            n = new CodeNode(BNF.KEYy, GenId("KY"));
+            n = new CodeNode(BNF.KEYy, GenId("KY"), origExpForException, linenumber);
             nodes[n.id] = n;
             return n.id;
           default: throw new Exception("Invalid Key at " + (linenumber + 1) + "\n" + line);
         }
-        n = new CodeNode(BNF.KEY, GenId("KK")) { iVal = pos };
+        n = new CodeNode(BNF.KEY, GenId("KK"), origExpForException, linenumber) { iVal = pos };
         nodes[n.id] = n;
         return n.id;
       });
@@ -1085,7 +1091,7 @@ public class CodeParser : MonoBehaviour {
       // _i => QI
       line = rgCastI.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.CASTi, GenId("QI"));
+        CodeNode n = new CodeNode(BNF.CASTi, GenId("QI"), origExpForException, linenumber);
         string child = m.Groups[1].Value.Trim();
         n.Add(nodes[child]);
         nodes[n.id] = n;
@@ -1096,7 +1102,7 @@ public class CodeParser : MonoBehaviour {
       // _i => QB
       line = rgCastB.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.CASTb, GenId("QB"));
+        CodeNode n = new CodeNode(BNF.CASTb, GenId("QB"), origExpForException, linenumber);
         string child = m.Groups[1].Value.Trim();
         n.Add(nodes[child]);
         nodes[n.id] = n;
@@ -1107,7 +1113,7 @@ public class CodeParser : MonoBehaviour {
       // _i => QI
       line = rgCastF.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.CASTf, GenId("QF"));
+        CodeNode n = new CodeNode(BNF.CASTf, GenId("QF"), origExpForException, linenumber);
         string child = m.Groups[1].Value.Trim();
         n.Add(nodes[child]);
         nodes[n.id] = n;
@@ -1118,7 +1124,7 @@ public class CodeParser : MonoBehaviour {
       // _s => QS
       line = rgCastS.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.CASTs, GenId("QS"));
+        CodeNode n = new CodeNode(BNF.CASTs, GenId("QS"), origExpForException, linenumber);
         string child = m.Groups[1].Value.Trim();
         n.Add(nodes[child]);
         nodes[n.id] = n;
@@ -1207,15 +1213,15 @@ public class CodeParser : MonoBehaviour {
   void ParseAssignment(string line, CodeNode parent, BNF bnf, string match) {
     string dest = line.Substring(0, line.IndexOf(match));
     string val = line.Substring(line.IndexOf(match) + 2);
-    CodeNode node = new CodeNode(bnf);
+    CodeNode node = new CodeNode(bnf, line, linenumber);
     expected.Set(Expected.Val.MemReg);
     ParseLine(node, dest, null);
     parent.Add(node);
     node.Add(ParseExpression(val));
   }
 
-  private string ParseMem(BNF bnf, string id, Match m) {
-    CodeNode n = new CodeNode(bnf, GenId(id));
+  private string ParseMem(BNF bnf, string id, string line, Match m) {
+    CodeNode n = new CodeNode(bnf, GenId(id), line, linenumber);
     string child = m.Value.Trim(' ', '[', ']');
     // strip the @ at end
     if (child.IndexOf('@') != -1) child = child.Substring(0, child.IndexOf('@'));
@@ -1233,7 +1239,7 @@ public class CodeParser : MonoBehaviour {
       if (s != null) return s.id;
     }
 
-    CodeNode n = new CodeNode(bnf, GenId(code));
+    CodeNode n = new CodeNode(bnf, GenId(code), code, linenumber);
     n.Add(left);
     n.Add(right);
     nodes[n.id] = n;
@@ -1342,7 +1348,7 @@ public class CodeParser : MonoBehaviour {
           bool filter = (!string.IsNullOrEmpty(m.Groups[3].Value) && m.Groups[3].Value.IndexOf('f') != -1);
 
           Debug.Log(w + "," + h + (filter ? " filter" : ""));
-          CodeNode n = new CodeNode(BNF.ScrConfig) { fVal = w, iVal = h, sVal = (filter ? "*" : "") };
+          CodeNode n = new CodeNode(BNF.ScrConfig, null, linenum) { fVal = w, iVal = h, sVal = (filter ? "*" : "") };
           data.Add(n);
 
           clean = clean.Substring(pos + 1).Trim(' ', '\n');
@@ -1355,7 +1361,7 @@ public class CodeParser : MonoBehaviour {
           char unit = (m.Groups[2].Value.Trim().ToLowerInvariant() + " ")[0];
           if (unit == 'k') size *= 1024;
           if (unit == 'm') size *= 1024 * 1024;
-          CodeNode n = new CodeNode(BNF.Ram) { iVal = size };
+          CodeNode n = new CodeNode(BNF.Ram, null, linenum) { iVal = size };
           data.Add(n);
           clean = clean.Substring(pos + 1).Trim(' ', '\n');
         }
@@ -1364,7 +1370,7 @@ public class CodeParser : MonoBehaviour {
           line = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
           if (labels.ContainsKey(line)) throw new Exception("Label \"" + line + "\" already defined");
           labels.Add(line, true);
-          lastDataLabel = new CodeNode(BNF.Label) { bVal = new byte[1024], iVal = 0, sVal = line };
+          lastDataLabel = new CodeNode(BNF.Label, line, linenum) { bVal = new byte[1024], iVal = 0, sVal = line };
           data.Add(lastDataLabel);
           clean = clean.Substring(pos + 1).Trim(' ', '\n');
         }

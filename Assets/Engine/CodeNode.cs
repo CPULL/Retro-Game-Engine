@@ -11,19 +11,26 @@ public class CodeNode {
   public byte[] bVal = null;
   public int Reg;
   public VT valType;
+  public string origLine;
+  public int origLineNum;
+
   internal CodeNode CN1 { get { return children?[0]; } }
   internal CodeNode CN2 { get { return children != null && children.Count > 1 ? children[1] : null; } }
   internal CodeNode CN3 { get { return children != null && children.Count > 2 ? children[2] : null; } }
   internal CodeNode CN4 { get { return children != null && children.Count > 3 ? children[3] : null; } }
   internal CodeNode CN5 { get { return children != null && children.Count > 4 ? children[4] : null; } }
 
-  public CodeNode(BNF bnf) {
+  public CodeNode(BNF bnf, string line, int linenum) {
     type = bnf;
+    origLine = line;
+    origLineNum = linenum + 1;
   }
 
-  public CodeNode(BNF bnf, string v) {
+  public CodeNode(BNF bnf, string v, string line, int linenum) {
     type = bnf;
     id = v;
+    origLine = line;
+    origLineNum = linenum + 1;
   }
 
   internal void Add(CodeNode node) {

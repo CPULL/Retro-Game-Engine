@@ -132,6 +132,7 @@ public class Arcade : MonoBehaviour {
 
     bool something = false;
     if (!startCompleted && startCode != null) {
+      int numruns = 0;
       while (stacks.Count > 0) {
         ExecStack stack = stacks[stacks.Count - 1];
         while (stack.step < stack.node.children.Count) {
@@ -141,6 +142,13 @@ public class Arcade : MonoBehaviour {
         }
         if (stack.cond != null && Evaluate(stack.cond).ToInt() != 0) {
           stack.step = 0;
+          numruns++;
+          if (numruns>1000) {
+            Write("Possible infinite loop at: " + stack.parent.origLineNum + "\n" + stack.parent.origLine, 4, 4, 48, 0);
+            texture.Apply();
+            startCompleted = true;
+            return;
+          }
         }
         else
           stacks.RemoveAt(stacks.Count - 1);
@@ -933,12 +941,12 @@ public class Arcade : MonoBehaviour {
           Value cond = Evaluate(n.CN1);
           if (cond.ToInt() != 0) {
             if (n.CN2.type == BNF.BLOCK && (n.CN2.children == null || n.CN2.children.Count == 0)) return true;
-            stacks.Add(new ExecStack { node = n.CN2, step = 0 });
+            stacks.Add(new ExecStack { node = n.CN2, step = 0, parent = n });
             return true;
           }
           else if (n.children.Count > 2) {
             if (n.CN3.type == BNF.BLOCK && (n.CN3.children == null || n.CN3.children.Count == 0)) return true;
-            stacks.Add(new ExecStack { node = n.CN3, step = 0 });
+            stacks.Add(new ExecStack { node = n.CN3, step = 0, parent = n });
             return true;
           }
         }
@@ -948,7 +956,7 @@ public class Arcade : MonoBehaviour {
           Value cond = Evaluate(n.CN1);
           if (cond.ToInt() != 0) {
             Debug.Log("Executing IF");
-            stacks.Add(new ExecStack { node = n.CN2, cond = n.CN1, step = 0 });
+            stacks.Add(new ExecStack { node = n.CN2, cond = n.CN1, step = 0, parent = n });
             return true;
           }
         }
@@ -958,7 +966,7 @@ public class Arcade : MonoBehaviour {
           Execute(n.CN1);
           Value cond = Evaluate(n.CN2);
           if (cond.ToInt() == 0) return false;
-          stacks.Add(new ExecStack { node = n.CN3, step = 0, cond = n.CN2 });
+          stacks.Add(new ExecStack { node = n.CN3, step = 0, cond = n.CN2, parent = n });
           return true;
         }
 
@@ -1234,6 +1242,7 @@ public class Arcade : MonoBehaviour {
 public class ExecStack {
   public CodeNode node;
   public CodeNode cond;
+  public CodeNode parent;
   public int step;
 }
 

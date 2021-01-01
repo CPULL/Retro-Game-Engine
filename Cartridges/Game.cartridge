@@ -1,5 +1,13 @@
 Name: Test
 
 Start {
-		write("w" + a, 0)
+	while(1) {
+		write("msg", 0, 0, 48)
+//	wtop("Hello world!")
+	}
+}
+
+
+#wtop(msg) {
+	write(msg, 0, 0, 48)
 }
