@@ -6,3 +6,12 @@ Start {
 	write("...in your dreams...", 0, 8, c300)
 }
 
+Update {
+}
+
+Data {
+}
+
+calculate(a, b, c) {
+
+}

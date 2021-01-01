@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class Arcade : MonoBehaviour {
+  const float updateTime = 1.5f;
   public RawImage Screen;
   public Text FPS;
   Texture2D texture;
@@ -60,7 +61,7 @@ public class Arcade : MonoBehaviour {
       updateDelay -= Time.deltaTime;
 
       if (updateDelay > 0) {
-        int num = (int)(sw * updateDelay * .5f);
+        int num = (int)(sw * updateDelay / updateTime);
         for (int i = 0; i < num; i++) {
           SetPixel(i, hm1 - 1, 0b111111);
           SetPixel(i, hm1, 0b111111);
@@ -395,7 +396,7 @@ public class Arcade : MonoBehaviour {
       else {
         Write("ROM:    " + MemSize(romsize), 10, 120, 0b001110);
       }
-      updateDelay = .5f; // FIXME
+      updateDelay = updateTime;
 
     } catch (Exception e) {
       string msg = "";

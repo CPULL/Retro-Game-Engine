@@ -79,7 +79,14 @@ public class CodeNode {
               res += n.ToString(indent + 1, false) + "\n";
         }
         break;
-        case BNF.Data: res = "Data:\n" + ToString(indent + 1, false); break;
+        case BNF.Data: {
+          res = "Data:\n";
+          int num = children == null ? 0 : children.Count;
+          for (int i = 0; i < num; i++) {
+            res += children[i].ToString(indent + 1, false);
+          }
+        }
+        break;
         case BNF.REG: res += (sameLine ? "" : id) + " R" + Reg + (sameLine ? " " : "\n"); break;
         case BNF.INT: res += (sameLine ? "" : id) + " " + iVal + (sameLine ? " " : "\n"); break;
         case BNF.COL:
@@ -440,6 +447,7 @@ public enum BNF {
   Start,
   Update,
   Data,
+  Function,
   ScrConfig,
   Ram,
   Label, // This is used to store the data
