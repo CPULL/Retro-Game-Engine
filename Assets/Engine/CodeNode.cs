@@ -13,6 +13,7 @@ public class CodeNode {
   public VT valType;
   public string origLine;
   public int origLineNum;
+  public CodeNode parent;
 
   internal CodeNode CN1 { get { return children?[0]; } }
   internal CodeNode CN2 { get { return children != null && children.Count > 1 ? children[1] : null; } }
@@ -37,6 +38,7 @@ public class CodeNode {
   internal void Add(CodeNode node) {
     if (children == null) children = new List<CodeNode>();
     children.Add(node);
+    node.parent = this;
   }
 
   internal bool HasNode(BNF bnf) {
@@ -120,7 +122,6 @@ public class CodeNode {
         case BNF.HEX: res += (sameLine ? "" : id) + " x" + iVal.ToString("X") + (sameLine ? " " : "\n"); break;
         case BNF.FLT: res += (sameLine ? "" : id) + " " + fVal + (sameLine ? " " : "\n"); break;
         case BNF.STR: res += (sameLine ? "" : id) + " \"" + sVal + (sameLine ? "\" " : "\"\n"); break;
-        case BNF.STRcnst: res += "[[" + type + "]]"; break;
         case BNF.MEM: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "]" + (sameLine ? " " : "\n"); break;
         case BNF.MEMlong: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@]" + (sameLine ? " " : "\n"); break;
         case BNF.MEMlongb: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@b]" + (sameLine ? " " : "\n"); break;
@@ -319,6 +320,8 @@ public class CodeNode {
           return pars + ")";
         }
 
+        case BNF.RETURN: return (sameLine ? "" : id) + "return " + (CN1 == null ? "" : CN1.ToString(indent, true));
+
         case BNF.NOP: return "";
 
 
@@ -357,7 +360,6 @@ public class CodeNode {
       case BNF.HEX:
       case BNF.COL:
       case BNF.STR:
-      case BNF.STRcnst:
       case BNF.MEM:
       case BNF.MEMlong:
       case BNF.MEMlongb:
@@ -374,11 +376,9 @@ public class CodeNode {
       case BNF.OPand:
       case BNF.OPor:
       case BNF.OPxor:
-
       case BNF.OPlsh:
       case BNF.OPrsh:
       case BNF.LAB:
-
       case BNF.UOneg:
       case BNF.UOinv:
       case BNF.UOsub:
@@ -400,6 +400,7 @@ public class CodeNode {
       case BNF.KEY:
       case BNF.KEYx:
       case BNF.KEYy:
+      case BNF.RETURN:
         return true;
     }
     return false;
@@ -498,6 +499,7 @@ public enum BNF {
   Functions,
   FunctionDef,
   FunctionCall,
+  RETURN,
   Params,
   ScrConfig,
   Ram,

@@ -61,8 +61,8 @@ public class CodeParser : MonoBehaviour {
   #region Regex
 
   readonly Regex rgMLBacktick = new Regex("`", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgSLComment = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgMLComment = new Regex("/\\*[\\s\\S]*?\\*/", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace | RegexOptions.Multiline, TimeSpan.FromSeconds(1));
+  readonly Regex rgCommentSL = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgCommentML = new Regex("/\\*[\\s\\S]*?\\*/", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace | RegexOptions.Multiline, TimeSpan.FromSeconds(1));
   readonly Regex rgOpenBracket = new Regex("[\\s]*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBlockOpen = new Regex(".*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBlockClose = new Regex("^[\\s]*\\}[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -167,6 +167,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgData = new Regex("^data[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFunction = new Regex("^#([a-z][a-z0-9]{0,11})[\\s]*\\((.*)\\)[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFunctionCall = new Regex("([a-z][a-z0-9]{0,11})[\\s]*\\((.*)\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgReturn = new Regex("[\\s]*return[\\s]*(.*)[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
   int linenumber = 0;
 
@@ -176,8 +177,13 @@ public class CodeParser : MonoBehaviour {
       file = file.Trim().Replace("\r", "").Replace("\t", " ");
       // [QuotedStrings]
       file = rgQString.Replace(file, "ˠ");
+      // Replace single line comments
+      file = rgCommentSL.Replace(file, m => {
+        if (m.Groups.Count > 1) return m.Groups[1].Value;
+        return m.Value;
+      });
       // Remove multiline-comments, but keep the newlines
-      file = rgMLComment.Replace(file, m => {
+      file = rgCommentML.Replace(file, m => {
         string inside = m.Value;
         string nls = "";
         foreach (char c in inside)
@@ -208,9 +214,10 @@ public class CodeParser : MonoBehaviour {
           // Parse the parameters, the parsing of th ecode will be done later because in the code other functions can be called
           string pars = m.Groups[2].Value.Trim(' ', '(', ')');
           foreach (string par in rgVar.Split(pars)) {
-            string p = par.Trim(' ', ',');
-            if (!string.IsNullOrWhiteSpace(p)) {
-              CodeNode v = new CodeNode(BNF.REG, par, linenumber) { sVal = p.ToLowerInvariant() };
+            string var = par.Trim(' ', ',').ToLowerInvariant();
+            if (!string.IsNullOrWhiteSpace(var)) {
+              if (reserverdKeywords.Contains(var)) throw new Exception("Parameter name \"" + var + "\" is invalid (reserverd keyword)\n" + (linenumber + 1) + ": " + line);
+              CodeNode v = new CodeNode(BNF.REG, par, linenumber) { sVal = var, Reg = vars.Add(var) };
               ps.Add(v);
             }
           }
@@ -293,8 +300,6 @@ public class CodeParser : MonoBehaviour {
       string line = lines[i].Trim();
       if (string.IsNullOrEmpty(line)) continue;
       line = rgString.Replace(line, "");
-      line = rgSLComment.Replace(line, "");
-      line = rgMLComment.Replace(line, "");
       if (rgBlockClose.IsMatch(line)) {
         num--;
         if (num == 0) return i;
@@ -308,11 +313,6 @@ public class CodeParser : MonoBehaviour {
     // Follow the BNF rules to get the elements, one line at time
     for (linenumber = start; linenumber < end; linenumber++) {
       string line = lines[linenumber].Trim();
-      line = rgSLComment.Replace(line, m => {
-        if (m.Groups.Count > 1) return m.Groups[1].Value;
-        return m.Value;
-      });
-      line = rgMLComment.Replace(line, "");
       if (string.IsNullOrEmpty(line)) continue;
       lines[linenumber] = line;
       expected.Set(Expected.Val.Statement);
@@ -453,6 +453,29 @@ public class CodeParser : MonoBehaviour {
       ParseLine(node, dests, null);
       parent.Add(node);
       node.Add(ParseExpression(val));
+      return;
+    }
+
+    // [RETURN] = return [EXPR]
+    if (expected.IsGood(Expected.Val.Statement) && rgReturn.IsMatch(line)) {
+      Match m = rgReturn.Match(line);
+      if (m.Groups.Count < 2) throw new Exception("Invalid Return() command. Line: " + (linenumber + 1));
+      CodeNode node = new CodeNode(BNF.RETURN, line, linenumber);
+      string ret = m.Groups[1].Value.Trim();
+      if (!string.IsNullOrEmpty(ret)) node.Add(ParseExpression(ret));
+
+      bool outsideFunctionDef = true;
+      CodeNode pn = parent;
+      while (pn != null) {
+        if (pn.type == BNF.FunctionDef) {
+          outsideFunctionDef = false;
+          break;
+        }
+        pn = pn.parent;
+      }
+
+      if (outsideFunctionDef) throw new Exception("RETURN can be used only inside functions\n" + (linenumber + 1) + ": " + origForException);
+      parent.Add(node);
       return;
     }
 
@@ -768,6 +791,8 @@ public class CodeParser : MonoBehaviour {
           ps.Add(v);
         }
 
+        if (!functions.ContainsKey(fnc)) throw new Exception("The function \"" + fnc + "\"\nis not defined\n" + (linenumber + 1) + ": " + origForException);
+
         if ((functions[fnc].CN1 == null && ps.children != null) || (functions[fnc].CN1.children?.Count != ps.children?.Count))
           throw new Exception("Function " + fnc + " has\na wrong number of parameters\n" + (linenumber + 1) + ": " + origForException);
         return;
@@ -781,14 +806,14 @@ public class CodeParser : MonoBehaviour {
 
 
 
-  void ParseIfBlock(CodeNode ifNode, string after, string[] lines) {
+  void ParseIfBlockOLD(CodeNode ifNode, string after, string[] lines) {
     // Block or single line?
     if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { // [IF] [BLOCK]
       CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
       int end = FindEndOfBlock(lines, linenumber);
       if (end < 0) throw new Exception("\"IF\" section does not end");
-      ParseBlock(lines, linenumber + 1, end, b);
       ifNode.Add(b);
+      ParseBlock(lines, linenumber + 1, end, b);
       linenumber = end + 1;
     }
     else { // [IF] [STATEMENT]
@@ -796,6 +821,37 @@ public class CodeParser : MonoBehaviour {
       ifNode.Add(b);
       ParseLine(b, new string[] { after });
       linenumber++;
+    }
+    ParseElseBlock(ifNode, lines);
+  }
+
+  void ParseIfBlock(CodeNode ifNode, string after, string[] lines) {
+    CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
+    ifNode.Add(b);
+    if (rgBlockOpen.IsMatch(after)) {  // [IF] {
+      int end = FindEndOfBlock(lines, linenumber);
+      if (end < 0) throw new Exception("\"IF\" section does not end");
+      ParseBlock(lines, linenumber + 1, end, b);
+      linenumber = end + 1;
+    }
+    else if (string.IsNullOrEmpty(after)) { // [IF] \n* ({ | [^{ ])
+      for (int i = linenumber + 1; i < lines.Length; i++) {
+        string l = lines[i].Trim();
+        if (string.IsNullOrEmpty(l)) continue;
+        if (rgOpenBracket.IsMatch(l)) { // [IF] \n* {
+          int end = FindEndOfBlock(lines, i);
+          if (end < 0) throw new Exception("\"IF\" section does not end");
+          ParseBlock(lines, linenumber + 1, end, b);
+          linenumber = end + 1;
+          break;
+        }
+        else { // [IF] \n* [^{ ]
+          linenumber = i;
+          ParseLine(b, lines);
+          linenumber++;
+          break;
+        }
+      }
     }
     ParseElseBlock(ifNode, lines);
   }
@@ -815,28 +871,28 @@ public class CodeParser : MonoBehaviour {
         if (rgBlockOpen.IsMatch(after)) {  // [ELSE] {
           int end = FindEndOfBlock(lines, linenumber);
           if (end < 0) throw new Exception("\"ELSE\" section does not end");
+          ifNode.Add(nElse);
           ParseBlock(lines, linenumber + 1, end, nElse);
           linenumber = end + 1;
-          ifNode.Add(nElse);
           return;
         }
         if (string.IsNullOrEmpty(after)) { // [ELSE] \n* ({ | [^{ ])
           for (int i = pos + 1; i < lines.Length; i++) {
-            l = lines[pos].Trim();
+            l = lines[i].Trim();
             if (string.IsNullOrEmpty(l)) continue;
             if (rgOpenBracket.IsMatch(l)) { // [ELSE] \n* {
-              int end = FindEndOfBlock(lines, linenumber);
+              int end = FindEndOfBlock(lines, i);
               if (end < 0) throw new Exception("\"ELSE\" section does not end");
+              ifNode.Add(nElse);
               ParseBlock(lines, linenumber + 1, end, nElse);
               linenumber = end + 1;
-              ifNode.Add(nElse);
               return;
             }
             else { // [ELSE] \n* [^{ ]
               linenumber = i;
+              ifNode.Add(nElse);
               ParseLine(nElse, lines);
               linenumber++;
-              ifNode.Add(nElse);
               return;
             }
           }
@@ -1406,11 +1462,6 @@ public class CodeParser : MonoBehaviour {
     for (int linenum = start + 1; linenum < end; linenum++) {
       string clean = lines[linenum].Trim();
       // Remove the comments and some unwanted chars
-      clean = rgSLComment.Replace(clean, m => {
-        if (m.Groups.Count > 1) return m.Groups[1].Value;
-        return m.Value;
-      });
-      clean = rgMLComment.Replace(clean, "");
       clean = rgMLBacktick.Replace(clean, "'");
 
       // Until the block is empty, get the possible parts

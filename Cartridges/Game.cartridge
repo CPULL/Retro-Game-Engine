@@ -2,16 +2,20 @@ Name: Test
 
 Start {
 clr(0)
+write("OK", 0, 0, 48)
 
-	write("abcdefghijklmnopqrstuvwxyzABCDE", 0, 10, 48, 0, 0)
-	write("FGHIJKLMNOPQRSTUVWXYZ0123456789", 0, 20, 48, 0, 0)
-	write("~`!@#$%^&*()_+|-=\[]{};:'\",./<>", 0, 30, 48, 0, 0)
-	write("?£¥§©«¬°µ»¿ßàáäæçèéëìíïñòóöùúü¡", 0, 40, 48, 0, 0)
-	
-	write("abcdefghijklmnopqrstuvwxyzABCDE", 0, 60, 48, 0, 1)
-	write("FGHIJKLMNOPQRSTUVWXYZ0123456789", 0, 70, 48, 0, 1)
-	write("~`!@#$%^&*()_+|-=\[]{};:'\",./<>", 0, 80, 48, 0, 1)
-	write("?£¥§©«¬°µ»¿ßàáäæçèéëìíïñòóöùúü¡", 0, 90, 48, 0, 1)
-	
+sum(1,0)
+
 }
 
+#sum(a,b) {
+	write("Dual par:" + a + "|" + b, 10, 10, 48)
+	
+		if (a)
+		return "IF done"
+	else
+		return //"ELSE done"
+
+	
+	return
+}
