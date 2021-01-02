@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class CodeParser : MonoBehaviour {
   Dictionary<string, CodeNode> nodes = null;
+  Dictionary<string, CodeNode> functions = null;
   int idcount = 0;
   Variables vars = null;
   readonly Expected expected = new Expected();
@@ -106,7 +107,6 @@ public class CodeParser : MonoBehaviour {
 
   readonly Regex rgTag = new Regex("([\\s]*`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-
   readonly Regex rgAssign = new Regex("[a-z\\][\\s]*=[^=]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgAssSum = new Regex("[a-z\\][\\s]*\\+=[^(\\+=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgAssSub = new Regex("[a-z\\][\\s]*\\-=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -161,11 +161,12 @@ public class CodeParser : MonoBehaviour {
 
   #endregion Regex
 
-  Regex rgName = new Regex("^name:[\\s]*([a-z0-9_\\s]+)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  Regex rgStart = new Regex("^start[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  Regex rgUpdate = new Regex("^update[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  Regex rgData = new Regex("^data[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  Regex rgFunction = new Regex("^#([a-z][a-z0-9]{0,11})[\\s]*\\((.*)\\)[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgName = new Regex("^name:[\\s]*([a-z0-9_\\s]+)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgStart = new Regex("^start[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUpdate = new Regex("^update[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgData = new Regex("^data[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgFunction = new Regex("^#([a-z][a-z0-9]{0,11})[\\s]*\\((.*)\\)[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgFunctionCall = new Regex("([a-z][a-z0-9]{0,11})[\\s]*\\((.*)\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   int linenumber = 0;
 
@@ -187,23 +188,37 @@ public class CodeParser : MonoBehaviour {
       idcount = 0;
       CodeNode res = new CodeNode(BNF.Program, null, 0);
       nodes = new Dictionary<string, CodeNode>();
+      functions = new Dictionary<string, CodeNode>();
       vars = variables;
 
 
       string[] lines = file.Split('\n');
 
       // Find first all function definitions
+      CodeNode funcs = new CodeNode(BNF.Functions, "", 0);
       for (int linenumber = 0; linenumber < lines.Length; linenumber++) {
-        string line = lines[linenumber];
-
+        string line = lines[linenumber].Trim();
         Match m = rgFunction.Match(line);
         if (m.Success) {
-          // parse the parameters, find the end of the block, and parse the result. Add it to a specific Functions node at the root
-          // FIXME
-          continue;
+          CodeNode n = new CodeNode(BNF.FunctionDef, line, linenumber) { sVal = m.Groups[1].Value.Trim().ToLowerInvariant() };
+          CodeNode ps = new CodeNode(BNF.Params, line, linenumber);
+          n.Add(ps);
+          funcs.Add(n);
+          functions.Add(n.sVal, n);
+          // Parse the parameters, the parsing of th ecode will be done later because in the code other functions can be called
+          string pars = m.Groups[2].Value.Trim(' ', '(', ')');
+          foreach (string par in rgVar.Split(pars)) {
+            string p = par.Trim(' ', ',');
+            if (!string.IsNullOrWhiteSpace(p)) {
+              CodeNode v = new CodeNode(BNF.REG, par, linenumber) { sVal = p.ToLowerInvariant() };
+              ps.Add(v);
+            }
+          }
         }
       }
+      if (functions.Count > 0) res.Add(funcs);
 
+      // Then the sections
       for (int linenumber = 0; linenumber < lines.Length; linenumber++) {
         string line = lines[linenumber];
 
@@ -246,6 +261,21 @@ public class CodeParser : MonoBehaviour {
           CodeNode data = new CodeNode(BNF.Data, line, linenumber);
           res.Add(data);
           ParseDataBlock(lines, linenumber, end, data);
+          continue;
+        }
+
+        m = rgFunction.Match(line);
+        if (m.Success) {
+          string fname = m.Groups[1].Value.Trim().ToLowerInvariant();
+          CodeNode f = functions[fname];
+          CodeNode b = new CodeNode(BNF.BLOCK, null, 0);
+          f.Add(b);
+
+          // find the end of the block, and parse the result
+          int end = FindEndOfBlock(lines, linenumber);
+          if (end == -1) throw new Exception("\"FUNCTION\" " + fname + " section does not end");
+
+          ParseBlock(lines, linenumber + 1, end, b);
           continue;
         }
       }
@@ -681,15 +711,15 @@ public class CodeParser : MonoBehaviour {
     }
 
 
-    // [REG]=a-z
+    // [REG]=a-z[a-z0-9]*
     if (expected.IsGood(Expected.Val.MemReg) && rgVar.IsMatch(line)) {
-    string var = rgVar.Match(line).Groups[1].Value.ToLowerInvariant();
-    if (!reserverdKeywords.Contains(var)) {
-      CodeNode node = new CodeNode(BNF.REG, line, linenumber) { Reg = vars.Add(var) };
-      parent.Add(node);
+      string var = rgVar.Match(line).Groups[1].Value.ToLowerInvariant();
+      if (!reserverdKeywords.Contains(var)) {
+        CodeNode node = new CodeNode(BNF.REG, line, linenumber) { Reg = vars.Add(var) };
+        parent.Add(node);
         return;
       }
-  }
+    }
 
     // [MEM]= \[<exp>\] | \[<exp>@<exp>\]
     if (expected.IsGood(Expected.Val.MemReg) && rgMemUnparsed.IsMatch(line)) {
@@ -702,6 +732,49 @@ public class CodeParser : MonoBehaviour {
     }
 
     if (rgOpenBracket.IsMatch(line)) return;
+
+
+    if (expected.IsGood(Expected.Val.Statement) && rgFunctionCall.IsMatch(line)) {
+      Match fm = rgFunctionCall.Match(line);
+      string fnc = fm.Groups[1].Value.ToLowerInvariant();
+      if (!reserverdKeywords.Contains(fnc)) {
+        CodeNode node = new CodeNode(BNF.FunctionCall, line, linenumber) { sVal = fnc };
+        parent.Add(node);
+        // Parse the parameters and evaluate as expressions
+        CodeNode ps = new CodeNode(BNF.Params, line, linenumber);
+        node.Add(ps);
+        string pars = fm.Groups[2].Value.Trim(' ', '(', ')');
+
+        // We need to grab each single parameter, they are separated by commas (,) but other functions can be nested
+        int nump = 0;
+        string parline = "";
+        CodeNode v;
+        foreach (char c in pars) {
+          if (c == '(') nump++;
+          else if (c == ')') nump--;
+          else if (c == ',' && nump == 0) {
+            // Parse
+            parline = parline.Trim(' ', ',');
+            v = ParseExpression(parline);
+            ps.Add(v);
+            parline = "";
+          }
+          else parline += c;
+        }
+        // parse the remaining part
+        parline = parline.Trim(' ', ',');
+        if (!string.IsNullOrEmpty(parline)) {
+          v = ParseExpression(parline);
+          ps.Add(v);
+        }
+
+        if ((functions[fnc].CN1 == null && ps.children != null) || (functions[fnc].CN1.children?.Count != ps.children?.Count))
+          throw new Exception("Function " + fnc + " has\na wrong number of parameters\n" + (linenumber + 1) + ": " + origForException);
+        return;
+      }
+    }
+
+
 
     throw new Exception("Invalid code at " + (linenumber + 1) + "\n" + origForException);
   }
