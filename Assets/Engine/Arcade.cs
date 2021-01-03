@@ -792,7 +792,7 @@ public class Arcade : MonoBehaviour {
   #endregion Sprites
 
   bool Execute(CodeNode n) {
-    Debug.Log(n);
+//    Debug.Log(n);
     try {
       switch (n.type) {
         case BNF.CLR: {
@@ -1115,15 +1115,10 @@ public class Arcade : MonoBehaviour {
         case BNF.SROT: SpriteRot(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToBool()); return false;
 
         case BNF.RETURN: {
-          if (n.CN1 == null) {
-            stacks.RemoveAt(stacks.Count - 1);
-            return true;
-          }
-
-          // If we need to return a value we should be evaluated as Expression. FIXME
-
+          // Return is not called as expression, just end the stack
+          stacks.RemoveAt(stacks.Count - 1);
+          return true;
         }
-        break;
 
         case BNF.FunctionCall: {
           // Evaluate all parameters and set them
@@ -1265,7 +1260,36 @@ public class Arcade : MonoBehaviour {
         return new Value(labels[n.sVal]);
       }
 
+      case BNF.FunctionCall: {
+        // Evaluate all parameters, assign all values to the registers, run the statements like a stack, return the value from a "return" (or 0 if there is no return)
+        CodeNode fDef = functions[n.sVal];
+        Debug.Log("Executing Function as expression " + fDef.sVal);
+        if (fDef.CN1?.children != null) {
+          // Evaluate the parameters
+          for (int i = 0; i < fDef.CN1.children.Count; i++) {
+            CodeNode par = fDef.CN1.children[i];
+            CodeNode val = n.CN1.children[i];
+            Debug.Log("Par#" + i + ": " + par);
+            Debug.Log("Val#" + i + ": " + val);
+            Value v = Evaluate(val);
+            variables.Set(par.Reg, v);
+          }
+        }
 
+        ExecStack stack = new ExecStack { node = fDef.CN2, step = 0, parent = n };
+        while (stack.step < stack.node.children.Count) {
+          CodeNode sn = stack.node.children[stack.step];
+          stack.step++;
+          if (sn.type == BNF.RETURN) return Evaluate(sn);
+          Execute(sn);
+        }
+        return new Value(0);
+      }
+
+      case BNF.RETURN: {
+        if (n.CN1 == null) return new Value(0);
+        return Evaluate(n.CN1);
+      }
     }
     throw new Exception("Invalid node to evaluate: " + n.type);
   }

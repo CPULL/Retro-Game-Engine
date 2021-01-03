@@ -284,18 +284,11 @@ public class CodeNode {
 
         case BNF.SPRITE: {
           res += (sameLine ? "" : id) + "sprite(";
-          if (CN4 == null) {
-            res += CN1.ToString(indent, true) + ", " +
-                   CN2.ToString(indent, true) + ", " +
-                   CN3.ToString(indent, true) + ")";
-          }
-          else {
-            res += CN1.ToString(indent, true) + ", " +
-                   CN2.ToString(indent, true) + ", " +
-                   CN3.ToString(indent, true) + ", " +
-                   CN4.ToString(indent, true) + ", " +
-                   CN5.ToString(indent, true) + ")";
-          }
+          res += CN1.ToString(indent, true) + ", " + CN2.ToString(indent, true);
+          if (CN3 != null) res += ", " + CN3.ToString(indent, true);
+          if (CN4 != null) res += ", " + CN4.ToString(indent, true);
+          if (CN5 != null) res += ", " + CN5.ToString(indent, true);
+          res += ")";
         }
         break;
         case BNF.DESTROY: return (sameLine ? "" : id) + "destroy(" + CN1.ToString(indent, true) + ")";
@@ -401,6 +394,7 @@ public class CodeNode {
       case BNF.KEYx:
       case BNF.KEYy:
       case BNF.RETURN:
+      case BNF.FunctionCall:
         return true;
     }
     return false;

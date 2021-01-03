@@ -755,9 +755,10 @@ public class CodeParser : MonoBehaviour {
       return;
     }
 
+    // {
     if (rgOpenBracket.IsMatch(line)) return;
 
-
+    // [FUNCTION]()
     if (expected.IsGood(Expected.Val.Statement) && rgFunctionCall.IsMatch(line)) {
       Match fm = rgFunctionCall.Match(line);
       string fnc = fm.Groups[1].Value.ToLowerInvariant();
@@ -805,26 +806,6 @@ public class CodeParser : MonoBehaviour {
     throw new Exception("Invalid code at " + (linenumber + 1) + "\n" + origForException);
   }
 
-
-
-  void ParseIfBlockOLD(CodeNode ifNode, string after, string[] lines) {
-    // Block or single line?
-    if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { // [IF] [BLOCK]
-      CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
-      int end = FindEndOfBlock(lines, linenumber);
-      if (end < 0) throw new Exception("\"IF\" section does not end");
-      ifNode.Add(b);
-      ParseBlock(lines, linenumber + 1, end, b);
-      linenumber = end + 1;
-    }
-    else { // [IF] [STATEMENT]
-      CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
-      ifNode.Add(b);
-      ParseLine(b, new string[] { after });
-      linenumber++;
-    }
-    ParseElseBlock(ifNode, lines);
-  }
 
   void ParseIfBlock(CodeNode ifNode, string after, string[] lines) {
     CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
@@ -1060,21 +1041,40 @@ public class CodeParser : MonoBehaviour {
     bool atLeastOneReplacement = true;
     while (atLeastOneReplacement) {
       atLeastOneReplacement = false;
-
       // functions => `FNx
       line = rgFunctionCall.Replace(line, m => {
-        CodeNode n = new CodeNode(BNF.OPpar, GenId("FN"), origForException, linenumber);
-        // Check that the function is defined: m.Groups[1]
+        // Check that the function is defined and it is not a reserved keywork: m.Groups[1]
         string fname = m.Groups[1].Value.Trim().ToLowerInvariant();
         if (!functions.ContainsKey(fname)) throw new Exception("A function named \"" + fname + "\"\nis not defined\n" + (linenumber + 1) + ": " + origForException);
+        if (reserverdKeywords.Contains(fname)) throw new Exception("A reserved keyword is used as function:\n\"" + fname + "\"\n" + (linenumber + 1) + ": " + origForException);
+        CodeNode n = new CodeNode(BNF.FunctionCall, GenId("FN"), origForException, linenumber) { sVal = fname };
 
-        // Check that the number of parameters is good: m.Groups[2]
-        // Parse each parameter as expression
+        // Parse each parameter as expression: m.Groups[2]
+        string pars = m.Groups[2].Value.Trim();
+        CodeNode ps = new CodeNode(BNF.Params, line, linenumber);
+        n.Add(ps);
 
+        // We need to grab each single parameter, they are separated by commas (,) but other functions can be nested
+        int nump = 0;
+        string parline = "";
+        foreach (char c in pars) {
+          if (c == '(') { parline += c; nump++; }
+          else if (c == ')') { parline += c; nump--; }
+          else if (c == ',' && nump == 0) {
+            // Parse
+            parline = parline.Trim(' ', ',');
+            ps.Add(ParseExpression(parline));
+            parline = "";
+          }
+          else parline += c;
+        }
+        // parse the remaining part
+        parline = parline.Trim(' ', ',');
+        if (!string.IsNullOrEmpty(parline)) {
+          ps.Add(ParseExpression(parline));
+        }
 
-        string inner = m.Value.Trim();
-        inner = inner.Substring(1, inner.Length - 2);
-        n.Add(ParseExpression(inner));
+        atLeastOneReplacement = true;
         nodes[n.id] = n;
         return n.id;
       });
