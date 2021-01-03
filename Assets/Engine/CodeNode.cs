@@ -107,7 +107,7 @@ public class CodeNode {
         break;
         case BNF.REG: res += (sameLine ? "" : id) + " R" + Reg + (sameLine ? " " : "\n"); break;
         case BNF.INT: res += (sameLine ? "" : id) + " " + iVal + (sameLine ? " " : "\n"); break;
-        case BNF.COL:
+        case BNF.COLOR:
           res += (sameLine ? "" : id) + " c" +
                   (iVal > 64 ?
                     ((iVal & 48) >> 4).ToString() +
@@ -129,12 +129,6 @@ public class CodeNode {
         case BNF.MEMlongf: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@f]" + (sameLine ? " " : "\n"); break;
         case BNF.MEMlongs: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@s]" + (sameLine ? " " : "\n"); break;
 
-        case BNF.EXP:
-          res += (sameLine ? "" : id);
-          foreach (CodeNode cn in children)
-            res += cn.ToString(indent + 1, true);
-          if (!sameLine) res += "\n";
-          break;
         case BNF.OPpar:
           res += "(" + CN1.ToString(indent + 1, true) + ")";
           break;
@@ -317,23 +311,6 @@ public class CodeNode {
 
         case BNF.NOP: return "";
 
-
-        case BNF.SPEN:
-          break;
-        case BNF.OP:
-          break;
-        case BNF.UO:
-          break;
-        case BNF.CND:
-          break;
-        case BNF.COMP:
-          break;
-        case BNF.STATEMENT:
-          break;
-        case BNF.INCDED:
-          break;
-        case BNF.CIR:
-          break;
         default:
           res += "[[Missing:" + type + "]]";
           break;
@@ -351,7 +328,7 @@ public class CodeNode {
       case BNF.INT:
       case BNF.FLT:
       case BNF.HEX:
-      case BNF.COL:
+      case BNF.COLOR:
       case BNF.STR:
       case BNF.MEM:
       case BNF.MEMlong:
@@ -359,7 +336,6 @@ public class CodeNode {
       case BNF.MEMlongi:
       case BNF.MEMlongf:
       case BNF.MEMlongs:
-      case BNF.EXP:
       case BNF.OPpar:
       case BNF.OPsum:
       case BNF.OPsub:
@@ -502,17 +478,14 @@ public enum BNF {
   INT, 
   FLT,
   HEX,
-  COL,
+  COLOR,//rename to color
   STR,
-  STRcnst,
   MEM,
   MEMlong,
   MEMlongb,
   MEMlongi,
   MEMlongf,
   MEMlongs,
-  EXP,
-  OP,
   OPpar,
   OPsum,
   OPsub,
@@ -529,19 +502,15 @@ public enum BNF {
   CASTi,
   CASTf,
   CASTs,
-  UO,
   UOneg,
   UOinv,
   UOsub,
-  CND,
-  COMP,
   COMPeq,
   COMPne,
   COMPlt,
   COMPle,
   COMPgt,
   COMPge,
-  STATEMENT,
   ASSIGN,
   ASSIGNsum,
   ASSIGNsub,
@@ -551,7 +520,6 @@ public enum BNF {
   ASSIGNand,
   ASSIGNor,
   ASSIGNxor,
-  INCDED,
   Inc,
   Dec,
   BLOCK,
@@ -565,13 +533,12 @@ public enum BNF {
   DESTROY,
   SCREEN,
   SPRITE,
-  SPEN,
+  SPEN, // FIXME
   SPOS,
   SROT,
   LINE,
   BOX,
   CIRCLE,
-  CIR,
   FRAME,
   DTIME,
   LEN,

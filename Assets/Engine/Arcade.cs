@@ -1206,10 +1206,9 @@ public class Arcade : MonoBehaviour {
 
       case BNF.INT: return new Value(n.iVal);
       case BNF.FLT: return new Value(n.fVal);
-      case BNF.COL: return new Value(n.iVal);
+      case BNF.COLOR: return new Value(n.iVal);
       case BNF.HEX: return new Value(n.iVal);
       case BNF.STR: return new Value(n.sVal);
-      case BNF.STRcnst: return new Value(n.sVal);
 
       case BNF.DTIME: return new Value(Time.deltaTime);
       case BNF.OPpar: return Evaluate(n.CN1);

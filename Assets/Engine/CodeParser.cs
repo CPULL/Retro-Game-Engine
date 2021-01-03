@@ -996,7 +996,7 @@ public class CodeParser : MonoBehaviour {
       if (g > 3) g = 3;
       if (b > 3) b = 3;
       if (a > 3) a = 3;
-      CodeNode n = new CodeNode(BNF.COL, GenId("CL"), origForException, linenumber) {
+      CodeNode n = new CodeNode(BNF.COLOR, GenId("CL"), origForException, linenumber) {
         iVal = a * 64 + r * 16 + g * 4 + b
       };
       nodes[n.id] = n;
