@@ -1114,6 +1114,16 @@ public class Arcade : MonoBehaviour {
 
         case BNF.SROT: SpriteRot(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToBool()); return false;
 
+        case BNF.RETURN: {
+          if (n.CN1 == null) {
+            stacks.RemoveAt(stacks.Count - 1);
+            return true;
+          }
+
+          // If we need to return a value we should be evaluated as Expression. FIXME
+
+        }
+        break;
 
         case BNF.FunctionCall: {
           // Evaluate all parameters and set them

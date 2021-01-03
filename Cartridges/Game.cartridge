@@ -1,21 +1,11 @@
 Name: Test
 
 Start {
-clr(0)
-write("OK", 0, 0, 48)
-
-sum(1,0)
-
+res = sum(2,3)
+write(res, 10, 10, c330)
 }
 
-#sum(a,b) {
-	write("Dual par:" + a + "|" + b, 10, 10, 48)
-	
-		if (a)
-		return "IF done"
-	else
-		return //"ELSE done"
-
-	
-	return
+#sumx(a,b) {
+	return a+b
 }
+

@@ -67,7 +67,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgBlockOpen = new Regex(".*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBlockClose = new Regex("^[\\s]*\\}[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgVar = new Regex("(?<=[^a-z0-9`]|^)([a-z][0-9a-z]{0,7})([^a-z0-9¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgVar = new Regex("(?<=[^a-z0-9`]|^)([a-z][0-9a-z]{0,7})([^a-z0-9\\(¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgHex = new Regex("0x([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgCol = new Regex("c([0-3])([0-3])([0-3])", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgQString = new Regex("\\\\\"", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -166,7 +166,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgUpdate = new Regex("^update[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgData = new Regex("^data[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFunction = new Regex("^#([a-z][a-z0-9]{0,11})[\\s]*\\((.*)\\)[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgFunctionCall = new Regex("([a-z][a-z0-9]{0,11})[\\s]*\\((.*)\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgFunctionCall = new Regex("([a-z][a-z0-9]{0,11})[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgReturn = new Regex("[\\s]*return[\\s]*(.*)[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
   int linenumber = 0;
@@ -321,7 +321,6 @@ public class CodeParser : MonoBehaviour {
   }
 
   string origForException = "";
-  string origExpForException = "";
   void ParseLine(CodeNode parent, string[] lines) {
     ParseLine(parent, lines[linenumber].Trim(' ', '\t', '\r'), lines);
   }
@@ -446,12 +445,14 @@ public class CodeParser : MonoBehaviour {
 
     // [ASS] = [MEM] = [EXPR] | [REG] = [EXP]
     if (expected.IsGood(Expected.Val.Statement) && rgAssign.IsMatch(line)) {
+      string fullorigline = origForException;
       string dests = line.Substring(0, line.IndexOf('='));
       string val = line.Substring(line.IndexOf('=') + 1);
       CodeNode node = new CodeNode(BNF.ASSIGN, line, linenumber);
       expected.Set(Expected.Val.MemReg);
       ParseLine(node, dests, null);
       parent.Add(node);
+      origForException = fullorigline;
       node.Add(ParseExpression(val));
       return;
     }
@@ -924,7 +925,6 @@ public class CodeParser : MonoBehaviour {
   // [EXP] [OP] [EXP] | [PAR] | [REG] | [INT] | [FLT] | [MEM] | [UO] | [LEN] | deltaTime
   CodeNode ParseExpression(string line) {
     line = line.Trim(' ', '\t', '\r');
-    origExpForException = line;
 
     // First get all REG, INT, FLT, MEM, DTIME, LEN and replace with specific chars
     // Then parse the structure (recursive)
@@ -936,7 +936,7 @@ public class CodeParser : MonoBehaviour {
       toReplace.Trim();
       if (toReplace[0] != '-') throw new Exception("Invalid negative value: " + toReplace);
       toReplace = toReplace.Substring(1).Trim();
-      CodeNode n = new CodeNode(BNF.UOsub, GenId("US"), origExpForException, linenumber);
+      CodeNode n = new CodeNode(BNF.UOsub, GenId("US"), origForException, linenumber);
       CodeNode exp = ParseExpression(toReplace);
       if (exp.type == BNF.INT) {
         n = exp;
@@ -958,7 +958,7 @@ public class CodeParser : MonoBehaviour {
       toReplace.Trim();
       if (toReplace[0] != '!') throw new Exception("Invalid negation: " + toReplace);
       toReplace = toReplace.Substring(1).Trim();
-      CodeNode n = new CodeNode(BNF.UOneg, GenId("US"), origExpForException, linenumber);
+      CodeNode n = new CodeNode(BNF.UOneg, GenId("US"), origForException, linenumber);
       CodeNode exp = ParseExpression(toReplace);
       n.Add(exp);
       nodes[n.id] = n;
@@ -971,7 +971,7 @@ public class CodeParser : MonoBehaviour {
       toReplace.Trim();
       if (toReplace[0] != '~') throw new Exception("Invalid unary complement: " + toReplace);
       toReplace = toReplace.Substring(1).Trim();
-      CodeNode n = new CodeNode(BNF.UOinv, GenId("US"), origExpForException, linenumber);
+      CodeNode n = new CodeNode(BNF.UOinv, GenId("US"), origForException, linenumber);
       CodeNode exp = ParseExpression(toReplace);
       n.Add(exp);
       nodes[n.id] = n;
@@ -980,7 +980,7 @@ public class CodeParser : MonoBehaviour {
 
     // Replace DTIME => `DTx
     line = rgDeltat.Replace(line, m => {
-      CodeNode n = new CodeNode(BNF.DTIME, GenId("DT"), origExpForException, linenumber);
+      CodeNode n = new CodeNode(BNF.DTIME, GenId("DT"), origForException, linenumber);
       nodes[n.id] = n;
       return n.id;
     });
@@ -988,7 +988,7 @@ public class CodeParser : MonoBehaviour {
     // Replace FLT => `FTx
     line = rgFloat.Replace(line, m => {
       float.TryParse(m.Value, out float fVal);
-      CodeNode n = new CodeNode(BNF.FLT, GenId("FT"), origExpForException, linenumber) {
+      CodeNode n = new CodeNode(BNF.FLT, GenId("FT"), origForException, linenumber) {
         fVal = fVal
       };
       nodes[n.id] = n;
@@ -997,7 +997,7 @@ public class CodeParser : MonoBehaviour {
 
     // Replace HEX => `HXx
     line = rgHex.Replace(line, m => {
-      CodeNode n = new CodeNode(BNF.HEX, GenId("HX"), origExpForException, linenumber) {
+      CodeNode n = new CodeNode(BNF.HEX, GenId("HX"), origForException, linenumber) {
         iVal = Convert.ToInt32("0" + m.Value, 16)
       };
       nodes[n.id] = n;
@@ -1015,7 +1015,7 @@ public class CodeParser : MonoBehaviour {
       if (g > 3) g = 3;
       if (b > 3) b = 3;
       if (a > 3) a = 3;
-      CodeNode n = new CodeNode(BNF.COL, GenId("CL"), origExpForException, linenumber) {
+      CodeNode n = new CodeNode(BNF.COL, GenId("CL"), origForException, linenumber) {
         iVal = a * 64 + r * 16 + g * 4 + b
       };
       nodes[n.id] = n;
@@ -1024,7 +1024,7 @@ public class CodeParser : MonoBehaviour {
 
     // LAB
     line = rgLabel.Replace(line, m => {
-      CodeNode n = new CodeNode(BNF.LAB, GenId("LB"), origExpForException, linenumber) {
+      CodeNode n = new CodeNode(BNF.LAB, GenId("LB"), origForException, linenumber) {
         sVal = m.Value.Trim().ToLowerInvariant()
       };
       nodes[n.id] = n;
@@ -1035,7 +1035,7 @@ public class CodeParser : MonoBehaviour {
     line = rgVar.Replace(line, m => {
       string var = m.Groups[1].Value.ToLowerInvariant();
       if (!reserverdKeywords.Contains(var)) {
-        CodeNode n = new CodeNode(BNF.REG, GenId("RG"), origExpForException, linenumber) {
+        CodeNode n = new CodeNode(BNF.REG, GenId("RG"), origForException, linenumber) {
           Reg = vars.Add(var)
         };
         nodes[n.id] = n;
@@ -1047,7 +1047,7 @@ public class CodeParser : MonoBehaviour {
     // Replace INT => `INx
     line = rgInt.Replace(line, m => {
       int.TryParse(m.Value, out int iVal);
-      CodeNode n = new CodeNode(BNF.INT, GenId("IN"), origExpForException, linenumber) {
+      CodeNode n = new CodeNode(BNF.INT, GenId("IN"), origForException, linenumber) {
         iVal = iVal
       };
       nodes[n.id] = n;
@@ -1061,11 +1061,32 @@ public class CodeParser : MonoBehaviour {
     while (atLeastOneReplacement) {
       atLeastOneReplacement = false;
 
+      // functions => `FNx
+      line = rgFunctionCall.Replace(line, m => {
+        CodeNode n = new CodeNode(BNF.OPpar, GenId("FN"), origForException, linenumber);
+        // Check that the function is defined: m.Groups[1]
+        string fname = m.Groups[1].Value.Trim().ToLowerInvariant();
+        if (!functions.ContainsKey(fname)) throw new Exception("A function named \"" + fname + "\"\nis not defined\n" + (linenumber + 1) + ": " + origForException);
+
+        // Check that the number of parameters is good: m.Groups[2]
+        // Parse each parameter as expression
+
+
+        string inner = m.Value.Trim();
+        inner = inner.Substring(1, inner.Length - 2);
+        n.Add(ParseExpression(inner));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+
+
       // PAR
       // Replace PAR => `PRx
       line = rgPars.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.OPpar, GenId("PR"), origExpForException, linenumber);
+        CodeNode n = new CodeNode(BNF.OPpar, GenId("PR"), origForException, linenumber);
         string inner = m.Value.Trim();
         inner = inner.Substring(1, inner.Length - 2);
         n.Add(ParseExpression(inner));
@@ -1078,7 +1099,7 @@ public class CodeParser : MonoBehaviour {
       // Replace LEN => `LNx
       line = rgLen.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.LEN, GenId("LN"), origExpForException, linenumber);
+        CodeNode n = new CodeNode(BNF.LEN, GenId("LN"), origForException, linenumber);
         if (m.Groups.Count < 2) throw new Exception("Unhandled LEN case: " + m.Groups.Count + " Line:" + (linenumber + 1));
         string left = m.Groups[1].Value.Trim();
         n.Add(nodes[left]);
@@ -1091,7 +1112,7 @@ public class CodeParser : MonoBehaviour {
       // Replace LEN => `PLx
       line = rgPLen.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.PLEN, GenId("PL"), origExpForException, linenumber);
+        CodeNode n = new CodeNode(BNF.PLEN, GenId("PL"), origForException, linenumber);
         if (m.Groups.Count < 2) throw new Exception("Unhandled PLEN case: " + m.Groups.Count + " Line:" + (linenumber + 1));
         string left = m.Groups[1].Value.Trim();
         n.Add(nodes[left]);
@@ -1162,16 +1183,16 @@ public class CodeParser : MonoBehaviour {
           case 'f': pos += 21; break;
           case 'e': pos += 24; break;
           case 'x':
-            n = new CodeNode(BNF.KEYx, GenId("KX"), origExpForException, linenumber);
+            n = new CodeNode(BNF.KEYx, GenId("KX"), origForException, linenumber);
             nodes[n.id] = n;
             return n.id;
           case 'y':
-            n = new CodeNode(BNF.KEYy, GenId("KY"), origExpForException, linenumber);
+            n = new CodeNode(BNF.KEYy, GenId("KY"), origForException, linenumber);
             nodes[n.id] = n;
             return n.id;
           default: throw new Exception("Invalid Key at " + (linenumber + 1) + "\n" + line);
         }
-        n = new CodeNode(BNF.KEY, GenId("KK"), origExpForException, linenumber) { iVal = pos };
+        n = new CodeNode(BNF.KEY, GenId("KK"), origForException, linenumber) { iVal = pos };
         nodes[n.id] = n;
         return n.id;
       });
@@ -1234,7 +1255,7 @@ public class CodeParser : MonoBehaviour {
       // _i => QI
       line = rgCastI.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.CASTi, GenId("QI"), origExpForException, linenumber);
+        CodeNode n = new CodeNode(BNF.CASTi, GenId("QI"), origForException, linenumber);
         string child = m.Groups[1].Value.Trim();
         n.Add(nodes[child]);
         nodes[n.id] = n;
@@ -1245,7 +1266,7 @@ public class CodeParser : MonoBehaviour {
       // _i => QB
       line = rgCastB.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.CASTb, GenId("QB"), origExpForException, linenumber);
+        CodeNode n = new CodeNode(BNF.CASTb, GenId("QB"), origForException, linenumber);
         string child = m.Groups[1].Value.Trim();
         n.Add(nodes[child]);
         nodes[n.id] = n;
@@ -1256,7 +1277,7 @@ public class CodeParser : MonoBehaviour {
       // _i => QI
       line = rgCastF.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.CASTf, GenId("QF"), origExpForException, linenumber);
+        CodeNode n = new CodeNode(BNF.CASTf, GenId("QF"), origForException, linenumber);
         string child = m.Groups[1].Value.Trim();
         n.Add(nodes[child]);
         nodes[n.id] = n;
@@ -1267,7 +1288,7 @@ public class CodeParser : MonoBehaviour {
       // _s => QS
       line = rgCastS.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.CASTs, GenId("QS"), origExpForException, linenumber);
+        CodeNode n = new CodeNode(BNF.CASTs, GenId("QS"), origForException, linenumber);
         string child = m.Groups[1].Value.Trim();
         n.Add(nodes[child]);
         nodes[n.id] = n;
@@ -1348,18 +1369,20 @@ public class CodeParser : MonoBehaviour {
     line = line.Trim(' ', '\t', '\r');
     if (!nodes.ContainsKey(line)) {
       line = rgTag.Replace(line, "").Trim();
-      throw new Exception("Invalid expression at " + (linenumber + 1) + "\n" + origExpForException + "\n" + line);
+      throw new Exception("Invalid expression at " + (linenumber + 1) + "\n" + origForException + "\n" + line);
     }
     return nodes[line];
   }
 
   void ParseAssignment(string line, CodeNode parent, BNF bnf, string match) {
+    string fullorigline = origForException;
     string dest = line.Substring(0, line.IndexOf(match));
     string val = line.Substring(line.IndexOf(match) + 2);
     CodeNode node = new CodeNode(bnf, line, linenumber);
     expected.Set(Expected.Val.MemReg);
     ParseLine(node, dest, null);
     parent.Add(node);
+    origForException = fullorigline;
     node.Add(ParseExpression(val));
   }
 
