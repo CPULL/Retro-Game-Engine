@@ -789,6 +789,12 @@ public class Arcade : MonoBehaviour {
     sprites[num].Rot(rot, flip);
   }
   
+  void SpriteEnable(int num, bool enable) {
+    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
+    if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined");
+    sprites[num].Enable(enable);
+  }
+
   #endregion Sprites
 
   bool Execute(CodeNode n) {
@@ -1113,6 +1119,8 @@ public class Arcade : MonoBehaviour {
         case BNF.SPOS: SpritePos(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToInt(), n.CN4 == null || Evaluate(n.CN4).ToBool()); return false;
 
         case BNF.SROT: SpriteRot(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToBool()); return false;
+
+        case BNF.SPEN: SpriteEnable(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToBool()); return false;
 
         case BNF.RETURN: {
           // Return is not called as expression, just end the stack
@@ -1572,14 +1580,11 @@ public class ExecStack {
 
 /*  TODO
 
-  change write to add the options for compact and compressed fonts
-  functions()
   Tiles, with priority byte
   Sounds
   Documentation on the Wiki of Github
   
   disable sprites and tilemaps on errors?
-  remove BNFs that are not used
   once parser is completed use as keys shorter strings, removing the first two characters
 
 

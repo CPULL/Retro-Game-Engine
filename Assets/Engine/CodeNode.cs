@@ -291,6 +291,7 @@ public class CodeNode {
                   CN1.ToString(indent, true) + ", " + CN2.ToString(indent, true) + ", " + CN3.ToString(indent, true) +
                   (CN4 != null ? ", " + CN4.ToString(indent, true) : "") + ")";
         case BNF.SROT: return (sameLine ? "" : id) + "SRot(" + CN1.ToString(indent, true) + ", " + CN2.ToString(indent, true) + ", " + CN3.ToString(indent, true) + ")";
+        case BNF.SPEN: return (sameLine ? "" : id) + "SPEn(" + CN1.ToString(indent, true) + ", " + CN2.ToString(indent, true) + ")";
 
         case BNF.FunctionDef:
           return (sameLine ? "" : id) + sVal + (CN1 == null ? "()" : CN1.ToString(indent, true)) + " {" + (CN2 == null ? "" : (CN2.children == null ? CN2.ToString(indent, true) : CN2.children.Count.ToString())) + "}";

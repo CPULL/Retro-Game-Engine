@@ -70,6 +70,10 @@ public class Grob {
     sprite.enabled = enable;
   }
 
+  internal void Enable(bool enable) {
+    sprite.enabled = enable;
+  }
+
   internal void Rot(int rot, bool flip) {
     switch(rot) {
       case 0: rt.localRotation = Quaternion.Euler(0, 0, 0); break;

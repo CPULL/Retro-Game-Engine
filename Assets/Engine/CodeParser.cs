@@ -141,6 +141,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*),([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(([^,]+),([^,]+),([^,]+)(,([^,]+))?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSrot = new Regex("[\\s]*srot[\\s]*\\(([^,]+),([^,]+),([^,]+)?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSPen = new Regex("[\\s]*spen[\\s]*\\(([^,]+),([^,]+)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgCMPlt = new Regex("(`[a-z]{3,}¶)([\\s]*\\<[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPle = new Regex("(`[a-z]{3,}¶)([\\s]*\\<\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -662,6 +663,17 @@ public class CodeParser : MonoBehaviour {
       node.Add(ParseExpression(m.Groups[1].Value));
       node.Add(ParseExpression(m.Groups[2].Value));
       node.Add(ParseExpression(m.Groups[3].Value));
+      parent.Add(node);
+      return;
+    }
+
+    // [SPEN] num, enable
+    if (expected.IsGood(Expected.Val.Statement) && rgSPen.IsMatch(line)) {
+      Match m = rgSPen.Match(line);
+      if (m.Groups.Count < 3) throw new Exception("Invalid SPen() command. Line: " + (linenumber + 1));
+      CodeNode node = new CodeNode(BNF.SPEN, line, linenumber);
+      node.Add(ParseExpression(m.Groups[1].Value));
+      node.Add(ParseExpression(m.Groups[2].Value));
       parent.Add(node);
       return;
     }
