@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class Arcade : MonoBehaviour {
-  const float updateTime = 1.5f;
+  const float updateTime = .5f;
   public RawImage Screen;
   public Text FPS;
   Texture2D texture;
@@ -35,14 +35,10 @@ public class Arcade : MonoBehaviour {
 
   float updateDelay = -1;
   float toWait = 0;
-  bool startCompleted = false;
   CodeNode startCode;
   CodeNode updateCode;
-  int stackProgramCounter = 0;
-  readonly List<ExecStack> stacks = new List<ExecStack>();
+  readonly ExecStacks stacks = new ExecStacks();
   readonly Dictionary<string, CodeNode> functions = new Dictionary<string, CodeNode>();
-  int fpsFrames = 0;
-  float fpsTime = 0;
   readonly bool[] inputs = new bool[27];
   public enum Keys {
     L = 0,  Lu = 1,  Ld = 2,
@@ -55,6 +51,11 @@ public class Arcade : MonoBehaviour {
     F = 21, Fu = 22, Fd = 23,
     E = 24, Eu = 25, Ed = 26
   }
+
+
+  int FpsFrames = 0;
+  float FpsTime = 0;
+
 
   private void Update() {
     if (updateDelay < 0) return;
@@ -71,24 +72,26 @@ public class Arcade : MonoBehaviour {
           SetPixel(i, hm1 - 1, 0);
           SetPixel(i, hm1, 0);
         }
-        texture.Apply();
+        CompleteFrame();
         return;
       }
       sprites[0].Pos(0, 0, scaleW, scaleH, false);
       updateDelay = 0;
     }
 
-    fpsTime += Time.deltaTime;
-    if (fpsTime > 1f) {
-      fpsTime -= 1f;
-      FPS.text = fpsFrames.ToString();
-      fpsFrames = 0;
+    FpsTime += Time.deltaTime;
+    if (FpsTime > 1f) {
+      FpsTime -= 1f;
+      FPS.text = FpsFrames.ToString();
+      FpsFrames = 0;
     }
 
     if (toWait > 0) {
       toWait -= Time.deltaTime;
       return;
     }
+
+    if (stacks.Invalid) return;
 
     #region Key input
     for (int i = 0; i < inputs.Length; i++) inputs[i] = false;
@@ -132,94 +135,30 @@ public class Arcade : MonoBehaviour {
 
     bool something = false;
     int numruns = 0;
-    if (!startCompleted && startCode != null) {
-      while (stacks.Count > 0) {
-        ExecStack stack = stacks[stacks.Count - 1];
-        while (stack.step < stack.node.children.Count) {
-          CodeNode n = stack.node.children[stack.step];
-          stack.step++;
-          if (Execute(n)) {
-            fpsFrames++;
-            return; // Skip the execution for now so Unity can actually draw the frame
-          }
-        }
-        if (stack.cond != null && Evaluate(stack.cond).ToInt() != 0) {
-          stack.step = 0;
-          numruns++;
-          if (numruns>1000) {
-            Write("Possible infinite loop at: " + stack.parent.origLineNum + "\n" + stack.parent.origLine, 4, 4, 48, 0);
-            texture.Apply();
-            startCompleted = true;
-            fpsFrames++;
-            return;
-          }
-        }
-        else
-          stacks.RemoveAt(stacks.Count - 1);
-      }
-
-      while (stackProgramCounter < startCode.children.Count) {
-        CodeNode n = startCode.children[stackProgramCounter];
-        stackProgramCounter++;
-        if (Execute(n)) {
-          fpsFrames++;
-          return; // Skip the execution for now so Unity can actually draw the frame
-        }
-      }
-      startCompleted = true;
-      stackProgramCounter = 0;
-      texture.Apply();
-      fpsFrames++;
-      return;
-    }
-
-    // Update cycle
-    if (updateCode == null) {
-      if (something) texture.Apply();
-      fpsFrames++;
-      return;
-    }
-
-    numruns = 0;
-    while (stacks.Count > 0) {
-      ExecStack stack = stacks[stacks.Count - 1];
-      while (stack.step < stack.node.children.Count) {
-        CodeNode n = stack.node.children[stack.step];
-        something = true;
-        stack.step++;
-        if (Execute(n)) {
-          fpsFrames++;
-          return; // Skip the execution for now so Unity can actually draw the frame
-        }
-      }
-      if (stack.cond != null && Evaluate(stack.cond).ToInt() != 0) {
-        stack.step = 0;
-        numruns++;
-        if (numruns > 1000) {
-          Write("Possible infinite loop at: " + stack.parent.origLineNum + "\n" + stack.parent.origLine, 4, 4, 48, 0);
-          texture.Apply();
-          startCompleted = true;
-          fpsFrames++;
-          return;
-        }
-      }
-      else
-        stacks.RemoveAt(stacks.Count - 1);
-    }
-
-    while (stackProgramCounter < updateCode.children.Count) {
-      CodeNode n = updateCode.children[stackProgramCounter];
+    CodeNode n = stacks.GetExecutionNode(this);
+    while (n != null) {
       something = true;
-      stackProgramCounter++;
       if (Execute(n)) {
-        fpsFrames++;
+        CompleteFrame();
         return; // Skip the execution for now so Unity can actually draw the frame
       }
+      numruns++;
+      if (numruns > 1000) {
+        Write("Possible infinite loop at: " + n.parent.origLineNum + "\n" + n.parent.origLine, 4, 4, 48, 0);
+        CompleteFrame();
+        return;
+      }
+      n = stacks.GetExecutionNode(this);
     }
-    stackProgramCounter = 0;
+    stacks.Destroy();
+    stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
 
-    if (something) texture.Apply();
-    fpsFrames++;
+    if (something) CompleteFrame();
+  }
+
+  void CompleteFrame() {
+    FpsFrames++;
+    texture.Apply();
   }
 
   private void Start() {
@@ -295,6 +234,11 @@ public class Arcade : MonoBehaviour {
 
     }
     texture.Apply();
+
+    if (startCode != null)
+      stacks.AddStack(startCode, null, startCode.origLine, startCode.origLineNum);
+    else
+      stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
   }
 
   public void SelectCartridge(string tag) {
@@ -836,7 +780,7 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.FRAME: {
-          texture.Apply();
+          CompleteFrame();
           return true; // We will skip to the next frame
         }
 
@@ -1074,14 +1018,14 @@ public class Arcade : MonoBehaviour {
         case BNF.IF: {
           Value cond = Evaluate(n.CN1);
           if (cond.ToInt() != 0) {
-            if (n.CN2.type == BNF.BLOCK && (n.CN2.children == null || n.CN2.children.Count == 0)) return true;
-            stacks.Add(new ExecStack { node = n.CN2, step = 0, parent = n });
-            return true;
+            if (n.CN2.type != BNF.BLOCK || (n.CN2.children != null && n.CN2.children.Count > 0))
+              stacks.AddStack(n.CN2, null, n.origLine, n.origLineNum);
+            return false;
           }
           else if (n.children.Count > 2) {
-            if (n.CN3.type == BNF.BLOCK && (n.CN3.children == null || n.CN3.children.Count == 0)) return true;
-            stacks.Add(new ExecStack { node = n.CN3, step = 0, parent = n });
-            return true;
+            if (n.CN3.type != BNF.BLOCK || (n.CN3.children != null && n.CN3.children.Count > 0))
+              stacks.AddStack(n.CN3, null, n.origLine, n.origLineNum);
+            return false;
           }
         }
         break;
@@ -1089,9 +1033,8 @@ public class Arcade : MonoBehaviour {
         case BNF.WHILE: {
           Value cond = Evaluate(n.CN1);
           if (cond.ToInt() != 0) {
-            Debug.Log("Executing IF");
-            stacks.Add(new ExecStack { node = n.CN2, cond = n.CN1, step = 0, parent = n });
-            return true;
+            stacks.AddStack(n.CN2, n.CN1, n.origLine, n.origLineNum);
+            return false;
           }
         }
         break;
@@ -1100,13 +1043,13 @@ public class Arcade : MonoBehaviour {
           Execute(n.CN1);
           Value cond = Evaluate(n.CN2);
           if (cond.ToInt() == 0) return false;
-          stacks.Add(new ExecStack { node = n.CN3, step = 0, cond = n.CN2, parent = n });
-          return true;
+          stacks.AddStack(n.CN3, n.CN2, n.origLine, n.origLineNum);
+          return false;
         }
 
         case BNF.WAIT: {
           toWait = Evaluate(n.CN1).ToFlt();
-          if (toWait > 0 && n.sVal == "*") texture.Apply();
+          if (toWait > 0 && n.sVal == "*") CompleteFrame();
           return toWait > 0;
         }
 
@@ -1154,11 +1097,7 @@ public class Arcade : MonoBehaviour {
 
         case BNF.SSCALE: SpriteScale(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToByte(), Evaluate(n.CN3).ToByte()); return false;
 
-        case BNF.RETURN: {
-          // Return is not called as expression, just end the stack
-          stacks.RemoveAt(stacks.Count - 1);
-          return true;
-        }
+        case BNF.RETURN: return stacks.PopUp(); // Return is not called as expression, just end the stack
 
         case BNF.FunctionCall: {
           // Evaluate all parameters and set them
@@ -1176,8 +1115,8 @@ public class Arcade : MonoBehaviour {
               variables.Set(par.Reg, v);
             }
           }
-          stacks.Add(new ExecStack { node = fDef.CN2, step = 0, parent = n });
-          return true;
+          stacks.AddStack(n.CN2, null, n.origLine, n.origLineNum);
+          return false;
         }
 
         case BNF.NOP: return false;
@@ -1186,14 +1125,14 @@ public class Arcade : MonoBehaviour {
           Clear(0b010000);
           Write("Not handled code:\n " + n.type + "\n" + n, 2, 2, 0b111100);
           updateDelay = -1;
-          stackProgramCounter = int.MaxValue;
-          texture.Apply();
+          stacks.Destroy();
+          CompleteFrame();
         }
         break;
       }
     } catch (Exception e) {
       Clear(0b110000);
-      Debug.Log(e.Message);
+      Debug.Log(e.Message + "\n" + e.StackTrace);
       string msg = "";
       for (int i = 0, l = 0; i < e.Message.Length; i++) {
         char c = e.Message[i];
@@ -1207,13 +1146,13 @@ public class Arcade : MonoBehaviour {
       }
       Write(msg, 2, 2, 0);
       updateDelay = -1;
-      stackProgramCounter = int.MaxValue;
-      texture.Apply();
+      stacks.Destroy();
+      CompleteFrame();
     }
     return false;
   }
 
-  private Value Evaluate(CodeNode n) {
+  internal Value Evaluate(CodeNode n) {
     if (n == null) return new Value();
     if (!n.Evaluable()) throw new Exception("Not evaluable node: " + n);
 
@@ -1315,12 +1254,21 @@ public class Arcade : MonoBehaviour {
           }
         }
 
-        ExecStack stack = new ExecStack { node = fDef.CN2, step = 0, parent = n };
-        while (stack.step < stack.node.children.Count) {
-          CodeNode sn = stack.node.children[stack.step];
-          stack.step++;
+        ExecStacks functionStack = new ExecStacks();
+        functionStack.AddStack(fDef.CN2, null, fDef.origLine, fDef.origLineNum);
+
+        int numruns = 0;
+        CodeNode sn = functionStack.GetExecutionNode(this);
+        while (sn != null) {
           if (sn.type == BNF.RETURN) return Evaluate(sn);
           Execute(sn);
+          numruns++;
+          if (numruns > 1000) {
+            Write("Possible infinite loop at: " + sn.parent.origLineNum + "\n" + sn.parent.origLine, 4, 4, 48, 0);
+            CompleteFrame();
+            return new Value();
+          }
+          sn = functionStack.GetExecutionNode(this);
         }
         return new Value(0);
       }
@@ -1600,13 +1548,6 @@ public class Arcade : MonoBehaviour {
 {'¡', new byte[]{0x00,0x18,0x00,0x00,0x18,0x18,0x18,0x18} }
   };
 
-}
-
-public class ExecStack {
-  public CodeNode node;
-  public CodeNode cond;
-  public CodeNode parent;
-  public int step;
 }
 
 

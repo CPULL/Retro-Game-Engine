@@ -74,7 +74,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgQString = new Regex("\\\\\"", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgString = new Regex("(\")([^\"]*)(\")", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDeltat = new Regex("deltatime", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgFloat = new Regex("[0-9]+\\.[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgFloat = new Regex("[0-9]*\\.[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgInt = new Regex("[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBin = new Regex("b([0-1]{1,31})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
@@ -108,15 +108,15 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgLen = new Regex("([\\s]*`[a-z]{3,}¶)\\.len[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgPLen = new Regex("([\\s]*`[a-z]{3,}¶)\\.plen[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgAssign = new Regex("[a-z\\][\\s]*=[^=]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgAssSum = new Regex("[a-z\\][\\s]*\\+=[^(\\+=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgAssSub = new Regex("[a-z\\][\\s]*\\-=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgAssMul = new Regex("[a-z\\][\\s]*\\*=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgAssDiv = new Regex("[a-z\\][\\s]*/=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgAssMod = new Regex("[a-z\\][\\s]*%=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgAssAnd = new Regex("[a-z\\][\\s]*&=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgAssOr = new Regex("[a-z\\][\\s]*\\|=[^(\\-=)]=", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgAssXor = new Regex("[a-z\\][\\s]*\\^=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgAssign = new Regex("[\\s]*=[^=]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgAssSum = new Regex("[\\s]*\\+=[^(\\+=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgAssSub = new Regex("[\\s]*\\-=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgAssMul = new Regex("[\\s]*\\*=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgAssDiv = new Regex("[\\s]*/=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgAssMod = new Regex("[\\s]*%=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgAssAnd = new Regex("[\\s]*&=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgAssOr = new Regex("[\\s]*\\|=[^(\\-=)]=", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgAssXor = new Regex("[\\s]*\\^=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgClr = new Regex("[\\s]*clr\\((.+)\\)[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgFrame = new Regex("frame", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -465,6 +465,7 @@ public class CodeParser : MonoBehaviour {
       parent.Add(node);
       origForException = fullorigline;
       node.Add(ParseExpression(val));
+      expected.Set(Expected.Val.Statement);
       return;
     }
 
@@ -1455,6 +1456,7 @@ public class CodeParser : MonoBehaviour {
     parent.Add(node);
     origForException = fullorigline;
     node.Add(ParseExpression(val));
+    expected.Set(Expected.Val.Statement);
   }
 
   private string ParseMem(BNF bnf, string id, string line, Match m) {

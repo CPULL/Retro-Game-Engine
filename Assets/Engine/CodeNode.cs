@@ -460,6 +460,17 @@ public class Expected {
   }
 
   public enum Val { None, Statement, MemReg, Expression, Block };
+
+  public override string ToString() {
+    string res = "";
+    if ((val & 1) != 0) res += (Val)0;
+    if ((val & 2) != 0) res += (Val)1;
+    if ((val & 4) != 0) res += (Val)2;
+    if ((val & 8) != 0) res += (Val)3;
+    if ((val & 16) != 0) res += (Val)4;
+    return res;
+  }
+
 }
 
 

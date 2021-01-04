@@ -10,8 +10,8 @@ Start {
 	p2y = 90
 	bx = 160
 	by = 90
-	vx = 0.22
-	vy = 0.18
+	vx = 2.2
+	vy = 1.8
 	Spos(0, 32, 90, 1)
 	Spos(1, 280, 90, 1)
 	Spos(2, bx, by, 1)
@@ -30,28 +30,67 @@ Update {
 	}
 
 
-	if (keyu & p1y > 1) p1y--;
-	if (keyd & p1y < 148) p1y++;
+	if (keyu & p1y > 1) p1y-=2
+	if (keyd & p1y < 148) p1y+=2
 
 	// A.I.
 	if (p2y + 10 > by & p2y > 1) {
-		if (vx > 0) p2y-=0.5
-		else p2y -= 0.05
+		if (vx > 0) p2y-=2
+		else p2y -= 0.35
 	}
+	
 	if (p2y + 10 < by & p2y < 148) {
-		if (vx > 0) p2y+=0.5
-		else p2y += 0.05
+		if (vx > 0) p2y+=2
+		else p2y += 0.35
 	}		
 
 	bx += vx
 	by += vy
 	
 	// Hit by enemy
-	if (bx > 270 & bx < 282 & by > p2y & by < p2y + 20 & vx > 0) vx = -vx
+	if (bx > 270 & bx < 282 & by > p2y - 10 & by < p2y + 40 & vx > 0) vx = -vx
 	// Hit by player
-	if (bx > 30 & bx < 38 & by > p1y & by < p1y + 20 & vx < 0) vx = -vx
+	if (bx > 30 & bx < 38 & by > p1y - 10 & by < p1y + 40 & vx < 0) vx = -vx
 
-	frame
+	if (bx < 1) {
+		score2++
+		vx=-vx
+		goal=.5
+	}
+
+	if (bx > 308) {
+		score1++
+		vx=-vx
+		goal=.5
+	}
+
+	if (goal > .4) {
+		clr(16)
+		goal -= deltaTime
+		write("Score: " + score1 + " : " + score2, 100, 0, c330, c001, 0)
+	}
+	else if (goal > .3) {
+		clr(32)
+		goal -= deltaTime
+		write("Score: " + score1 + " : " + score2, 100, 0, c330, c001, 0)
+	}
+	else if (goal > .2) {
+		clr(48)
+		goal -= deltaTime
+		write("Score: " + score1 + " : " + score2, 100, 0, c330, c001, 0)
+	}
+	else if (goal > .1) {
+		clr(32)
+		goal -= deltaTime
+		write("Score: " + score1 + " : " + score2, 100, 0, c330, c001, 0)
+	}
+	else if (goal > 0) {
+		clr(16)
+		goal -= deltaTime
+		if (goal <= 0) clr(1)
+		write("Score: " + score1 + " : " + score2, 100, 0, c330, c001, 0)
+	}
+
 	Spos(0, 32, p1y)
 	Spos(1, 280, p2y)
 	Spos(2, bx, by)
