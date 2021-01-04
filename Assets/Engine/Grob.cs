@@ -58,6 +58,7 @@ public class Grob {
     if (w > 32) w = 32;
     if (h < 8) h = 8;
     if (h > 32) h = 32;
+    notDefined = false;
     texture = texture2D;
     texture.filterMode = filter ? FilterMode.Bilinear : FilterMode.Point;
     sprite.texture = texture;
@@ -66,7 +67,7 @@ public class Grob {
 
 
   internal void Pos(int x, int y, float scaleW, float scaleH, bool enable) {
-    rt.anchoredPosition = new Vector2(scaleW * x, -scaleH * y - 20.25f);
+    rt.anchoredPosition = new Vector2(scaleW * x, -scaleH * y);
     sprite.enabled = enable;
   }
 

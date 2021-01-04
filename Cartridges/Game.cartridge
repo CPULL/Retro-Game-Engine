@@ -1,49 +1,64 @@
-Name: Squash with sprites
+Name: Pong
 
 Start {
-	clr(0)
-	a = 11
-	b = 20
-	c = 30
-	d = func(a, b)
-	Write("a = " + a, 0, 0, c330)
-	Write("b = " + b, 0, 10, c330)
-	Write("c = " + c, 0, 20, c330)
-	Write("d = " + d, 0, 30, c330)
-}
-
-#func(b, c) {
-	// Changing a
-	a = 0
-	res = b+c
-	b = 25
-	c = 35
-	return res
-}
-
-
-aStart {
 	clr(c001)
 	sprite(0, PaddleSize:)
-	sprite(1, 12, 12,Ball:, f)
-	p = 90
+	sprite(1, PaddleSize:)
+	stint(1, c300)
+	sprite(2, 12, 12, Ball:, f)
+	p1y = 90
+	p2y = 90
+	bx = 160
+	by = 90
+	vx = 0.22
+	vy = 0.18
 	Spos(0, 32, 90, 1)
-	x = 160
-	y = 90
-	vx = 2.2
-	vy = 1.8
-	Spos(1, x, y, 1)
-	score = 0
+	Spos(1, 280, 90, 1)
+	Spos(2, bx, by, 1)
+	score1 = 0
+	score2 = 0
 }
 
-aUpdate {
-	write("Score: " + score, 200, 0, c330, 1)
+Update {
+	if (by > 180-14 & vy > 0) vy = -vy
+	if (by < 14 & vy < 0) vy = -vy
 
-	x += vx
-	y += vy
-	Spos(1, x, y)
+	if (psc1 != score1 | psc2 != score2) {
+		write("Score: " + score1 + " : " + score2 + "    ", 100, 0, c330, c001, 0)
+		psc1 = score1
+		psc2 = score2
+	}
+
+
+	if (keyu & p1y > 1) p1y--;
+	if (keyd & p1y < 148) p1y++;
+
+	// A.I.
+	if (p2y + 10 > by & p2y > 1) {
+		if (vx > 0) p2y-=0.5
+		else p2y -= 0.05
+	}
+	if (p2y + 10 < by & p2y < 148) {
+		if (vx > 0) p2y+=0.5
+		else p2y += 0.05
+	}		
+
+	bx += vx
+	by += vy
+	
+	// Hit by enemy
+	if (bx > 270 & bx < 282 & by > p2y & by < p2y + 20 & vx > 0) vx = -vx
+	// Hit by player
+	if (bx > 30 & bx < 38 & by > p1y & by < p1y + 20 & vx < 0) vx = -vx
+
 	frame
+	Spos(0, 32, p1y)
+	Spos(1, 280, p2y)
+	Spos(2, bx, by)
+}
 
+
+/*
 	if (keyU & p > 1) {
 		p -= 2.5
 	}
@@ -101,6 +116,7 @@ aUpdate {
 	
 }
 
+*/
 
 Data {
 	screen(320,180)

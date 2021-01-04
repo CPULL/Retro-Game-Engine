@@ -84,7 +84,6 @@ public class Arcade : MonoBehaviour {
       FPS.text = fpsFrames.ToString();
       fpsFrames = 0;
     }
-    fpsFrames++;
 
     if (toWait > 0) {
       toWait -= Time.deltaTime;
@@ -139,7 +138,10 @@ public class Arcade : MonoBehaviour {
         while (stack.step < stack.node.children.Count) {
           CodeNode n = stack.node.children[stack.step];
           stack.step++;
-          if (Execute(n)) return; // Skip the execution for now so Unity can actually draw the frame
+          if (Execute(n)) {
+            fpsFrames++;
+            return; // Skip the execution for now so Unity can actually draw the frame
+          }
         }
         if (stack.cond != null && Evaluate(stack.cond).ToInt() != 0) {
           stack.step = 0;
@@ -148,6 +150,7 @@ public class Arcade : MonoBehaviour {
             Write("Possible infinite loop at: " + stack.parent.origLineNum + "\n" + stack.parent.origLine, 4, 4, 48, 0);
             texture.Apply();
             startCompleted = true;
+            fpsFrames++;
             return;
           }
         }
@@ -158,17 +161,22 @@ public class Arcade : MonoBehaviour {
       while (stackProgramCounter < startCode.children.Count) {
         CodeNode n = startCode.children[stackProgramCounter];
         stackProgramCounter++;
-        if (Execute(n)) return; // Skip the execution for now so Unity can actually draw the frame
+        if (Execute(n)) {
+          fpsFrames++;
+          return; // Skip the execution for now so Unity can actually draw the frame
+        }
       }
       startCompleted = true;
       stackProgramCounter = 0;
       texture.Apply();
+      fpsFrames++;
       return;
     }
 
     // Update cycle
     if (updateCode == null) {
       if (something) texture.Apply();
+      fpsFrames++;
       return;
     }
 
@@ -179,7 +187,10 @@ public class Arcade : MonoBehaviour {
         CodeNode n = stack.node.children[stack.step];
         something = true;
         stack.step++;
-        if (Execute(n)) return; // Skip the execution for now so Unity can actually draw the frame
+        if (Execute(n)) {
+          fpsFrames++;
+          return; // Skip the execution for now so Unity can actually draw the frame
+        }
       }
       if (stack.cond != null && Evaluate(stack.cond).ToInt() != 0) {
         stack.step = 0;
@@ -188,6 +199,7 @@ public class Arcade : MonoBehaviour {
           Write("Possible infinite loop at: " + stack.parent.origLineNum + "\n" + stack.parent.origLine, 4, 4, 48, 0);
           texture.Apply();
           startCompleted = true;
+          fpsFrames++;
           return;
         }
       }
@@ -199,11 +211,15 @@ public class Arcade : MonoBehaviour {
       CodeNode n = updateCode.children[stackProgramCounter];
       something = true;
       stackProgramCounter++;
-      if (Execute(n)) return; // Skip the execution for now so Unity can actually draw the frame
+      if (Execute(n)) {
+        fpsFrames++;
+        return; // Skip the execution for now so Unity can actually draw the frame
+      }
     }
     stackProgramCounter = 0;
 
     if (something) texture.Apply();
+    fpsFrames++;
   }
 
   private void Start() {
@@ -1595,6 +1611,8 @@ public class ExecStack {
 
 
 /*  TODO
+
+  FPS looks really unrealistic
 
   Tiles, with priority byte
   Sounds

@@ -301,7 +301,7 @@ public class CodeParser : MonoBehaviour {
 
       return res;
     } catch (Exception e) {
-      Debug.Log(e.Message + "\nCurrent line = " + (linenumber + 1));
+      Debug.Log(e.Message + "\nCurrent line = " + (linenumber + 1) + "\n" + e.StackTrace);
       throw e;
     }
   }
@@ -371,8 +371,8 @@ public class CodeParser : MonoBehaviour {
       else if (!string.IsNullOrEmpty(after)) { // [IF] ([EXP]) [STATEMENT]
         CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
         node.Add(b);
-        ParseLine(b, new string[] { after });
-        ParseElseBlock(node, lines);
+        ParseLine(b, after, lines);
+        ParseElseBlock(node, lines, true);
         return;
       }
 
@@ -385,7 +385,7 @@ public class CodeParser : MonoBehaviour {
       CodeNode node = new CodeNode(BNF.FOR, line, linenumber);
       parent.Add(node);
       if (!string.IsNullOrEmpty(m.Groups[1].Value.Trim())) {
-        ParseLine(node, new string[] { m.Groups[1].Value.Trim() });
+        ParseLine(node, m.Groups[1].Value.Trim(), lines);
       }
       else node.Add(new CodeNode(BNF.NOP, line, linenumber));
 
@@ -401,7 +401,7 @@ public class CodeParser : MonoBehaviour {
       node.Add(b);
 
       if (!string.IsNullOrEmpty(m.Groups[3].Value.Trim())) { // The last parst is added at the end of the block
-        ParseLine(b, new string[] { m.Groups[3].Value.Trim() });
+        ParseLine(b, m.Groups[3].Value.Trim(), lines);
       }
     }
 
@@ -772,7 +772,7 @@ public class CodeParser : MonoBehaviour {
       else if (!string.IsNullOrEmpty(after)) { // [WHILE] ([EXP]) [STATEMENT]
         CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
         node.Add(b);
-        ParseLine(b, new string[] { after });
+        ParseLine(b, after, lines);
         return;
       }
 
@@ -870,7 +870,7 @@ public class CodeParser : MonoBehaviour {
       int end = FindEndOfBlock(lines, linenumber);
       if (end < 0) throw new Exception("\"IF\" section does not end");
       ParseBlock(lines, linenumber + 1, end, b);
-      linenumber = end + 1;
+      linenumber = end;
     }
     else if (string.IsNullOrEmpty(after)) { // [IF] \n* ({ | [^{ ])
       for (int i = linenumber + 1; i < lines.Length; i++) {
@@ -880,24 +880,23 @@ public class CodeParser : MonoBehaviour {
           int end = FindEndOfBlock(lines, i);
           if (end < 0) throw new Exception("\"IF\" section does not end");
           ParseBlock(lines, linenumber + 1, end, b);
-          linenumber = end + 1;
+          linenumber = end;
           break;
         }
         else { // [IF] \n* [^{ ]
           linenumber = i;
           ParseLine(b, lines);
-          linenumber++;
           break;
         }
       }
     }
-    ParseElseBlock(ifNode, lines);
+    ParseElseBlock(ifNode, lines, false);
   }
 
 
-  void ParseElseBlock(CodeNode ifNode, string[] lines) {
+  void ParseElseBlock(CodeNode ifNode, string[] lines, bool nextLine) {
     // Is the next non-empty line an "else"?
-    for (int pos = linenumber; pos < lines.Length; pos++) {
+    for (int pos = linenumber + (nextLine ? 1 : 0); pos < lines.Length; pos++) {
       string l = lines[pos].Trim();
       if (string.IsNullOrEmpty(l)) continue;
       Match m = rgElse.Match(l);
@@ -911,7 +910,7 @@ public class CodeParser : MonoBehaviour {
           if (end < 0) throw new Exception("\"ELSE\" section does not end");
           ifNode.Add(nElse);
           ParseBlock(lines, linenumber + 1, end, nElse);
-          linenumber = end + 1;
+          linenumber = end;
           return;
         }
         if (string.IsNullOrEmpty(after)) { // [ELSE] \n* ({ | [^{ ])
@@ -923,17 +922,22 @@ public class CodeParser : MonoBehaviour {
               if (end < 0) throw new Exception("\"ELSE\" section does not end");
               ifNode.Add(nElse);
               ParseBlock(lines, linenumber + 1, end, nElse);
-              linenumber = end + 1;
+              linenumber = end;
               return;
             }
             else { // [ELSE] \n* [^{ ]
               linenumber = i;
               ifNode.Add(nElse);
               ParseLine(nElse, lines);
-              linenumber++;
               return;
             }
           }
+        }
+        else { // [ELSE] \n* [^{ ]
+          ifNode.Add(nElse);
+          ParseLine(nElse, after, null);
+          linenumber++;
+          return;
         }
       }
       else return; // No else
@@ -954,7 +958,7 @@ public class CodeParser : MonoBehaviour {
     else { // [WHILE] [STATEMENT]
       CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
       ifNode.Add(b);
-      ParseLine(b, new string[] { after });
+      ParseLine(b, after, lines);
       linenumber++;
     }
   }
@@ -1381,7 +1385,7 @@ public class CodeParser : MonoBehaviour {
       // < => `GTx¶
       line = rgCMPgt.Replace(line, m => {
         atLeastOneReplacement = true;
-        return HandleOperand(BNF.COMPlt, "GT", ">", m);
+        return HandleOperand(BNF.COMPgt, "GT", ">", m);
       });
       if (atLeastOneReplacement) continue;
 
@@ -1572,10 +1576,7 @@ public class CodeParser : MonoBehaviour {
           Match m = rgConfScreen.Match(line);
           int.TryParse(m.Groups[1].Value.Trim(), out int w);
           int.TryParse(m.Groups[2].Value.Trim(), out int h);
-
           bool filter = (!string.IsNullOrEmpty(m.Groups[3].Value) && m.Groups[3].Value.IndexOf('f') != -1);
-
-          Debug.Log(w + "," + h + (filter ? " filter" : ""));
           CodeNode n = new CodeNode(BNF.ScrConfig, null, linenum) { fVal = w, iVal = h, sVal = (filter ? "*" : "") };
           data.Add(n);
 
