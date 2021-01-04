@@ -966,7 +966,7 @@ public class CodeParser : MonoBehaviour {
 
   // [EXP] [OP] [EXP] | [PAR] | [REG] | [INT] | [FLT] | [MEM] | [UO] | [LEN] | deltaTime
   CodeNode ParseExpression(string line) {
-    line = line.Trim(' ', '\t', '\r');
+    line = line.Trim(' ', '\t', '\r', ';');
 
     // First get all REG, INT, FLT, MEM, DTIME, LEN and replace with specific chars
     // Then parse the structure (recursive)
