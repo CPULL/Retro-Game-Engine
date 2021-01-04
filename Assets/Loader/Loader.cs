@@ -10,14 +10,13 @@ public class Loader : MonoBehaviour {
  
   void Start() {
     string[] args = System.Environment.GetCommandLineArgs();
-    if (args.Length == 0) {
-      StartCoroutine(ShowButtonsDelayed());
+
+    foreach (string arg in args) {
+      if (arg.ToLowerInvariant() == "-play") SceneManager.LoadScene("Arcade");
+      if (arg.ToLowerInvariant() == "-sel") SceneManager.LoadScene("ArcadePlus");
+      if (arg.ToLowerInvariant() == "-dev") SceneManager.LoadScene("Developer");
     }
-    else {
-      if (args[0].ToLowerInvariant() == "-play") SceneManager.LoadScene("Arcade");
-      if (args[0].ToLowerInvariant() == "-sel") SceneManager.LoadScene("ArcadePlus");
-      if (args[0].ToLowerInvariant() == "-dev") SceneManager.LoadScene("Developer");
-    }
+    StartCoroutine(ShowButtonsDelayed());
   }
 
   IEnumerator ShowButtonsDelayed() {
