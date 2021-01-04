@@ -534,7 +534,7 @@ public enum BNF {
   DESTROY,
   SCREEN,
   SPRITE,
-  SPEN, // FIXME
+  SPEN,
   SPOS,
   SROT,
   LINE,

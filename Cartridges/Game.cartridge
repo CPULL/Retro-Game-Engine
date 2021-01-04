@@ -1,6 +1,28 @@
 Name: Squash with sprites
 
 Start {
+	clr(0)
+	a = 11
+	b = 20
+	c = 30
+	d = func(a, b)
+	Write("a = " + a, 0, 0, c330)
+	Write("b = " + b, 0, 10, c330)
+	Write("c = " + c, 0, 20, c330)
+	Write("d = " + d, 0, 30, c330)
+}
+
+#func(b, c) {
+	// Changing a
+	a = 0
+	res = b+c
+	b = 25
+	c = 35
+	return res
+}
+
+
+aStart {
 	clr(c001)
 	sprite(0, PaddleSize:)
 	sprite(1, 12, 12,Ball:, f)
@@ -14,7 +36,7 @@ Start {
 	score = 0
 }
 
-Update {
+aUpdate {
 	write("Score: " + score, 200, 0, c330, 1)
 
 	x += vx

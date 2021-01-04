@@ -66,6 +66,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgOpenBracket = new Regex("[\\s]*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBlockOpen = new Regex(".*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBlockClose = new Regex("^[\\s]*\\}[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgTag = new Regex("([\\s]*`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgVar = new Regex("(?<=[^a-z0-9`]|^)([a-z][0-9a-z]{0,7})([^a-z0-9\\(¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgHex = new Regex("0x([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
@@ -98,14 +99,14 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgAnd = new Regex("(`[a-z]{3,}¶)([\\s]*&[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgOr = new Regex("(`[a-z]{3,}¶)([\\s]*\\|[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgXor = new Regex("(`[a-z]{3,}¶)([\\s]*\\^[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgOPlsh = new Regex("\\<\\<", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgOPrsh = new Regex("\\>\\>", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCastB = new Regex("(`[a-z]{3,}¶)_b", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCastI = new Regex("(`[a-z]{3,}¶)_i", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCastF = new Regex("(`[a-z]{3,}¶)_f", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCastS = new Regex("(`[a-z]{3,}¶)_s", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgLen = new Regex("([\\s]*`[a-z]{3,}¶)\\.len[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgPLen = new Regex("([\\s]*`[a-z]{3,}¶)\\.plen[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-
-  readonly Regex rgTag = new Regex("([\\s]*`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgAssign = new Regex("[a-z\\][\\s]*=[^=]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgAssSum = new Regex("[a-z\\][\\s]*\\+=[^(\\+=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -150,17 +151,12 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgCMPeq = new Regex("(`[a-z]{3,}¶)([\\s]*\\=\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPne = new Regex("(`[a-z]{3,}¶)([\\s]*\\!\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgOPlsh = new Regex("\\<\\<", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgOPrsh = new Regex("\\>\\>", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-
   readonly Regex rgKey = new Regex("[\\s]*key([udlrabcfexyhv]|fire|esc)([ud]?)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   //   keys -> U, D, L, R, A, B, C, D, X, Y, H, V, Fire, Esc
   readonly Regex rgLabel = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgConfScreen = new Regex("screen[\\s]*\\([\\s]*([0-9]+)[\\s]*,[\\s]*([0-9]+)[\\s]*(,[\\s]*[fn])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgRam = new Regex("ram[\\s]*\\([\\s]*([0-9]+)[\\s]*([bkm])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-
-  #endregion Regex
 
   readonly Regex rgName = new Regex("^name:[\\s]*([a-z0-9_\\s]+)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgStart = new Regex("^start[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -170,7 +166,14 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgFunctionCall = new Regex("([a-z][a-z0-9]{0,11})[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgReturn = new Regex("[\\s]*return[\\s]*(.*)[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
-  int linenumber = 0;
+  #endregion Regex
+
+
+  int linenumber = 0; // Current parsed line number
+  string origForException = ""; // Used to keep the original text of the line to show erorrs
+  string currentFunction = null; // Used to keep track of the current parsed functions to have the local variables
+  CodeNode currentFunctionParameters = null; // Used to keep track of the current parsed functions to have the local variables
+
 
   public CodeNode Parse(string file, Variables variables) {
     try {
@@ -218,6 +221,8 @@ public class CodeParser : MonoBehaviour {
             string var = par.Trim(' ', ',').ToLowerInvariant();
             if (!string.IsNullOrWhiteSpace(var)) {
               if (reserverdKeywords.Contains(var)) throw new Exception("Parameter name \"" + var + "\" is invalid (reserverd keyword)\n" + (linenumber + 1) + ": " + line);
+              // Function parameters have to be local to the function, we will add the function name before
+              var = n.sVal + "." + var;
               CodeNode v = new CodeNode(BNF.REG, par, linenumber) { sVal = var, Reg = vars.Add(var) };
               ps.Add(v);
             }
@@ -283,6 +288,10 @@ public class CodeParser : MonoBehaviour {
           int end = FindEndOfBlock(lines, linenumber);
           if (end == -1) throw new Exception("\"FUNCTION\" " + fname + " section does not end");
 
+
+          // We need to handle the variables as local variables if they are parameters
+          currentFunction = fname;
+          currentFunctionParameters = f.CN1;
           ParseBlock(lines, linenumber + 1, end, b);
           continue;
         }
@@ -321,7 +330,6 @@ public class CodeParser : MonoBehaviour {
     }
   }
 
-  string origForException = "";
   void ParseLine(CodeNode parent, string[] lines) {
     ParseLine(parent, lines[linenumber].Trim(' ', '\t', '\r'), lines);
   }
@@ -751,6 +759,17 @@ public class CodeParser : MonoBehaviour {
     if (expected.IsGood(Expected.Val.MemReg) && rgVar.IsMatch(line)) {
       string var = rgVar.Match(line).Groups[1].Value.ToLowerInvariant();
       if (!reserverdKeywords.Contains(var)) {
+        // Are we parsing a function?
+        if (currentFunction != null && currentFunctionParameters.children != null) {
+          // Is it a parameter variable?
+          string lp = currentFunction + "." + var;
+          foreach(CodeNode p in currentFunctionParameters.children) {
+            if (p.sVal == lp) { // Yes, it is local
+              var = lp;
+              break;
+            }
+          }
+        }
         CodeNode node = new CodeNode(BNF.REG, line, linenumber) { Reg = vars.Add(var) };
         parent.Add(node);
         return;
@@ -1028,6 +1047,17 @@ public class CodeParser : MonoBehaviour {
     line = rgVar.Replace(line, m => {
       string var = m.Groups[1].Value.ToLowerInvariant();
       if (!reserverdKeywords.Contains(var)) {
+        // Are we parsing a function?
+        if (currentFunction != null && currentFunctionParameters.children != null) {
+          // Is it a parameter variable?
+          string lp = currentFunction + "." + var;
+          foreach (CodeNode p in currentFunctionParameters.children) {
+            if (p.sVal == lp) { // Yes, it is local
+              var = lp;
+              break;
+            }
+          }
+        }
         CodeNode n = new CodeNode(BNF.REG, GenId("RG"), origForException, linenumber) {
           Reg = vars.Add(var)
         };
