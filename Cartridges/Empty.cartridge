@@ -1,0 +1,24 @@
+Name: <no name>
+
+Start {
+	// Put here the code that will be run at startup
+}
+
+Update {
+	// Put here the code that should be run each cycle
+}
+
+Data {
+	screen(256,160)
+	ram(4k)
+	
+	// Put here the data for sprites, tiles, sounds, and all other data that should go in the "rom"
+}
+
+#function1(a, b) {
+	// Definition of "function1", the parameters a and b are local
+}
+
+#function2(c, d) {
+	// Definition of "function2", the parameters c and d are local
+}

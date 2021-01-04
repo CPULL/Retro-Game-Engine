@@ -5,13 +5,3 @@ Start {
 	write("Last Ninja II", 0, 0, c330)
 	write("...in your dreams...", 0, 8, c300)
 }
-
-Update {
-}
-
-Data {
-}
-
-calculate(a, b, c) {
-
-}
