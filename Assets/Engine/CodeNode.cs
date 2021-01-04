@@ -292,6 +292,8 @@ public class CodeNode {
                   (CN4 != null ? ", " + CN4.ToString(indent, true) : "") + ")";
         case BNF.SROT: return (sameLine ? "" : id) + "SRot(" + CN1.ToString(indent, true) + ", " + CN2.ToString(indent, true) + ", " + CN3.ToString(indent, true) + ")";
         case BNF.SPEN: return (sameLine ? "" : id) + "SPEn(" + CN1.ToString(indent, true) + ", " + CN2.ToString(indent, true) + ")";
+        case BNF.STINT: return (sameLine ? "" : id) + "STint(" + CN1.ToString(indent, true) + ", " + CN2.ToString(indent, true) + ")";
+        case BNF.SSCALE: return (sameLine ? "" : id) + "SScale(" + CN1.ToString(indent, true) + ", " + CN2.ToString(indent, true) + ", " + CN3.ToString(indent, true) + ")";
 
         case BNF.FunctionDef:
           return (sameLine ? "" : id) + sVal + (CN1 == null ? "()" : CN1.ToString(indent, true)) + " {" + (CN2 == null ? "" : (CN2.children == null ? CN2.ToString(indent, true) : CN2.children.Count.ToString())) + "}";
@@ -537,6 +539,8 @@ public enum BNF {
   SPEN,
   SPOS,
   SROT,
+  STINT,
+  SSCALE,
   LINE,
   BOX,
   CIRCLE,

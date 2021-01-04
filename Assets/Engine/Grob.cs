@@ -81,7 +81,11 @@ public class Grob {
       case 2: rt.localRotation = Quaternion.Euler(0, 0, 180); break;
       case 3: rt.localRotation = Quaternion.Euler(0, 0, 90); break;
     }
-    rt.localScale = new Vector3(flip ? -1 : 1, 1, 1);
+    Vector3 scale = rt.localScale;
+    scale.x = (scale.x < 0 ? -scale.x : scale.x);
+    scale.y = (scale.y < 0 ? -scale.y : scale.y);
+    scale.x *= flip ? -1 : 1;
+    rt.localScale = scale;
     /*
      n0, false   : 0 1,1
      n0, true    : 0, -1,1
@@ -92,6 +96,22 @@ public class Grob {
      w3, false   : 0,0,90 1,1
      w3, true    : 0,0,90 -1,1
      */
+  }
+
+  internal void Tint(byte col) {
+    byte a = (byte)(255 - ((col & 0b11000000) >> 6) * 85);
+    byte r = (byte)(((col & 0b00110000) >> 4) * 85);
+    byte g = (byte)(((col & 0b00001100) >> 2) * 85);
+    byte b = (byte)(((col & 0b00000011) >> 0) * 85);
+    if (a == 0 && (r != 0 || g != 0 || b != 0)) a = 40;
+    sprite.color = new Color32(r, g, b, a);
+  }
+
+  internal void Scale(byte sx, byte sy) {
+    Vector3 scale = rt.localScale;
+    scale.x = sx * (scale.x < 0 ? -1 : 1);
+    scale.y = sy * (scale.y < 0 ? -1 : 1);
+    rt.localScale = scale;
   }
 
   internal void Init(int x, int y, int sw, int sh) {

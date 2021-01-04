@@ -143,6 +143,8 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(([^,]+),([^,]+),([^,]+)(,([^,]+))?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSrot = new Regex("[\\s]*srot[\\s]*\\(([^,]+),([^,]+),([^,]+)?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSPen = new Regex("[\\s]*spen[\\s]*\\(([^,]+),([^,]+)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSTint = new Regex("[\\s]*stint[\\s]*\\(([^,]+),([^,]+)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSScale = new Regex("[\\s]*sscale[\\s]*\\(([^,]+),([^,]+),([^,]+)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgCMPlt = new Regex("(`[a-z]{3,}¶)([\\s]*\\<[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPle = new Regex("(`[a-z]{3,}¶)([\\s]*\\<\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -668,6 +670,29 @@ public class CodeParser : MonoBehaviour {
       Match m = rgSrot.Match(line);
       if (m.Groups.Count < 4) throw new Exception("Invalid SRot() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.SROT, line, linenumber);
+      node.Add(ParseExpression(m.Groups[1].Value));
+      node.Add(ParseExpression(m.Groups[2].Value));
+      node.Add(ParseExpression(m.Groups[3].Value));
+      parent.Add(node);
+      return;
+    }
+
+    // [STINT] num, enable
+    if (expected.IsGood(Expected.Val.Statement) && rgSTint.IsMatch(line)) {
+      Match m = rgSTint.Match(line);
+      if (m.Groups.Count < 3) throw new Exception("Invalid STint() command. Line: " + (linenumber + 1));
+      CodeNode node = new CodeNode(BNF.STINT, line, linenumber);
+      node.Add(ParseExpression(m.Groups[1].Value));
+      node.Add(ParseExpression(m.Groups[2].Value));
+      parent.Add(node);
+      return;
+    }
+
+    // [SScale] num, enable
+    if (expected.IsGood(Expected.Val.Statement) && rgSScale.IsMatch(line)) {
+      Match m = rgSScale.Match(line);
+      if (m.Groups.Count < 4) throw new Exception("Invalid SScale() command. Line: " + (linenumber + 1));
+      CodeNode node = new CodeNode(BNF.SSCALE, line, linenumber);
       node.Add(ParseExpression(m.Groups[1].Value));
       node.Add(ParseExpression(m.Groups[2].Value));
       node.Add(ParseExpression(m.Groups[3].Value));

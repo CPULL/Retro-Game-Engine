@@ -795,6 +795,18 @@ public class Arcade : MonoBehaviour {
     sprites[num].Enable(enable);
   }
 
+  void SpriteTint(int num, byte color) {
+    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
+    if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined");
+    sprites[num].Tint(color);
+  }
+
+  void SpriteScale(int num, byte sx, byte sy) {
+    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
+    if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined");
+    sprites[num].Scale(sx, sy);
+  }
+
   #endregion Sprites
 
   bool Execute(CodeNode n) {
@@ -1121,6 +1133,10 @@ public class Arcade : MonoBehaviour {
         case BNF.SROT: SpriteRot(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToInt(), Evaluate(n.CN3).ToBool()); return false;
 
         case BNF.SPEN: SpriteEnable(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToBool()); return false;
+
+        case BNF.STINT: SpriteTint(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToByte()); return false;
+
+        case BNF.SSCALE: SpriteScale(Evaluate(n.CN1).ToInt(), Evaluate(n.CN2).ToByte(), Evaluate(n.CN3).ToByte()); return false;
 
         case BNF.RETURN: {
           // Return is not called as expression, just end the stack
