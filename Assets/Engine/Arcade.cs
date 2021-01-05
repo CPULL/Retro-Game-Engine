@@ -59,6 +59,11 @@ public class Arcade : MonoBehaviour {
 
 
   private void Update() {
+//   if (Input.GetKeyDown(KeyCode.Alpha1)) audioManager.Play(0, 440, 1);
+//   if (Input.GetKeyDown(KeyCode.Alpha2)) audioManager.Play(0, 540, 1);
+//   if (Input.GetKeyDown(KeyCode.Alpha3)) audioManager.Play(0, 680, 1);
+//   if (Input.GetKeyDown(KeyCode.Alpha4)) audioManager.Play(0, 800, 1);
+
     if (updateDelay < 0) return;
     if (updateDelay > 0) {
       updateDelay -= Time.deltaTime;
@@ -163,10 +168,18 @@ public class Arcade : MonoBehaviour {
     texture.Apply();
   }
 
-  private void Start() {
-    audioManager.Play(0, Waveform.Wave.Saw, 1.2f, 540, 1);
-    return;
+  public byte[] music;
 
+
+  private void Start() {
+    //audioManager.Play(music);
+
+//    audioManager.ADSR(0, 30, 15, 200, 25);
+//    audioManager.Wave(0, Waveform.Wave.Sin, .5f);
+//    audioManager.Play(0, 540, 2);
+
+
+    return;
     cp = GetComponent<CodeParser>();
     texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
       filterMode = FilterMode.Point

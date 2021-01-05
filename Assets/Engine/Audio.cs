@@ -11,40 +11,141 @@ public class Audio : MonoBehaviour {
   void Awake() {
     clips = new AudioClip[channels.Length];
     waveforms = new Waveform[channels.Length];
-    clips[0] = AudioClip.Create("Channel0", samplerate * 2, 1, samplerate, true, OnAudioRead0, OnAudioSetPosition0);
     timeouts = new float[channels.Length];
     for (int i = 0; i < channels.Length; i++) {
+      int channel = i;
+//      clips[i] = AudioClip.Create("Channel0", samplerate * 2, 1, samplerate, true, (pos) => { int c = channel; OnAudioRead(pos, c); }, (pos) => { int c = channel; OnAudioSetPosition(pos, c); });
+      clips[i] = AudioClip.Create("Channel0", samplerate * 2, 1, samplerate, true, OnAudioRead, OnAudioSetPosition);
       channels[i].clip = clips[i];
       timeouts[i] = -1f;
       waveforms[i] = new Waveform(Waveform.Wave.Triangular);
     }
   }
 
+  /*
+   Define ADSR volume
+   Define ADSR frequncy
+   Define ADSR phase
+   Define global volume
+   Define pan
 
-  public void Play(int channel, Waveform.Wave wave, float phase, int freq, float length = -1) {
+   Define a way to play music: 2 bytes total len + 1 byte num channles + [1 byte channel, 2 bytes freq, 2 bytes len] * num channels
+   */
+
+  public void Volume(int channel, float vol) {
+    if (channel < -1 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
+    if (vol < 0) vol = 0;
+    if (vol > 1) vol = 1;
+    if (channel == -1) {
+      for (int i = 0; i < channels.Length; i++) {
+        channels[i].volume = vol;
+        waveforms[i].vol = vol;
+      }
+    }
+    else {
+      channels[channel].volume = vol;
+      waveforms[channel].vol = vol;
+    }
+  }
+
+  public void Pan(int channel, float pan) {
+    if (channel < -1 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
+    if (pan < -1) pan = -1;
+    if (pan > 1) pan = 1;
+    if (channel == -1) {
+      for (int i = 0; i < channels.Length; i++)
+        channels[i].panStereo = pan;
+    }
+    else
+      channels[channel].panStereo = pan;
+  }
+
+  public void Play(int channel, int freq, float length = -1) {
     if (channel < 0 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
-    if (phase < .01f) phase = .01f;
-    if (phase > 10) phase = 10;
     if (freq < 50) freq = 50;
     if (freq > 18000) freq = 18000;
-
-    waveforms[channel].wave = wave;
-//FIXME    waveforms[channel].phase = phase; // If square, make it between 0 and 1 excluded
-//    waveforms[channel].freq = freq;
-    waveforms[channel].position = 0;
-
+    waveforms[channel].freq = freq;
+    waveforms[channel].time = 0;
     channels[channel].Play();
     timeouts[channel] = length;
   }
 
+  public void Wave(int channel, Waveform.Wave wave, float phase) {
+    if (channel < 0 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
+    if (phase < .01f) phase = .01f;
+    if (phase > 10) phase = 10;
+
+    waveforms[channel].wave = wave;
+    waveforms[channel].position = 0;
+    if (wave == Waveform.Wave.Square) { // If square, make it between 0 and 1 excluded
+      if (phase < 0.01f) phase = 0.01f;
+      if (phase > 0.99f) phase = 0.99f;
+    }
+    waveforms[channel].phase = phase;
+  }
+
+  public void ADSR(int channel, byte attack, byte decay, byte sustain, byte release) {
+    if (channel < 0 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
+
+    if (attack ==0 && decay == 0 && sustain == 0 && release == 0) {
+      waveforms[channel].adsrV = false;
+      return;
+    }
+    waveforms[channel].adsrV = true;
+    waveforms[channel].av = 0.03137f * attack + 0.001f; // time = 0.03137f * av + 0.001f
+    waveforms[channel].dv = 0.06274f * decay + 0.002f; // time = 0.06274f * dv + 0.002f
+    waveforms[channel].sv = sustain / 255f; // % of volume = sv/255
+    waveforms[channel].rv = 0.06274f * release + 0.002f; // time = 0.06274f * rv + 0.002f;
+  }
+
+  byte[] toplay = null;
+  int playpos = -1;
+  public void Play(byte[] music) {
+    toplay = music;
+    playpos = 0;
+  }
+
+  float gather = 0;
+
   private void Update() {
     for (int i = 0; i < channels.Length; i++) {
-      if (timeouts[i] > -1) timeouts[i] -= Time.deltaTime;
-      if (timeouts[i] > -1 && timeouts[i] <= 0) {
-        timeouts[i] = -1;
-        channels[i].Stop();
+      if (!channels[i].isPlaying) continue;
+      waveforms[i].time += Time.deltaTime;
+      float t = waveforms[i].time;
+      if (waveforms[i].adsrV) {
+        if (t < waveforms[i].av) channels[i].volume = waveforms[i].vol * (1 - (waveforms[i].av - t) / waveforms[i].av);
+        else if (t < waveforms[i].av + waveforms[i].dv) {
+          float perc = (waveforms[i].dv - (t - waveforms[i].av)) / waveforms[i].dv;
+          // perc = 1 -> 1
+          // perc = 0 -> sv
+          channels[i].volume = waveforms[i].vol * (perc + (1 - perc) * waveforms[i].sv);
+        }
+        else channels[i].volume = waveforms[i].vol * waveforms[i].sv;
+
+        gather += Time.deltaTime;
+        if (gather >= .05) {
+          int vv = (int)(channels[i].volume * 20);
+          Debug.Log(vv);
+          gather = 0;
+        }
+      }
+      if (t >= timeouts[i]) {
+        if (waveforms[i].adsrV) {
+          if (t >= timeouts[i] + waveforms[i].rv)
+            channels[i].Stop();
+          else
+            channels[i].volume = waveforms[i].vol * (timeouts[i] + waveforms[i].rv - t) * waveforms[i].sv;
+        }
+        else {
+          channels[i].Stop();
+        }
       }
     }
+
+    if (playpos == -1 || toplay == null) return;
+    // Get the next set of notes
+    byte numchannels = toplay[playpos];
+    float len = (toplay[playpos + 1] * 256 + toplay[playpos] + 1) / 65535f;
   }
 
   const float piP2 = Mathf.PI * 2f;
@@ -52,14 +153,15 @@ public class Audio : MonoBehaviour {
   const float piD2 = 2f / Mathf.PI;
 
 
-  void OnAudioRead0(float[] data) {
-    switch (waveforms[0].wave) {
+  void OnAudioRead(float[] data) {
+    int channel = 0;
+    switch (waveforms[channel].wave) {
       case Waveform.Wave.Triangular:
         for (int i = 0; i < data.Length; i++) {
-          waveforms[0].position++;
-          if (waveforms[0].position > samplerate) waveforms[0].position = 0;
-          float pos = waveforms[0].freq * waveforms[0].position / samplerate;
-          data[i] = piD2 * Mathf.Asin(Mathf.Cos(piP2 * pos)) * waveforms[0].phase;
+          waveforms[channel].position++;
+          if (waveforms[channel].position >= samplerate) waveforms[channel].position = 0;
+          float pos = waveforms[channel].freq * waveforms[channel].position / samplerate;
+          data[i] = piD2 * Mathf.Asin(Mathf.Cos(piP2 * pos)) * waveforms[channel].phase;
           if (data[i] < -1f) data[i] = -1f;
           if (data[i] > 1f) data[i] = 1f;
         }
@@ -67,13 +169,13 @@ public class Audio : MonoBehaviour {
 
       case Waveform.Wave.Saw:
         for (int i = 0; i < data.Length; i++) {
-          waveforms[0].position++;
-          if (waveforms[0].position > samplerate) waveforms[0].position = 0;
-          float pos = waveforms[0].freq * waveforms[0].position / samplerate;
+          waveforms[channel].position++;
+          if (waveforms[channel].position >= samplerate) waveforms[channel].position = 0;
+          float pos = waveforms[channel].freq * waveforms[channel].position / samplerate;
           if (pos == 0)
             data[i] = 0;
           else
-            data[i] = 1f - (piH2 - Mathf.Atan(waveforms[0].phase * Mathf.Tan(piD2 * pos))) * piD2;
+            data[i] = 1f - (piH2 - Mathf.Atan(waveforms[channel].phase * Mathf.Tan(piD2 * pos))) * piD2;
           if (data[i] < -1f) data[i] = -1f;
           if (data[i] > 1f) data[i] = 1f;
         }
@@ -81,11 +183,11 @@ public class Audio : MonoBehaviour {
 
       case Waveform.Wave.Square:
         for (int i = 0; i < data.Length; i++) {
-          waveforms[0].position++;
-          if (waveforms[0].position > samplerate) waveforms[0].position = 0;
-          float pos = waveforms[0].freq * waveforms[0].position / samplerate;
+          waveforms[channel].position++;
+          if (waveforms[channel].position >= samplerate) waveforms[channel].position = 0;
+          float pos = waveforms[channel].freq * waveforms[channel].position / samplerate;
           pos -= (int)pos;
-          if (pos < waveforms[0].phase)
+          if (pos < waveforms[channel].phase)
             data[i] = .9f;
           else
             data[i] = -.9f;
@@ -94,27 +196,27 @@ public class Audio : MonoBehaviour {
 
       case Waveform.Wave.Sin:
         for (int i = 0; i < data.Length; i++) {
-          waveforms[0].position++;
-          if (waveforms[0].position > samplerate) waveforms[0].position = 0;
-          float pos = waveforms[0].freq * waveforms[0].position / samplerate;
-          data[i] = (Mathf.Sin(2 * Mathf.PI * pos) + Mathf.Sin(2 * Mathf.PI * pos * waveforms[0].phase)) * .5f;
+          waveforms[channel].position++;
+          if (waveforms[channel].position >= samplerate) waveforms[channel].position = 0;
+          float pos = waveforms[channel].freq * waveforms[channel].position / samplerate;
+          data[i] = (Mathf.Sin(2 * Mathf.PI * pos) + Mathf.Sin(2 * Mathf.PI * pos * waveforms[channel].phase)) * .5f;
         }
         break;
 
       case Waveform.Wave.Noise:
         for (int i = 0; i < data.Length; i++) {
-          waveforms[0].position++;
-          if (waveforms[0].position > samplerate) waveforms[0].position = 0;
-          float pos = waveforms[0].freq * waveforms[0].position / samplerate;
-
-          data[i] = Squirrel3Norm((int)pos, (uint)(waveforms[0].phase * 1000));
+          waveforms[channel].position++;
+          if (waveforms[channel].position >= samplerate) waveforms[channel].position = 0;
+          float pos = waveforms[channel].freq * waveforms[channel].position / samplerate;
+          data[i] = Squirrel3Norm((int)pos, (uint)(waveforms[channel].phase * 1000));
         }
         break;
     }
   }
 
-  void OnAudioSetPosition0(int newPosition) {
-    waveforms[0].position = newPosition;
+  void OnAudioSetPosition(int newPosition) {
+    int channel = 0;
+    waveforms[channel].position = newPosition;
   }
 
   const uint NOISE1 = 0xb5297a4d;
@@ -148,33 +250,6 @@ public class Audio : MonoBehaviour {
     return res;
   }
 
-  /*
-
-
-
-def squirrel3(n, seed=0):
-    """Returns an unsigned integer containing 32 reasonably-well-scrambled
-    bits, based on a given (signed) integer input parameter `n` and optional
-    `seed`.  Kind of like looking up a value in an infinitely large
-    non-existent table of previously generated random numbers.
-    """
-
-
-class Squirrel3Random(random.Random):
-
-    _n = 0
-
-    def seed(self, a=None):
-        if a is None:
-            a = 0
-        self._seed = a
-
-    def random(self):
-        n = self._n
-        self._n += 1
-        return squirrel3(n, self._seed) / float(CAP)
-
-  */
 }
 
 [System.Serializable]
@@ -184,12 +259,43 @@ public struct Waveform {
   public float phase;
   public float freq;
   public int position;
+  public float time;
+  public float vol;
+  public bool adsrV;
+  public float av;
+  public float dv;
+  public float sv;
+  public float rv;
+  public float af;
+  public float df;
+  public float sf;
+  public float rf;
+  public float ap;
+  public float dp;
+  public float sp;
+  public float rp;
 
   public Waveform(Wave w) {
     wave = w;
     phase = 1f;
     freq = 440;
     position = 0;
+    time = 0;
+    vol = 1;
+    adsrV = false;
+    av = 0;
+    dv = 0;
+    sv = 0;
+    rv = 0;
+    af = 0;
+    df = 0;
+    sf = 0;
+    rf = 0;
+    ap = 0;
+    dp = 0;
+    sp = 0;
+    rp = 0;
   }
 }
 
+// Merge all the structs in a single one, channel, wave, timeout
