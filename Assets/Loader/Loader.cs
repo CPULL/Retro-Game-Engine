@@ -13,6 +13,7 @@ public class Loader : MonoBehaviour {
 
     foreach (string arg in args) {
       if (arg.ToLowerInvariant() == "-play") SceneManager.LoadScene("Arcade");
+      if (arg.ToLowerInvariant() == "-game") SceneManager.LoadScene("Arcade");
       if (arg.ToLowerInvariant() == "-sel") SceneManager.LoadScene("ArcadePlus");
       if (arg.ToLowerInvariant() == "-dev") SceneManager.LoadScene("Developer");
     }

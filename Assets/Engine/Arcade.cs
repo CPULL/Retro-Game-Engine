@@ -9,6 +9,7 @@ public class Arcade : MonoBehaviour {
   const float updateTime = .5f;
   public RawImage Screen;
   public Text FPS;
+  public Audio audioManager;
   Texture2D texture;
   Color32[] pixels;
   byte[] raw;
@@ -151,7 +152,8 @@ public class Arcade : MonoBehaviour {
       n = stacks.GetExecutionNode(this);
     }
     stacks.Destroy();
-    stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
+    if (updateCode != null)
+      stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
 
     if (something) CompleteFrame();
   }
@@ -162,6 +164,9 @@ public class Arcade : MonoBehaviour {
   }
 
   private void Start() {
+    audioManager.Play(0, Waveform.Wave.Saw, 1.2f, 540, 1);
+    return;
+
     cp = GetComponent<CodeParser>();
     texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
       filterMode = FilterMode.Point
@@ -224,9 +229,9 @@ public class Arcade : MonoBehaviour {
     else {
       // Load Game.Cartridge
       string codefile;
-      try { codefile = File.ReadAllText(Application.dataPath + "\\..\\Cartridges\\game.cartridge"); } catch (Exception) {
+      try { codefile = File.ReadAllText(Path.GetDirectoryName(Application.dataPath) + "/Cartridges/Game.cartridge"); } catch (Exception) {
         Write("No cardridge found!", 4, 40, 48);
-        Write("Path: " + Application.dataPath + "\\..\\Cartridges\\game.cartridge", 4, 50, 48, 0, 2);
+        Write("Path: " + Path.GetDirectoryName(Application.dataPath) + "/Cartridges/Game.cartridge", 4, 50, 48, 0, 2);
         texture.Apply();
         return;
       }
@@ -237,16 +242,16 @@ public class Arcade : MonoBehaviour {
 
     if (startCode != null)
       stacks.AddStack(startCode, null, startCode.origLine, startCode.origLineNum);
-    else
+    else if (updateCode != null)
       stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
   }
 
   public void SelectCartridge(string tag) {
     FileSelection.SetActive(false);
     string codefile;
-    try { codefile = File.ReadAllText(Application.dataPath + "\\..\\Cartridges\\" + tag); } catch (Exception) {
+    try { codefile = File.ReadAllText(Application.dataPath + "/../Cartridges/" + tag); } catch (Exception) {
       Write("No cardridge found!", 4, 40, 48);
-      Write("Path: " + Application.dataPath + "\\..\\Cartridges\\" + tag, 4, 50, 48, 0, 2);
+      Write("Path: " + Application.dataPath + "/../Cartridges/" + tag, 4, 50, 48, 0, 2);
       texture.Apply();
       return;
     }
