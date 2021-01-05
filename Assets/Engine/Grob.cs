@@ -76,7 +76,7 @@ public class Grob {
   }
 
   internal void Rot(int rot, bool flip) {
-    switch(rot) {
+    switch(rot % 4) {
       case 0: rt.localRotation = Quaternion.Euler(0, 0, 0); break;
       case 1: rt.localRotation = Quaternion.Euler(0, 0, 270); break;
       case 2: rt.localRotation = Quaternion.Euler(0, 0, 180); break;
@@ -109,6 +109,10 @@ public class Grob {
   }
 
   internal void Scale(byte sx, byte sy) {
+    if (sx < 1) sx = 1;
+    if (sx > 8) sx = 8;
+    if (sy < 1) sy = 1;
+    if (sy > 8) sy = 8;
     Vector3 scale = rt.localScale;
     scale.x = sx * (scale.x < 0 ? -1 : 1);
     scale.y = sy * (scale.y < 0 ? -1 : 1);
