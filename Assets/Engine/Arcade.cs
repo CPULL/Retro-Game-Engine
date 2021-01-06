@@ -62,6 +62,9 @@ public class Arcade : MonoBehaviour {
   byte vals = 255;
   byte valr = 0;
 
+  byte[] music = new byte[] {
+  };
+
   private void Update() {
     if (Input.GetKeyDown(KeyCode.Alpha1)) audioManager.Play(0, 440, .5f);
     if (Input.GetKeyDown(KeyCode.Alpha2)) audioManager.Play(0, 494, .5f);
@@ -217,8 +220,6 @@ public class Arcade : MonoBehaviour {
     FpsFrames++;
     texture.Apply();
   }
-
-  public byte[] music;
 
 
   private void Start() {

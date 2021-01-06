@@ -37,16 +37,6 @@ public class Audio : MonoBehaviour {
     }
   }
 
-  /*
-   Define ADSR volume
-   Define ADSR frequncy
-   Define ADSR phase
-   Define global volume
-   Define pan
-
-   Define a way to play music: 2 bytes total len + 1 byte num channles + [1 byte channel, 2 bytes freq, 2 bytes len] * num channels
-   */
-
   public void Volume(int channel, float vol) {
     if (channel < -1 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
     if (vol < 0) vol = 0;
@@ -75,6 +65,7 @@ public class Audio : MonoBehaviour {
 
   public void Play(int channel, int freq, float length = -1) {
     if (channel < 0 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
+    if (freq == 0) return;
     if (freq < 50) freq = 50;
     if (freq > 18000) freq = 18000;
     channels[channel].Play(freq, length);
@@ -110,6 +101,7 @@ public class Audio : MonoBehaviour {
 
   byte[] toplay = null;
   int playpos = -1;
+  float musicsteplen = 0;
   public void Play(byte[] music) {
     toplay = music;
     playpos = 0;
@@ -142,10 +134,32 @@ public class Audio : MonoBehaviour {
     }
 
     if (playpos == -1 || toplay == null) return;
+    if (musicsteplen > 0) {
+      musicsteplen -= Time.deltaTime;
+      return;
+    }
     // Get the next set of notes
     byte numchannels = toplay[playpos];
-    float len = (toplay[playpos + 1] * 256 + toplay[playpos] + 1) / 65535f;
+    if (playpos + 2 + numchannels * 5 >= toplay.Length) {
+      playpos = -1;
+      toplay = null;
+      return;
+    }
+    musicsteplen = (toplay[playpos + 2] * 256 + toplay[playpos + 1] + 1) / 65535f;
+    playpos += 3;
+    for (int i = 0; i < numchannels; i++) {
+      byte channel = toplay[playpos];
+      int cfreq = toplay[playpos + 2] * 256 + toplay[playpos];
+      float clen = (toplay[playpos + 4] * 256 + toplay[playpos + 3] + 1) / 65535f;
+      Play(channel, cfreq, clen);
+      playpos += 5;
+    }
   }
+
+
+  //  Define a way to play music: 2 bytes total len + 1 byte num channles + [1 byte channel, 2 bytes freq, 2 bytes len] * num channels
+
+
 
   const float piP2 = Mathf.PI * 2f;
   const float piH2 = Mathf.PI * .5f;
