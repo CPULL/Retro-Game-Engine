@@ -2,7 +2,7 @@
 using UnityEngine.UI;
 
 public class PaletteCube : MonoBehaviour {
-  public Pixel[] colors;
+  public PixelCube[] colors;
   public Pixel[] alphas;
   public Image selected;
   byte r = 255, g = 255, b = 255, a = 255;
@@ -18,7 +18,7 @@ public class PaletteCube : MonoBehaviour {
 
   private void Start() {
     for (int i = 0; i < colors.Length; i++)
-      colors[i].Init(colors[i].pos, SetColor, null);
+      colors[i].Init(SetColor);
 
     for (int i = 0; i < alphas.Length; i++)
       alphas[i].Init(alphas[i].pos, SetAlpha, null);
@@ -50,50 +50,52 @@ public class PaletteCube : MonoBehaviour {
     byte b256 = (byte)(b * 85);
     byte a256 = (byte)(a * 85);
 
-    foreach(Pixel p in colors) {
-      int idx = p.pos;
-      Color32 col = p.img.color;
-      if ((idx / 25) == 4) col.r = r256;
-      if ((idx / 5) % 5 == 4) col.g = g256;
-      if (idx % 5 == 4) col.b = b256;
-      p.img.color = col;
+    foreach (PixelCube p in colors) {
+      Color32 pcol = p.img.color;
+      if (p.r == -1) pcol.r = r256;
+      if (p.g == -1) pcol.g = g256;
+      if (p.b == -1) pcol.b = b256;
+      p.img.color = pcol;
     }
     selected.color = new Color32(r256, g256, b256, a256);
+    for (int i = 5; i < 10; i++) 
+      alphas[i].img.color = new Color32(r256, g256, b256, (byte)(alphas[i].img.color.a * 255.9f));
   }
 
-  public void SetColor(int idx) {
+  public void SetColor(int r, int g, int b) {
     Color32 col = selected.color;
-    int r = idx / 25;
-    int g = (idx / 5) % 5;
-    int b = idx % 5;
-    if (r == 4) {
+    if (r == -1) {
       col.g = (byte)(g * 85);
       col.b = (byte)(b * 85);
     }
-    else if (g == 4) {
+    else if (g == -1) {
       col.r = (byte)(r * 85);
       col.b = (byte)(b * 85);
     }
-    else if (b == 4) {
+    else if (b == -1) {
       col.r = (byte)(r * 85);
       col.g = (byte)(g * 85);
     }
 
-    foreach (Pixel p in colors) {
-      int pos = p.pos;
+    foreach (PixelCube p in colors) {
       Color32 pcol = p.img.color;
-      if ((pos / 25) == 4) pcol.r = col.r;
-      if ((pos / 5) % 5 == 4) pcol.g = col.g;
-      if (pos % 5 == 4) pcol.b = col.b;
+      if (p.r == -1) pcol.r = col.r;
+      if (p.g == -1) pcol.g = col.g;
+      if (p.b == -1) pcol.b = col.b;
       p.img.color = pcol;
     }
 
     selected.color = col;
+    for (int i = 5; i < 10; i++) {
+      col.a = (byte)(alphas[i].img.color.a * 255.9f);
+      alphas[i].img.color = col;
+    }
   }
 
   public void SetAlpha(int pos) {
     Color32 col = selected.color;
     col.a = (byte)pos;
+    if (pos < 40) { col = new Color32(0, 0, 0, 0); }
     selected.color = col;
   }
 }
