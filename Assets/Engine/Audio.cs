@@ -272,7 +272,7 @@ public class Audio : MonoBehaviour {
   #endregion
 }
 
-public enum Waveform { Triangular, Saw, Square, Sin, Noise };
+public enum Waveform { Triangular=0, Saw=1, Square=2, Sin=3, Noise=4 };
 
 [System.Serializable]
 public struct Channel {
