@@ -59,10 +59,10 @@ public class Arcade : MonoBehaviour {
 
 
   private void Update() {
-//   if (Input.GetKeyDown(KeyCode.Alpha1)) audioManager.Play(0, 440, 1);
-//   if (Input.GetKeyDown(KeyCode.Alpha2)) audioManager.Play(0, 540, 1);
-//   if (Input.GetKeyDown(KeyCode.Alpha3)) audioManager.Play(0, 680, 1);
-//   if (Input.GetKeyDown(KeyCode.Alpha4)) audioManager.Play(0, 800, 1);
+   if (Input.GetKeyDown(KeyCode.Alpha1)) audioManager.Play(0, 440, 1);
+   if (Input.GetKeyDown(KeyCode.Alpha2)) audioManager.Play(0, 540, 1);
+   if (Input.GetKeyDown(KeyCode.Alpha3)) audioManager.Play(0, 680, 1);
+   if (Input.GetKeyDown(KeyCode.Alpha4)) audioManager.Play(0, 800, 1);
 
     if (updateDelay < 0) return;
     if (updateDelay > 0) {
