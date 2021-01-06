@@ -57,12 +57,62 @@ public class Arcade : MonoBehaviour {
   int FpsFrames = 0;
   float FpsTime = 0;
 
+  byte vala = 0;
+  byte vald = 0;
+  byte vals = 255;
+  byte valr = 0;
 
   private void Update() {
-   if (Input.GetKeyDown(KeyCode.Alpha1)) audioManager.Play(0, 440, 1);
-   if (Input.GetKeyDown(KeyCode.Alpha2)) audioManager.Play(0, 540, 1);
-   if (Input.GetKeyDown(KeyCode.Alpha3)) audioManager.Play(0, 680, 1);
-   if (Input.GetKeyDown(KeyCode.Alpha4)) audioManager.Play(0, 800, 1);
+    if (Input.GetKeyDown(KeyCode.Alpha1)) audioManager.Play(0, 440, .5f);
+    if (Input.GetKeyDown(KeyCode.Alpha2)) audioManager.Play(0, 494, .5f);
+    if (Input.GetKeyDown(KeyCode.Alpha3)) audioManager.Play(0, 523, .5f);
+    if (Input.GetKeyDown(KeyCode.Alpha4)) audioManager.Play(0, 587, .5f);
+    if (Input.GetKeyDown(KeyCode.Alpha5)) audioManager.Play(0, 659, .5f);
+    if (Input.GetKeyDown(KeyCode.Alpha6)) audioManager.Play(0, 698, .5f);
+    if (Input.GetKeyDown(KeyCode.Alpha7)) audioManager.Play(0, 784, .5f);
+    if (Input.GetKeyDown(KeyCode.Alpha8)) audioManager.Play(0, 880, .5f);
+
+    if (Input.GetKeyDown(KeyCode.Q) && vala > 0) {
+      vala--;
+      Write("A" + vala.ToString() + "  ", 0, 0, 63, 0);
+      CompleteFrame();
+      audioManager.ADSR(0, vala, vald, vals, valr);
+    }
+    if (Input.GetKeyDown(KeyCode.W) && vala < 255) {
+      vala++;
+      Write("A" + vala.ToString() + "  ", 0, 0, 63, 0);
+      CompleteFrame();
+      audioManager.ADSR(0, vala, vald, vals, valr);
+    }
+
+    if (Input.GetKeyDown(KeyCode.A) && vald > 0) {
+      vald--;
+      Write("D" + vald.ToString() + "  ", 0, 10, 63, 0);
+      CompleteFrame();
+      audioManager.ADSR(0, vala, vald, vals, valr);
+    }
+    if (Input.GetKeyDown(KeyCode.S) && vald < 255) {
+      vald++;
+      Write("D" + vald.ToString() + "  ", 0, 10, 63, 0);
+      CompleteFrame();
+      audioManager.ADSR(0, vala, vald, vals, valr);
+    }
+
+    if (Input.GetKeyDown(KeyCode.Z) && valr > 0) {
+      valr--;
+      Write("R" + valr.ToString() + "  ", 0, 20, 63, 0);
+      CompleteFrame();
+      audioManager.ADSR(0, vala, vald, vals, valr);
+    }
+    if (Input.GetKeyDown(KeyCode.X) && valr < 255) {
+      valr++;
+      Write("R" + valr.ToString() + "  ", 0, 20, 63, 0);
+      CompleteFrame();
+      audioManager.ADSR(0, vala, vald, vals, valr);
+    }
+
+
+
 
     if (updateDelay < 0) return;
     if (updateDelay > 0) {
@@ -172,14 +222,6 @@ public class Arcade : MonoBehaviour {
 
 
   private void Start() {
-    //audioManager.Play(music);
-
-//    audioManager.ADSR(0, 30, 15, 200, 25);
-//    audioManager.Wave(0, Waveform.Wave.Sin, .5f);
-//    audioManager.Play(0, 540, 2);
-
-
-    return;
     cp = GetComponent<CodeParser>();
     texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
       filterMode = FilterMode.Point
@@ -191,12 +233,20 @@ public class Arcade : MonoBehaviour {
     Write("--- MMM Arcade RGE ---", 35, 8, 60);
     Write(" virtual machine", 55, 14 + 4, 0b011010);
     Write(" Retro Game Engine", 45, 14 + 9, 0b011110);
-
     sprites = new Grob[spriteImgs.Length];
     for (int i = 0; i < spriteImgs.Length; i++) {
       sprites[i] = new Grob(spriteImgs[i], sw, sh);
       spriteImgs[i].enabled = false;
     }
+
+
+    // FIXME
+    Clear(0);
+    Write("--- MMM Arcade RGE ---", 35, 8, 60);
+    Write("Audio test", 55, 14 + 4, 0b011010);
+    CompleteFrame();
+    return;//FIXME
+
     sprites[0].Init(0, 6, sw, sh);
 
     if (SceneManager.GetActiveScene().name == "ArcadePlus") {

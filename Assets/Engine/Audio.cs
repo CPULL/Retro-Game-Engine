@@ -102,10 +102,10 @@ public class Audio : MonoBehaviour {
       return;
     }
     channels[channel].adsrV = true;
-    channels[channel].av = 0.03137f * attack + 0.001f; // time = 0.03137f * av + 0.001f
-    channels[channel].dv = 0.06274f * decay + 0.002f; // time = 0.06274f * dv + 0.002f
+    channels[channel].av = 0.015625f * attack + 0.001f; // 0.001s -> 4s
+    channels[channel].dv = 0.02344f * decay + 0.001f; // 0.001s -> 6s
     channels[channel].sv = sustain / 255f; // % of volume = sv/255
-    channels[channel].rv = 0.06274f * release + 0.002f; // time = 0.06274f * rv + 0.002f;
+    channels[channel].rv = 0.02344f * release + 0.001f; // 0.001s -> 6s
   }
 
   byte[] toplay = null;
@@ -124,8 +124,6 @@ public class Audio : MonoBehaviour {
         if (t < channels[i].av) channels[i].audio.volume = channels[i].vol * (1 - (channels[i].av - t) / channels[i].av);
         else if (t < channels[i].av + channels[i].dv) {
           float perc = (channels[i].dv - (t - channels[i].av)) / channels[i].dv;
-          // perc = 1 -> 1
-          // perc = 0 -> sv
           channels[i].audio.volume = channels[i].vol * (perc + (1 - perc) * channels[i].sv);
         }
         else channels[i].audio.volume = channels[i].vol * channels[i].sv;
@@ -153,23 +151,6 @@ public class Audio : MonoBehaviour {
   const float piH2 = Mathf.PI * .5f;
   const float piD2 = 2f / Mathf.PI;
 
-  void OnAudioRead0(float[] data) { OnAudioRead(data, 0); }
-  void OnAudioRead1(float[] data) { OnAudioRead(data, 1); }
-  void OnAudioRead2(float[] data) { OnAudioRead(data, 2); }
-  void OnAudioRead3(float[] data) { OnAudioRead(data, 3); }
-  void OnAudioRead4(float[] data) { OnAudioRead(data, 4); }
-  void OnAudioRead5(float[] data) { OnAudioRead(data, 5); }
-  void OnAudioRead6(float[] data) { OnAudioRead(data, 6); }
-  void OnAudioRead7(float[] data) { OnAudioRead(data, 7); }
-
-  void OnAudioSetPosition0(int pos) { OnAudioSetPosition(pos, 0);  }
-  void OnAudioSetPosition1(int pos) { OnAudioSetPosition(pos, 1);  }
-  void OnAudioSetPosition2(int pos) { OnAudioSetPosition(pos, 2);  }
-  void OnAudioSetPosition3(int pos) { OnAudioSetPosition(pos, 3);  }
-  void OnAudioSetPosition4(int pos) { OnAudioSetPosition(pos, 4);  }
-  void OnAudioSetPosition5(int pos) { OnAudioSetPosition(pos, 5);  }
-  void OnAudioSetPosition6(int pos) { OnAudioSetPosition(pos, 6);  }
-  void OnAudioSetPosition7(int pos) { OnAudioSetPosition(pos, 7);  }
 
   void OnAudioRead(float[] data, int channel) {
     if (channels[channel].clip == null) return;
@@ -255,6 +236,26 @@ public class Audio : MonoBehaviour {
     return res;
   }
 
+  #region commodity delegate functions
+  void OnAudioRead0(float[] data) { OnAudioRead(data, 0); }
+  void OnAudioRead1(float[] data) { OnAudioRead(data, 1); }
+  void OnAudioRead2(float[] data) { OnAudioRead(data, 2); }
+  void OnAudioRead3(float[] data) { OnAudioRead(data, 3); }
+  void OnAudioRead4(float[] data) { OnAudioRead(data, 4); }
+  void OnAudioRead5(float[] data) { OnAudioRead(data, 5); }
+  void OnAudioRead6(float[] data) { OnAudioRead(data, 6); }
+  void OnAudioRead7(float[] data) { OnAudioRead(data, 7); }
+
+  void OnAudioSetPosition0(int pos) { OnAudioSetPosition(pos, 0); }
+  void OnAudioSetPosition1(int pos) { OnAudioSetPosition(pos, 1); }
+  void OnAudioSetPosition2(int pos) { OnAudioSetPosition(pos, 2); }
+  void OnAudioSetPosition3(int pos) { OnAudioSetPosition(pos, 3); }
+  void OnAudioSetPosition4(int pos) { OnAudioSetPosition(pos, 4); }
+  void OnAudioSetPosition5(int pos) { OnAudioSetPosition(pos, 5); }
+  void OnAudioSetPosition6(int pos) { OnAudioSetPosition(pos, 6); }
+  void OnAudioSetPosition7(int pos) { OnAudioSetPosition(pos, 7); }
+
+  #endregion
 }
 
 public enum Waveform { Triangular, Saw, Square, Sin, Noise };
@@ -275,14 +276,6 @@ public struct Channel {
   public float dv;
   public float sv;
   public float rv;
-  public float af;
-  public float df;
-  public float sf;
-  public float rf;
-  public float ap;
-  public float dp;
-  public float sp;
-  public float rp;
 
   public Channel(AudioSource src, Waveform w, AudioClip ac) {
     audio = src;
@@ -300,14 +293,6 @@ public struct Channel {
     dv = 0;
     sv = 0;
     rv = 0;
-    af = 0;
-    df = 0;
-    sf = 0;
-    rf = 0;
-    ap = 0;
-    dp = 0;
-    sp = 0;
-    rp = 0;
   }
 
   internal void SetVol(float vol) {
@@ -322,5 +307,3 @@ public struct Channel {
     audio.Play();
   }
 }
-
-// Merge all the structs in a single one, channel, wave, timeout
