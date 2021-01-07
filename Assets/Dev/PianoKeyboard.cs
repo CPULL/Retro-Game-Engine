@@ -6,8 +6,8 @@ public class PianoKeyboard : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
   public Color32 normalColor;
   public string note;
   public Image image;
-  Color32 pressedColor = new Color32(10, 200, 240, 255);
-  Color32 overColor = new Color32(10, 200, 240, 255);
+  public Color32 pressedColor = new Color32(10, 200, 240, 255);
+  public Color32 overColor = new Color32(10, 200, 240, 255);
   public WaveformEditor we;
 
   void Start() {

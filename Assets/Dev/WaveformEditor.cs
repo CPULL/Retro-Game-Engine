@@ -25,6 +25,8 @@ public class WaveformEditor : MonoBehaviour {
   Waveform wave = Waveform.Triangular;
   float phase = 0;
 
+  public PianoKeyboard[] AllKeys;
+
   private void Start() {
     CleanADSR();
     WaveChange();
@@ -36,6 +38,59 @@ public class WaveformEditor : MonoBehaviour {
     sounds.Volume(-1, 1);
   }
 
+  private void Update() {
+    if (Input.GetKeyDown(KeyCode.Tab)) StartNote("C4", true);
+    if (Input.GetKeyDown(KeyCode.Alpha1)) StartNote("C4#", true);
+    if (Input.GetKeyDown(KeyCode.Q)) StartNote("D4", true);
+    if (Input.GetKeyDown(KeyCode.Alpha2)) StartNote("E4b", true);
+    if (Input.GetKeyDown(KeyCode.W)) StartNote("E4", true);
+    if (Input.GetKeyDown(KeyCode.E)) StartNote("F4", true);
+    if (Input.GetKeyDown(KeyCode.Alpha3)) StartNote("F4#", true);
+    if (Input.GetKeyDown(KeyCode.R)) StartNote("G4", true);
+    if (Input.GetKeyDown(KeyCode.Alpha5)) StartNote("G4#", true);
+    if (Input.GetKeyDown(KeyCode.T)) StartNote("A4", true);
+    if (Input.GetKeyDown(KeyCode.Alpha6)) StartNote("B4b", true);
+    if (Input.GetKeyDown(KeyCode.Y)) StartNote("B4", true);
+
+    if (Input.GetKeyDown(KeyCode.U)) StartNote("C5", true);
+    if (Input.GetKeyDown(KeyCode.Alpha8)) StartNote("C5#", true);
+    if (Input.GetKeyDown(KeyCode.I)) StartNote("D5", true);
+    if (Input.GetKeyDown(KeyCode.Alpha9)) StartNote("E5b", true);
+    if (Input.GetKeyDown(KeyCode.O)) StartNote("E5", true);
+    if (Input.GetKeyDown(KeyCode.P)) StartNote("F5", true);
+    if (Input.GetKeyDown(KeyCode.Minus)) StartNote("F5#", true);
+    if (Input.GetKeyDown(KeyCode.LeftBracket)) StartNote("G5", true);
+    if (Input.GetKeyDown(KeyCode.Equals)) StartNote("G5#", true);
+    if (Input.GetKeyDown(KeyCode.RightBracket)) StartNote("A5", true);
+    if (Input.GetKeyDown(KeyCode.Backslash)) StartNote("B5b", true);
+    if (Input.GetKeyDown(KeyCode.Return)) StartNote("B5", true);
+
+    if (Input.GetKeyUp(KeyCode.Tab)) StopNote("C4", true);
+    if (Input.GetKeyUp(KeyCode.Alpha1)) StopNote("C4#", true);
+    if (Input.GetKeyUp(KeyCode.Q)) StopNote("D4", true);
+    if (Input.GetKeyUp(KeyCode.Alpha2)) StopNote("E4b", true);
+    if (Input.GetKeyUp(KeyCode.W)) StopNote("E4", true);
+    if (Input.GetKeyUp(KeyCode.E)) StopNote("F4", true);
+    if (Input.GetKeyUp(KeyCode.Alpha3)) StopNote("F4#", true);
+    if (Input.GetKeyUp(KeyCode.R)) StopNote("G4", true);
+    if (Input.GetKeyUp(KeyCode.Alpha5)) StopNote("G4#", true);
+    if (Input.GetKeyUp(KeyCode.T)) StopNote("A4", true);
+    if (Input.GetKeyUp(KeyCode.Alpha6)) StopNote("B4b", true);
+    if (Input.GetKeyUp(KeyCode.Y)) StopNote("B4", true);
+
+    if (Input.GetKeyUp(KeyCode.U)) StopNote("C5", true);
+    if (Input.GetKeyUp(KeyCode.Alpha8)) StopNote("C5#", true);
+    if (Input.GetKeyUp(KeyCode.I)) StopNote("D5", true);
+    if (Input.GetKeyUp(KeyCode.Alpha9)) StopNote("E5b", true);
+    if (Input.GetKeyUp(KeyCode.O)) StopNote("E5", true);
+    if (Input.GetKeyUp(KeyCode.P)) StopNote("F5", true);
+    if (Input.GetKeyUp(KeyCode.Minus)) StopNote("F5#", true);
+    if (Input.GetKeyUp(KeyCode.LeftBracket)) StopNote("G5", true);
+    if (Input.GetKeyUp(KeyCode.Equals)) StopNote("G5#", true);
+    if (Input.GetKeyUp(KeyCode.RightBracket)) StopNote("A5", true);
+    if (Input.GetKeyUp(KeyCode.Backslash)) StopNote("B5b", true);
+    if (Input.GetKeyUp(KeyCode.Return)) StopNote("B5", true);
+  }
 
   public void OnSliderChange(Slider slider) {
     int val = (int)slider.value;
@@ -159,15 +214,23 @@ public class WaveformEditor : MonoBehaviour {
   int nextNotePos = 0;
   readonly int[] playedNotes = new int[8];
 
-  public void StartNote(string note) {
+  public void StartNote(string note, bool show = false) {
     int freq = CalculateNoteFrequency(note);
     playedNotes[nextNotePos] = freq;
     sounds.Play(nextNotePos, freq, -1);
     nextNotePos++;
     if (nextNotePos >= 8) nextNotePos = 0;
+
+    if (show) {
+      foreach (PianoKeyboard key in AllKeys)
+        if (key.note == note) {
+          key.image.color = key.pressedColor;
+          return;
+        }
+    }
   }
 
-  public void StopNote(string note) {
+  public void StopNote(string note, bool show = false) {
     int freq = CalculateNoteFrequency(note);
     for (int i = 0; i < 8; i++)
       if (playedNotes[i] == freq) {
@@ -175,6 +238,14 @@ public class WaveformEditor : MonoBehaviour {
         playedNotes[i] = -1;
         break;
       }
+
+    if (show) {
+      foreach (PianoKeyboard key in AllKeys)
+        if (key.note == note) {
+          key.image.color = key.normalColor;
+          return;
+        }
+    }
   }
 
   const float step = 1.059463f;
