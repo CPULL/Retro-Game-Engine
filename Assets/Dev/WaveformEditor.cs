@@ -12,6 +12,8 @@ public class WaveformEditor : MonoBehaviour {
   public Slider Release;
   public Text ReleaseTxt;
   public LineRenderer lineRenderer;
+  public Toggle ShowOscillometer;
+  public LineRenderer oscilloscope;
   public Slider Phase;
   public Text PhaseTxt;
   public Dropdown Wave;
@@ -26,6 +28,7 @@ public class WaveformEditor : MonoBehaviour {
   float phase = 0;
 
   public PianoKeyboard[] AllKeys;
+  Vector3[] oscilloscopeValues = new Vector3[512];
 
   private void Start() {
     CleanADSR();
@@ -36,6 +39,11 @@ public class WaveformEditor : MonoBehaviour {
     for (int i = 0; i < 8; i++)
       sounds.Play(i, 440, 0.01f);
     sounds.Volume(-1, 1);
+
+    for (int i = 0; i < 512; i++)
+      oscilloscopeValues[i] = new Vector3(i * 2, 128, 0);
+    oscilloscope.positionCount = 512;
+    oscilloscope.SetPositions(oscilloscopeValues);
   }
 
   private void Update() {
@@ -90,6 +98,18 @@ public class WaveformEditor : MonoBehaviour {
     if (Input.GetKeyUp(KeyCode.RightBracket)) StopNote("A5", true);
     if (Input.GetKeyUp(KeyCode.Backslash)) StopNote("B5b", true);
     if (Input.GetKeyUp(KeyCode.Return)) StopNote("B5", true);
+
+    if (ShowOscillometer.isOn) RenderOscilloscope();
+  }
+
+
+
+  void RenderOscilloscope() {
+    float[] data = sounds.Oscillator;
+
+    for (int i = 0; i < data.Length; i++)
+      oscilloscopeValues[i].y = 128 + 127 * data[i];
+    oscilloscope.SetPositions(oscilloscopeValues);
   }
 
   public void OnSliderChange(Slider slider) {

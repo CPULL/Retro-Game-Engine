@@ -4,7 +4,8 @@ public class Audio : MonoBehaviour {
   public AudioSource[] srcs;
   public Channel[] channels;
   const int samplerate = 44100;
-
+  private float[] oscValues = new float[512];
+  private float[][] outputs;
 
   void Awake() {
     AudioClip.PCMReaderCallback[] readers = new AudioClip.PCMReaderCallback[8];
@@ -35,7 +36,32 @@ public class Audio : MonoBehaviour {
         AudioClip.Create("Channel" + i, samplerate * 2, 1, samplerate, true, readers[i], positions[i])
       );
     }
+
+    outputs = new float[channels.Length][];
+    for (int i = 0; i < channels.Length; i++)
+      outputs[i] = new float[512];
   }
+
+  public float[] Oscillator {
+    get {
+      float max = 1;
+      for (int c = 0; c < srcs.Length; c++)
+        channels[c].audio.GetOutputData(outputs[c], 0);
+      for (int i = 0; i < 512; i++) {
+        float val = 0;
+        for (int c = 0; c < srcs.Length; c++)
+          val += outputs[c][i];
+        oscValues[i] = val;
+        if (max < val) max = val;
+        if (max < -val) max = -val;
+      }
+      for (int i = 0; i < 512; i++)
+        oscValues[i] /= max;
+      return oscValues;
+    }
+  }
+
+
 
   public void Volume(int channel, float vol) {
     if (channel < -1 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
@@ -138,8 +164,10 @@ public class Audio : MonoBehaviour {
             if (t >= channels[i].timeout + channels[i].rv) {
               channels[i].stopnow = true;
             }
-            else
-              channels[i].audio.volume = channels[i].vol * (channels[i].timeout + channels[i].rv - t) * channels[i].sv;
+            else {
+              float releaseVal = 1 - (t - channels[i].timeout) / channels[i].rv;
+              channels[i].audio.volume = channels[i].vol * releaseVal * channels[i].sv;
+            }
           }
           else {
             channels[i].stopnow = true;
@@ -170,9 +198,6 @@ public class Audio : MonoBehaviour {
       playpos += 5;
     }
   }
-
-
-  //  Define a way to play music: 2 bytes total len + 1 byte num channles + [1 byte channel, 2 bytes freq, 2 bytes len] * num channels
 
 
 
@@ -229,11 +254,12 @@ public class Audio : MonoBehaviour {
         break;
 
       case Waveform.Noise:
+        seed++;
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
           float pos = channels[channel].freq * channels[channel].position / samplerate;
-          data[i] = Squirrel3Norm((int)pos, (uint)(channels[channel].phase * 1000));
+          data[i] = Squirrel3Norm((int)pos, seed);
         }
         break;
     }
@@ -248,6 +274,7 @@ public class Audio : MonoBehaviour {
   const uint NOISE3 = 0x1b56c4e9;
   const uint CAP = 1 << 30;
   const float CAP2 = 1 << 29;
+  uint seed = 0;
 
   float Squirrel3Norm(int pos, uint seed = 0) {
     uint n = (uint)pos;
@@ -341,11 +368,10 @@ public struct Channel {
 
 
 /*
+ * Define a way to play music: 2 bytes total len + 1 byte num channles + [1 byte channel, 2 bytes freq, 2 bytes len] * num channels
  * 
- * Do not stop immediately sonds, never, use a quick fadeout
- * 
- * Add bass wave
- * 
- * Add battery wave
+ * Wave: bass
+ * Wave: battery
+ * Wave: 8bit PCM
  * 
  */
