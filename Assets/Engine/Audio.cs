@@ -255,39 +255,50 @@ public class Audio : MonoBehaviour {
         break;
 
       case Waveform.Bass1:
-        float sqph = channels[channel].phase;
-        if (sqph > 1) sqph = 1 / sqph;
+        seed++;
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = 0.25f * channels[channel].freq * channels[channel].position / samplerate;
 
-          float reminder = pos - (int)pos;
-          data[i] = (
-            .49f * Mathf.Sin(2 * Mathf.PI * pos) + 
-            .1f * Mathf.Sin(2 * Mathf.PI * pos * channels[channel].phase) +
-            .39f * piD2 * Mathf.Asin(Mathf.Cos(piP2 * pos * channels[channel].phase * .5f)) +
-            .02f * (reminder < .5f ? .25f : -25f) * sqph
-            );
+          float x = channels[channel].position * .0005f;
+          float xf = (channels[channel].position + 31.5f) * channels[channel].freq * .001f;
+          float y = Mathf.Sin(piP2 * Mathf.Sqrt(.25f * xf)) * Mathf.Cos(Mathf.PI * xf * .0001245f) * (-.06f * x + 1000) / 1000;
+          data[i] = y;
           if (data[i] < -1f) data[i] = -1f;
           if (data[i] > 1f) data[i] = 1f;
+        }
+        for (int t = 0; t < 4; t++) {
+          for (int i = 1; i < data.Length - 1; i++)
+            data[i] = (data[i] + data[i - 1] + data[i + 1]) * .333f;
+          for (int i = 2; i < data.Length - 2; i++)
+            data[i] = (data[i] + data[i - 1] + data[i + 1] + data[i - 2] + data[i + 2]) * .2f;
+          for (int i = 1; i < data.Length - 1; i++)
+            data[i] = (data[i] + data[i - 1] + data[i + 1]) * .3333f;
         }
         break;
 
       case Waveform.Bass2:
         seed++;
+        float p = channels[channel].phase;
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * .5f * channels[channel].position / samplerate;
-          float x = 25 * channels[channel].phase / (pos + channels[channel].phase + 5);
-          data[i] = Mathf.Sin(2 * Mathf.PI * x + Squirrel3Norm((int)pos, seed) * .01f);
+          float pos = .25f * channels[channel].freq * channels[channel].position / samplerate;
+
+          float y =
+            1.0f * Mathf.Sin(piP2 * pos) +
+            0.1f * Mathf.Sin(piP2 * pos * 4 + p) +
+            0.05f * Mathf.Sin(piP2 * pos * 8 + p * p) +
+            0.02f * Mathf.Sin(piP2 * pos * 16 + p * p * p) +
+            0.01f * Mathf.Sin(piP2 * pos * 32 + p * p * p * p);
+          y *= 0.88f;
+          y += .001f * (Squirrel3Norm((int)pos, seed) + Squirrel3Norm((int)pos, (uint)pos));
+          if (y < -1f) y = -1f;
+          if (y > 1f) y = 1f;
+          data[i] = y;
         }
-        for (int i = 1; i < data.Length; i += 2)
+        for (int i = 1; i < data.Length; i++) { 
           data[i] = (data[i] + data[i - 1]) * .5f;
-        for (int i = 1; i < data.Length; i++) {
-          if (i > 1 && Mathf.Abs(data[i - 2] - data[i]) > .5f) data[i] *= -.25f;
-          if (i > 0 && Mathf.Abs(data[i - 1] - data[i]) > .5f) data[i] *= -.25f;
         }
         break;
 
