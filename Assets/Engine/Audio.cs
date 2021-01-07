@@ -163,6 +163,7 @@ public class Audio : MonoBehaviour {
           if (channels[i].adsrV) {
             if (t >= channels[i].timeout + channels[i].rv) {
               channels[i].stopnow = true;
+              channels[i].audio.volume = 0.01f;
             }
             else {
               float releaseVal = 1 - (t - channels[i].timeout) / channels[i].rv;
@@ -253,6 +254,43 @@ public class Audio : MonoBehaviour {
         }
         break;
 
+      case Waveform.Bass1:
+        float sqph = channels[channel].phase;
+        if (sqph > 1) sqph = 1 / sqph;
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+          float pos = 0.25f * channels[channel].freq * channels[channel].position / samplerate;
+
+          float reminder = pos - (int)pos;
+          data[i] = (
+            .49f * Mathf.Sin(2 * Mathf.PI * pos) + 
+            .1f * Mathf.Sin(2 * Mathf.PI * pos * channels[channel].phase) +
+            .39f * piD2 * Mathf.Asin(Mathf.Cos(piP2 * pos * channels[channel].phase * .5f)) +
+            .02f * (reminder < .5f ? .25f : -25f) * sqph
+            );
+          if (data[i] < -1f) data[i] = -1f;
+          if (data[i] > 1f) data[i] = 1f;
+        }
+        break;
+
+      case Waveform.Bass2:
+        seed++;
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+          float pos = channels[channel].freq * .5f * channels[channel].position / samplerate;
+          float x = 25 * channels[channel].phase / (pos + channels[channel].phase + 5);
+          data[i] = Mathf.Sin(2 * Mathf.PI * x + Squirrel3Norm((int)pos, seed) * .01f);
+        }
+        for (int i = 1; i < data.Length; i += 2)
+          data[i] = (data[i] + data[i - 1]) * .5f;
+        for (int i = 1; i < data.Length; i++) {
+          if (i > 1 && Mathf.Abs(data[i - 2] - data[i]) > .5f) data[i] *= -.25f;
+          if (i > 0 && Mathf.Abs(data[i - 1] - data[i]) > .5f) data[i] *= -.25f;
+        }
+        break;
+
       case Waveform.Noise:
         seed++;
         for (int i = 0; i < data.Length; i++) {
@@ -260,6 +298,101 @@ public class Audio : MonoBehaviour {
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
           float pos = channels[channel].freq * channels[channel].position / samplerate;
           data[i] = Squirrel3Norm((int)pos, seed);
+        }
+        break;
+
+      case Waveform.PinkNoise:
+        seed++;
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          data[i] = Squirrel3Norm((int)pos, seed);
+          if (i > 0 && Mathf.Abs(data[i - 1] - data[i]) > .5f) data[i] *= -.5f;
+        }
+        break;
+
+      case Waveform.BrownNoise:
+        seed++;
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          data[i] = Squirrel3Norm((int)pos, seed);
+          if (i > 1 && Mathf.Abs(data[i - 2] - data[i]) > .5f) data[i] *= -.25f;
+          if (i > 0 && Mathf.Abs(data[i - 1] - data[i]) > .5f) data[i] *= -.25f;
+        }
+        break;
+
+      case Waveform.BlackNoise:
+        seed++;
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          data[i] = Squirrel3Norm((int)pos, seed);
+          if (i > 3 && Mathf.Abs(data[i - 4] - data[i]) > .5f) data[i] *= -.25f;
+          if (i > 2 && Mathf.Abs(data[i - 3] - data[i]) > .5f) data[i] *= -.25f;
+          if (i > 1 && Mathf.Abs(data[i - 2] - data[i]) > .5f) data[i] *= -.25f;
+          if (i > 0 && Mathf.Abs(data[i - 1] - data[i]) > .5f) data[i] *= -.25f;
+        }
+        break;
+
+      case Waveform.SoftNoise:
+        seed++;
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          if ((i % 3) == 0) {
+            float x = 10 * channels[channel].phase / (pos + channels[channel].phase);
+            x = pos * .25f;
+            data[i] = Mathf.Sin(2 * Mathf.PI * x);
+          }
+          else
+            data[i] = Squirrel3Norm((int)pos, seed) * .75f;
+          if (i > 0 && Mathf.Abs(data[i] - data[i - 1]) > .01f) data[i] = .05f * data[i] + .95f * data[i - 1];
+        }
+
+        for (int t = 0; t < 2; t++) {
+          for (int i = 1; i < data.Length - 1; i++)
+            data[i] = (data[i] + data[i - 1] + data[i + 1]) * .333f;
+          for (int i = 2; i < data.Length - 2; i++)
+            data[i] = (data[i] + data[i - 1] + data[i + 1] + data[i - 2] + data[i + 2]) * .2f;
+          for (int i = 1; i < data.Length - 1; i++)
+            data[i] = (data[i] + data[i - 1] + data[i + 1]) * .3333f;
+        }
+        for (int i = 0; i < 16; i++) {
+          data[i] *= .5f * (i + 16) / 16f;
+          data[data.Length - i - 1] *= .5f * (i + 16) / 16f;
+        }
+        break;
+
+      case Waveform.Drums:
+        seed++;
+        float maxn = 10 * channels[channel].phase / (channels[channel].freq * 4096);
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+
+          float x = channels[channel].freq * channels[channel].position / 1760;
+          float y = Mathf.Sin(piP2 * Mathf.Sqrt(.5f * (x + 31.5f))) * Mathf.Cos(Mathf.PI * (x + 31.5f) * .0001245f) * (-.25f * x + 1000) / 1000;
+          if (channels[channel].position < 5000)
+            y += Squirrel3Norm((int)x, seed) * x * maxn * (-.25f * x + 1000) / 1000;
+          if (x < 64) y *= x / 256;
+          if (x < 72) y *= x / 128;
+          if (x < 80) y *= x / 64;
+          data[i] = y;
+          if (data[i] < -1f) data[i] = -1f;
+          if (data[i] > 1f) data[i] = 1f;
+        }
+        for (int t = 0; t < 2; t++) {
+          for (int i = 1; i < data.Length - 1; i++)
+            data[i] = (data[i] + data[i - 1] + data[i + 1]) * .333f;
+          for (int i = 2; i < data.Length - 2; i++)
+            data[i] = (data[i] + data[i - 1] + data[i + 1] + data[i - 2] + data[i + 2]) * .2f;
+          for (int i = 1; i < data.Length - 1; i++)
+            data[i] = (data[i] + data[i - 1] + data[i + 1]) * .3333f;
         }
         break;
     }
@@ -311,7 +444,7 @@ public class Audio : MonoBehaviour {
   #endregion
 }
 
-public enum Waveform { Triangular=0, Saw=1, Square=2, Sin=3, Noise=4 };
+public enum Waveform { Triangular=0, Saw=1, Square=2, Sin=3, Bass1=4, Bass2=5, Noise=6, PinkNoise=7, BrownNoise=8, BlackNoise=9, SoftNoise=10, Drums=11 };
 
 [System.Serializable]
 public struct Channel {

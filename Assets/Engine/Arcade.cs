@@ -240,14 +240,6 @@ public class Arcade : MonoBehaviour {
       spriteImgs[i].enabled = false;
     }
 
-
-    // FIXME
-    Clear(0);
-    Write("--- MMM Arcade RGE ---", 35, 8, 60);
-    Write("Audio test", 55, 14 + 4, 0b011010);
-    CompleteFrame();
-    return;//FIXME
-
     sprites[0].Init(0, 6, sw, sh);
 
     if (SceneManager.GetActiveScene().name == "ArcadePlus") {

@@ -549,6 +549,7 @@ public class SpriteEditor : MonoBehaviour {
   readonly Regex rgHex = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   public void PostLoad() {
+    if (!gameObject.activeSelf) return;
     Message.text = "";
     string data = Values.text.Trim();
     data = rgComments.Replace(data, " ");

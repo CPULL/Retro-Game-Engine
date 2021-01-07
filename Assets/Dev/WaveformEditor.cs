@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Text.RegularExpressions;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class WaveformEditor : MonoBehaviour {
@@ -16,9 +18,11 @@ public class WaveformEditor : MonoBehaviour {
   public LineRenderer oscilloscope;
   public Slider Phase;
   public Text PhaseTxt;
-  public Dropdown Wave;
-  public Image WaveSprite;
+  public GameObject WaveValues;
   public Sprite[] WaveSprites;
+  public string[] WaveNames;
+  public Image WaveSprite;
+  public Text WaveName;
 
   int attack = 0;
   int decay = 0;
@@ -28,11 +32,11 @@ public class WaveformEditor : MonoBehaviour {
   float phase = 0;
 
   public PianoKeyboard[] AllKeys;
-  Vector3[] oscilloscopeValues = new Vector3[512];
+  readonly Vector3[] oscilloscopeValues = new Vector3[512];
 
   private void Start() {
     CleanADSR();
-    WaveChange();
+    WaveChange(0);
     UpdateWaveforms();
 
     sounds.Volume(-1, 0);
@@ -47,6 +51,8 @@ public class WaveformEditor : MonoBehaviour {
   }
 
   private void Update() {
+    if (Values.gameObject.activeSelf) return;
+
     if (Input.GetKeyDown(KeyCode.Tab)) StartNote("C4", true);
     if (Input.GetKeyDown(KeyCode.Alpha1)) StartNote("C4#", true);
     if (Input.GetKeyDown(KeyCode.Q)) StartNote("D4", true);
@@ -112,58 +118,58 @@ public class WaveformEditor : MonoBehaviour {
     oscilloscope.SetPositions(oscilloscopeValues);
   }
 
-  public void OnSliderChange(Slider slider) {
-    int val = (int)slider.value;
-    if (slider == Attack) {
-      attack = val;
-      float t = 0.0078392156f * attack + 0.001f;
-      string time;
-      if (t>.5f) {
-        time = ((int)(t * 100))/100f + "s";
-      }
-      else {
-        time = (int)(t * 1000) + "ms";
-      }
-      AttackTxt.text = "Attack\n" + time;
+  public void OnSliderChange() {
+    attack = (int)Attack.value;
+    decay = (int)Decay.value;
+    sustain = (int)Sustain.value;
+    release = (int)Release.value;
+
+    if (attack == 0 && decay == 0 && sustain == 0 && release == 0) {
+      AttackTxt.text = "Attack\n0ms";
+      DecayTxt.text = "Decay\n0ms";
+      SustainTxt.text = "Sustain\n100%";
+      ReleaseTxt.text = "Release\n0ms";
       UpdateADSRGraph();
+      return;
     }
-    if (slider == Decay) {
-      decay = val;
-      float t = 0.0117607843f * decay + 0.001f;
-      string time;
-      if (t > .5f) {
-        time = ((int)(t * 100)) / 100f + "s";
-      }
-      else {
-        time = (int)(t * 1000) + "ms";
-      }
-      DecayTxt.text = "Decay\n" + time;
-      UpdateADSRGraph();
+    if (sustain == 0) sustain = 255;
+
+    float t = 0.0078392156f * attack + 0.001f;
+    string time;
+    if (t > .5f) {
+      time = ((int)(t * 100)) / 100f + "s";
     }
-    if (slider == Sustain) {
-      sustain = val;
-      string perc = (((int)(sustain * 1000 / 255f))/10f) + "%";
-      SustainTxt.text = "Sustain\n" + perc;
-      UpdateADSRGraph();
+    else {
+      time = (int)(t * 1000) + "ms";
     }
-    if (slider == Release) {
-      release = val;
-      float t = 0.0117607843f * release + 0.001f;
-      string time;
-      if (t > .5f) {
-        time = ((int)(t * 100)) / 100f + "s";
-      }
-      else {
-        time = (int)(t * 1000) + "ms";
-      }
-      ReleaseTxt.text = "Release\n" + time;
-      UpdateADSRGraph();
+    AttackTxt.text = "Attack\n" + time;
+
+    t = 0.0117607843f * decay + 0.001f;
+    if (t > .5f) {
+      time = ((int)(t * 100)) / 100f + "s";
     }
+    else {
+      time = (int)(t * 1000) + "ms";
+    }
+    DecayTxt.text = "Decay\n" + time;
+
+    string perc = (((int)(sustain * 1000 / 255f)) / 10f) + "%";
+    SustainTxt.text = "Sustain\n" + perc;
+
+    t = 0.0117607843f * release + 0.001f;
+    if (t > .5f) {
+      time = ((int)(t * 100)) / 100f + "s";
+    }
+    else {
+      time = (int)(t * 1000) + "ms";
+    }
+    ReleaseTxt.text = "Release\n" + time;
+    UpdateADSRGraph();
   }
   public void CleanADSR() {
     Attack.SetValueWithoutNotify(0);
     attack = 0;
-    AttackTxt.text = "Attak\n0";
+    AttackTxt.text = "Attack\n0";
     Decay.SetValueWithoutNotify(0);
     decay = 0;
     DecayTxt.text = "Decay\n0";
@@ -174,6 +180,7 @@ public class WaveformEditor : MonoBehaviour {
     release = 0;
     ReleaseTxt.text = "Release\n0";
     UpdateADSRGraph();
+    UpdateWaveforms();
   }
 
   void UpdateADSRGraph() {
@@ -200,9 +207,15 @@ public class WaveformEditor : MonoBehaviour {
     UpdateWaveforms();
   }
 
-  public void WaveChange() {
-    wave = (Waveform)Wave.value;
-    WaveSprite.sprite = WaveSprites[Wave.value];
+  public void WaveOpenDD() {
+    WaveValues.SetActive(!WaveValues.activeSelf);
+  }
+
+  public void WaveChange(int w) {
+    WaveValues.SetActive(false);
+    wave = (Waveform)w;
+    WaveSprite.sprite = WaveSprites[w];
+    WaveName.text = WaveNames[w];
     PhaseChange();
   }
 
@@ -290,5 +303,107 @@ public class WaveformEditor : MonoBehaviour {
       case "b ": freq = obase * step4 * step4 * step * step * step; break;
     }
     return (int)freq;
+  }
+
+
+  public InputField Values;
+  public Button LoadSubButton;
+
+  public void PreLoad() {
+    Values.gameObject.SetActive(true);
+    LoadSubButton.enabled = true;
+  }
+  readonly Regex rgComments = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgLabels = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgHex = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
+  public void PostLoad() {
+    if (!gameObject.activeSelf) return;
+    string data = Values.text.Trim();
+    data = rgComments.Replace(data, " ");
+    data = rgLabels.Replace(data, " ");
+    data = data.Replace('\n', ' ').Trim();
+    while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
+
+    data = ReadNextByte(data, out byte waveb);
+    wave = (Waveform)waveb;
+    data = ReadNextByte(data, out byte phaseb1);
+    data = ReadNextByte(data, out byte phaseb2);
+    phase = (phaseb1 * 256 + phaseb2) / 1000f;
+
+    data = ReadNextByte(data, out byte attackb);
+    attack = attackb;
+    data = ReadNextByte(data, out byte decayb);
+    decay = decayb;
+    data = ReadNextByte(data, out byte sustainb);
+    sustain = sustainb;
+    ReadNextByte(data, out byte releaseb);
+    release = releaseb;
+
+    Attack.SetValueWithoutNotify(attack);
+    Decay.SetValueWithoutNotify(decay);
+    Sustain.SetValueWithoutNotify(sustain);
+    Release.SetValueWithoutNotify(release);
+//FXOME    Wave.SetValueWithoutNotify(waveb);
+
+    float val = Phase.value;
+    if (wave == Waveform.Square) {
+      if (phase < 0.01f) phase = .01f;
+      if (phase > 0.99f) phase = .99f;
+      val = 20f * phase - 10;
+    }
+    else { // FIXME this may not work
+      if (phase < 0.01f) phase = .01f;
+      if (phase > 10f) phase = 10f;
+      val = 10 * phase - 10;
+      if (val > 0) val = 1.1f * phase - 1;
+      if (val == 0) phase = 1;
+    }
+    Phase.SetValueWithoutNotify(val);
+
+    OnSliderChange();
+    WaveChange((int)wave);
+
+    Values.gameObject.SetActive(false);
+    LoadSubButton.enabled = false;
+  }
+
+  string ReadNextByte(string data, out byte res) {
+    int pos1 = data.IndexOf(' ');
+    int pos2 = data.Length;
+    if (pos1 == -1) pos1 = int.MaxValue;
+    if (pos2 == -1) pos1 = int.MaxValue;
+    int pos = pos1;
+    if (pos > pos2) pos = pos2;
+    if (pos < 1) {
+      res = 0;
+      return "";
+    }
+
+    string part = data.Substring(0, pos);
+    Match m = rgHex.Match(part);
+    if (m.Success) {
+      res = (byte)Convert.ToInt32(m.Groups[1].Value, 16);
+      return data.Substring(pos).Trim();
+    }
+
+    res = 0;
+    return data;
+  }
+
+
+  public void Save() {
+    string res = "Wave:\n0x" +
+      ((int)wave).ToString("X2") + " 0x";
+
+    int pbyte = (int)(phase * 1000);
+    res += ((byte)((pbyte & 0xff00) >> 8)).ToString("X2") + " 0x" +
+    ((byte)(pbyte & 0xff)).ToString("X2") + " 0x";
+
+    res += attack.ToString("X2") + " 0x" + decay.ToString("X2") + " 0x" + sustain.ToString("X2") + " 0x" + release.ToString("X2"); 
+
+    Values.gameObject.SetActive(true);
+    LoadSubButton.enabled = false;
+    Values.text = res;
   }
 }
