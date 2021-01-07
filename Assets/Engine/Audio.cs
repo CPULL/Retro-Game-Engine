@@ -235,6 +235,25 @@ public class Audio : MonoBehaviour {
         }
         break;
 
+      case Waveform.SuperSaw:
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float pt = channels[channel].phase;
+          float pt2 = pt * pt;
+          float y1 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos))) * piD2;
+          float y2 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos * pt))) * piD2;
+          float y3 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos * pt2))) * piD2;
+          float y4 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos * pt2 * pt))) * piD2;
+          float y5 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos * pt2 * pt2))) * piD2;
+          float y6 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos * pt2 * pt2 * pt))) * piD2;
+          data[i] = (y1 + y2 + y3 + y4 + y5 + y6) * .1666666f;
+          if (data[i] < -1f) data[i] = -1f;
+          if (data[i] > 1f) data[i] = 1f;
+        }
+        break;
+
       case Waveform.Square:
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
@@ -455,7 +474,7 @@ public class Audio : MonoBehaviour {
   #endregion
 }
 
-public enum Waveform { Triangular=0, Saw=1, Square=2, Sin=3, Bass1=4, Bass2=5, Noise=6, PinkNoise=7, BrownNoise=8, BlackNoise=9, SoftNoise=10, Drums=11 };
+public enum Waveform { Triangular=0, Saw=1, Square=2, Sin=3, Bass1=4, Bass2=5, Noise=6, PinkNoise=7, BrownNoise=8, BlackNoise=9, SoftNoise=10, Drums=11, SuperSaw=12 };
 
 [System.Serializable]
 public struct Channel {
