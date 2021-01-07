@@ -71,6 +71,10 @@ public class Audio : MonoBehaviour {
     channels[channel].Play(freq, length);
   }
 
+  public void Stop(int channel) {
+    channels[channel].timeout = channels[channel].time;
+  }
+
   public void Wave(int channel, Waveform wave, float phase) {
     if (channel < 0 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
     if (phase < .01f) phase = .01f;
@@ -88,21 +92,21 @@ public class Audio : MonoBehaviour {
   public void ADSR(int channel, byte attack, byte decay, byte sustain, byte release) {
     if (channel < 0 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
 
-    if (attack ==0 && decay == 0 && sustain == 0 && release == 0) {
+    if (attack == 0 && decay == 0 && sustain == 0 && release == 0) {
       channels[channel].adsrV = false;
       return;
     }
     channels[channel].adsrV = true;
-    channels[channel].av = 0.015625f * attack + 0.001f; // 0.001s -> 4s
-    channels[channel].dv = 0.02344f * decay + 0.001f; // 0.001s -> 6s
+    channels[channel].av = 0.0078392156f * attack + 0.001f; // 0.001s -> 2s
+    channels[channel].dv = 0.0117607843f * decay + 0.001f; // 0.001s -> 3s
     channels[channel].sv = sustain / 255f; // % of volume = sv/255
-    channels[channel].rv = 0.02344f * release + 0.001f; // 0.001s -> 6s
+    channels[channel].rv = 0.0117607843f * release + 0.001f; // 0.001s -> 3s
   }
 
   byte[] toplay = null;
   int playpos = -1;
   float musicsteplen = 0;
-  public void Play(byte[] music) {
+  public void PlayMusic(byte[] music) {
     toplay = music;
     playpos = 0;
   }
@@ -110,25 +114,36 @@ public class Audio : MonoBehaviour {
   private void Update() {
     for (int i = 0; i < channels.Length; i++) {
       if (!channels[i].audio.isPlaying) continue;
-      channels[i].time += Time.deltaTime;
-      float t = channels[i].time;
-      if (channels[i].adsrV) {
-        if (t < channels[i].av) channels[i].audio.volume = channels[i].vol * (1 - (channels[i].av - t) / channels[i].av);
-        else if (t < channels[i].av + channels[i].dv) {
-          float perc = (channels[i].dv - (t - channels[i].av)) / channels[i].dv;
-          channels[i].audio.volume = channels[i].vol * (perc + (1 - perc) * channels[i].sv);
-        }
-        else channels[i].audio.volume = channels[i].vol * channels[i].sv;
-      }
-      if (t >= channels[i].timeout) {
-        if (channels[i].adsrV) {
-          if (t >= channels[i].timeout + channels[i].rv)
-            channels[i].audio.Stop();
-          else
-            channels[i].audio.volume = channels[i].vol * (channels[i].timeout + channels[i].rv - t) * channels[i].sv;
-        }
-        else {
+
+      if (channels[i].stopnow) {
+        channels[i].audio.volume *= .75f;
+        if (channels[i].audio.volume <= 0.01f) {
           channels[i].audio.Stop();
+          channels[i].stopnow = false;
+        }
+      }
+      else {
+        channels[i].time += Time.deltaTime;
+        float t = channels[i].time;
+        if (channels[i].adsrV) {
+          if (t < channels[i].av) channels[i].audio.volume = channels[i].vol * (1 - (channels[i].av - t) / channels[i].av);
+          else if (t < channels[i].av + channels[i].dv) {
+            float perc = (channels[i].dv - (t - channels[i].av)) / channels[i].dv;
+            channels[i].audio.volume = channels[i].vol * (perc + (1 - perc) * channels[i].sv);
+          }
+          else channels[i].audio.volume = channels[i].vol * channels[i].sv;
+        }
+        if (channels[i].timeout != -1 && t >= channels[i].timeout) {
+          if (channels[i].adsrV) {
+            if (t >= channels[i].timeout + channels[i].rv) {
+              channels[i].stopnow = true;
+            }
+            else
+              channels[i].audio.volume = channels[i].vol * (channels[i].timeout + channels[i].rv - t) * channels[i].sv;
+          }
+          else {
+            channels[i].stopnow = true;
+          }
         }
       }
     }
@@ -200,10 +215,7 @@ public class Audio : MonoBehaviour {
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
           float pos = channels[channel].freq * channels[channel].position / samplerate;
           pos -= (int)pos;
-          if (pos < channels[channel].phase)
-            data[i] = .9f;
-          else
-            data[i] = -.9f;
+          if (pos < channels[channel].phase) data[i] = .99f; else data[i] = -.99f;
         }
         break;
 
@@ -290,6 +302,7 @@ public struct Channel {
   public float dv;
   public float sv;
   public float rv;
+  public bool stopnow;
 
   public Channel(AudioSource src, Waveform w, AudioClip ac) {
     audio = src;
@@ -307,6 +320,7 @@ public struct Channel {
     dv = 0;
     sv = 0;
     rv = 0;
+    stopnow = false;
   }
 
   internal void SetVol(float vol) {
@@ -318,6 +332,20 @@ public struct Channel {
     freq = frequency;
     time = 0;
     timeout = length;
+    stopnow = false;
+    audio.volume = vol;
     audio.Play();
   }
 }
+
+
+
+/*
+ * 
+ * Do not stop immediately sonds, never, use a quick fadeout
+ * 
+ * Add bass wave
+ * 
+ * Add battery wave
+ * 
+ */
