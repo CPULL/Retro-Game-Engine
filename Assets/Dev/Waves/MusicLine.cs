@@ -4,6 +4,7 @@ using UnityEngine.UI;
 public class MusicLine : MonoBehaviour {
   public int index;
   public Text IndexTxt;
+  public Image Background;
   public int numVoices;
   public MusicNote ch0;
   public MusicNote ch1;
