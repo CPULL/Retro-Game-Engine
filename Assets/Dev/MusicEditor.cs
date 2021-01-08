@@ -214,9 +214,28 @@ public enum MusicEditorStatus {
   Idle, BlockList, Music, BlockEdit, Waveforms
 }
 
+public class Music {
+  byte numVoices;
+  byte[] channels;
+  byte numWaves;
+  Wave[] waves;
+  byte numBlocks;
+  byte[] blocks;
+}
+
+struct Wave {
+  byte wave;
+  byte phase1;
+  byte phase2;
+  byte a;
+  byte d;
+  byte s;
+  byte r;
+}
+
 public class MusicBlock {
   int index;
-  int numVoices;
+  byte bpm;
   List<MusicLine> Lines;
 }
 
