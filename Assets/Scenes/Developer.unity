@@ -787,10 +787,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 448985484}
   len: 0
   LenTxt: {fileID: 1203369893}
+  back: {fileID: 0}
 --- !u!114 &10461544
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -984,10 +986,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 2090764347}
   val: 0
   ValTxt: {fileID: 1580895325}
   len: 0
   LenTxt: {fileID: 520337081}
+  back: {fileID: 271447941}
 --- !u!114 &11003012
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2322,10 +2326,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 238541186}
   len: 0
   LenTxt: {fileID: 1002858817}
+  back: {fileID: 0}
 --- !u!114 &27299696
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5435,10 +5441,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1111654711}
   len: 0
   LenTxt: {fileID: 363258758}
+  back: {fileID: 0}
 --- !u!114 &74348718
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8699,10 +8707,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1926261004}
   len: 0
   LenTxt: {fileID: 1252581320}
+  back: {fileID: 0}
 --- !u!114 &126712487
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9181,10 +9191,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 282167121}
   len: 0
   LenTxt: {fileID: 1319538507}
+  back: {fileID: 0}
 --- !u!114 &128874724
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9472,10 +9484,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 1876225412}
   val: 0
   ValTxt: {fileID: 658731061}
   len: 0
   LenTxt: {fileID: 613059927}
+  back: {fileID: 295818180}
 --- !u!114 &134273928
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10877,10 +10891,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1697732902}
   len: 0
   LenTxt: {fileID: 583329096}
+  back: {fileID: 0}
 --- !u!114 &162945857
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11342,10 +11358,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 2143940309}
   len: 0
   LenTxt: {fileID: 1019229441}
+  back: {fileID: 0}
 --- !u!114 &175354038
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11859,10 +11877,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1970680385}
   len: 0
   LenTxt: {fileID: 1723299119}
+  back: {fileID: 0}
 --- !u!114 &185274386
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16637,10 +16657,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1240050371}
   len: 0
   LenTxt: {fileID: 936484994}
+  back: {fileID: 0}
 --- !u!114 &282995544
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19438,10 +19460,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1636657980}
   len: 0
   LenTxt: {fileID: 1320013405}
+  back: {fileID: 0}
 --- !u!114 &325591590
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21135,10 +21159,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 2077307233}
   len: 0
   LenTxt: {fileID: 951778774}
+  back: {fileID: 0}
 --- !u!114 &357763857
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27519,10 +27545,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 1301027563}
   val: 0
   ValTxt: {fileID: 437401475}
   len: 0
   LenTxt: {fileID: 536752761}
+  back: {fileID: 1539638277}
 --- !u!114 &467851317
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28182,14 +28210,7 @@ MonoBehaviour:
   IndexTxt: {fileID: 1593567729}
   Background: {fileID: 0}
   numVoices: 0
-  ch0: {fileID: 1330452960}
-  ch1: {fileID: 1305762562}
-  ch2: {fileID: 736899883}
-  ch3: {fileID: 1278329544}
-  ch4: {fileID: 1403236144}
-  ch5: {fileID: 1684564871}
-  ch6: {fileID: 1812779020}
-  ch7: {fileID: 1362955730}
+  note: []
 --- !u!114 &481469724
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28459,10 +28480,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 254525727}
   len: 0
   LenTxt: {fileID: 479438115}
+  back: {fileID: 0}
 --- !u!114 &485353551
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30072,14 +30095,7 @@ MonoBehaviour:
   IndexTxt: {fileID: 1756075815}
   Background: {fileID: 0}
   numVoices: 0
-  ch0: {fileID: 1471714088}
-  ch1: {fileID: 485353550}
-  ch2: {fileID: 27299695}
-  ch3: {fileID: 1466205186}
-  ch4: {fileID: 2033204138}
-  ch5: {fileID: 1748395724}
-  ch6: {fileID: 628434983}
-  ch7: {fileID: 1772933649}
+  note: []
 --- !u!114 &520391881
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33424,10 +33440,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 729760421}
   len: 0
   LenTxt: {fileID: 533061283}
+  back: {fileID: 0}
 --- !u!114 &580403014
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34871,10 +34889,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 320834042}
   len: 0
   LenTxt: {fileID: 624042957}
+  back: {fileID: 0}
 --- !u!114 &598460577
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36475,10 +36495,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1009188599}
   len: 0
   LenTxt: {fileID: 888764743}
+  back: {fileID: 0}
 --- !u!114 &628434984
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -37242,14 +37264,7 @@ MonoBehaviour:
   IndexTxt: {fileID: 1235678450}
   Background: {fileID: 0}
   numVoices: 0
-  ch0: {fileID: 1476777941}
-  ch1: {fileID: 692081639}
-  ch2: {fileID: 836954639}
-  ch3: {fileID: 1911627441}
-  ch4: {fileID: 2045006988}
-  ch5: {fileID: 1590188871}
-  ch6: {fileID: 1973908413}
-  ch7: {fileID: 869750065}
+  note: []
 --- !u!114 &638610429
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -39345,10 +39360,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 422336735}
   len: 0
   LenTxt: {fileID: 1260684340}
+  back: {fileID: 0}
 --- !u!114 &685608503
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -39504,10 +39521,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 828169893}
   len: 0
   LenTxt: {fileID: 1190686800}
+  back: {fileID: 0}
 --- !u!114 &692081640
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -41702,10 +41721,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 271209300}
   len: 0
   LenTxt: {fileID: 444864814}
+  back: {fileID: 0}
 --- !u!114 &732214860
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -42058,10 +42079,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 644163687}
   len: 0
   LenTxt: {fileID: 1377911077}
+  back: {fileID: 0}
 --- !u!114 &736899884
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -43272,10 +43295,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 386695795}
   len: 0
   LenTxt: {fileID: 607208231}
+  back: {fileID: 0}
 --- !u!114 &766647986
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -45263,10 +45288,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1718609542}
   len: 0
   LenTxt: {fileID: 603195945}
+  back: {fileID: 0}
 --- !u!114 &807784683
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -45347,10 +45374,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 128280933}
   len: 0
   LenTxt: {fileID: 566028566}
+  back: {fileID: 0}
 --- !u!114 &808228694
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -47132,10 +47161,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 2067107496}
   len: 0
   LenTxt: {fileID: 21269789}
+  back: {fileID: 0}
 --- !u!114 &836954640
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -49342,10 +49373,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1162942474}
   len: 0
   LenTxt: {fileID: 129558946}
+  back: {fileID: 0}
 --- !u!114 &869750066
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -52188,14 +52221,7 @@ MonoBehaviour:
   IndexTxt: {fileID: 1220734429}
   Background: {fileID: 0}
   numVoices: 0
-  ch0: {fileID: 1759731717}
-  ch1: {fileID: 1411015384}
-  ch2: {fileID: 1682668782}
-  ch3: {fileID: 1501002442}
-  ch4: {fileID: 126712486}
-  ch5: {fileID: 1518623710}
-  ch6: {fileID: 1840864600}
-  ch7: {fileID: 1777686253}
+  note: []
 --- !u!114 &927634987
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -53305,10 +53331,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1867727674}
   len: 0
   LenTxt: {fileID: 865950979}
+  back: {fileID: 0}
 --- !u!114 &947226012
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -54390,14 +54418,7 @@ MonoBehaviour:
   IndexTxt: {fileID: 2053821602}
   Background: {fileID: 0}
   numVoices: 0
-  ch0: {fileID: 962416861}
-  ch1: {fileID: 1096949860}
-  ch2: {fileID: 185274385}
-  ch3: {fileID: 1937948924}
-  ch4: {fileID: 1573579549}
-  ch5: {fileID: 1043382532}
-  ch6: {fileID: 1477500530}
-  ch7: {fileID: 947226011}
+  note: []
 --- !u!114 &957665856
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -54837,10 +54858,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 964421846}
   len: 0
   LenTxt: {fileID: 541176866}
+  back: {fileID: 0}
 --- !u!114 &962416862
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -55279,10 +55302,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 1715667918}
   val: 0
   ValTxt: {fileID: 1236439621}
   len: 0
   LenTxt: {fileID: 144470837}
+  back: {fileID: 1911885384}
 --- !u!114 &972124641
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -57630,10 +57655,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1194891905}
   len: 0
   LenTxt: {fileID: 767957444}
+  back: {fileID: 0}
 --- !u!114 &1010212817
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59307,10 +59334,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1413140184}
   len: 0
   LenTxt: {fileID: 926966007}
+  back: {fileID: 0}
 --- !u!114 &1043382533
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59391,10 +59420,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 459602496}
   len: 0
   LenTxt: {fileID: 1225751540}
+  back: {fileID: 0}
 --- !u!114 &1044626541
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60838,10 +60869,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1502903770}
   len: 0
   LenTxt: {fileID: 514777479}
+  back: {fileID: 0}
 --- !u!114 &1070347073
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -61001,10 +61034,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1153414784}
   len: 0
   LenTxt: {fileID: 523861694}
+  back: {fileID: 0}
 --- !u!114 &1071772086
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -61444,10 +61479,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 1432934049}
   val: 0
   ValTxt: {fileID: 1974447500}
   len: 0
   LenTxt: {fileID: 1797152274}
+  back: {fileID: 25861322}
 --- !u!114 &1078491829
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -61920,10 +61957,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97e0572e4a1fb7d47bedb2e254bb44fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  sounds: {fileID: 2085629020}
   Contents: {fileID: 1609375854}
   LineTemplate: {fileID: 1567421271}
   SelectedCol: {fileID: 295935401}
   scroll: {fileID: 672943842}
+  NoteTypeSprites:
+  - {fileID: 8468567423917572358, guid: 2f3eb67cfccc23a4cb1c097078cda570, type: 3}
+  - {fileID: 5428170060190249899, guid: 2f3eb67cfccc23a4cb1c097078cda570, type: 3}
+  - {fileID: 7477972197570131676, guid: 2f3eb67cfccc23a4cb1c097078cda570, type: 3}
+  - {fileID: -5348126227062872262, guid: 2f3eb67cfccc23a4cb1c097078cda570, type: 3}
+  - {fileID: 5967537651669573871, guid: 2f3eb67cfccc23a4cb1c097078cda570, type: 3}
 --- !u!224 &1090031088
 RectTransform:
   m_ObjectHideFlags: 0
@@ -62117,10 +62161,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1333982257}
   len: 0
   LenTxt: {fileID: 408248961}
+  back: {fileID: 0}
 --- !u!114 &1096949861
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -62896,10 +62942,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 512184334}
   val: 0
   ValTxt: {fileID: 573975545}
   len: 0
   LenTxt: {fileID: 1071133290}
+  back: {fileID: 1383047993}
 --- !u!114 &1114157439
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -63291,14 +63339,7 @@ MonoBehaviour:
   IndexTxt: {fileID: 779718535}
   Background: {fileID: 0}
   numVoices: 0
-  ch0: {fileID: 357763856}
-  ch1: {fileID: 1522087943}
-  ch2: {fileID: 1784042022}
-  ch3: {fileID: 1010212816}
-  ch4: {fileID: 732214859}
-  ch5: {fileID: 807784682}
-  ch6: {fileID: 808228693}
-  ch7: {fileID: 2077901423}
+  note: []
 --- !u!114 &1132730034
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -63916,10 +63957,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 565600201}
   len: 0
   LenTxt: {fileID: 634768124}
+  back: {fileID: 0}
 --- !u!114 &1142553349
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -68968,10 +69011,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 729902505}
   len: 0
   LenTxt: {fileID: 229563422}
+  back: {fileID: 0}
 --- !u!114 &1234510406
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -71270,10 +71315,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 593344620}
   len: 0
   LenTxt: {fileID: 1711654474}
+  back: {fileID: 0}
 --- !u!114 &1278329545
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -73258,10 +73305,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 564173623}
   len: 0
   LenTxt: {fileID: 1348195340}
+  back: {fileID: 0}
 --- !u!114 &1305762563
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -73416,10 +73465,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1162308239}
   len: 0
   LenTxt: {fileID: 179569416}
+  back: {fileID: 0}
 --- !u!114 &1314592298
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -74788,10 +74839,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 77870759}
   len: 0
   LenTxt: {fileID: 952418874}
+  back: {fileID: 0}
 --- !u!114 &1330452961
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -76098,10 +76151,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 1210190673}
   val: 0
   ValTxt: {fileID: 95791947}
   len: 0
   LenTxt: {fileID: 1370901293}
+  back: {fileID: 1906067985}
 --- !u!114 &1346342305
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -77012,10 +77067,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 208722484}
   len: 0
   LenTxt: {fileID: 1341045367}
+  back: {fileID: 0}
 --- !u!114 &1361837898
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -77096,10 +77153,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1255457670}
   len: 0
   LenTxt: {fileID: 1707185798}
+  back: {fileID: 0}
 --- !u!114 &1362955731
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -78638,10 +78697,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 2034256785}
   len: 0
   LenTxt: {fileID: 313384181}
+  back: {fileID: 0}
 --- !u!114 &1390437739
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -78722,10 +78783,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1289760758}
   len: 0
   LenTxt: {fileID: 452071175}
+  back: {fileID: 0}
 --- !u!114 &1392671484
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -79381,10 +79444,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1027717738}
   len: 0
   LenTxt: {fileID: 803985534}
+  back: {fileID: 0}
 --- !u!114 &1403236145
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -79502,10 +79567,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 817218310}
   len: 0
   LenTxt: {fileID: 1790705575}
+  back: {fileID: 0}
 --- !u!114 &1408304225
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -79885,10 +79952,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1804851359}
   len: 0
   LenTxt: {fileID: 2075341114}
+  back: {fileID: 0}
 --- !u!114 &1411015385
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -82968,14 +83037,7 @@ MonoBehaviour:
   IndexTxt: {fileID: 1220092062}
   Background: {fileID: 0}
   numVoices: 0
-  ch0: {fileID: 1684611998}
-  ch1: {fileID: 1142553348}
-  ch2: {fileID: 162945856}
-  ch3: {fileID: 175354037}
-  ch4: {fileID: 1967796554}
-  ch5: {fileID: 1314592297}
-  ch6: {fileID: 1548487925}
-  ch7: {fileID: 1234510405}
+  note: []
 --- !u!114 &1458732794
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -83523,10 +83585,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 31065566}
   len: 0
   LenTxt: {fileID: 2054838600}
+  back: {fileID: 0}
 --- !u!114 &1466205187
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -84007,10 +84071,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 2074777298}
   len: 0
   LenTxt: {fileID: 1142047176}
+  back: {fileID: 0}
 --- !u!114 &1471714089
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -84510,10 +84576,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 82177811}
   len: 0
   LenTxt: {fileID: 1570988355}
+  back: {fileID: 0}
 --- !u!114 &1476777942
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -84669,10 +84737,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 529026783}
   len: 0
   LenTxt: {fileID: 552082505}
+  back: {fileID: 0}
 --- !u!114 &1477500531
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -85724,10 +85794,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 409318907}
   len: 0
   LenTxt: {fileID: 632225263}
+  back: {fileID: 0}
 --- !u!114 &1501002443
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -86369,10 +86441,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1383728139}
   len: 0
   LenTxt: {fileID: 408530070}
+  back: {fileID: 0}
 --- !u!114 &1518623711
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -86724,10 +86798,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 100284091}
   len: 0
   LenTxt: {fileID: 1228723826}
+  back: {fileID: 0}
 --- !u!114 &1522087944
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -87071,10 +87147,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1871754850}
   len: 0
   LenTxt: {fileID: 1295914956}
+  back: {fileID: 0}
 --- !u!114 &1533441520
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -87947,10 +88025,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 553610559}
   len: 0
   LenTxt: {fileID: 1395032415}
+  back: {fileID: 0}
 --- !u!114 &1548487926
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -88639,14 +88719,15 @@ MonoBehaviour:
   IndexTxt: {fileID: 116918772}
   Background: {fileID: 1567421275}
   numVoices: 0
-  ch0: {fileID: 467851316}
-  ch1: {fileID: 1624282240}
-  ch2: {fileID: 134273927}
-  ch3: {fileID: 1078491828}
-  ch4: {fileID: 11003011}
-  ch5: {fileID: 1346342304}
-  ch6: {fileID: 972124640}
-  ch7: {fileID: 1114157438}
+  note:
+  - {fileID: 467851316}
+  - {fileID: 1624282240}
+  - {fileID: 134273927}
+  - {fileID: 1078491828}
+  - {fileID: 11003011}
+  - {fileID: 1346342304}
+  - {fileID: 972124640}
+  - {fileID: 1114157438}
 --- !u!114 &1567421274
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -89261,10 +89342,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 125722220}
   len: 0
   LenTxt: {fileID: 1069256260}
+  back: {fileID: 0}
 --- !u!114 &1573579550
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -90238,10 +90321,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1135648144}
   len: 0
   LenTxt: {fileID: 11352187}
+  back: {fileID: 0}
 --- !u!114 &1590188872
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91567,10 +91652,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 1928660213}
   val: 0
   ValTxt: {fileID: 545310082}
   len: 0
   LenTxt: {fileID: 1649239584}
+  back: {fileID: 302908887}
 --- !u!114 &1624282241
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91892,14 +91979,7 @@ MonoBehaviour:
   IndexTxt: {fileID: 1402549153}
   Background: {fileID: 0}
   numVoices: 0
-  ch0: {fileID: 2137710064}
-  ch1: {fileID: 766647985}
-  ch2: {fileID: 1071772085}
-  ch3: {fileID: 1761998054}
-  ch4: {fileID: 1070347072}
-  ch5: {fileID: 1969540771}
-  ch6: {fileID: 1978651895}
-  ch7: {fileID: 1390437738}
+  note: []
 --- !u!114 &1629406330
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -93679,14 +93759,7 @@ MonoBehaviour:
   IndexTxt: {fileID: 1319965456}
   Background: {fileID: 0}
   numVoices: 0
-  ch0: {fileID: 685608502}
-  ch1: {fileID: 1853681342}
-  ch2: {fileID: 1730149705}
-  ch3: {fileID: 74348717}
-  ch4: {fileID: 580403013}
-  ch5: {fileID: 325591589}
-  ch6: {fileID: 1533441519}
-  ch7: {fileID: 128874723}
+  note: []
 --- !u!114 &1661165225
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -94568,10 +94641,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 148924507}
   len: 0
   LenTxt: {fileID: 1164822458}
+  back: {fileID: 0}
 --- !u!114 &1682668783
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -94727,10 +94802,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 153112679}
   len: 0
   LenTxt: {fileID: 1421316370}
+  back: {fileID: 0}
 --- !u!114 &1684564872
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -94820,10 +94897,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1852322673}
   len: 0
   LenTxt: {fileID: 1673814703}
+  back: {fileID: 0}
 --- !u!114 &1684611999
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96413,10 +96492,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1443888975}
   len: 0
   LenTxt: {fileID: 464489996}
+  back: {fileID: 0}
 --- !u!114 &1726298060
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96576,10 +96657,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1294920947}
   len: 0
   LenTxt: {fileID: 404336264}
+  back: {fileID: 0}
 --- !u!114 &1730149706
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -97654,10 +97737,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1191025690}
   len: 0
   LenTxt: {fileID: 617273083}
+  back: {fileID: 0}
 --- !u!114 &1748395725
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -98122,10 +98207,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1320511997}
   len: 0
   LenTxt: {fileID: 1777025817}
+  back: {fileID: 0}
 --- !u!114 &1759731718
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -98515,10 +98602,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 321792416}
   len: 0
   LenTxt: {fileID: 822296700}
+  back: {fileID: 0}
 --- !u!114 &1761998055
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -99291,10 +99380,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1430543431}
   len: 0
   LenTxt: {fileID: 507922672}
+  back: {fileID: 0}
 --- !u!114 &1772933650
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -99526,10 +99617,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 51378270}
   len: 0
   LenTxt: {fileID: 611826058}
+  back: {fileID: 0}
 --- !u!114 &1777686254
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -99814,10 +99907,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 274884925}
   len: 0
   LenTxt: {fileID: 814238297}
+  back: {fileID: 0}
 --- !u!114 &1784042023
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -101133,10 +101228,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 446761754}
   len: 0
   LenTxt: {fileID: 160572889}
+  back: {fileID: 0}
 --- !u!114 &1812779021
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -102046,10 +102143,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1394372721}
   len: 0
   LenTxt: {fileID: 1923056597}
+  back: {fileID: 0}
 --- !u!114 &1840864601
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -102401,10 +102500,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1628552439}
   len: 0
   LenTxt: {fileID: 2026763485}
+  back: {fileID: 0}
 --- !u!114 &1853681343
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -103305,14 +103406,7 @@ MonoBehaviour:
   IndexTxt: {fileID: 656212230}
   Background: {fileID: 0}
   numVoices: 0
-  ch0: {fileID: 0}
-  ch1: {fileID: 0}
-  ch2: {fileID: 0}
-  ch3: {fileID: 0}
-  ch4: {fileID: 0}
-  ch5: {fileID: 0}
-  ch6: {fileID: 0}
-  ch7: {fileID: 0}
+  note: []
 --- !u!114 &1868378915
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -105448,10 +105542,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 699735528}
   len: 0
   LenTxt: {fileID: 224714913}
+  back: {fileID: 0}
 --- !u!114 &1911627442
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -106850,10 +106946,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 824123770}
   len: 0
   LenTxt: {fileID: 725780137}
+  back: {fileID: 0}
 --- !u!114 &1937948925
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -107869,10 +107967,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1295471959}
   len: 0
   LenTxt: {fileID: 395051325}
+  back: {fileID: 0}
 --- !u!114 &1967796555
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -107953,10 +108053,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 629783912}
   len: 0
   LenTxt: {fileID: 2051624783}
+  back: {fileID: 0}
 --- !u!114 &1969540772
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -108412,10 +108514,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 185718736}
   len: 0
   LenTxt: {fileID: 527016711}
+  back: {fileID: 0}
 --- !u!114 &1973908414
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -108763,10 +108867,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1368543873}
   len: 0
   LenTxt: {fileID: 244703547}
+  back: {fileID: 0}
 --- !u!114 &1978651896
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -109455,14 +109561,7 @@ MonoBehaviour:
   IndexTxt: {fileID: 952678877}
   Background: {fileID: 0}
   numVoices: 0
-  ch0: {fileID: 1408304224}
-  ch1: {fileID: 1726298059}
-  ch2: {fileID: 1361837897}
-  ch3: {fileID: 282995543}
-  ch4: {fileID: 598460576}
-  ch5: {fileID: 10461543}
-  ch6: {fileID: 1044626540}
-  ch7: {fileID: 1392671483}
+  note: []
 --- !u!114 &1989877134
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -111132,10 +111231,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 1435584334}
   len: 0
   LenTxt: {fileID: 839212777}
+  back: {fileID: 0}
 --- !u!114 &2033204139
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -112070,10 +112171,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 219322660}
   len: 0
   LenTxt: {fileID: 922514526}
+  back: {fileID: 0}
 --- !u!114 &2045006989
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -114593,10 +114696,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 35249858}
   len: 0
   LenTxt: {fileID: 633983749}
+  back: {fileID: 0}
 --- !u!114 &2077901424
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -116949,10 +117054,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  TypeImg: {fileID: 0}
   val: 0
   ValTxt: {fileID: 91079583}
   len: 0
   LenTxt: {fileID: 620015170}
+  back: {fileID: 0}
 --- !u!114 &2137710065
 MonoBehaviour:
   m_ObjectHideFlags: 0

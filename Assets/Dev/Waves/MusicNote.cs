@@ -3,10 +3,12 @@ using UnityEngine.UI;
 
 public class MusicNote : MonoBehaviour {
   public NoteType type;
+  public Image TypeImg;
   public int val;
   public Text ValTxt;
   public int len;
   public Text LenTxt;
+  public RectTransform back;
 }
 
 

@@ -6,12 +6,5 @@ public class MusicLine : MonoBehaviour {
   public Text IndexTxt;
   public Image Background;
   public int numVoices;
-  public MusicNote ch0;
-  public MusicNote ch1;
-  public MusicNote ch2;
-  public MusicNote ch3;
-  public MusicNote ch4;
-  public MusicNote ch5;
-  public MusicNote ch6;
-  public MusicNote ch7;
+  public MusicNote[] note;
 }
