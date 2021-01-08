@@ -47,11 +47,13 @@ public class MusicEditor : MonoBehaviour {
   private void Update() {
     bool update = false;
     autoRepeat -= Time.deltaTime;
-    if (Input.GetKeyDown(KeyCode.LeftArrow) && col > 0 && autoRepeat < 0)  { col--; update = true; autoRepeat = .25f; }
-    if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7 && autoRepeat < 0) { col++; update = true; autoRepeat = .25f; }
-    if (Input.GetKey(KeyCode.UpArrow) && row > 0)    { row--; update = true; }
-    if (Input.GetKey(KeyCode.DownArrow) && row < 64) { row++; update = true; }
+    if (Input.GetKeyDown(KeyCode.LeftArrow) && col > 0)  { col--; update = true; autoRepeat = .25f; }
+    if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7) { col++; update = true; autoRepeat = .25f; }
+    if (Input.GetKey(KeyCode.UpArrow) && row > 0 && autoRepeat < 0)        { row--; update = true; autoRepeat = .1f; }
+    if (Input.GetKey(KeyCode.DownArrow) && row < 64 && autoRepeat < 0)     { row++; update = true; autoRepeat = .1f; }
 
+    if (Input.GetKeyDown(KeyCode.PageUp)) ChangeLength(true);
+    if (Input.GetKeyDown(KeyCode.PageDown)) ChangeLength(false);
 
     // Space change type
     if (Input.GetKeyDown(KeyCode.Space)) {
