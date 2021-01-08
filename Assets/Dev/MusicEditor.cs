@@ -36,6 +36,13 @@ public class MusicEditor : MonoBehaviour {
   }
 
   int len = 1;
+  public Text LengthText;
+  public void ChangeLength(bool up) {
+    if (up && len < 16) len++;
+    if (!up && len > 1) len--;
+    LengthText.text = " Length: " + len;
+  }
+
   float autoRepeat = 0;
   private void Update() {
     bool update = false;
