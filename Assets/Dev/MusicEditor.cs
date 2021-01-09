@@ -12,16 +12,22 @@ public class MusicEditor : MonoBehaviour {
   private Color32 SelectedColor = new Color32(36, 52, 36, 255);
   private Color32 Transparent = new Color32(0, 0, 0, 0);
   public Sprite[] NoteTypeSprites;
-  
+  Music music;
 
   MusicEditorStatus status = MusicEditorStatus.Idle;
   int row = 0;
   int col = 0;
 
   private void Start() {
+    music = new Music() { name = "Music" };
     foreach (Transform t in Contents)
       Destroy(t.gameObject);
     lines.Clear();
+    for (int i = 0; i < InfoParts.Length; i++)
+      InfoParts[i].SetActive(false);
+
+
+    // FIXME do not do it at startup
     for (int i = 0; i < 65; i++) {
       MusicLine line = Instantiate(LineTemplate, Contents).GetComponent<MusicLine>();
       line.gameObject.SetActive(true);
@@ -98,9 +104,50 @@ public class MusicEditor : MonoBehaviour {
     }
   }
 
+  public InputField NameInput;
+  public Text NumVoicesTxt;
+  public GameObject[] InfoParts;
+  public Text[] Infos;
+
+  public void Music() { // Show what we have as music
+    status = MusicEditorStatus.Music;
+    foreach (Transform t in Contents)
+      Destroy(t.gameObject);
+    lines.Clear();
+
+    NameInput.text = music.name;
+    NumVoicesTxt.text = " # Voices: " + music.numVoices;
+    // FIXME assign the channels
+    Infos[0].text = music.numWaves + " Waveforms";
+    Infos[1].text = music.numBlocks + " Blocks";
+    Infos[3].text = music.length + " Length in blocks";
+
+    for (int i = 0; i < InfoParts.Length; i++)
+      InfoParts[i].SetActive(i < 5);
+    InfoParts[InfoParts.Length - 1].SetActive(true); // Filler
+  }
+
+  public void ChangeMusicVoices(bool up) {
+    if (up && len < 8) music.numVoices++;
+    if (!up && len > 1) music.numVoices--;
+    NumVoicesTxt.text = " # Voices: " + music.numVoices;
+  }
 
 
-  KeyCode[] keyNotes = new KeyCode[] {
+  public void Blocks() { // Show a list of blocks
+
+  }
+
+  public void Block() { // Show the current block
+
+  }
+
+  public void Waves() { // Show a list of waves
+
+  }
+
+
+  readonly KeyCode[] keyNotes = new KeyCode[] {
     KeyCode.Q, KeyCode.Alpha2, // C4 C4#
     KeyCode.W, KeyCode.Alpha3, // D4 E4b
     KeyCode.E,                 // E4
@@ -117,7 +164,7 @@ public class MusicEditor : MonoBehaviour {
     KeyCode.Return,            // A5
   };
 
-  string[] noteNames = new string[] {
+  readonly string[] noteNames = new string[] {
     "C2", "C2#",
     "D2", "E2b",
     "E2",
@@ -159,7 +206,7 @@ public class MusicEditor : MonoBehaviour {
     "A7",
   };
 
-  int[] freqs = new int[] {
+  readonly int[] freqs = new int[] {
     65, 69,
     73, 77,
     82,
@@ -211,31 +258,35 @@ public class MusicEditor : MonoBehaviour {
 }
 
 public enum MusicEditorStatus {
-  Idle, BlockList, Music, BlockEdit, Waveforms
+  Idle, Music, BlockList, BlockEdit, Waveforms
 }
 
 public class Music {
-  byte numVoices;
-  byte[] channels;
-  byte numWaves;
-  Wave[] waves;
-  byte numBlocks;
-  byte[] blocks;
+  public string name;
+  public byte numVoices;
+  public byte[] channels;
+  public byte numWaves;
+  public Wave[] waves;
+  public byte numBlocks;
+  public byte[] blocks;
+  public int length;
 }
 
-struct Wave {
-  byte wave;
-  byte phase1;
-  byte phase2;
-  byte a;
-  byte d;
-  byte s;
-  byte r;
+public struct Wave {
+  public string name;
+  public byte wave;
+  public byte phase1;
+  public byte phase2;
+  public byte a;
+  public byte d;
+  public byte s;
+  public byte r;
 }
 
 public class MusicBlock {
-  int index;
-  byte bpm;
-  List<MusicLine> Lines;
+  public string name;
+  public int index;
+  public byte bpm;
+  public List<MusicLine> Lines;
 }
 
