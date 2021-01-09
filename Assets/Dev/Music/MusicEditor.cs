@@ -8,7 +8,12 @@ public class MusicEditor : MonoBehaviour {
   public GameObject LineTemplate;
   public RectTransform SelectedCol;
   public Scrollbar scroll;
-  readonly private List<BlockLine> lines = new List<BlockLine>();
+
+  private List<MusicBlock> mlines = null;
+  private List<BlockLine> blines = null;
+
+
+
   private Color32 SelectedColor = new Color32(36, 52, 36, 255);
   private Color32 Transparent = new Color32(0, 0, 0, 0);
   public Sprite[] NoteTypeSprites;
@@ -19,15 +24,17 @@ public class MusicEditor : MonoBehaviour {
   int col = 0;
 
   private void Start() {
-    music = new Music() { name = "Music" };
+    music = new Music() { name = "Music", blocks = new List<MusicBlock>() };
     foreach (Transform t in Contents)
       Destroy(t.gameObject);
-    lines.Clear();
     for (int i = 0; i < InfoParts.Length; i++)
       InfoParts[i].SetActive(false);
 
 
+    /*
     // FIXME do not do it at startup
+    lines.Clear(); <-- this is bad, do not use it
+
     for (int i = 0; i < 65; i++) {
       BlockLine line = Instantiate(LineTemplate, Contents).GetComponent<BlockLine>();
       line.gameObject.SetActive(true);
@@ -39,6 +46,7 @@ public class MusicEditor : MonoBehaviour {
         line.IndexTxt.text = i.ToString("d2");
     }
     lines[0].Background.color = SelectedColor;
+    */
   }
 
   int len = 1;
@@ -53,36 +61,40 @@ public class MusicEditor : MonoBehaviour {
   private void Update() {
     bool update = false;
     autoRepeat -= Time.deltaTime;
-    if (Input.GetKeyDown(KeyCode.LeftArrow) && col > 0)  { col--; update = true; autoRepeat = .25f; }
-    if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7) { col++; update = true; autoRepeat = .25f; }
-    if (Input.GetKey(KeyCode.UpArrow) && row > 0 && autoRepeat < 0)        { row--; update = true; autoRepeat = .1f; }
-    if (Input.GetKey(KeyCode.DownArrow) && row < 64 && autoRepeat < 0)     { row++; update = true; autoRepeat = .1f; }
+    if (Input.GetKeyDown(KeyCode.LeftArrow) && status == MusicEditorStatus.BlockEdit && col > 0)  { col--; update = true; autoRepeat = .25f; }
+    if (Input.GetKeyDown(KeyCode.RightArrow) && status == MusicEditorStatus.BlockEdit && col < 7) { col++; update = true; autoRepeat = .25f; }
+    if (Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0)        { row--; update = true; autoRepeat = .1f; }
+    if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < blines.Count - 1 && autoRepeat < 0)     { row++; update = true; autoRepeat = .1f; }
 
     if (Input.GetKeyDown(KeyCode.PageUp)) ChangeLength(true);
     if (Input.GetKeyDown(KeyCode.PageDown)) ChangeLength(false);
 
-    // Space change type
-    if (Input.GetKeyDown(KeyCode.Space)) {
-      int t = (int)lines[row].note[col].type;
-      t++;
-      if (t == 5) t = 0;
-      lines[row].note[col].type = (NoteType)t;
-      lines[row].note[col].TypeImg.sprite = NoteTypeSprites[t];
-    }
+    if (status == MusicEditorStatus.BlockEdit) {
+      BlockLine l = blines[row];
 
-    for (int i = 0; i < keyNotes.Length; i++) {
-      if (Input.GetKeyDown(keyNotes[i])) {
-        // Set the current cell as note with the given note/frequency, update the text to be the note notation
-        lines[row].note[col].TypeImg.sprite = NoteTypeSprites[1];
-        lines[row].note[col].ValTxt.text = noteNames[i + 24];
-        lines[row].note[col].val = freqs[i + 24];
-        lines[row].note[col].len = len;
-        lines[row].note[col].LenTxt.text = len.ToString();
-        lines[row].note[col].back.sizeDelta = new Vector2(38, len * 32);
-        // Move to the next row
-        if (row + len < 64) { row += len; update = true; }
-        // Play the actual sound (find the wave that should be used, if none is defined use a basic triangle wave)
-        sounds.Play(0, freqs[i + 24], .25f);
+      // Space change type
+      if (Input.GetKeyDown(KeyCode.Space)) {
+        int t = (int)l.note[col].type;
+        t++;
+        if (t == 5) t = 0;
+        l.note[col].type = (NoteType)t;
+        l.note[col].TypeImg.sprite = NoteTypeSprites[t];
+      }
+
+      for (int i = 0; i < keyNotes.Length; i++) {
+        if (Input.GetKeyDown(keyNotes[i])) {
+          // Set the current cell as note with the given note/frequency, update the text to be the note notation
+          l.note[col].TypeImg.sprite = NoteTypeSprites[1];
+          l.note[col].ValTxt.text = noteNames[i + 24];
+          l.note[col].val = freqs[i + 24];
+          l.note[col].len = len;
+          l.note[col].LenTxt.text = len.ToString();
+          l.note[col].back.sizeDelta = new Vector2(38, len * 32);
+          // Move to the next row
+          if (row + len < 64) { row += len; update = true; }
+          // Play the actual sound (find the wave that should be used, if none is defined use a basic triangle wave)
+          sounds.Play(0, freqs[i + 24], .25f);
+        }
       }
     }
 
@@ -98,22 +110,40 @@ public class MusicEditor : MonoBehaviour {
       else scroll.value = -0.0276f * row + 1.333333333333333f;
 
       SelectedCol.anchoredPosition = new Vector3(48 + col * 142, 30, 0);
-      lines[row].Background.color = SelectedColor;
-      if (row > 0) lines[row - 1].Background.color = Transparent;
-      if (row < lines.Count-1) lines[row + 1].Background.color = Transparent;
+
+      if (status == MusicEditorStatus.BlockEdit) {
+        blines[row].Background.color = SelectedColor;
+        if (row > 0) blines[row - 1].Background.color = Transparent;
+        if (row < blines.Count - 1) blines[row + 1].Background.color = Transparent;
+      }
+      else if (status == MusicEditorStatus.Music) {
+        mlines[row].Background.color = SelectedColor;
+        if (row > 0) mlines[row - 1].Background.color = Transparent;
+        if (row < mlines.Count - 1) mlines[row + 1].Background.color = Transparent;
+      }
+
     }
   }
+
+  public GameObject TitleMusic;
+  public GameObject TitleBlock;
 
   public InputField NameInput;
   public Text NumVoicesTxt;
   public GameObject[] InfoParts;
   public Text[] Infos;
 
+  public GameObject MusicLineTempate;
+  public GameObject CreateNewBlockInMusic;
+
   public void Music() { // Show what we have as music
     status = MusicEditorStatus.Music;
     foreach (Transform t in Contents)
       Destroy(t.gameObject);
-    lines.Clear();
+
+    TitleMusic.SetActive(true);
+    TitleBlock.SetActive(false);
+    SelectedCol.gameObject.SetActive(false);
 
     NameInput.text = music.name;
     NumVoicesTxt.text = " # Voices: " + music.numVoices;
@@ -125,10 +155,13 @@ public class MusicEditor : MonoBehaviour {
     // ----
     // Selected block (with input and dropdown to change it)
 
+    mlines = music.blocks;
 
     for (int i = 0; i < InfoParts.Length; i++)
       InfoParts[i].SetActive(i < 5);
     InfoParts[InfoParts.Length - 1].SetActive(true); // Filler
+
+    Instantiate(CreateNewBlockInMusic, Contents).SetActive(true);
   }
 
   public void ChangeMusicVoices(bool up) {
@@ -140,7 +173,28 @@ public class MusicEditor : MonoBehaviour {
   public void AddNewBlockInMusic() {
     // Each block should have the ID (hex number), and a name. Remove, MoveUp, Down, Edit
 
+    music.numBlocks++;
 
+
+    Transform last = Contents.GetChild(Contents.childCount - 1);
+    last.SetParent(null);
+    GameObject mbo = Instantiate(MusicLineTempate, Contents);
+    mbo.SetActive(true);
+    MusicBlock mb = mbo.GetComponent<MusicBlock>();
+    mb.name = "Block";
+    mb.index = music.blocks.Count + 1;
+    mb.bpm = 120;
+    mb.Lines = new List<BlockLine>();
+    music.blocks.Add(mb);
+    last.SetParent(Contents);
+    mb.index = music.numBlocks;
+    mb.IndexTxt.text = music.numBlocks.ToString();
+    mb.blockNum = mb.index; // FIXME get the very last available index
+    mb.BlockNumTxt.text = mb.index.ToString();
+    mb.blockName = mb.name;
+    mb.BlockNameTxt.text = mb.name;
+    mb.blockLen = mb.Lines.Count;
+    mb.BlockLenTxt.text = mb.Lines.Count.ToString();
   }
 
 
@@ -278,7 +332,7 @@ public class Music {
   public byte numWaves;
   public Wave[] waves;
   public byte numBlocks;
-  public byte[] blocks;
+  public List<MusicBlock> blocks;
   public int length;
 }
 
@@ -293,10 +347,4 @@ public struct Wave {
   public byte r;
 }
 
-public class MusicBlock {
-  public string name;
-  public int index;
-  public byte bpm;
-  public List<BlockLine> Lines;
-}
 

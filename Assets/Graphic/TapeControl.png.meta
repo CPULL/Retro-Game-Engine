@@ -29,6 +29,9 @@ TextureImporter:
   - first:
       213: 2382616803870252998
     second: TapeControl_8
+  - first:
+      213: 6612445436345865858
+    second: TapeControl_9
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -312,6 +315,27 @@ TextureImporter:
       bones: []
       spriteID: 6cf10960c51c01120800000000000000
       internalID: 2382616803870252998
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TapeControl_9
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2865c02171024cb50800000000000000
+      internalID: 6612445436345865858
       vertices: []
       indices: 
       edges: []
