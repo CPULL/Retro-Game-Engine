@@ -9,10 +9,12 @@ public class MusicEditor : MonoBehaviour {
   public RectTransform SelectedCol;
   public Scrollbar scroll;
 
-  private List<MusicBlock> mlines = null;
-  private List<BlockLine> blines = null;
+
+  private List<Block> blocks = null;
 
 
+  private List<MusicLine> mlines = new List<MusicLine>();
+  private List<BlockLine> blines = new List<BlockLine>();
 
   private Color32 SelectedColor = new Color32(36, 52, 36, 255);
   private Color32 Transparent = new Color32(0, 0, 0, 0);
@@ -24,7 +26,13 @@ public class MusicEditor : MonoBehaviour {
   int col = 0;
 
   private void Start() {
-    music = new Music() { name = "Music", blocks = new List<MusicBlock>() };
+    music = new Music() {
+      name = "Music",
+      bpm = 120,
+      voices = new byte[] { 0, 255, 255, 255, 255, 255, 255, 255 },
+      blocks = new List<int>()
+    };
+    blocks = new List<Block>();
     foreach (Transform t in Contents)
       Destroy(t.gameObject);
     for (int i = 0; i < InfoParts.Length; i++)
@@ -153,16 +161,38 @@ public class MusicEditor : MonoBehaviour {
     SelectedCol.gameObject.SetActive(false);
 
     NameInput.text = music.name;
-    NumVoicesTxt.text = " # Voices: " + music.numVoices;
+    int numv = 0;
+    for (int i = 0; i < music.voices.Length; i++)
+      if (music.voices[i] != 255) numv++;
+    NumVoicesTxt.text = " # Voices: " + numv;
     // FIXME assign the channels
-    Infos[0].text = music.numWaves + " Waveforms";
-    Infos[1].text = music.numBlocks + " Blocks";
-    Infos[3].text = music.length + " Length in blocks";
+    Infos[0].text = music.blocks.Count + " Lenght";
+    Infos[1].text = "??? Waveforms";
+    Infos[2].text = "??? Blocks";
 
+    // FIXME
     // ----
     // Selected block (with input and dropdown to change it)
 
-    mlines = music.blocks;
+    int pos = 1;
+    mlines.Clear();
+    foreach (int bi in music.blocks) {
+      Block b = null;
+      for (int i = 0; i < blocks.Count; i++)
+        if (blocks[i].id == bi) {
+          b = blocks[i];
+          break;
+        }
+
+      GameObject line = Instantiate(MusicLineTempate, Contents);
+      MusicLine ml = line.GetComponent<MusicLine>();
+      ml.index = pos;
+      ml.IndexTxt.text = pos.ToString();
+      ml.BlockID.text = bi.ToString();
+      ml.BlockName.text = b.name;
+      ml.BlockLen.text = (b.ch0 == null ? 0 : b.ch0.Count).ToString();
+      mlines.Add(ml);
+    }
 
     for (int i = 0; i < InfoParts.Length; i++)
       InfoParts[i].SetActive(i < 5);
@@ -172,38 +202,42 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void ChangeMusicVoices(bool up) {
-    if (up && len < 8) music.numVoices++;
-    if (!up && len > 1) music.numVoices--;
-    NumVoicesTxt.text = " # Voices: " + music.numVoices;
+    int numv = 0;
+    for (int i = 0; i < music.voices.Length; i++)
+      if (music.voices[i] != 255) numv++;
+    if (up && numv < 8) numv++;
+    if (!up && numv > 1) numv--;
+    for (int i = 0; i < 8; i++)
+      music.voices[i] = (byte)((i < numv) ? i : 255);
+    NumVoicesTxt.text = " # Voices: " + numv;
   }
 
   public void AddNewBlockInMusic() {
     // Each block should have the ID (hex number), and a name. Remove, MoveUp, Down, Edit
-
-    music.numBlocks++;
-
-
+    music.blocks.Add(-1);
     Transform last = Contents.GetChild(Contents.childCount - 1);
     last.SetParent(null);
     GameObject mbo = Instantiate(MusicLineTempate, Contents);
     mbo.SetActive(true);
-    MusicBlock mb = mbo.GetComponent<MusicBlock>();
-    mb.name = "Block";
-    mb.index = music.blocks.Count + 1;
-    mb.bpm = 120;
-    mb.Lines = new List<BlockLine>();
-    music.blocks.Add(mb);
+    MusicLine ml = mbo.GetComponent<MusicLine>();
+    ml.index = music.blocks.Count;
+    ml.IndexTxt.text = music.blocks.Count.ToString();
+    ml.BlockID.text = "";
+    ml.BlockName.text = "<i>empty</i>";
+    ml.BlockLen.text = "0";
     last.SetParent(Contents);
-    mb.index = music.numBlocks;
-    mb.IndexTxt.text = music.numBlocks.ToString();
-    mb.blockNum = mb.index; // FIXME get the very last available index
-    mb.BlockNumTxt.text = mb.index.ToString();
-    mb.blockName = mb.name;
-    mb.BlockNameTxt.text = mb.name;
-    mb.blockLen = mb.Lines.Count;
-    mb.BlockLenTxt.text = mb.Lines.Count.ToString();
+    mlines.Add(ml);
   }
 
+  public void RemoveCurrentMusicLine() {
+    if (row < 0 && row >= blines.Count) return;
+
+
+
+  }
+
+
+  // FIXME I need to divide the block data from the display data. Block data should never be destroyed, while UI data can be destroyed all the times
 
   public void Blocks() { // Show a list of blocks
 
@@ -332,16 +366,6 @@ public enum MusicEditorStatus {
   Idle, Music, BlockList, BlockEdit, Waveforms
 }
 
-public class Music {
-  public string name;
-  public byte numVoices;
-  public byte[] channels;
-  public byte numWaves;
-  public Wave[] waves;
-  public byte numBlocks;
-  public List<MusicBlock> blocks;
-  public int length;
-}
 
 public struct Wave {
   public string name;
@@ -353,5 +377,43 @@ public struct Wave {
   public byte s;
   public byte r;
 }
+
+
+public class Music {
+  public string name;
+  public int bpm;
+  public byte[] voices;
+  public List<int> blocks;
+}
+
+public class Block {
+  public int id;
+  public string name;
+  public int bpm;
+  public int numVoices;
+  public List<BlockNote> ch0;
+  public List<BlockNote> ch1;
+  public List<BlockNote> ch2;
+  public List<BlockNote> ch3;
+  public List<BlockNote> ch4;
+  public List<BlockNote> ch5;
+  public List<BlockNote> ch6;
+  public List<BlockNote> ch7;
+}
+
+public class BlockNote {
+  public NoteType type;
+  public int val;
+  public int len;
+}
+
+
+/*
+ 
+Music->blockrefList 
+ 
+block->notelist
+ 
+ */
 
 
