@@ -191,6 +191,10 @@ public class MusicEditor : MonoBehaviour {
       ml.BlockID.text = bi.ToString();
       ml.BlockName.text = b.name;
       ml.BlockLen.text = (b.ch0 == null ? 0 : b.ch0.Count).ToString();
+      ml.Delete.onClick.AddListener(() => RemoveCurrentMusicLine(ml));
+      ml.Up.onClick.AddListener(() => MoveCurrentMusicLineUp(ml));
+      ml.Down.onClick.AddListener(() => MoveCurrentMusicLineDown(ml));
+      ml.Edit.onClick.AddListener(() => EditCurrentMusicLine(ml));
       mlines.Add(ml);
     }
 
@@ -217,25 +221,79 @@ public class MusicEditor : MonoBehaviour {
     music.blocks.Add(-1);
     Transform last = Contents.GetChild(Contents.childCount - 1);
     last.SetParent(null);
-    GameObject mbo = Instantiate(MusicLineTempate, Contents);
-    mbo.SetActive(true);
-    MusicLine ml = mbo.GetComponent<MusicLine>();
+    GameObject line = Instantiate(MusicLineTempate, Contents);
+    line.SetActive(true);
+    MusicLine ml = line.GetComponent<MusicLine>();
     ml.index = music.blocks.Count;
     ml.IndexTxt.text = music.blocks.Count.ToString();
     ml.BlockID.text = "";
-    ml.BlockName.text = "<i>empty</i>";
+    ml.BlockName.text = "<i>empty</i> (" + ml.index + ")";
     ml.BlockLen.text = "0";
+    ml.Delete.onClick.AddListener(() => RemoveCurrentMusicLine(ml));
+    ml.Up.onClick.AddListener(() => MoveCurrentMusicLineUp(ml));
+    ml.Down.onClick.AddListener(() => MoveCurrentMusicLineDown(ml));
+    ml.Edit.onClick.AddListener(() => EditCurrentMusicLine(ml));
     last.SetParent(Contents);
     mlines.Add(ml);
-  }
-
-  public void RemoveCurrentMusicLine() {
-    if (row < 0 && row >= blines.Count) return;
-
-
 
   }
 
+  public void RemoveCurrentMusicLine(MusicLine line) {
+    int pos = -1;
+    for (int i = 0; i < mlines.Count; i++)
+      if (mlines[i] == line) {
+        pos = i;
+        break;
+      }
+    if (pos == -1) return;
+
+    row = pos - 1;
+    if (row < 0) row = 0;
+    music.blocks.RemoveAt(pos);
+    Destroy(line.gameObject);
+    mlines.RemoveAt(pos);
+    for (int i = 0; i < music.blocks.Count; i++)
+      mlines[i].Background.color = Transparent;
+    if (row >= 0) mlines[row].Background.color = SelectedColor;
+  }
+
+  public void MoveCurrentMusicLineUp(MusicLine line) {
+    int pos = -1;
+    for (int i = 0; i < mlines.Count; i++)
+      if (mlines[i] == line) {
+        pos = i;
+        break;
+      }
+    if (pos < 1) return;
+
+    MusicLine tmp = mlines[pos - 1];
+    mlines[pos - 1] = mlines[pos];
+    mlines[pos] = tmp;
+    Contents.GetChild(pos).SetSiblingIndex(pos - 1);
+  }
+
+  public void MoveCurrentMusicLineDown(MusicLine line) {
+    int pos = -1;
+    for (int i = 0; i < mlines.Count; i++)
+      if (mlines[i] == line) {
+        pos = i;
+        break;
+      }
+    if (pos == -1 || pos + 1 >= mlines.Count) return;
+
+    MusicLine tmp = mlines[pos + 1];
+    mlines[pos + 1] = mlines[pos];
+    mlines[pos] = tmp;
+    Contents.GetChild(pos).SetSiblingIndex(pos + 1);
+  }
+
+  public void EditCurrentMusicLine(MusicLine line) {
+
+  }
+
+  public void PickBlock() {
+
+  }
 
   // FIXME I need to divide the block data from the display data. Block data should never be destroyed, while UI data can be destroyed all the times
 
