@@ -61,17 +61,24 @@ public class MusicEditor : MonoBehaviour {
   private void Update() {
     bool update = false;
     autoRepeat -= Time.deltaTime;
-    if (Input.GetKeyDown(KeyCode.LeftArrow) && status == MusicEditorStatus.BlockEdit && col > 0)  { col--; update = true; autoRepeat = .25f; }
-    if (Input.GetKeyDown(KeyCode.RightArrow) && status == MusicEditorStatus.BlockEdit && col < 7) { col++; update = true; autoRepeat = .25f; }
-    if (Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0)        { row--; update = true; autoRepeat = .1f; }
-    if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < blines.Count - 1 && autoRepeat < 0)     { row++; update = true; autoRepeat = .1f; }
 
-    if (Input.GetKeyDown(KeyCode.PageUp)) ChangeLength(true);
-    if (Input.GetKeyDown(KeyCode.PageDown)) ChangeLength(false);
+    if (status == MusicEditorStatus.BlockEdit) {
+      if (Input.GetKeyDown(KeyCode.LeftArrow) && col > 0) { col--; update = true; autoRepeat = .25f; }
+      if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7) { col++; update = true; autoRepeat = .25f; }
+      if (Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+      if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < blines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+      if (Input.GetKeyDown(KeyCode.PageUp)) ChangeLength(true);
+      if (Input.GetKeyDown(KeyCode.PageDown)) ChangeLength(false);
+
+    }
+    else if (status == MusicEditorStatus.Music) {
+      if (Input.GetKey(KeyCode.UpArrow) && mlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+      if (Input.GetKey(KeyCode.DownArrow) && mlines != null && row < mlines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+    }
+
 
     if (status == MusicEditorStatus.BlockEdit) {
       BlockLine l = blines[row];
-
       // Space change type
       if (Input.GetKeyDown(KeyCode.Space)) {
         int t = (int)l.note[col].type;
@@ -80,7 +87,7 @@ public class MusicEditor : MonoBehaviour {
         l.note[col].type = (NoteType)t;
         l.note[col].TypeImg.sprite = NoteTypeSprites[t];
       }
-
+      // Piano keys
       for (int i = 0; i < keyNotes.Length; i++) {
         if (Input.GetKeyDown(keyNotes[i])) {
           // Set the current cell as note with the given note/frequency, update the text to be the note notation
