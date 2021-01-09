@@ -126,17 +126,23 @@ public class MusicEditor : MonoBehaviour {
 
       SelectedCol.anchoredPosition = new Vector3(48 + col * 142, 30, 0);
 
-      if (status == MusicEditorStatus.BlockEdit) {
-        blines[row].Background.color = SelectedColor;
-        if (row > 0) blines[row - 1].Background.color = Transparent;
-        if (row < blines.Count - 1) blines[row + 1].Background.color = Transparent;
-      }
-      else if (status == MusicEditorStatus.Music) {
-        mlines[row].Background.color = SelectedColor;
-        if (row > 0) mlines[row - 1].Background.color = Transparent;
-        if (row < mlines.Count - 1) mlines[row + 1].Background.color = Transparent;
-      }
+      SelectRow(row);
+    }
+  }
 
+
+  void SelectRow(int line) {
+    if (status == MusicEditorStatus.Music) {
+      int max = mlines.Count;
+      for (int i = 0; i < max; i++)
+        mlines[i].Background.color = Transparent;
+      mlines[line].Background.color = SelectedColor;
+    }
+    else if (status == MusicEditorStatus.BlockEdit) {
+      int max = blines.Count;
+      for (int i = 0; i < max; i++)
+        blines[i].Background.color = Transparent;
+      blines[line].Background.color = SelectedColor;
     }
   }
 
@@ -254,7 +260,7 @@ public class MusicEditor : MonoBehaviour {
     mlines.RemoveAt(pos);
     for (int i = 0; i < music.blocks.Count; i++)
       mlines[i].Background.color = Transparent;
-    if (row >= 0) mlines[row].Background.color = SelectedColor;
+    if (row >= 0) SelectRow(row);
   }
 
   public void MoveCurrentMusicLineUp(MusicLine line) {
