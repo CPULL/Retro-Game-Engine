@@ -8,7 +8,7 @@ public class MusicEditor : MonoBehaviour {
   public GameObject LineTemplate;
   public RectTransform SelectedCol;
   public Scrollbar scroll;
-  readonly private List<MusicLine> lines = new List<MusicLine>();
+  readonly private List<BlockLine> lines = new List<BlockLine>();
   private Color32 SelectedColor = new Color32(36, 52, 36, 255);
   private Color32 Transparent = new Color32(0, 0, 0, 0);
   public Sprite[] NoteTypeSprites;
@@ -29,7 +29,7 @@ public class MusicEditor : MonoBehaviour {
 
     // FIXME do not do it at startup
     for (int i = 0; i < 65; i++) {
-      MusicLine line = Instantiate(LineTemplate, Contents).GetComponent<MusicLine>();
+      BlockLine line = Instantiate(LineTemplate, Contents).GetComponent<BlockLine>();
       line.gameObject.SetActive(true);
       line.index = i;
       lines.Add(line);
@@ -122,6 +122,10 @@ public class MusicEditor : MonoBehaviour {
     Infos[1].text = music.numBlocks + " Blocks";
     Infos[3].text = music.length + " Length in blocks";
 
+    // ----
+    // Selected block (with input and dropdown to change it)
+
+
     for (int i = 0; i < InfoParts.Length; i++)
       InfoParts[i].SetActive(i < 5);
     InfoParts[InfoParts.Length - 1].SetActive(true); // Filler
@@ -131,6 +135,12 @@ public class MusicEditor : MonoBehaviour {
     if (up && len < 8) music.numVoices++;
     if (!up && len > 1) music.numVoices--;
     NumVoicesTxt.text = " # Voices: " + music.numVoices;
+  }
+
+  public void AddNewBlockInMusic() {
+    // Each block should have the ID (hex number), and a name. Remove, MoveUp, Down, Edit
+
+
   }
 
 
@@ -287,6 +297,6 @@ public class MusicBlock {
   public string name;
   public int index;
   public byte bpm;
-  public List<MusicLine> Lines;
+  public List<BlockLine> Lines;
 }
 
