@@ -131,8 +131,9 @@ public class MusicEditor : MonoBehaviour {
       BlockBPMText.text = "???";
 
       int id = music.blocks[line];
-      foreach(Block b in blocks) {
+      foreach (Block b in blocks) {
         if (b.id == id) {
+          BlockNameInput.SetTextWithoutNotify(b.name);
           CurrentBlock.text = "[" + id + "] " + b.name;
           BlockLengthText.text = " Block Len: " + b.chs[0].Count.ToString();
           BlockBPMText.text = " Block BPM: " + b.bpm.ToString();
@@ -152,12 +153,20 @@ public class MusicEditor : MonoBehaviour {
       for (int i = 0; i < max; i++)
         bllines[i].Background.color = Transparent;
       bllines[line].Background.color = SelectedColor;
+
+      // show block info
+      currentBlock = blocks[line];
+      BlockNameInput.SetTextWithoutNotify(currentBlock.name);
+      CurrentBlock.text = "[" + currentBlock.id + "] " + currentBlock.name;
+      BlockLengthText.text = " Block Len: " + currentBlock.chs[0].Count.ToString();
+      BlockBPMText.text = " Block BPM: " + currentBlock.bpm.ToString();
     }
     else if (status == MusicEditorStatus.Waveforms) {
       int max = wlines.Count;
       for (int i = 0; i < max; i++)
         wlines[i].Background.color = Transparent;
       wlines[line].Background.color = SelectedColor;
+      WaveNameInput.SetTextWithoutNotify(wlines[line].WaveName.text.Trim());
     }
   }
 
