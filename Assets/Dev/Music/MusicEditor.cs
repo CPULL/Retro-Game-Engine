@@ -10,13 +10,16 @@ public class MusicEditor : MonoBehaviour {
   public Scrollbar scroll;
 
   private List<Block> blocks = null;
+  private List<Wave> waves = null;
   private Block currentBlock = null;
+  private Wave currentWave = null;
   private List<MusicLine> mlines = new List<MusicLine>();
   private List<BlockLine> blines = new List<BlockLine>();
 
   private Color32 SelectedColor = new Color32(36, 52, 36, 255);
   private Color32 Transparent = new Color32(0, 0, 0, 0);
   public Sprite[] NoteTypeSprites;
+  public Sprite[] WaveSprites;
   Music music;
 
   MusicEditorStatus status = MusicEditorStatus.Idle;
@@ -141,6 +144,7 @@ public class MusicEditor : MonoBehaviour {
   public GameObject TitleMusic;
   public GameObject TitleBlock;
   public GameObject TitleBlockList;
+  public GameObject TitleWaves;
 
   public InputField NameInput;
   public Text NumVoicesTxt;
@@ -150,12 +154,15 @@ public class MusicEditor : MonoBehaviour {
   public Text NumBlocks;
   public Text CurrentBlock;
   public InputField BlockNameInput;
+  public InputField WaveNameInput;
 
   public GameObject MusicLineTempate;
   public GameObject BlockLineTempate;
   public GameObject BlockListLineTemplate;
+  public GameObject WaveLineTemplate;
   public GameObject CreateNewBlockInMusic;
   public GameObject CreateNewBlockInList;
+  public GameObject CreateNewWaveInList;
 
   bool inputsSelected = false;
 
@@ -169,6 +176,7 @@ public class MusicEditor : MonoBehaviour {
     TitleMusic.SetActive(true);
     TitleBlock.SetActive(false);
     TitleBlockList.SetActive(false);
+    TitleWaves.SetActive(false);
     SelectedCol.gameObject.SetActive(false);
 
     NameInput.text = music.name;
@@ -462,6 +470,7 @@ public class MusicEditor : MonoBehaviour {
     TitleMusic.SetActive(false);
     TitleBlock.SetActive(true);
     TitleBlockList.SetActive(false);
+    TitleWaves.SetActive(false);
     SelectedCol.gameObject.SetActive(true);
 
     BlockNameInput.text = currentBlock.name;
@@ -500,8 +509,8 @@ public class MusicEditor : MonoBehaviour {
     TitleMusic.SetActive(false);
     TitleBlock.SetActive(false);
     TitleBlockList.SetActive(true);
+    TitleWaves.SetActive(false);
     SelectedCol.gameObject.SetActive(false);
-
 
     foreach (Block b in blocks) {
       GameObject line = Instantiate(BlockListLineTemplate, Contents);
@@ -534,8 +543,65 @@ public class MusicEditor : MonoBehaviour {
   #endregion
 
   public void Waves() { // Show a list of waves
+    status = MusicEditorStatus.Waveforms;
+    foreach (Transform t in Contents)
+      Destroy(t.gameObject);
+
+    TitleMusic.SetActive(false);
+    TitleBlock.SetActive(false);
+    TitleBlockList.SetActive(false);
+    TitleWaves.SetActive(true);
+    SelectedCol.gameObject.SetActive(false);
+
+    foreach (Wave w in waves) {
+      GameObject line = Instantiate(WaveLineTemplate, Contents);
+      WaveLine wl = line.GetComponent<WaveLine>();
+      wl.WaveID.text = w.id.ToString();
+      wl.WaveName.text = w.name;
+      wl.WaveType.text = w.wave.ToString();
+      wl.WaveTypeImg.sprite = WaveSprites[(int)w.wave];
+      wl.Delete.onClick.AddListener(() => DeleteWaveFromList(w));
+      wl.Edit.onClick.AddListener(() => EditWaveFromList(w));
+    }
+
+    Instantiate(CreateNewWaveInList, Contents).SetActive(true);
+  }
+
+  private void EditWaveFromList(Wave w) {
+    throw new NotImplementedException();
+  }
+
+  private void DeleteWaveFromList(Wave w) {
+    throw new NotImplementedException();
+  }
+
+  public void CreateNewWave() {
+    int id = waves.Count > 0 ? waves[waves.Count - 1].id + 1 : 1;
+    Wave w = new Wave() { id = id, name = "No name" };
+    waves.Add(w);
+    currentWave = w;
+    Waves();
+    ShowWave();
+  }
+
+  void ShowWave() {
 
   }
+
+  public void CopyFromWaveEditor() {
+
+  }
+
+  public void CopyToWaveEditor() {
+
+  }
+
+  public void UpdateWaveName(bool completed) {
+    if (currentWave == null) return;
+    currentWave.name = WaveNameInput.text;
+    inputsSelected = !completed;
+  }
+
 
 
   readonly KeyCode[] keyNotes = new KeyCode[] {
@@ -653,11 +719,11 @@ public enum MusicEditorStatus {
 }
 
 
-public struct Wave {
+public class Wave {
+  public int id;
   public string name;
-  public byte wave;
-  public byte phase1;
-  public byte phase2;
+  public Waveform wave;
+  public float phase;
   public byte a;
   public byte d;
   public byte s;
