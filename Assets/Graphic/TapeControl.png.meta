@@ -32,6 +32,12 @@ TextureImporter:
   - first:
       213: 6612445436345865858
     second: TapeControl_9
+  - first:
+      213: -8737864178582715827
+    second: TapeControl_10
+  - first:
+      213: -6246811774654497395
+    second: TapeControl_11
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -239,8 +245,8 @@ TextureImporter:
       name: TapeControl_5
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
+        x: 320
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -260,7 +266,7 @@ TextureImporter:
       name: TapeControl_6
       rect:
         serializedVersion: 2
-        x: 64
+        x: 0
         y: 0
         width: 64
         height: 64
@@ -281,7 +287,7 @@ TextureImporter:
       name: TapeControl_7
       rect:
         serializedVersion: 2
-        x: 128
+        x: 64
         y: 0
         width: 64
         height: 64
@@ -302,7 +308,7 @@ TextureImporter:
       name: TapeControl_8
       rect:
         serializedVersion: 2
-        x: 192
+        x: 128
         y: 0
         width: 64
         height: 64
@@ -323,7 +329,7 @@ TextureImporter:
       name: TapeControl_9
       rect:
         serializedVersion: 2
-        x: 256
+        x: 192
         y: 0
         width: 64
         height: 64
@@ -336,6 +342,48 @@ TextureImporter:
       bones: []
       spriteID: 2865c02171024cb50800000000000000
       internalID: 6612445436345865858
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TapeControl_10
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d4287f323dedcb680800000000000000
+      internalID: -8737864178582715827
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TapeControl_11
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d8dbdf8b9cdde49a0800000000000000
+      internalID: -6246811774654497395
       vertices: []
       indices: 
       edges: []

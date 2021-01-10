@@ -8,4 +8,5 @@ public class MusicLine : ListLine {
   public Button Up;
   public Button Down;
   public Button Edit;
+  public Button Pick;
 }

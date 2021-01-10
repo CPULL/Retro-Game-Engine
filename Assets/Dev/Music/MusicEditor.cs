@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -54,7 +55,7 @@ public class MusicEditor : MonoBehaviour {
     }
 
 
-    if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count) {
+    if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count && !inputsSelected) {
       BlockLine l = blines[row];
       // Space change type
       if (Input.GetKeyDown(KeyCode.Space)) {
@@ -63,19 +64,22 @@ public class MusicEditor : MonoBehaviour {
         if (t == 5) t = 0;
         l.note[col].type = (NoteType)t;
         l.note[col].TypeImg.sprite = NoteTypeSprites[t];
+        currentBlock.chs[col][row].Set(l.note[col]);
       }
       // Piano keys
       for (int i = 0; i < keyNotes.Length; i++) {
         if (Input.GetKeyDown(keyNotes[i])) {
           // Set the current cell as note with the given note/frequency, update the text to be the note notation
+          l.note[col].type = NoteType.Note;
           l.note[col].TypeImg.sprite = NoteTypeSprites[1];
           l.note[col].ValTxt.text = noteNames[i + 24];
           l.note[col].val = freqs[i + 24];
           l.note[col].len = noteLen;
           l.note[col].LenTxt.text = noteLen.ToString();
           l.note[col].back.sizeDelta = new Vector2(38, noteLen * 32);
+          currentBlock.chs[col][row].Set(l.note[col]);
           // Move to the next row
-          if (row + noteLen < currentBlock.ch0.Count) { row += noteLen; update = true; }
+          if (row + noteLen < currentBlock.chs[0].Count) { row += noteLen; update = true; }
           // Play the actual sound (find the wave that should be used, if none is defined use a basic triangle wave)
           sounds.Play(0, freqs[i + 24], .25f);
         }
@@ -116,7 +120,7 @@ public class MusicEditor : MonoBehaviour {
       foreach(Block b in blocks) {
         if (b.id == id) {
           CurrentBlock.text = "[" + id + "] " + b.name;
-          BlockLengthText.text = " Block Len: " + b.ch0.Count.ToString();
+          BlockLengthText.text = " Block Len: " + b.chs[0].Count.ToString();
           BlockBPMText.text = " Block BPM: " + b.bpm.ToString();
           break;
         }
@@ -149,6 +153,8 @@ public class MusicEditor : MonoBehaviour {
   public GameObject MusicLineTempate;
   public GameObject BlockLineTempate;
   public GameObject CreateNewBlockInMusic;
+
+  bool inputsSelected = false;
 
   #region Music
 
@@ -187,11 +193,12 @@ public class MusicEditor : MonoBehaviour {
       ml.IndexTxt.text = pos.ToString();
       ml.BlockID.text = bi.ToString();
       ml.BlockName.text = b.name;
-      ml.BlockLen.text = b.ch0.Count.ToString();
+      ml.BlockLen.text = b.chs[0].Count.ToString();
       ml.Delete.onClick.AddListener(() => RemoveCurrentMusicLine(ml));
       ml.Up.onClick.AddListener(() => MoveCurrentMusicLineUp(ml));
       ml.Down.onClick.AddListener(() => MoveCurrentMusicLineDown(ml));
-      ml.Edit.onClick.AddListener(() => EditCurrentMusicLine(ml));
+      ml.Edit.onClick.AddListener(() => EditCurrentMusicLineBlock(ml));
+      ml.Pick.onClick.AddListener(() => PickCurrentMusicLineBlock(ml));
       mlines.Add(ml);
     }
 
@@ -225,7 +232,7 @@ public class MusicEditor : MonoBehaviour {
     ml.Delete.onClick.AddListener(() => RemoveCurrentMusicLine(ml));
     ml.Up.onClick.AddListener(() => MoveCurrentMusicLineUp(ml));
     ml.Down.onClick.AddListener(() => MoveCurrentMusicLineDown(ml));
-    ml.Edit.onClick.AddListener(() => EditCurrentMusicLine(ml));
+    ml.Edit.onClick.AddListener(() => EditCurrentMusicLineBlock(ml));
     last.SetParent(Contents);
     mlines.Add(ml);
 
@@ -280,22 +287,71 @@ public class MusicEditor : MonoBehaviour {
     Contents.GetChild(pos).SetSiblingIndex(pos + 1);
   }
 
-  public void EditCurrentMusicLine(MusicLine line) {
+  public void EditCurrentMusicLineBlock(MusicLine line) {
     // pick the current block and show it, if missing create a new one
     // FIXME
   }
 
-  public void UpdateMusicName() {
+  public void PickCurrentMusicLineBlock(MusicLine line) {
+    // pick the current block and show it, if missing create a new one
+    inMusicLine = -1;
+    for (int i = 0; i < mlines.Count; i++)
+      if (mlines[i] == line) {
+        inMusicLine = i;
+        break;
+      }
+    if (inMusicLine == -1) return;
+    BlockPickContainer.parent.gameObject.SetActive(true);
+    PickBlockSetup();
+  }
+
+  public void UpdateMusicName(bool completed) {
     music.name = NameInput.text;
+    inputsSelected = !completed;
   }
 
   #endregion
 
   #region Block
   public Transform BlockPickContainer;
+  public GameObject SelctBlockButton;
 
+  int inMusicLine = -1;
   public void PickBlock() {
-    BlockPickContainer.gameObject.SetActive(!BlockPickContainer.gameObject.activeSelf);
+    inMusicLine = -1;
+    bool active = !BlockPickContainer.parent.gameObject.activeSelf;
+    BlockPickContainer.parent.gameObject.SetActive(active);
+    if (active) PickBlockSetup();
+  }
+
+  void PickBlockSetup() {
+    foreach (Transform t in BlockPickContainer)
+      Destroy(t.gameObject);
+
+    foreach(Block b in blocks) {
+      GameObject sbb = Instantiate(SelctBlockButton, BlockPickContainer);
+      sbb.SetActive(true);
+      sbb.transform.GetChild(0).GetComponent<Text>().text = "[" + b.id + "] " + b.name;
+      sbb.GetComponent<Button>().onClick.AddListener(() => { DoPickBlock(b); });
+    }
+  }
+
+  private void DoPickBlock(Block b) {
+    BlockPickContainer.parent.gameObject.SetActive(false);
+    currentBlock = b;
+
+    if (inMusicLine == -1)
+      ShowBlock();
+    else {
+      BlockNameInput.text = currentBlock.name;
+      BlockLengthText.text = " Block Len: " + currentBlock.chs[0].Count;
+      BlockBPMText.text = " Block BPM: " + currentBlock.bpm;
+      music.blocks[inMusicLine] = b.id;
+      MusicLine ml = mlines[inMusicLine];
+      ml.BlockID.text = b.id.ToString();
+      ml.BlockName.text = b.name;
+      ml.BlockLen.text = b.chs[0].Count.ToString();
+    }
   }
 
   public void CreateBlock() {
@@ -306,23 +362,14 @@ public class MusicEditor : MonoBehaviour {
     for (int i = 0; i < music.voices.Length; i++)
       if (music.voices[i] != 255) numv++;
 
-    b.ch0 = new List<BlockNote>();
-    b.ch1 = new List<BlockNote>();
-    b.ch2 = new List<BlockNote>();
-    b.ch3 = new List<BlockNote>();
-    b.ch4 = new List<BlockNote>();
-    b.ch5 = new List<BlockNote>();
-    b.ch6 = new List<BlockNote>();
-    b.ch7 = new List<BlockNote>();
+    b.chs = new List<BlockNote>[8];
+    for (int i = 0; i < 8; i++) {
+      b.chs[i] = new List<BlockNote>();
+    }
     for (int n = 0; n < 64; n++) {
-      b.ch0.Add(new BlockNote()); 
-      b.ch1.Add(new BlockNote()); 
-      b.ch2.Add(new BlockNote()); 
-      b.ch3.Add(new BlockNote()); 
-      b.ch4.Add(new BlockNote()); 
-      b.ch5.Add(new BlockNote()); 
-      b.ch6.Add(new BlockNote()); 
-      b.ch7.Add(new BlockNote()); 
+      for (int j = 0; j < 8; j++) {
+        b.chs[j].Add(new BlockNote()); 
+      }
     }
     b.numVoices = numv;
     blocks.Add(b);
@@ -335,47 +382,31 @@ public class MusicEditor : MonoBehaviour {
   public void ChangeBlockLength(bool up) {
     if (CurrentBlock == null || status != MusicEditorStatus.BlockEdit) return;
     Block b = currentBlock;
-    int len = b.ch0.Count;
+    int len = b.chs[0].Count;
     if (up && len < 128) len++;
     if (!up && len > 1) len--;
 
-    if (b.ch0.Count < len) {
-      for (int i = b.ch0.Count; i <= len; i++) {
-        b.ch0.Add(new BlockNote());
-        b.ch1.Add(new BlockNote());
-        b.ch2.Add(new BlockNote());
-        b.ch3.Add(new BlockNote());
-        b.ch4.Add(new BlockNote());
-        b.ch5.Add(new BlockNote());
-        b.ch6.Add(new BlockNote());
-        b.ch7.Add(new BlockNote());
+    if (b.chs[0].Count < len) {
+      for (int i = b.chs[0].Count; i <= len; i++) {
+        for (int j = 0; j < 8; j++) {
+          b.chs[j].Add(new BlockNote());
+        }
 
         GameObject line = Instantiate(BlockLineTempate, Contents);
         BlockLine bl = line.GetComponent<BlockLine>();
         bl.index = i;
         bl.IndexTxt.text = i.ToString("d2");
-        bl.note[0].SetZeroValues(NoteTypeSprites);
-        bl.note[1].SetZeroValues(NoteTypeSprites);
-        bl.note[2].SetZeroValues(NoteTypeSprites);
-        bl.note[3].SetZeroValues(NoteTypeSprites);
-        bl.note[4].SetZeroValues(NoteTypeSprites);
-        bl.note[5].SetZeroValues(NoteTypeSprites);
-        bl.note[6].SetZeroValues(NoteTypeSprites);
-        bl.note[7].SetZeroValues(NoteTypeSprites);
+        for (int j = 0; j < 8; j++)
+          bl.note[j].SetZeroValues(NoteTypeSprites);
         blines.Add(bl);
       }
     }
     else {
-      for (int i = b.ch0.Count; i <= len; i++) {
-        int pos = b.ch0.Count - 1;
-        b.ch0.RemoveAt(pos);
-        b.ch1.RemoveAt(pos);
-        b.ch2.RemoveAt(pos);
-        b.ch3.RemoveAt(pos);
-        b.ch4.RemoveAt(pos);
-        b.ch5.RemoveAt(pos);
-        b.ch6.RemoveAt(pos);
-        b.ch7.RemoveAt(pos);
+      for (int i = b.chs[0].Count; i <= len; i++) {
+        int pos = b.chs[0].Count - 1;
+        for (int j = 0; j < 8; j++) {
+          b.chs[j].RemoveAt(pos);
+        }
         pos = blines.Count - 1;
         Destroy(blines[pos]);
         blines.RemoveAt(pos);
@@ -403,12 +434,6 @@ public class MusicEditor : MonoBehaviour {
   }
 
 
-  #endregion
-
-  public void Blocks() { // Show a list of blocks
-
-  }
-
   public void ShowBlock() { // Show the current block
     status = MusicEditorStatus.BlockEdit;
     foreach (Transform t in Contents)
@@ -418,31 +443,35 @@ public class MusicEditor : MonoBehaviour {
     SelectedCol.gameObject.SetActive(true);
 
     BlockNameInput.text = currentBlock.name;
-    BlockLengthText.text = " Block Len: " + currentBlock.ch0.Count;
+    BlockLengthText.text = " Block Len: " + currentBlock.chs[0].Count;
     BlockBPMText.text = " Block BPM: " + currentBlock.bpm;
 
     blines.Clear();
-    for (int i = 0; i < currentBlock.ch0.Count; i++) {
+    for (int i = 0; i < currentBlock.chs[0].Count; i++) {
       GameObject line = Instantiate(BlockLineTempate, Contents);
+      line.SetActive(true);
       BlockLine bl = line.GetComponent<BlockLine>();
       bl.index = i;
       bl.IndexTxt.text = i.ToString("d2");
-      bl.note[0].SetValues(currentBlock.ch0[i], NoteTypeSprites, freqs, noteNames);
-      bl.note[1].SetValues(currentBlock.ch1[i], NoteTypeSprites, freqs, noteNames);
-      bl.note[2].SetValues(currentBlock.ch2[i], NoteTypeSprites, freqs, noteNames);
-      bl.note[3].SetValues(currentBlock.ch3[i], NoteTypeSprites, freqs, noteNames);
-      bl.note[4].SetValues(currentBlock.ch4[i], NoteTypeSprites, freqs, noteNames);
-      bl.note[5].SetValues(currentBlock.ch5[i], NoteTypeSprites, freqs, noteNames);
-      bl.note[6].SetValues(currentBlock.ch6[i], NoteTypeSprites, freqs, noteNames);
-      bl.note[7].SetValues(currentBlock.ch7[i], NoteTypeSprites, freqs, noteNames);
+      for (int j = 0; j < 8; j++) {
+        bl.note[j].SetValues(currentBlock.chs[j][i], NoteTypeSprites, freqs, noteNames);
+      }
       blines.Add(bl);
     }
   }
 
-  public void UpdateBlockName() {
+  public void UpdateBlockName(bool completed) {
     if (currentBlock == null || status != MusicEditorStatus.BlockEdit) return;
     currentBlock.name = BlockNameInput.text;
+    inputsSelected = !completed;
   }
+
+  #endregion
+
+  public void Blocks() { // Show a list of blocks
+
+  }
+
 
   public void Waves() { // Show a list of waves
 
@@ -588,20 +617,19 @@ public class Block {
   public string name;
   public int bpm;
   public int numVoices;
-  public List<BlockNote> ch0;
-  public List<BlockNote> ch1;
-  public List<BlockNote> ch2;
-  public List<BlockNote> ch3;
-  public List<BlockNote> ch4;
-  public List<BlockNote> ch5;
-  public List<BlockNote> ch6;
-  public List<BlockNote> ch7;
+  public List<BlockNote>[] chs;
 }
 
 public class BlockNote {
   public NoteType type;
   public int val;
   public int len;
+
+  internal void Set(MusicNote note) {
+    type = note.type;
+    val = note.val;
+    len = note.len;
+  }
 }
 
 
