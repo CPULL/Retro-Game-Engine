@@ -15,6 +15,8 @@ public class MusicEditor : MonoBehaviour {
   private Wave currentWave = null;
   private List<MusicLine> mlines = new List<MusicLine>();
   private List<BlockLine> blines = new List<BlockLine>();
+  private List<BlockListLine> bllines = new List<BlockListLine>();
+  private List<WaveLine> wlines = new List<WaveLine>();
 
   private Color32 SelectedColor = new Color32(36, 52, 36, 255);
   private Color32 Transparent = new Color32(0, 0, 0, 0);
@@ -34,6 +36,7 @@ public class MusicEditor : MonoBehaviour {
       blocks = new List<int>()
     };
     blocks = new List<Block>();
+    waves = new List<Wave>();
     foreach (Transform t in Contents)
       Destroy(t.gameObject);
   }
@@ -55,6 +58,14 @@ public class MusicEditor : MonoBehaviour {
     else if (status == MusicEditorStatus.Music) {
       if (Input.GetKey(KeyCode.UpArrow) && mlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
       if (Input.GetKey(KeyCode.DownArrow) && mlines != null && row < mlines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+    }
+    else if (status == MusicEditorStatus.Waveforms) {
+      if (Input.GetKey(KeyCode.UpArrow) && wlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+      if (Input.GetKey(KeyCode.DownArrow) && wlines != null && row < wlines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+    }
+    else if (status == MusicEditorStatus.BlockList) {
+      if (Input.GetKey(KeyCode.UpArrow) && bllines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+      if (Input.GetKey(KeyCode.DownArrow) && bllines != null && row < bllines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
     }
 
 
@@ -136,9 +147,18 @@ public class MusicEditor : MonoBehaviour {
         blines[i].Background.color = Transparent;
       blines[line].Background.color = SelectedColor;
     }
-
-
-
+    else if (status == MusicEditorStatus.BlockList) {
+      int max = bllines.Count;
+      for (int i = 0; i < max; i++)
+        bllines[i].Background.color = Transparent;
+      bllines[line].Background.color = SelectedColor;
+    }
+    else if (status == MusicEditorStatus.Waveforms) {
+      int max = wlines.Count;
+      for (int i = 0; i < max; i++)
+        wlines[i].Background.color = Transparent;
+      wlines[line].Background.color = SelectedColor;
+    }
   }
 
   public GameObject TitleMusic;
@@ -506,6 +526,7 @@ public class MusicEditor : MonoBehaviour {
     foreach (Transform t in Contents)
       Destroy(t.gameObject);
 
+    bllines.Clear();
     TitleMusic.SetActive(false);
     TitleBlock.SetActive(false);
     TitleBlockList.SetActive(true);
@@ -521,6 +542,7 @@ public class MusicEditor : MonoBehaviour {
       bll.BlockBPM.text = b.bpm.ToString();
       bll.Delete.onClick.AddListener(() => DeleteBlockFromList(b));
       bll.Edit.onClick.AddListener(() => EditBlockFromList(b));
+      bllines.Add(bll);
     }
 
     Instantiate(CreateNewBlockInList, Contents).SetActive(true);
@@ -552,16 +574,19 @@ public class MusicEditor : MonoBehaviour {
     TitleBlockList.SetActive(false);
     TitleWaves.SetActive(true);
     SelectedCol.gameObject.SetActive(false);
+    wlines.Clear();
 
     foreach (Wave w in waves) {
       GameObject line = Instantiate(WaveLineTemplate, Contents);
       WaveLine wl = line.GetComponent<WaveLine>();
+      line.SetActive(true);
       wl.WaveID.text = w.id.ToString();
       wl.WaveName.text = w.name;
       wl.WaveType.text = w.wave.ToString();
       wl.WaveTypeImg.sprite = WaveSprites[(int)w.wave];
       wl.Delete.onClick.AddListener(() => DeleteWaveFromList(w));
       wl.Edit.onClick.AddListener(() => EditWaveFromList(w));
+      wlines.Add(wl);
     }
 
     Instantiate(CreateNewWaveInList, Contents).SetActive(true);
