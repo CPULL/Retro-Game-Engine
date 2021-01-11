@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 public class WaveformEditor : MonoBehaviour {
@@ -30,6 +32,7 @@ public class WaveformEditor : MonoBehaviour {
   int release = 0;
   Waveform wave = Waveform.Triangular;
   float phase = 0;
+  byte[] rawPCM;
 
   public PianoKeyboard[] AllKeys;
   readonly Vector3[] oscilloscopeValues = new Vector3[512];
@@ -109,6 +112,46 @@ public class WaveformEditor : MonoBehaviour {
   }
 
 
+  public void LoadPCM() {
+    FileBrowser.Show(PostLoadPCM);
+  }
+
+  public void PostLoadPCM(string path) {
+    StartCoroutine(LoadPCMCoroutine(path));
+  }
+
+  IEnumerator LoadPCMCoroutine(string path) {
+    string url = string.Format("file://{0}", path);
+    string ext = path.Substring(path.LastIndexOf('.') + 1).ToLowerInvariant();
+    AudioType at = AudioType.UNKNOWN;
+    if (ext == "wav") at = AudioType.WAV;
+    if (ext == "ogg") at = AudioType.OGGVORBIS;
+    if (ext == "mp3") at = AudioType.MPEG;
+
+    using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(url, at)) {
+      yield return www.SendWebRequest();
+      AudioClip pcm = DownloadHandlerAudioClip.GetContent(www);
+
+      float[] res = new float[44100 * 2];
+      for (int i = 0; i < 44100 * 2; i++)
+        res[i] = float.MinValue;
+      pcm.GetData(res, 0);
+
+      int len = 0;
+      for (int i = 0; i < 44100 * 2; i++)
+        if (res[i] == float.MinValue) {
+          len = i;
+          break;
+        }
+      rawPCM = new byte[len];
+      for (int i = 0; i < len; i++) {
+        float val = res[i];
+        if (val < -1) val = -1;
+        if (val > -1) val = 1;
+        rawPCM[i] = (byte)(255 * (val + 1) * .5f);
+      }
+    }
+  }
 
   void RenderOscilloscope() {
     float[] data = sounds.Oscillator;

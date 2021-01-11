@@ -568,8 +568,6 @@ public struct Channel {
 /*
  * Define a way to play music: 2 bytes total len + 1 byte num channles + [1 byte channel, 2 bytes freq, 2 bytes len] * num channels
  * 
- * Wave: bass
- * Wave: battery
  * Wave: 8bit PCM
  * 
  */
