@@ -100,6 +100,16 @@ public class MusicEditor : MonoBehaviour {
       }
     }
 
+    if (status == MusicEditorStatus.Waveforms && row > -1 && row < wlines.Count && !inputsSelected) {
+      // Piano keys
+      for (int i = 0; i < keyNotes.Length; i++) {
+        if (Input.GetKeyDown(keyNotes[i])) {
+          // Set the current cell as note with the given note/frequency, update the text to be the note notation
+          sounds.Play(0, freqs[i + 24], .25f);
+        }
+      }
+    }
+
 
     // top 2 rows -> set note
     // pgup/dwn -> change instrument/volume/freq/note
@@ -166,7 +176,8 @@ public class MusicEditor : MonoBehaviour {
       for (int i = 0; i < max; i++)
         wlines[i].Background.color = Transparent;
       wlines[line].Background.color = SelectedColor;
-      WaveNameInput.SetTextWithoutNotify(wlines[line].WaveName.text.Trim());
+      currentWave = waves[line];
+      ShowWave();
     }
   }
 
@@ -184,6 +195,8 @@ public class MusicEditor : MonoBehaviour {
   public Text CurrentBlock;
   public InputField BlockNameInput;
   public InputField WaveNameInput;
+  public Text WaveTypeName;
+  public Image WaveTypeImg;
 
   public GameObject MusicLineTempate;
   public GameObject BlockLineTempate;
@@ -618,16 +631,30 @@ public class MusicEditor : MonoBehaviour {
     ShowWave();
   }
 
-  void ShowWave() {
 
+
+  void ShowWave() {
+    if (currentWave == null) return;
+    WaveNameInput.SetTextWithoutNotify(currentWave.name);
+    WaveTypeName.text = currentWave.wave.ToString();
+    WaveTypeImg.sprite = WaveSprites[(int)currentWave.wave];
+
+    sounds.Wave(0, currentWave.wave, currentWave.phase);
+    sounds.ADSR(0, currentWave.a, currentWave.d, currentWave.s, currentWave.r);
   }
 
-  public void CopyFromWaveEditor() {
+  public WaveformEditor editor;
 
+  public void CopyFromWaveEditor() {
+    if (currentWave == null) return;
+    Wave w = editor.Export();
+    currentWave.CopyForm(w);
+    ShowWave();
   }
 
   public void CopyToWaveEditor() {
-
+    if (currentWave == null) return;
+    editor.Import(currentWave);
   }
 
   public void UpdateWaveName(bool completed) {
@@ -762,6 +789,15 @@ public class Wave {
   public byte d;
   public byte s;
   public byte r;
+
+  internal void CopyForm(Wave w) {
+    wave = w.wave;
+    phase = w.phase;
+    a = w.a;
+    d = w.d;
+    s = w.s;
+    r = w.r;
+  }
 }
 
 

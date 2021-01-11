@@ -344,7 +344,6 @@ public class WaveformEditor : MonoBehaviour {
     Decay.SetValueWithoutNotify(decay);
     Sustain.SetValueWithoutNotify(sustain);
     Release.SetValueWithoutNotify(release);
-//FXOME    Wave.SetValueWithoutNotify(waveb);
 
     float val = Phase.value;
     if (wave == Waveform.Square) {
@@ -405,5 +404,51 @@ public class WaveformEditor : MonoBehaviour {
     Values.gameObject.SetActive(true);
     LoadSubButton.enabled = false;
     Values.text = res;
+  }
+
+  public Wave Export() {
+    Wave w = new Wave();
+    w.id = 0;
+    w.name = "Wave from editor";
+    w.wave = wave;
+    w.phase = phase;
+    w.a = (byte)attack;
+    w.d = (byte)decay;
+    w.s = (byte)sustain;
+    w.r = (byte)release;
+    return w;
+  }
+
+  public void Import(Wave w) {
+    wave = w.wave;
+    phase = w.phase;
+    attack = w.a;
+    decay = w.d;
+    sustain = w.s;
+    release = w.r;
+
+    // Update the interface
+    Attack.SetValueWithoutNotify(attack);
+    Decay.SetValueWithoutNotify(decay);
+    Sustain.SetValueWithoutNotify(sustain);
+    Release.SetValueWithoutNotify(release);
+
+    float val;
+    if (wave == Waveform.Square) {
+      if (phase < 0.01f) phase = .01f;
+      if (phase > 0.99f) phase = .99f;
+      val = 20f * phase - 10;
+    }
+    else { // FIXME this may not work
+      if (phase < 0.01f) phase = .01f;
+      if (phase > 10f) phase = 10f;
+      val = 10 * phase - 10;
+      if (val > 0) val = 1.1f * phase - 1;
+      if (val == 0) phase = 1;
+    }
+    Phase.SetValueWithoutNotify(val);
+
+    OnSliderChange();
+    WaveChange((int)wave);
   }
 }
