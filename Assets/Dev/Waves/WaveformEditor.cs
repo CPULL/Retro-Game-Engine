@@ -25,6 +25,7 @@ public class WaveformEditor : MonoBehaviour {
   public string[] WaveNames;
   public Image WaveSprite;
   public Text WaveName;
+  public GameObject LoadPCMButton;
 
   int attack = 0;
   int decay = 0;
@@ -131,25 +132,30 @@ public class WaveformEditor : MonoBehaviour {
     using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(url, at)) {
       yield return www.SendWebRequest();
       AudioClip pcm = DownloadHandlerAudioClip.GetContent(www);
+      int freq = pcm.frequency;
+      float diff = freq / 44100f;
+      int len = (int)(pcm.samples / diff);
 
-      float[] res = new float[44100 * 2];
-      for (int i = 0; i < 44100 * 2; i++)
-        res[i] = float.MinValue;
+      float[] res = new float[pcm.samples * pcm.channels];
+      rawPCM = new byte[len];
       pcm.GetData(res, 0);
 
-      int len = 0;
-      for (int i = 0; i < 44100 * 2; i++)
-        if (res[i] == float.MinValue) {
-          len = i;
-          break;
-        }
-      rawPCM = new byte[len];
       for (int i = 0; i < len; i++) {
-        float val = res[i];
+        // we need to mix all the values from the pos in the new array to the pos+1
+        int srcpos1 = (int)(i * diff);
+        int srcpos2 = (int)((i + 1) * diff);
+
+        float val = 0;
+        for (int p = 0; p < srcpos2 - srcpos1; p++)
+          for (int c = 0; c < pcm.channels; c++)
+            val += res[srcpos1 + p * pcm.channels + c];
+        val /= pcm.channels * (srcpos2 - srcpos1);
         if (val < -1) val = -1;
-        if (val > -1) val = 1;
+        if (val > 1) val = 1;
         rawPCM[i] = (byte)(255 * (val + 1) * .5f);
       }
+      wave = Waveform.PCM;
+      UpdateWaveforms();
     }
   }
 
@@ -260,6 +266,7 @@ public class WaveformEditor : MonoBehaviour {
     WaveSprite.sprite = WaveSprites[w];
     WaveName.text = WaveNames[w];
     PhaseChange();
+    LoadPCMButton.SetActive(w == 14); // PCM
   }
 
   public void PhaseChange() {
@@ -287,7 +294,10 @@ public class WaveformEditor : MonoBehaviour {
 
   void UpdateWaveforms() {
     for (int i = 0; i < 8; i++) {
-      sounds.Wave(i, wave, phase);
+      if (wave == Waveform.PCM && rawPCM != null)
+        sounds.Wave(i, rawPCM);
+      else
+        sounds.Wave(i, wave, phase);
       sounds.ADSR(i, (byte)attack, (byte)decay, (byte)sustain, (byte)release);
     }
   }
@@ -337,12 +347,12 @@ public class WaveformEditor : MonoBehaviour {
     float obase = (13081 << (oct - 3)) / 100f;
     float freq = 440;
     switch(n) {
-      case "c ": freq = obase * step; break;
-      case "c#": freq = obase * step * step; break;
-      case "d ": freq = obase * step * step * step; break;
-      case "eb": freq = obase * step4; break;
-      case "e ": freq = obase * step4 * step; break;
-      case "f ": freq = obase * step4 * step * step; break;
+      case "c ": freq = obase; break;
+      case "c#": freq = obase * step; break;
+      case "d ": freq = obase * step * step; break;
+      case "eb": freq = obase * step * step * step; break;
+      case "e ": freq = obase * step4; break;
+      case "f ": freq = obase * step4 * step; break;
       case "f#": freq = obase * step4 * step * step; break;
       case "g ": freq = obase * step4 * step * step * step; break;
       case "g#": freq = obase * step4 * step4; break;

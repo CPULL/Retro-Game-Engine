@@ -8,6 +8,7 @@ public class FileBrowser : MonoBehaviour {
   Action<string> postLoadAction;
   string currentpath;
 
+  public GameObject FileBrowserContents;
   public GameObject FileTemplate;
   public GameObject FolderTemplate;
   public Transform Items;
@@ -17,11 +18,11 @@ public class FileBrowser : MonoBehaviour {
 
   private void Awake() {
     inst = this;
-    gameObject.SetActive(false);
+    FileBrowserContents.SetActive(false);
   }
 
   public static void Show(Action<string> action) {
-    inst.gameObject.SetActive(true);
+    inst.FileBrowserContents.SetActive(true);
     inst.postLoadAction = action;
     inst.LoadButton.interactable = false;
     FileInfo fi = new FileInfo(Application.dataPath);
@@ -31,6 +32,7 @@ public class FileBrowser : MonoBehaviour {
   private void ShowFolder(string path) {
     currentpath = path;
     PathText.text = path;
+    FileInfoText.gameObject.SetActive(false);
     foreach (Transform t in Items)
       Destroy(t.gameObject);
 
@@ -66,9 +68,8 @@ public class FileBrowser : MonoBehaviour {
       Destroy(t.gameObject);
     LoadButton.interactable = true;
     FileInfo fi = new FileInfo(path);
-    Text msg = Instantiate(FileInfoText, Items.parent);
-    msg.gameObject.SetActive(true);
-    msg.text = "File: " + fi.Name + "\nPath: " + fi.Directory.FullName + "\nSize: " + fi.Length + "\nExtension: " + fi.Extension;
+    FileInfoText.gameObject.SetActive(true);
+    FileInfoText.text = "File: " + fi.Name + "\nPath: " + fi.Directory.FullName + "\nSize: " + fi.Length + "\nExtension: " + fi.Extension;
   }
 
   public void SelectFolder(string path) {
@@ -84,11 +85,11 @@ public class FileBrowser : MonoBehaviour {
   }
 
   public void LoadFile() {
-    gameObject.SetActive(false);
+    FileBrowserContents.SetActive(false);
     postLoadAction?.Invoke(currentpath);
   }
 
   public void Exit() {
-    gameObject.SetActive(false);
+    FileBrowserContents.SetActive(false);
   }
 }

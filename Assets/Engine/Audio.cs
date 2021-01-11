@@ -4,6 +4,7 @@ public class Audio : MonoBehaviour {
   public AudioSource[] srcs;
   public Channel[] channels;
   const int samplerate = 44100;
+  const float oneOversamplerate = 1f / 44100;
   private float[] oscValues = new float[512];
   private float[][] outputs;
 
@@ -115,6 +116,14 @@ public class Audio : MonoBehaviour {
     channels[channel].phase = phase;
   }
 
+  public void Wave(int channel, byte[] data) {
+    if (channel < 0 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
+    channels[channel].wave = Waveform.PCM;
+    channels[channel].position = 0;
+    channels[channel].phase = 0;
+    channels[channel].pcmdata = data;
+  }
+
   public void ADSR(int channel, byte attack, byte decay, byte sustain, byte release) {
     if (channel < 0 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
 
@@ -211,6 +220,7 @@ public class Audio : MonoBehaviour {
   const float o7th = 1f / 7f;
   const float o9th = 1f / 9f;
   const float o11th = 1f / 11f;
+  const float o255th = 1f / 255f;
 
 
   void OnAudioRead(float[] data, int channel) {
@@ -220,7 +230,7 @@ public class Audio : MonoBehaviour {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           data[i] = piD2 * Mathf.Asin(Mathf.Cos(piP2 * pos)) * channels[channel].phase;
           if (data[i] < -1f) data[i] = -1f;
           if (data[i] > 1f) data[i] = 1f;
@@ -231,7 +241,7 @@ public class Audio : MonoBehaviour {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           if (pos == 0)
             data[i] = 0;
           else
@@ -245,7 +255,7 @@ public class Audio : MonoBehaviour {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           float pt = channels[channel].phase;
           float pt2 = pt * pt;
           float y1 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos))) * piD2;
@@ -264,7 +274,7 @@ public class Audio : MonoBehaviour {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           pos -= (int)pos;
           if (pos < channels[channel].phase) {
             if (channels[channel].phase - pos < .01f) {
@@ -289,7 +299,7 @@ public class Audio : MonoBehaviour {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           data[i] = (Mathf.Sin(2 * Mathf.PI * pos) + Mathf.Sin(2 * Mathf.PI * pos * channels[channel].phase)) * .5f;
         }
         break;
@@ -298,7 +308,7 @@ public class Audio : MonoBehaviour {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           float w = channels[channel].phase;
           float s = w * Mathf.Sin(pos);
           data[i] = piD325 * (Mathf.Sin(w * s) + Mathf.Sin(3 * w * s) * o3rd + Mathf.Sin(5 * w * s) * o5th + Mathf.Sin(7 * w * s) * o7th + Mathf.Sin(9 * w * s) * o9th + Mathf.Sin(11 * w * s) * o11th);
@@ -337,7 +347,7 @@ public class Audio : MonoBehaviour {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = .25f * channels[channel].freq * channels[channel].position / samplerate;
+          float pos = .25f * channels[channel].freq * channels[channel].position * oneOversamplerate;
 
           float y =
             1.0f * Mathf.Sin(piP2 * pos) +
@@ -361,7 +371,7 @@ public class Audio : MonoBehaviour {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           data[i] = Squirrel3Norm((int)pos, seed);
         }
         break;
@@ -371,7 +381,7 @@ public class Audio : MonoBehaviour {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           data[i] = Squirrel3Norm((int)pos, seed);
           if (i > 0 && Mathf.Abs(data[i - 1] - data[i]) > .5f) data[i] *= -.5f;
         }
@@ -382,7 +392,7 @@ public class Audio : MonoBehaviour {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           data[i] = Squirrel3Norm((int)pos, seed);
           if (i > 1 && Mathf.Abs(data[i - 2] - data[i]) > .5f) data[i] *= -.25f;
           if (i > 0 && Mathf.Abs(data[i - 1] - data[i]) > .5f) data[i] *= -.25f;
@@ -394,7 +404,7 @@ public class Audio : MonoBehaviour {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           data[i] = Squirrel3Norm((int)pos, seed);
           if (i > 3 && Mathf.Abs(data[i - 4] - data[i]) > .5f) data[i] *= -.25f;
           if (i > 2 && Mathf.Abs(data[i - 3] - data[i]) > .5f) data[i] *= -.25f;
@@ -408,7 +418,7 @@ public class Audio : MonoBehaviour {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           if ((i % 3) == 0) {
             float x = 10 * channels[channel].phase / (pos + channels[channel].phase);
             x = pos * .25f;
@@ -460,6 +470,23 @@ public class Audio : MonoBehaviour {
             data[i] = (data[i] + data[i - 1] + data[i + 1]) * .3333f;
         }
         break;
+
+      case Waveform.PCM:
+        if (channels[channel].pcmdata == null) return;
+        int pcmsize = channels[channel].pcmdata.Length;
+        if (pcmsize == 0) return;
+
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          int pos = (int)(channels[channel].freq * channels[channel].position / 220);
+          pos %= channels[channel].pcmdata.Length;
+
+          data[i] = 2 * channels[channel].pcmdata[pos] * o255th - 1f;
+          if (data[i] < -1f) data[i] = -1f;
+          if (data[i] > 1f) data[i] = 1f;
+        }
+        break;
+
     }
   }
 
@@ -509,7 +536,7 @@ public class Audio : MonoBehaviour {
   #endregion
 }
 
-public enum Waveform { Triangular=0, Saw=1, Square=2, Sin=3, Bass1=4, Bass2=5, Noise=6, PinkNoise=7, BrownNoise=8, BlackNoise=9, SoftNoise=10, Drums=11, SuperSaw=12, SuperSin=13 };
+public enum Waveform { Triangular=0, Saw=1, Square=2, Sin=3, Bass1=4, Bass2=5, Noise=6, PinkNoise=7, BrownNoise=8, BlackNoise=9, SoftNoise=10, Drums=11, SuperSaw=12, SuperSin=13, PCM=14 };
 
 [System.Serializable]
 public struct Channel {
@@ -527,6 +554,7 @@ public struct Channel {
   public float dv;
   public float sv;
   public float rv;
+  public byte[] pcmdata;
   public bool stopnow;
 
   public Channel(AudioSource src, Waveform w, AudioClip ac) {
@@ -545,6 +573,7 @@ public struct Channel {
     dv = 0;
     sv = 0;
     rv = 0;
+    pcmdata = null;
     stopnow = false;
   }
 
