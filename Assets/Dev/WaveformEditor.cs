@@ -237,6 +237,11 @@ public class WaveformEditor : MonoBehaviour {
     UpdateWaveforms();
   }
 
+  public void ResetPhase() {
+    Phase.SetValueWithoutNotify(0);
+    PhaseChange();
+  }
+
   void UpdateWaveforms() {
     for (int i = 0; i < 8; i++) {
       sounds.Wave(i, wave, phase);

@@ -830,11 +830,12 @@ public class BlockNote {
 
 /*
 
+add play/pause/rev/ff
 changing music name has no effect
 add name of current block editable
 have a valid way to add/remove voices, the block voices should be changed accordingly
 add multiple selection of rows to enalbe cleanup and copy/paste
- 
+Soften the square waves
  */
 
 

@@ -205,6 +205,12 @@ public class Audio : MonoBehaviour {
   const float piP2 = Mathf.PI * 2f;
   const float piH2 = Mathf.PI * .5f;
   const float piD2 = 2f / Mathf.PI;
+  const float piD325 = 3.25f / Mathf.PI;
+  const float o3rd = 1f / 3f;
+  const float o5th = 1f / 5f;
+  const float o7th = 1f / 7f;
+  const float o9th = 1f / 9f;
+  const float o11th = 1f / 11f;
 
 
   void OnAudioRead(float[] data, int channel) {
@@ -260,7 +266,22 @@ public class Audio : MonoBehaviour {
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
           float pos = channels[channel].freq * channels[channel].position / samplerate;
           pos -= (int)pos;
-          if (pos < channels[channel].phase) data[i] = .99f; else data[i] = -.99f;
+          if (pos < channels[channel].phase) {
+            if (channels[channel].phase - pos < .01f) {
+              float tilt = (channels[channel].phase - pos) * 100;
+              data[i] = -.99f * tilt + .99f * (1 - tilt);
+            }
+            else
+              data[i] = .99f;
+          }
+          else {
+            if (pos - channels[channel].phase < .01f) {
+              float tilt = (pos - channels[channel].phase) * 100;
+              data[i] = -.99f * tilt + .99f * (1 - tilt);
+            }
+            else
+              data[i] = -.99f;
+          }
         }
         break;
 
@@ -272,6 +293,20 @@ public class Audio : MonoBehaviour {
           data[i] = (Mathf.Sin(2 * Mathf.PI * pos) + Mathf.Sin(2 * Mathf.PI * pos * channels[channel].phase)) * .5f;
         }
         break;
+
+      case Waveform.SuperSin: {
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+          float pos = channels[channel].freq * channels[channel].position / samplerate;
+          float w = channels[channel].phase;
+          float s = w * Mathf.Sin(pos);
+          data[i] = piD325 * (Mathf.Sin(w * s) + Mathf.Sin(3 * w * s) * o3rd + Mathf.Sin(5 * w * s) * o5th + Mathf.Sin(7 * w * s) * o7th + Mathf.Sin(9 * w * s) * o9th + Mathf.Sin(11 * w * s) * o11th);
+          if (data[i] < -1f) data[i] = -1f;
+          if (data[i] > 1f) data[i] = 1f;
+        }
+      }
+      break;
 
       case Waveform.Bass1:
         seed++;
@@ -407,7 +442,7 @@ public class Audio : MonoBehaviour {
 
           float x = channels[channel].freq * channels[channel].position / 1760;
           float y = Mathf.Sin(piP2 * Mathf.Sqrt(.5f * (x + 31.5f))) * Mathf.Cos(Mathf.PI * (x + 31.5f) * .0001245f) * (-.25f * x + 1000) / 1000;
-          if (channels[channel].position < 5000)
+          if (channels[channel].position < 2500 * channels[channel].phase)
             y += Squirrel3Norm((int)x, seed) * x * maxn * (-.25f * x + 1000) / 1000;
           if (x < 64) y *= x / 256;
           if (x < 72) y *= x / 128;
@@ -474,7 +509,7 @@ public class Audio : MonoBehaviour {
   #endregion
 }
 
-public enum Waveform { Triangular=0, Saw=1, Square=2, Sin=3, Bass1=4, Bass2=5, Noise=6, PinkNoise=7, BrownNoise=8, BlackNoise=9, SoftNoise=10, Drums=11, SuperSaw=12 };
+public enum Waveform { Triangular=0, Saw=1, Square=2, Sin=3, Bass1=4, Bass2=5, Noise=6, PinkNoise=7, BrownNoise=8, BlackNoise=9, SoftNoise=10, Drums=11, SuperSaw=12, SuperSin=13 };
 
 [System.Serializable]
 public struct Channel {
