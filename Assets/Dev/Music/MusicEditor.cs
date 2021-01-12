@@ -110,8 +110,8 @@ public class MusicEditor : MonoBehaviour {
         if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7) { col++; update = true; autoRepeat = .25f; }
         if (Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
         if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < blines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
-        if (Input.GetKeyDown(KeyCode.PageUp)) ChangeBlockLength(true);
-        if (Input.GetKeyDown(KeyCode.PageDown)) ChangeBlockLength(false);
+        if (Input.GetKeyDown(KeyCode.PageUp)) ;
+        if (Input.GetKeyDown(KeyCode.PageDown)) ;
       }
       else if (status == MusicEditorStatus.Music) {
         if (Input.GetKey(KeyCode.UpArrow) && mlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
@@ -191,8 +191,8 @@ public class MusicEditor : MonoBehaviour {
       mlines[line].Background.color = SelectedColor;
       CurrentBlockID.text = "[]";
       BlockNameInput.SetTextWithoutNotify("???");
-      BlockLengthText.text = "???";
-      BlockBPMText.text = "???";
+      BlockLenInputField.SetTextWithoutNotify("64");
+      BlockBPMInputField.SetTextWithoutNotify("120");
       int id = music.blocks[line];
       foreach (Block b in blocks) {
         if (b.id == id) {
@@ -267,6 +267,10 @@ public class MusicEditor : MonoBehaviour {
   public InputField NumVoicesInputField;
   public InputField MusicBPMInputField;
   public InputField MusicDefLenInputField;
+  public InputField BlockBPMInputField;
+  public InputField BlockLenInputField;
+  public InputField NoteLenInputField;
+  public InputField StepLenInputField;
 
   public Text CurrentBlockID;
   public InputField BlockNameInput;
@@ -353,6 +357,41 @@ public class MusicEditor : MonoBehaviour {
     if (prev != numv && status == MusicEditorStatus.BlockEdit) ShowBlock();
     inputsSelected = !completed;
   }
+
+  public void ChangeMusicBPM(bool up) {
+    if (up && music.bpm < 240) music.bpm++;
+    if (!up && music.bpm > 20) music.bpm--;
+    MusicBPMInputField.SetTextWithoutNotify(music.bpm.ToString());
+    inputsSelected = false;
+  }
+  public void ChangeMusicBPMType(bool completed) {
+    int.TryParse(MusicBPMInputField.text, out int bpm);
+    if (bpm < 20 || bpm > 240) {
+      MusicBPMInputField.SetTextWithoutNotify(music.bpm.ToString());
+      return;
+    }
+    music.bpm = bpm;
+    inputsSelected = !completed;
+  }
+
+  public void ChangeMusicLen(bool up) {
+    if (up && music.defLen < 128) music.defLen++;
+    if (!up && music.defLen > 1) music.defLen--;
+    MusicDefLenInputField.SetTextWithoutNotify(music.defLen.ToString());
+    inputsSelected = false;
+  }
+  public void ChangeMusicLenType(bool completed) {
+    int.TryParse(MusicDefLenInputField.text, out int len);
+    if (len < 1 || len > 128) {
+      MusicDefLenInputField.SetTextWithoutNotify(music.defLen.ToString());
+      return;
+    }
+    music.defLen = len;
+    inputsSelected = !completed;
+  }
+
+
+
 
   public void AddNewBlockInMusic() {
     // Each block should have the ID (hex number), and a name. Remove, MoveUp, Down, Edit
@@ -517,14 +556,29 @@ public class MusicEditor : MonoBehaviour {
     SelectRow(bllines.Count - 1);
   }
 
-  public Text BlockLengthText;
-  public void ChangeBlockLength(bool up) {
+
+  public void ChangeBlockLen(bool up) {
     if (currentBlock == null) return;
     Block b = currentBlock;
     int len = b.chs[0].Count;
     if (up && len < 128) len++;
     if (!up && len > 1) len--;
-
+    BlockLenInputField.SetTextWithoutNotify(len.ToString());
+    inputsSelected = false;
+    UpdateBLockLen(b, len);
+  }
+  public void ChangeBlockLenType(bool completed) {
+    if (currentBlock == null) return;
+    Block b = currentBlock;
+    int.TryParse(BlockLenInputField.text, out int len);
+    if (len < 1 || len > 128) {
+      BlockLenInputField.SetTextWithoutNotify(b.chs[0].Count.ToString());
+      return;
+    }
+    inputsSelected = !completed;
+    UpdateBLockLen(b, len);
+  }
+  void UpdateBLockLen(Block b, int len) {
     if (b.chs[0].Count < len) {
       for (int i = b.chs[0].Count; i <= len; i++) {
         for (int j = 0; j < 8; j++) {
@@ -557,7 +611,6 @@ public class MusicEditor : MonoBehaviour {
         }
       }
     }
-    BlockLengthText.text = " Block Len: " + len;
 
     if (status == MusicEditorStatus.BlockList) {
       foreach(BlockListLine bll in bllines) {
@@ -575,14 +628,28 @@ public class MusicEditor : MonoBehaviour {
     }
   }
 
-  public Text BlockBPMText;
+
   public void ChangeBlockBPM(bool up) {
     if (currentBlock == null) return;
     Block b = currentBlock;
-    if (up && b.bpm < 280) b.bpm++;
-    if (!up && b.bpm > 32) b.bpm--;
-    BlockBPMText.text = " Block BPM: " + b.bpm;
+    if (up && b.bpm < 240) b.bpm++;
+    if (!up && b.bpm > 20) b.bpm--;
+    BlockBPMInputField.SetTextWithoutNotify(b.bpm.ToString());
+    inputsSelected = false;
   }
+  public void ChangeBlockBPMType(bool completed) {
+    if (currentBlock == null) return;
+    Block b = currentBlock;
+    int.TryParse(BlockBPMInputField.text, out int bpm);
+    if (bpm < 20 || bpm > 240) {
+      BlockBPMInputField.SetTextWithoutNotify(b.bpm.ToString());
+      return;
+    }
+    b.bpm = bpm;
+    inputsSelected = !completed;
+  }
+
+
 
   int noteLen = 1;
   public Text NoteLengthText;
@@ -632,8 +699,8 @@ public class MusicEditor : MonoBehaviour {
     if (currentBlock == null) return;
     BlockNameInput.SetTextWithoutNotify(currentBlock.name);
     CurrentBlockID.text = "[" + currentBlock.id + "]";
-    BlockLengthText.text = " Block Len: " + currentBlock.chs[0].Count;
-    BlockBPMText.text = " Block BPM: " + currentBlock.bpm;
+    BlockLenInputField.SetTextWithoutNotify(currentBlock.chs[0].Count.ToString());
+    BlockBPMInputField.SetTextWithoutNotify(currentBlock.bpm.ToString());
   }
 
   public void UpdateBlockName(bool completed) {
@@ -1053,6 +1120,7 @@ public class Wave {
 public class Music {
   public string name;
   public int bpm;
+  public int defLen;
   public byte[] voices;
   public List<int> blocks;
 
