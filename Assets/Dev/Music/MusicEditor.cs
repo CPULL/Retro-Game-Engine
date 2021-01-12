@@ -777,9 +777,14 @@ public class MusicEditor : MonoBehaviour {
 
 
   #region Play
+  public void Record() {
+    // FIXME
+  }
+
   public void Rewind() {
     SelectRow(0);
   }
+
   public void FastForward() {
     SelectRow(10000);
   }
@@ -789,8 +794,13 @@ public class MusicEditor : MonoBehaviour {
     playing = true;
   }
 
+  public void Pause() {
+    playing = false;
+  }
+
   public void Stop() {
     playing = false;
+    SelectRow(0);
   }
 
 
