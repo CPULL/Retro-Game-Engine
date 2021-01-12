@@ -46,6 +46,8 @@ public class MusicEditor : MonoBehaviour {
     bool update = false;
     autoRepeat -= Time.deltaTime;
 
+    if (playing) return;
+
     if (status == MusicEditorStatus.BlockEdit) {
       if (Input.GetKeyDown(KeyCode.LeftArrow) && col > 0) { col--; update = true; autoRepeat = .25f; }
       if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7) { col++; update = true; autoRepeat = .25f; }
@@ -53,7 +55,6 @@ public class MusicEditor : MonoBehaviour {
       if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < blines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
       if (Input.GetKeyDown(KeyCode.PageUp)) ChangeBlockLength(true);
       if (Input.GetKeyDown(KeyCode.PageDown)) ChangeBlockLength(false);
-
     }
     else if (status == MusicEditorStatus.Music) {
       if (Input.GetKey(KeyCode.UpArrow) && mlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
@@ -95,7 +96,7 @@ public class MusicEditor : MonoBehaviour {
           // Move to the next row
           if (row + noteLen < currentBlock.chs[0].Count) { row += noteLen; update = true; }
           // Play the actual sound (find the wave that should be used, if none is defined use a basic triangle wave)
-          sounds.Play(0, freqs[i + 24], .25f);
+          sounds.Play(col, freqs[i + 24], .25f);
         }
       }
     }
@@ -111,10 +112,6 @@ public class MusicEditor : MonoBehaviour {
     }
 
 
-    // top 2 rows -> set note
-    // pgup/dwn -> change instrument/volume/freq/note
-    // what to increse/decrease length?
-
     if (update) {
       // Scroll if needed
       if (row < 13) scroll.value = 1;
@@ -129,6 +126,7 @@ public class MusicEditor : MonoBehaviour {
 
 
   void SelectRow(int line) {
+    if (playing) return;
     if (status == MusicEditorStatus.Music) {
       if (mlines.Count == 0) return;
       for (int i = 0; i < mlines.Count; i++)
@@ -158,6 +156,23 @@ public class MusicEditor : MonoBehaviour {
       for (int i = 0; i < blines.Count; i++)
         blines[i].Background.color = Transparent;
       blines[line].Background.color = SelectedColor;
+
+      List<BlockNote> notes = currentBlock.chs[col];
+      for (int i = row; i >= 0; i--) {
+        if (notes[i].type == NoteType.Wave) {
+          Wave w = null;
+          for (int widx = 0; widx < waves.Count; widx++) {
+            if (waves[widx].id== notes[i].val) {
+              w = waves[widx];
+            }
+          }
+          if (w != null) {
+            sounds.Wave(col, w.wave, w.phase);
+            sounds.ADSR(col, w.a, w.d, w.s, w.r);
+            if (w.rawPCM != null) sounds.Wave(col, w.rawPCM);
+          }
+        }
+      }
     }
     else if (status == MusicEditorStatus.BlockList) {
       if (bllines.Count == 0) return;
@@ -372,7 +387,7 @@ public class MusicEditor : MonoBehaviour {
 
   #region Block
   public Transform BlockPickContainer;
-  public GameObject SelctBlockButton;
+  public GameObject SelectBlockButton;
 
   public void PickBlock() {
     bool active = !BlockPickContainer.parent.gameObject.activeSelf;
@@ -390,7 +405,7 @@ public class MusicEditor : MonoBehaviour {
       Destroy(t.gameObject);
 
     foreach(Block b in blocks) {
-      GameObject sbb = Instantiate(SelctBlockButton, BlockPickContainer);
+      GameObject sbb = Instantiate(SelectBlockButton, BlockPickContainer);
       sbb.SetActive(true);
       sbb.transform.GetChild(0).GetComponent<Text>().text = "[" + b.id + "] " + b.name;
       sbb.GetComponent<Button>().onClick.AddListener(() => { DoPickBlock(b); });
@@ -490,10 +505,6 @@ public class MusicEditor : MonoBehaviour {
         }
       }
     }
-  }
-
-  public void CLickClick() {
-    Debug.Log("click");
   }
 
   public Text BlockBPMText;
@@ -626,6 +637,9 @@ public class MusicEditor : MonoBehaviour {
   #endregion
 
   #region Waves
+  public Transform WavePickContainer;
+  public GameObject SelectWaveButton;
+
   public void Waves() { // Show a list of waves
     status = MusicEditorStatus.Waveforms;
     foreach (Transform t in Contents)
@@ -706,7 +720,79 @@ public class MusicEditor : MonoBehaviour {
     if (currentWave == null) return;
     currentWave.name = WaveNameInput.text;
     inputsSelected = !completed;
+
+    if (status != MusicEditorStatus.Waveforms || wlines == null || wlines.Count == 0) return;
+    foreach(WaveLine wl in wlines) {
+      if (wl.WaveID.text == currentWave.id.ToString()) {
+        wl.WaveName.text = currentWave.name;
+        wl.WaveType.text = currentWave.wave.ToString();
+        wl.WaveTypeImg.sprite = editor.WaveSprites[(int)currentWave.wave];
+        return;
+      }
+    }
   }
+
+  public void SetWave() {
+    bool active = !WavePickContainer.parent.gameObject.activeSelf;
+    WavePickContainer.parent.gameObject.SetActive(active);
+    if (active) PickWaveSetup();
+  }
+
+
+  void PickWaveSetup() {
+    if (waves.Count == 0) {
+      WavePickContainer.parent.gameObject.SetActive(false);
+      return;
+    }
+
+    foreach (Transform t in WavePickContainer)
+      Destroy(t.gameObject);
+
+    foreach (Wave w in waves) {
+      GameObject sbb = Instantiate(SelectWaveButton, WavePickContainer);
+      sbb.SetActive(true);
+      sbb.transform.GetChild(0).GetComponent<Image>().sprite = editor.WaveSprites[(int)w.wave];
+      sbb.transform.GetChild(1).GetComponent<Text>().text = "[" + w.id + "] " + w.name;
+      sbb.GetComponent<Button>().onClick.AddListener(() => { DoPickWave(w); });
+    }
+  }
+
+  private void DoPickWave(Wave w) {
+    WavePickContainer.parent.gameObject.SetActive(false);
+    currentWave = w;
+    ShowWave();
+    if (status != MusicEditorStatus.BlockEdit) return;
+
+    if (col < 0 || col >= music.numVoices) return;
+    if (row < 0 || row >= currentBlock.chs[col].Count) return;
+
+    currentBlock.chs[col][row].type = NoteType.Wave;
+    currentBlock.chs[col][row].val = w.id;
+
+    blines[row].note[col].SetWave(w.id, w.name, NoteTypeSprites[(int)NoteType.Wave]);
+  }
+
+
+  #endregion
+
+
+  #region Play
+  public void Rewind() {
+    SelectRow(0);
+  }
+  public void FastForward() {
+    SelectRow(10000);
+  }
+
+  bool playing = false;
+  public void Play() {
+    playing = true;
+  }
+
+  public void Stop() {
+    playing = false;
+  }
+
 
   #endregion
 
@@ -834,6 +920,7 @@ public class Wave {
   public byte d;
   public byte s;
   public byte r;
+  public byte[] rawPCM;
 
   internal void CopyForm(Wave w) {
     wave = w.wave;
@@ -842,6 +929,7 @@ public class Wave {
     d = w.d;
     s = w.s;
     r = w.r;
+    rawPCM = w.rawPCM;
   }
 }
 
@@ -883,6 +971,7 @@ public class BlockNote {
 
 /*
 
+If enter is pressed select block (music editor) or wave (block editor)
 
 add play/pause/rev/ff
 add multiple selection of rows to enalbe cleanup and copy/paste

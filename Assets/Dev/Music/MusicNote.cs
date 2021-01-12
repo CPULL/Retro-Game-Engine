@@ -17,6 +17,7 @@ public class MusicNote : MonoBehaviour {
     len = blockNote.len;
     back.sizeDelta = new Vector2(38, len * 32);
     gameObject.SetActive(true);
+    ValTxt.fontSize = 28;
 
     switch (type) {
       case NoteType.Empty: // Nothing required
@@ -56,7 +57,19 @@ public class MusicNote : MonoBehaviour {
     }
   }
 
-  internal void SetZeroValues(Sprite[] sprites) {
+  internal void SetWave(int id, string name, Sprite spr) {
+    type = NoteType.Wave;
+    TypeImg.sprite = spr;
+    val = id;
+    len = 0;
+    back.sizeDelta = new Vector2(38, 0);
+    gameObject.SetActive(true);
+    ValTxt.fontSize = 14;
+    ValTxt.text = id + "\n" + name;
+    LenTxt.text = "";
+  }
+
+    internal void SetZeroValues(Sprite[] sprites) {
     gameObject.SetActive(true);
     type = NoteType.Empty;
     TypeImg.sprite = sprites[0];
@@ -73,4 +86,4 @@ public class MusicNote : MonoBehaviour {
 }
 
 
-public enum NoteType { Empty=0, Note=1, Volume=2, Wave=3, Freq=4 };
+public enum NoteType { Empty=0, Volume=1, Note=2, Wave = 3, Freq=4 };

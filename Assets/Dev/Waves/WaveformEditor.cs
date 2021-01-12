@@ -267,6 +267,7 @@ public class WaveformEditor : MonoBehaviour {
     WaveName.text = WaveNames[w];
     PhaseChange();
     LoadPCMButton.SetActive(w == 14); // PCM
+    Phase.gameObject.SetActive(w != 14);
   }
 
   public void PhaseChange() {
@@ -465,15 +466,17 @@ public class WaveformEditor : MonoBehaviour {
   }
 
   public Wave Export() {
-    Wave w = new Wave();
-    w.id = 0;
-    w.name = "Wave from editor";
-    w.wave = wave;
-    w.phase = phase;
-    w.a = (byte)attack;
-    w.d = (byte)decay;
-    w.s = (byte)sustain;
-    w.r = (byte)release;
+    Wave w = new Wave {
+      id = 0,
+      name = "Wave from editor",
+      wave = wave,
+      phase = phase,
+      a = (byte)attack,
+      d = (byte)decay,
+      s = (byte)sustain,
+      r = (byte)release,
+      rawPCM = rawPCM
+    };
     return w;
   }
 
@@ -484,6 +487,7 @@ public class WaveformEditor : MonoBehaviour {
     decay = w.d;
     sustain = w.s;
     release = w.r;
+    rawPCM = w.rawPCM;
 
     // Update the interface
     Attack.SetValueWithoutNotify(attack);
@@ -492,7 +496,10 @@ public class WaveformEditor : MonoBehaviour {
     Release.SetValueWithoutNotify(release);
 
     float val;
-    if (wave == Waveform.Square) {
+    if (wave == Waveform.PCM) {
+      val = 0;
+    }
+    else if (wave == Waveform.Square) {
       if (phase < 0.01f) phase = .01f;
       if (phase > 0.99f) phase = .99f;
       val = 20f * phase - 10;
