@@ -189,8 +189,8 @@ public class MusicEditor : MonoBehaviour {
       if (row < 0) row = 0;
       if (row >= mlines.Count) row = mlines.Count - 1;
       mlines[line].Background.color = SelectedColor;
+      CurrentBlockID.text = "[]";
       BlockNameInput.SetTextWithoutNotify("???");
-      CurrentBlock.text = "???";
       BlockLengthText.text = "???";
       BlockBPMText.text = "???";
       int id = music.blocks[line];
@@ -264,12 +264,11 @@ public class MusicEditor : MonoBehaviour {
   public GameObject TitleWaves;
 
   public InputField NameInput;
-  public Text NumVoicesTxt;
+  public InputField NumVoicesInputField;
+  public InputField MusicBPMInputField;
+  public InputField MusicDefLenInputField;
 
-  public Text TotalNumBlocks;
-  public Text NumWaves;
-  public Text NumBlocks;
-  public Text CurrentBlock;
+  public Text CurrentBlockID;
   public InputField BlockNameInput;
   public InputField WaveNameInput;
   public Text WaveTypeName;
@@ -282,6 +281,7 @@ public class MusicEditor : MonoBehaviour {
   public GameObject CreateNewBlockInMusic;
   public GameObject CreateNewBlockInList;
   public GameObject CreateNewWaveInList;
+
 
   bool inputsSelected = false;
 
@@ -299,10 +299,6 @@ public class MusicEditor : MonoBehaviour {
     SelectedCol.gameObject.SetActive(false);
 
     NameInput.text = music.name;
-    NumVoicesTxt.text = " # Voices: " + music.numVoices;
-    TotalNumBlocks.text = music.blocks.Count + " Lenght";
-    NumWaves.text = waves.Count + " Waveforms";
-    NumBlocks.text = blocks.Count + " Blocks";
 
     int pos = 1;
     mlines.Clear();
@@ -342,7 +338,20 @@ public class MusicEditor : MonoBehaviour {
     if (!up && numv > 1) numv--;
     for (int i = 0; i < 8; i++)
       music.voices[i] = (byte)((i < numv) ? i : 255);
-    NumVoicesTxt.text = " # Voices: " + numv;
+    NumVoicesInputField.SetTextWithoutNotify(numv.ToString());
+    inputsSelected = false;
+  }
+  public void ChangeMusicVoicesType(bool completed) {
+    int.TryParse(NumVoicesInputField.text, out int numv);
+    if (numv < 1 || numv > 8) {
+      NumVoicesInputField.SetTextWithoutNotify(music.numVoices.ToString());
+      return;
+    }
+    int prev = music.numVoices;
+    for (int i = 0; i < 8; i++)
+      music.voices[i] = (byte)((i < numv) ? i : 255);
+    if (prev != numv && status == MusicEditorStatus.BlockEdit) ShowBlock();
+    inputsSelected = !completed;
   }
 
   public void AddNewBlockInMusic() {
@@ -506,12 +515,11 @@ public class MusicEditor : MonoBehaviour {
     ShowBlockInfo();
     Blocks();
     SelectRow(bllines.Count - 1);
-    NumBlocks.text = blocks.Count + " Blocks";
   }
 
   public Text BlockLengthText;
   public void ChangeBlockLength(bool up) {
-    if (CurrentBlock == null) return;
+    if (currentBlock == null) return;
     Block b = currentBlock;
     int len = b.chs[0].Count;
     if (up && len < 128) len++;
@@ -569,7 +577,7 @@ public class MusicEditor : MonoBehaviour {
 
   public Text BlockBPMText;
   public void ChangeBlockBPM(bool up) {
-    if (CurrentBlock == null) return;
+    if (currentBlock == null) return;
     Block b = currentBlock;
     if (up && b.bpm < 280) b.bpm++;
     if (!up && b.bpm > 32) b.bpm--;
@@ -579,7 +587,7 @@ public class MusicEditor : MonoBehaviour {
   int noteLen = 1;
   public Text NoteLengthText;
   public void ChangeNoteLength(bool up) {
-    if (CurrentBlock == null) return;
+    if (currentBlock == null) return;
     if (up && noteLen < 16) noteLen++;
     if (!up && noteLen > 1) noteLen--;
     NoteLengthText.text = " Note Len: " + noteLen;
@@ -623,7 +631,7 @@ public class MusicEditor : MonoBehaviour {
   void ShowBlockInfo() {
     if (currentBlock == null) return;
     BlockNameInput.SetTextWithoutNotify(currentBlock.name);
-    CurrentBlock.text = "[" + currentBlock.id + "] " + currentBlock.name;
+    CurrentBlockID.text = "[" + currentBlock.id + "]";
     BlockLengthText.text = " Block Len: " + currentBlock.chs[0].Count;
     BlockBPMText.text = " Block BPM: " + currentBlock.bpm;
   }
@@ -751,7 +759,6 @@ public class MusicEditor : MonoBehaviour {
     Waves();
     ShowWave();
     SelectRow(waves.Count - 1);
-    NumWaves.text = waves.Count + " Waveforms";
   }
 
 
@@ -1079,6 +1086,14 @@ public class BlockNote {
 
 
 /*
+
+what should be the len of the note and the step to jump to?
+how to change len of note with just keyboard?
+how to change music bpm?
+Add typable numebrs for len/bpm
+
+remove text for id+name, and just put id before the name field
+
 
 If enter is pressed select block (music editor) or wave (block editor)
 
