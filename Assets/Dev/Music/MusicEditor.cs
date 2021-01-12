@@ -174,9 +174,7 @@ public class MusicEditor : MonoBehaviour {
       if (row < 13) scroll.value = 1;
       else if (row > 48) scroll.value = 0;
       else scroll.value = -0.0276f * row + 1.333333333333333f;
-
       SelectedCol.anchoredPosition = new Vector3(48 + col * 142, 30, 0);
-
       SelectRow(row);
     }
   }
@@ -252,6 +250,12 @@ public class MusicEditor : MonoBehaviour {
       currentWave = waves[line];
       ShowWave();
     }
+  }
+
+  void SelectRowColumn(int line, int column) {
+    col = column;
+    SelectedCol.anchoredPosition = new Vector3(48 + col * 142, 30, 0);
+    SelectRow(line);
   }
 
   public GameObject TitleMusic;
@@ -603,10 +607,14 @@ public class MusicEditor : MonoBehaviour {
       int linenum = i;
       bl.LineButton.onClick.AddListener(() => SelectRow(linenum));
       for (int j = 0; j < music.numVoices; j++) {
+        int colnum = j;
         bl.note[j].SetValues(currentBlock.chs[j][i], NoteTypeSprites, freqs, noteNames);
+        bl.note[j].ColButton.onClick.AddListener(() => SelectRowColumn(linenum, colnum));
       }
       for (int j = music.numVoices; j < 8; j++) {
+        int colnum = j;
         bl.note[j].Hide();
+        bl.note[j].ColButton.onClick.AddListener(() => SelectRowColumn(linenum, colnum));
       }
       blines.Add(bl);
     }
@@ -1073,7 +1081,6 @@ public class BlockNote {
 /*
 
 If enter is pressed select block (music editor) or wave (block editor)
-Add col selection with click
 
 add play/pause/rev/ff
 add multiple selection of rows to enalbe cleanup and copy/paste

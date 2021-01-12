@@ -9,6 +9,7 @@ public class MusicNote : MonoBehaviour {
   public int len;
   public Text LenTxt;
   public RectTransform back;
+  public Button ColButton;
 
   internal void SetValues(BlockNote blockNote, Sprite[] sprites,  int[] freqs, string[] notenames) {
     type = blockNote.type;
