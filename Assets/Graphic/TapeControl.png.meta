@@ -38,6 +38,9 @@ TextureImporter:
   - first:
       213: -6246811774654497395
     second: TapeControl_11
+  - first:
+      213: 4073120164959007406
+    second: TapeControl_12
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -141,7 +144,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 64
+        y: 128
         width: 64
         height: 64
       alignment: 0
@@ -162,7 +165,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 64
-        y: 64
+        y: 128
         width: 64
         height: 64
       alignment: 0
@@ -183,7 +186,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 128
-        y: 64
+        y: 128
         width: 64
         height: 64
       alignment: 0
@@ -204,7 +207,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 192
-        y: 64
+        y: 128
         width: 64
         height: 64
       alignment: 0
@@ -225,7 +228,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 256
-        y: 64
+        y: 128
         width: 64
         height: 64
       alignment: 0
@@ -246,7 +249,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 320
-        y: 64
+        y: 128
         width: 64
         height: 64
       alignment: 0
@@ -267,7 +270,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 0
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -288,7 +291,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 64
-        y: 0
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -309,7 +312,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 128
-        y: 0
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -330,7 +333,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 192
-        y: 0
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -351,7 +354,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 256
-        y: 0
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -372,7 +375,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 320
-        y: 0
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -384,6 +387,27 @@ TextureImporter:
       bones: []
       spriteID: d8dbdf8b9cdde49a0800000000000000
       internalID: -6246811774654497395
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TapeControl_12
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ea2bcdfa531a68830800000000000000
+      internalID: 4073120164959007406
       vertices: []
       indices: 
       edges: []

@@ -20,8 +20,11 @@ public class MusicEditor : MonoBehaviour {
 
   private Color32 SelectedColor = new Color32(36, 52, 36, 255);
   private Color32 Transparent = new Color32(0, 0, 0, 0);
+  private Color32 TapeButtonColor = new Color32(191, 202, 219, 255);
+  private Color32 TapeButtonBlue = new Color32(47, 112, 212, 255);
   public Sprite[] NoteTypeSprites;
   public Sprite[] WaveSprites;
+  public Button[] TapeButtons;
   Music music;
 
   MusicEditorStatus status = MusicEditorStatus.Idle;
@@ -61,7 +64,12 @@ public class MusicEditor : MonoBehaviour {
           row++;
           update = true;
           if (row >= currentBlock.chs[0].Count) {
-            row = -1;
+            if (repeat)
+              row = -1;
+            else {
+              playing = false;
+              SetTapeButtonColor(-1);
+            }
             return;
           }
           // Beat completed, check if we need to play a note, stop it or anything else
@@ -831,23 +839,46 @@ public class MusicEditor : MonoBehaviour {
 
 
   #region Play
+
+  void SetTapeButtonColor(int num) {
+    ColorBlock cols;
+    for (int i = 0; i < TapeButtons.Length; i++) {
+      cols = TapeButtons[i].colors;
+      cols.normalColor = TapeButtonColor;
+      TapeButtons[i].colors = cols;
+    }
+    if (num != -1) {
+      cols = TapeButtons[num].colors;
+      cols.normalColor = TapeButtonBlue;
+      TapeButtons[num].colors = cols;
+    }
+  }
+
   public void Record() {
     // FIXME
+    SetTapeButtonColor(0);
   }
 
   public void Rewind() {
-    SelectRow(0);
-  }
-
-  public void FastForward() {
-    SelectRow(10000);
+    SetTapeButtonColor(1);
   }
 
   bool playing = false;
+  bool repeat = false;
   public void Play() {
     row--;
     timeForNextBeat = 0;
     playing = true;
+    repeat = false;
+    SetTapeButtonColor(2);
+  }
+
+  public void Repeat() {
+    row--;
+    timeForNextBeat = 0;
+    playing = true;
+    repeat = true;
+    SetTapeButtonColor(3);
   }
 
   public void Pause() {
@@ -857,6 +888,10 @@ public class MusicEditor : MonoBehaviour {
   public void Stop() {
     playing = false;
     SelectRow(0);
+  }
+
+  public void FastForward() {
+    SelectRow(10000);
   }
 
 
