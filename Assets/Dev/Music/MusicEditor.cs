@@ -41,72 +41,121 @@ public class MusicEditor : MonoBehaviour {
       Destroy(t.gameObject);
   }
 
+  float timeForNextBeat = 0;
   float autoRepeat = 0;
   private void Update() {
     bool update = false;
     autoRepeat -= Time.deltaTime;
 
-    if (playing) return;
-
-    if (status == MusicEditorStatus.BlockEdit) {
-      if (Input.GetKeyDown(KeyCode.LeftArrow) && col > 0) { col--; update = true; autoRepeat = .25f; }
-      if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7) { col++; update = true; autoRepeat = .25f; }
-      if (Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
-      if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < blines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
-      if (Input.GetKeyDown(KeyCode.PageUp)) ChangeBlockLength(true);
-      if (Input.GetKeyDown(KeyCode.PageDown)) ChangeBlockLength(false);
-    }
-    else if (status == MusicEditorStatus.Music) {
-      if (Input.GetKey(KeyCode.UpArrow) && mlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
-      if (Input.GetKey(KeyCode.DownArrow) && mlines != null && row < mlines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
-    }
-    else if (status == MusicEditorStatus.Waveforms) {
-      if (Input.GetKey(KeyCode.UpArrow) && wlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
-      if (Input.GetKey(KeyCode.DownArrow) && wlines != null && row < wlines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
-    }
-    else if (status == MusicEditorStatus.BlockList) {
-      if (Input.GetKey(KeyCode.UpArrow) && bllines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
-      if (Input.GetKey(KeyCode.DownArrow) && bllines != null && row < bllines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
-    }
+    if (playing) {
+      float timeForBeat = 15f / currentBlock.bpm;
 
 
-    if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count && !inputsSelected) {
-      BlockLine l = blines[row];
-      // Space change type
-      if (Input.GetKeyDown(KeyCode.Space)) {
-        int t = (int)l.note[col].type;
-        t++;
-        if (t == 5) t = 0;
-        l.note[col].type = (NoteType)t;
-        l.note[col].TypeImg.sprite = NoteTypeSprites[t];
-        currentBlock.chs[col][row].Set(l.note[col]);
+      if (status == MusicEditorStatus.Music) {
+        if (timeForNextBeat == 0) {
+
+        }
       }
-      // Piano keys
-      for (int i = 0; i < keyNotes.Length; i++) {
-        if (Input.GetKeyDown(keyNotes[i])) {
-          // Set the current cell as note with the given note/frequency, update the text to be the note notation
-          l.note[col].type = NoteType.Note;
-          l.note[col].TypeImg.sprite = NoteTypeSprites[1];
-          l.note[col].ValTxt.text = noteNames[i + 24];
-          l.note[col].val = freqs[i + 24];
-          l.note[col].len = noteLen;
-          l.note[col].LenTxt.text = noteLen.ToString();
-          l.note[col].back.sizeDelta = new Vector2(38, noteLen * 32);
-          currentBlock.chs[col][row].Set(l.note[col]);
-          // Move to the next row
-          if (row + noteLen < currentBlock.chs[0].Count) { row += noteLen; update = true; }
-          // Play the actual sound (find the wave that should be used, if none is defined use a basic triangle wave)
-          sounds.Play(col, freqs[i + 24], .25f);
+      else if (status == MusicEditorStatus.BlockEdit) {
+        if (timeForNextBeat == 0) {
+          row++;
+          update = true;
+          if (row >= currentBlock.chs[0].Count) {
+            row = -1;
+            return;
+          }
+          // Beat completed, check if we need to play a note, stop it or anything else
+          timeForNextBeat = timeForBeat;
+
+          for (int c = 0; c < music.numVoices; c++) {
+            BlockNote n = currentBlock.chs[c][row];
+            switch (n.type) {
+              case NoteType.Empty: break;
+              case NoteType.Volume: break; // FIXME
+              case NoteType.Freq: break; // FIXME
+
+              case NoteType.Note:
+                sounds.Play(c, n.val, n.len * timeForBeat);
+                break;
+
+              case NoteType.Wave:
+                Wave w = GetWave(n.val);
+                if (w != null) {
+                  sounds.Wave(c, w.wave, w.phase);
+                  sounds.ADSR(c, w.a, w.d, w.s, w.r);
+                  if (w.rawPCM != null) sounds.Wave(c, w.rawPCM);
+                }
+                break;
+            }
+          }
+        }
+        else {
+          timeForNextBeat -= Time.deltaTime;
+          if (timeForNextBeat < 0) timeForNextBeat = 0;
         }
       }
     }
+    else {
 
-    if (status == MusicEditorStatus.Waveforms && row > -1 && row < wlines.Count && !inputsSelected) {
-      // Piano keys
-      for (int i = 0; i < keyNotes.Length; i++) {
-        if (Input.GetKeyDown(keyNotes[i])) {
-          // Set the current cell as note with the given note/frequency, update the text to be the note notation
-          sounds.Play(0, freqs[i + 24], .25f);
+      if (status == MusicEditorStatus.BlockEdit) {
+        if (Input.GetKeyDown(KeyCode.LeftArrow) && col > 0) { col--; update = true; autoRepeat = .25f; }
+        if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7) { col++; update = true; autoRepeat = .25f; }
+        if (Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+        if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < blines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+        if (Input.GetKeyDown(KeyCode.PageUp)) ChangeBlockLength(true);
+        if (Input.GetKeyDown(KeyCode.PageDown)) ChangeBlockLength(false);
+      }
+      else if (status == MusicEditorStatus.Music) {
+        if (Input.GetKey(KeyCode.UpArrow) && mlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+        if (Input.GetKey(KeyCode.DownArrow) && mlines != null && row < mlines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+      }
+      else if (status == MusicEditorStatus.Waveforms) {
+        if (Input.GetKey(KeyCode.UpArrow) && wlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+        if (Input.GetKey(KeyCode.DownArrow) && wlines != null && row < wlines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+      }
+      else if (status == MusicEditorStatus.BlockList) {
+        if (Input.GetKey(KeyCode.UpArrow) && bllines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+        if (Input.GetKey(KeyCode.DownArrow) && bllines != null && row < bllines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+      }
+
+      if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count && !inputsSelected) {
+        BlockLine l = blines[row];
+        // Space change type
+        if (Input.GetKeyDown(KeyCode.Space)) {
+          int t = (int)l.note[col].type;
+          t++;
+          if (t == 5) t = 0;
+          l.note[col].type = (NoteType)t;
+          l.note[col].TypeImg.sprite = NoteTypeSprites[t];
+          currentBlock.chs[col][row].Set(l.note[col]);
+        }
+        // Piano keys
+        for (int i = 0; i < keyNotes.Length; i++) {
+          if (Input.GetKeyDown(keyNotes[i])) {
+            // Set the current cell as note with the given note/frequency, update the text to be the note notation
+            l.note[col].type = NoteType.Note;
+            l.note[col].TypeImg.sprite = NoteTypeSprites[1];
+            l.note[col].ValTxt.text = noteNames[i + 24];
+            l.note[col].val = freqs[i + 24];
+            l.note[col].len = noteLen;
+            l.note[col].LenTxt.text = noteLen.ToString();
+            l.note[col].back.sizeDelta = new Vector2(38, noteLen * 32);
+            currentBlock.chs[col][row].Set(l.note[col]);
+            // Move to the next row
+            if (row + noteLen < currentBlock.chs[0].Count) { row += noteLen; update = true; }
+            // Play the actual sound (find the wave that should be used, if none is defined use a basic triangle wave)
+            sounds.Play(col, freqs[i + 24], .25f);
+          }
+        }
+      }
+
+      if (status == MusicEditorStatus.Waveforms && row > -1 && row < wlines.Count && !inputsSelected) {
+        // Piano keys
+        for (int i = 0; i < keyNotes.Length; i++) {
+          if (Input.GetKeyDown(keyNotes[i])) {
+            // Set the current cell as note with the given note/frequency, update the text to be the note notation
+            sounds.Play(0, freqs[i + 24], .25f);
+          }
         }
       }
     }
@@ -126,7 +175,6 @@ public class MusicEditor : MonoBehaviour {
 
 
   void SelectRow(int line) {
-    if (playing) return;
     if (status == MusicEditorStatus.Music) {
       if (mlines.Count == 0) return;
       for (int i = 0; i < mlines.Count; i++)
@@ -772,6 +820,12 @@ public class MusicEditor : MonoBehaviour {
     blines[row].note[col].SetWave(w.id, w.name, NoteTypeSprites[(int)NoteType.Wave]);
   }
 
+  private Wave GetWave(int val) {
+    foreach (Wave w in waves)
+      if (w.id == val) return w;
+    return null;
+  }
+
 
   #endregion
 
@@ -791,6 +845,8 @@ public class MusicEditor : MonoBehaviour {
 
   bool playing = false;
   public void Play() {
+    row--;
+    timeForNextBeat = 0;
     playing = true;
   }
 
@@ -982,6 +1038,7 @@ public class BlockNote {
 /*
 
 If enter is pressed select block (music editor) or wave (block editor)
+Add col selection with click
 
 add play/pause/rev/ff
 add multiple selection of rows to enalbe cleanup and copy/paste
