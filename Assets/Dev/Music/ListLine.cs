@@ -5,4 +5,5 @@ public class ListLine : MonoBehaviour {
   public int index;
   public Text IndexTxt;
   public Image Background;
+  public Button LineButton;
 }

@@ -133,7 +133,7 @@ public class WaveformEditor : MonoBehaviour {
       yield return www.SendWebRequest();
       AudioClip pcm = DownloadHandlerAudioClip.GetContent(www);
       int freq = pcm.frequency;
-      float diff = freq / 44100f;
+      float diff = freq / 22050f;
       int len = (int)(pcm.samples / diff);
 
       float[] res = new float[pcm.samples * pcm.channels];

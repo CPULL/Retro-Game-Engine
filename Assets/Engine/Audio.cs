@@ -478,7 +478,7 @@ public class Audio : MonoBehaviour {
 
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          int pos = (int)(channels[channel].freq * channels[channel].position / 220);
+          int pos = (int)(channels[channel].freq * channels[channel].position / 440);
           pos %= channels[channel].pcmdata.Length;
 
           data[i] = 2 * channels[channel].pcmdata[pos] * o255th - 1f;

@@ -9,4 +9,8 @@ public class MusicLine : ListLine {
   public Button Down;
   public Button Edit;
   public Button Pick;
+
+  public override string ToString() {
+    return index + ") " + BlockID.text + " " + BlockName.text;
+  }
 }
