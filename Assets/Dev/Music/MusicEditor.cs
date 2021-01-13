@@ -141,13 +141,11 @@ public class MusicEditor : MonoBehaviour {
       }
 
       if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count) {
-      }
-
-      if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count) {
         BlockLine l = blines[row];
         // Enter select wave if there is not a note
         if (Input.GetKeyDown(KeyCode.Return) && (l.note[col].type == NoteType.Empty || l.note[col].type == NoteType.Wave)) {
           SetWave();
+          return;
         }
 
         // Change length
@@ -169,6 +167,9 @@ public class MusicEditor : MonoBehaviour {
           l.note[col].type = (NoteType)t;
           l.note[col].TypeImg.sprite = NoteTypeSprites[t];
           currentBlock.chs[col][row].Set(l.note[col]);
+
+          ShowNote(currentBlock.chs[col][row]);
+
         }
         // Piano keys
         for (int i = 0; i < keyNotes.Length; i++) {
@@ -259,6 +260,8 @@ public class MusicEditor : MonoBehaviour {
           }
         }
       }
+
+      ShowNote(currentBlock.chs[col][row]);
     }
     else if (status == MusicEditorStatus.BlockList) {
       if (bllines.Count == 0) return;
@@ -791,17 +794,140 @@ public class MusicEditor : MonoBehaviour {
 
   private void UpdateNoteLength(int len = -1) {
     MusicNote note = blines[row].note[col];
+    BlockNote bn = currentBlock.chs[col][row];
     if (note.type != NoteType.Note && note.type != NoteType.Freq && note.type != NoteType.Volume) {
       note.len = 0;
       note.LenTxt.text = "";
       note.back.sizeDelta = new Vector2(38, 0 * 32);
+      bn.len = 0;
       return;
     }
 
     int val = (len == -1) ? noteLen : len;
     note.len = val;
+    bn.len = val;
     note.LenTxt.text = val.ToString();
     note.back.sizeDelta = new Vector2(38, val * 32);
+  }
+
+  public Image CellTypeImg;
+  public Text CellTypeTxt;
+  public GameObject CellValContainer;
+  public Text CellValPreText;
+  public InputField CellValInput;
+  public Text CellValPostText;
+  public GameObject CellLenContainer;
+  public Text CellLenPreText;
+  public InputField CellLenInput;
+  public Text CellLenPostText;
+  public Text CellInfoTxt;
+
+  private void ShowNote(BlockNote note) {
+    switch (note.type) {
+      case NoteType.Empty:
+        CellTypeImg.sprite = NoteTypeSprites[0];
+        CellTypeTxt.text = "";
+        CellValContainer.SetActive(false);
+        CellLenContainer.SetActive(false);
+        break;
+
+      case NoteType.Note:
+        CellTypeImg.sprite = NoteTypeSprites[1];
+        CellTypeTxt.text = "Note";
+        CellValContainer.SetActive(true);
+        CellLenContainer.SetActive(true);
+        CellValPreText.gameObject.SetActive(false);
+        CellValPostText.gameObject.SetActive(true);
+        // Find the closest note and the freq
+        {
+          string nv = null;
+          for (int i = 0; i < freqs.Length - 1; i++) {
+            if (note.val == freqs[i]) {
+              nv = noteNames[i] + " - " + note.val;
+              break;
+            }
+            if (note.val > freqs[i] && note.val < freqs[i + 1]) {
+              if (note.val - freqs[i] < freqs[i + 1] - note.val)
+                nv = "~" + noteNames[i] + " - " + note.val;
+              else
+                nv = "~" + noteNames[i + 1] + " - " + note.val;
+              break;
+            }
+          }
+          if (nv == null) nv = note.val.ToString();
+          CellValInput.SetTextWithoutNotify(nv);
+          CellValInput.SetTextWithoutNotify(nv);
+        }
+        CellValPreText.text = "";
+        CellValPostText.text = "Hz";
+        CellLenPreText.gameObject.SetActive(true);
+        CellLenPostText.gameObject.SetActive(true);
+        CellLenPreText.text = "For ";
+        CellLenInput.SetTextWithoutNotify(note.len.ToString());
+        CellLenPostText.text = " beats";
+        break;
+
+      case NoteType.Wave:
+        CellTypeImg.sprite = NoteTypeSprites[2];
+        CellTypeTxt.text = "Wave change";
+        CellValContainer.SetActive(true);
+        CellLenContainer.SetActive(false);
+        // Find the closest note and the freq
+        {
+          CellValInput.SetTextWithoutNotify("");
+          CellValPostText.text = "???";
+          foreach (Wave w in waves) {
+            if (w.id == note.val) {
+              CellValInput.SetTextWithoutNotify(w.id.ToString());
+              CellValPostText.text = w.name;
+              break;
+            }
+          }
+        }
+        CellValPreText.gameObject.SetActive(false);
+        CellValPostText.gameObject.SetActive(true);
+        CellValPreText.text = "";
+        break;
+
+      case NoteType.Volume:
+        CellTypeImg.sprite = NoteTypeSprites[3];
+        CellTypeTxt.text = "Volume";
+        CellValContainer.SetActive(true);
+        CellLenContainer.SetActive(note.len > 1);
+        CellValPreText.gameObject.SetActive(false);
+        CellValPostText.gameObject.SetActive(true);
+        CellValPreText.text = "";
+        CellValPostText.text = "%";
+        CellValInput.SetTextWithoutNotify(((int)((note.val / 255f) * 100)).ToString());
+        CellLenPreText.gameObject.SetActive(false);
+        CellLenPostText.gameObject.SetActive(true);
+        CellLenPreText.text = "In ";
+        CellLenInput.SetTextWithoutNotify(note.len.ToString());
+        CellLenPostText.text = " beats";
+        break;
+
+      case NoteType.Freq:
+        CellTypeImg.sprite = NoteTypeSprites[4];
+        CellTypeTxt.text = "Freq";
+        CellValContainer.SetActive(true);
+        CellLenContainer.SetActive(note.len > 1);
+        CellValPreText.gameObject.SetActive(false);
+        CellValPostText.gameObject.SetActive(true);
+        CellValPreText.text = "";
+        CellValPostText.text = "Hz";
+        CellValInput.SetTextWithoutNotify(note.val.ToString());
+        CellLenPreText.gameObject.SetActive(false);
+        CellLenPostText.gameObject.SetActive(true);
+        CellLenPreText.text = "In ";
+        CellLenInput.SetTextWithoutNotify(note.len.ToString());
+        CellLenPostText.text = " beats";
+        break;
+    }
+    CellInfoTxt.text = "Row: " + row + "\nChannel: " + (col + 1);
+  }
+
+  public void ChangeNoteType() {
+
   }
 
 
