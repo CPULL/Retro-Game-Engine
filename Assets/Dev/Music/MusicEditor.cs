@@ -77,7 +77,7 @@ public class MusicEditor : MonoBehaviour {
           // Beat completed, check if we need to play a note, stop it or anything else
           timeForNextBeat = timeForBeat;
 
-          for (int c = 0; c < music.numVoices; c++) {
+          for (int c = 0; c < music.NumVoices; c++) {
             BlockNote n = currentBlock.chs[c][row];
             switch (n.type) {
               case NoteType.Empty: break;
@@ -119,8 +119,6 @@ public class MusicEditor : MonoBehaviour {
         if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7) { col++; update = true; autoRepeat = .25f; }
         if (Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
         if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < blines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
-        if (Input.GetKeyDown(KeyCode.PageUp)) ;
-        if (Input.GetKeyDown(KeyCode.PageDown)) ;
       }
       else if (status == MusicEditorStatus.Music) {
         if (Input.GetKey(KeyCode.UpArrow) && mlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
@@ -143,7 +141,26 @@ public class MusicEditor : MonoBehaviour {
       }
 
       if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count) {
+      }
+
+      if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count) {
         BlockLine l = blines[row];
+        // Enter select wave if there is not a note
+        if (Input.GetKeyDown(KeyCode.Return) && (l.note[col].type == NoteType.Empty || l.note[col].type == NoteType.Wave)) {
+          SetWave();
+        }
+
+        // Change length
+        if (l.note[col].type == NoteType.Note || l.note[col].type == NoteType.Freq|| l.note[col].type == NoteType.Volume) {
+          if (Input.GetKeyDown(KeyCode.PageUp) && l.note[col].len > 1) {
+            UpdateNoteLength(l.note[col].len - 1);
+          }
+          if (Input.GetKeyDown(KeyCode.PageDown) && l.note[col].len < blines.Count - row) {
+            UpdateNoteLength(l.note[col].len + 1);
+          }
+        }
+
+
         // Space change type
         if (Input.GetKeyDown(KeyCode.Space)) {
           int t = (int)l.note[col].type;
@@ -194,7 +211,6 @@ public class MusicEditor : MonoBehaviour {
       SelectRow(row);
     }
   }
-
 
   void SelectRow(int line) {
     if (status == MusicEditorStatus.Music) {
@@ -306,7 +322,7 @@ public class MusicEditor : MonoBehaviour {
 
   bool inputsSelected = false;
 
-  #region Music
+  #region Music **********************************************************************************************************************************************************
 
   public void Music() { // Show what we have as music
     status = MusicEditorStatus.Music;
@@ -354,7 +370,7 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void ChangeMusicVoices(bool up) {
-    int numv = music.numVoices;
+    int numv = music.NumVoices;
     if (up && numv < 8) numv++;
     if (!up && numv > 1) numv--;
     for (int i = 0; i < 8; i++)
@@ -365,10 +381,10 @@ public class MusicEditor : MonoBehaviour {
   public void ChangeMusicVoicesType(bool completed) {
     int.TryParse(NumVoicesInputField.text, out int numv);
     if (numv < 1 || numv > 8) {
-      NumVoicesInputField.SetTextWithoutNotify(music.numVoices.ToString());
+      NumVoicesInputField.SetTextWithoutNotify(music.NumVoices.ToString());
       return;
     }
-    int prev = music.numVoices;
+    int prev = music.NumVoices;
     for (int i = 0; i < 8; i++)
       music.voices[i] = (byte)((i < numv) ? i : 255);
     if (prev != numv && status == MusicEditorStatus.BlockEdit) ShowBlock();
@@ -406,9 +422,6 @@ public class MusicEditor : MonoBehaviour {
     music.defLen = len;
     inputsSelected = !completed;
   }
-
-
-
 
   public void AddNewBlockInMusic() {
     // Each block should have the ID (hex number), and a name. Remove, MoveUp, Down, Edit
@@ -510,7 +523,7 @@ public class MusicEditor : MonoBehaviour {
 
   #endregion
 
-  #region Block
+  #region Block **********************************************************************************************************************************************************
   public Transform BlockPickContainer;
   public GameObject SelectBlockButton;
 
@@ -582,7 +595,6 @@ public class MusicEditor : MonoBehaviour {
     Blocks();
     SelectRow(bllines.Count - 1);
   }
-
 
   public void ChangeBlockLen(bool up) {
     if (currentBlock == null) return;
@@ -676,8 +688,6 @@ public class MusicEditor : MonoBehaviour {
     inputsSelected = !completed;
   }
 
-
-
   int noteLen = 1;
   int stepLen = 2;
 
@@ -686,6 +696,7 @@ public class MusicEditor : MonoBehaviour {
     if (!up && noteLen > 1) noteLen--;
     NoteLenInputField.SetTextWithoutNotify(noteLen.ToString());
     inputsSelected = false;
+    UpdateNoteLength();
   }
   public void ChangeNoteLenType(bool completed) {
     int.TryParse(NoteLenInputField.text, out int len);
@@ -695,6 +706,7 @@ public class MusicEditor : MonoBehaviour {
     }
     noteLen = len;
     inputsSelected = !completed;
+    UpdateNoteLength();
   }
 
   public void ChangeStepLen(bool up) {
@@ -712,9 +724,6 @@ public class MusicEditor : MonoBehaviour {
     stepLen = len;
     inputsSelected = !completed;
   }
-
-
-
 
   public void ShowBlock() { // Show the current block
     if (currentBlock == null) return;
@@ -737,12 +746,12 @@ public class MusicEditor : MonoBehaviour {
       bl.IndexTxt.text = i.ToString("d2");
       int linenum = i;
       bl.LineButton.onClick.AddListener(() => SelectRow(linenum));
-      for (int j = 0; j < music.numVoices; j++) {
+      for (int j = 0; j < music.NumVoices; j++) {
         int colnum = j;
         bl.note[j].SetValues(currentBlock.chs[j][i], NoteTypeSprites, freqs, noteNames);
         bl.note[j].ColButton.onClick.AddListener(() => SelectRowColumn(linenum, colnum));
       }
-      for (int j = music.numVoices; j < 8; j++) {
+      for (int j = music.NumVoices; j < 8; j++) {
         int colnum = j;
         bl.note[j].Hide();
         bl.note[j].ColButton.onClick.AddListener(() => SelectRowColumn(linenum, colnum));
@@ -780,9 +789,25 @@ public class MusicEditor : MonoBehaviour {
     }
   }
 
+  private void UpdateNoteLength(int len = -1) {
+    MusicNote note = blines[row].note[col];
+    if (note.type != NoteType.Note && note.type != NoteType.Freq && note.type != NoteType.Volume) {
+      note.len = 0;
+      note.LenTxt.text = "";
+      note.back.sizeDelta = new Vector2(38, 0 * 32);
+      return;
+    }
+
+    int val = (len == -1) ? noteLen : len;
+    note.len = val;
+    note.LenTxt.text = val.ToString();
+    note.back.sizeDelta = new Vector2(38, val * 32);
+  }
+
+
   #endregion
 
-  #region Block list
+  #region Block list **********************************************************************************************************************************************************
 
   public void Blocks() { // Show a list of blocks
     status = MusicEditorStatus.BlockList;
@@ -831,7 +856,7 @@ public class MusicEditor : MonoBehaviour {
 
   #endregion
 
-  #region Waves
+  #region Waves **********************************************************************************************************************************************************
   public Transform WavePickContainer;
   public GameObject SelectWaveButton;
 
@@ -961,7 +986,7 @@ public class MusicEditor : MonoBehaviour {
     ShowWave();
     if (status != MusicEditorStatus.BlockEdit) return;
 
-    if (col < 0 || col >= music.numVoices) return;
+    if (col < 0 || col >= music.NumVoices) return;
     if (row < 0 || row >= currentBlock.chs[col].Count) return;
 
     currentBlock.chs[col][row].type = NoteType.Wave;
@@ -980,7 +1005,7 @@ public class MusicEditor : MonoBehaviour {
   #endregion
 
 
-  #region Play
+  #region Play **********************************************************************************************************************************************************
 
   void SetTapeButtonColor(int num) {
     ColorBlock cols;
@@ -1184,7 +1209,7 @@ public class Music {
   public byte[] voices;
   public List<int> blocks;
 
-  public int numVoices { get {
+  public int NumVoices { get {
       int numv = 0;
       for (int i = 0; i < voices.Length; i++)
         if (voices[i] != 255) numv++;
@@ -1215,11 +1240,10 @@ public class BlockNote {
 
 /*
 
-handle better inputSelected
+Space in blockedit does not really do what it should do
 
-If enter is pressed select block (music editor) or wave (block editor)
+pgup/down to change len of note or wave index
 
-add play/pause/rev/ff
 add multiple selection of rows to enalbe cleanup and copy/paste
  */
 
