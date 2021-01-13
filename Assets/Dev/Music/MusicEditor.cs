@@ -164,24 +164,20 @@ public class MusicEditor : MonoBehaviour {
         }
 
 
-        // Space change type
+        // Space change type FIXME
         if (Input.GetKeyDown(KeyCode.Space)) {
           int t = (int)l.note[col].type;
           t++;
           if (t == 5) t = 0;
-          l.note[col].type = (NoteType)t;
-          l.note[col].TypeImg.sprite = NoteTypeSprites[t];
-          currentBlock.chs[col][row].Set(l.note[col]);
-
-          ShowNote(currentBlock.chs[col][row]);
-
+          ChangeNoteTypePost(t);
         }
+
         // Piano keys
         for (int i = 0; i < keyNotes.Length; i++) {
           if (Input.GetKeyDown(keyNotes[i])) {
             // Set the current cell as note with the given note/frequency, update the text to be the note notation
             l.note[col].type = NoteType.Note;
-            l.note[col].TypeImg.sprite = NoteTypeSprites[1];
+            l.note[col].TypeImg.sprite = NoteTypeSprites[(int)NoteType.Note];
             l.note[col].ValTxt.text = noteNames[i + 24];
             l.note[col].val = freqs[i + 24];
             l.note[col].len = noteLen;
@@ -817,6 +813,9 @@ public class MusicEditor : MonoBehaviour {
     ShowNote(bn);
   }
 
+  #endregion
+
+  #region Cell **********************************************************************************************************************************************************
   public Image CellTypeImg;
   public Text CellTypeTxt;
   public GameObject CellValContainer;
@@ -827,10 +826,11 @@ public class MusicEditor : MonoBehaviour {
   public InputField CellLenInput;
   public Text CellLenPostText;
   public Text CellInfoTxt;
+  public GameObject CellTypeContainer;
 
   private void ShowNote(BlockNote note) {
     if (note==null) {
-      CellTypeImg.sprite = NoteTypeSprites[0];
+      CellTypeImg.sprite = NoteTypeSprites[(int)NoteType.Empty];
       CellTypeTxt.text = "";
       CellValContainer.SetActive(false);
       CellLenContainer.SetActive(false);
@@ -937,8 +937,34 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void ChangeNoteType() {
-
+    CellTypeContainer.SetActive(!CellTypeContainer.activeSelf);
   }
+
+  public void ChangeNoteTypePost(int type) {
+    // Empty=0, Volume=1, Note=2, Wave=3, Freq=4
+
+    MusicNote note = blines[row].note[col];
+    note.type = (NoteType)type;
+    note.TypeImg.sprite = NoteTypeSprites[type];
+    BlockNote bn = currentBlock.chs[col][row];
+    bn.Set(note);
+    blines[row].note[col].SetValues(bn, NoteTypeSprites, freqs, noteNames);
+    ShowNote(bn);
+    CellTypeContainer.SetActive(false);
+  }
+
+  public void ChangeNoteVal(bool up) {
+    if (currentBlock == null || currentBlock.chs[col][row] == null) return;
+    BlockNote bn = currentBlock.chs[col][row];
+    if (up) bn.val++; else bn.val--;
+    blines[row].note[col].SetValues(bn, NoteTypeSprites, freqs, noteNames);
+    ShowNote(bn);
+  }
+
+
+
+  // FIXME input val
+  // FIXME input len
 
 
   #endregion
@@ -1125,10 +1151,11 @@ public class MusicEditor : MonoBehaviour {
     if (col < 0 || col >= music.NumVoices) return;
     if (row < 0 || row >= currentBlock.chs[col].Count) return;
 
-    currentBlock.chs[col][row].type = NoteType.Wave;
-    currentBlock.chs[col][row].val = w.id;
-
+    BlockNote bn = currentBlock.chs[col][row];
+    bn.type = NoteType.Wave;
+    bn.val = w.id;
     blines[row].note[col].SetWave(w.id, w.name, NoteTypeSprites[(int)NoteType.Wave]);
+    ShowNote(bn);
   }
 
   private Wave GetWave(int val) {
@@ -1382,7 +1409,6 @@ public class BlockNote {
 
 /*
 
-Space in blockedit does not really do what it should do
 
 pgup/down to change wave index
 

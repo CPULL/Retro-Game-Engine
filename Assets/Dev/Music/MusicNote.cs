@@ -16,7 +16,6 @@ public class MusicNote : MonoBehaviour {
     TypeImg.sprite = sprites[(int)blockNote.type];
     val = blockNote.val;
     len = blockNote.len;
-    back.sizeDelta = new Vector2(38, len * 32);
     gameObject.SetActive(true);
     ValTxt.fontSize = 28;
 
@@ -24,6 +23,7 @@ public class MusicNote : MonoBehaviour {
       case NoteType.Empty: // Nothing required
         ValTxt.text = "";
         LenTxt.text = "";
+        back.sizeDelta = new Vector2(38, 0);
         break;
 
       case NoteType.Note: // val should be the frequency with the text being the visible note
@@ -34,16 +34,19 @@ public class MusicNote : MonoBehaviour {
             break;
           }
         LenTxt.text = len.ToString();
+        back.sizeDelta = new Vector2(38, len * 32);
         break;
 
       case NoteType.Wave: // val should be the wave id
         ValTxt.text = val.ToString();
         LenTxt.text = "";
+        back.sizeDelta = new Vector2(38, 0);
         break;
 
       case NoteType.Volume: // val should be the volume
         ValTxt.text = val.ToString();
         LenTxt.text = len.ToString();
+        back.sizeDelta = new Vector2(38, len * 32);
         break;
 
       case NoteType.Freq: // val should be the frequency
@@ -54,6 +57,7 @@ public class MusicNote : MonoBehaviour {
             break;
           }
         LenTxt.text = len.ToString();
+        back.sizeDelta = new Vector2(38, len * 32);
         break;
     }
   }
@@ -87,4 +91,4 @@ public class MusicNote : MonoBehaviour {
 }
 
 
-public enum NoteType { Empty=0, Volume=1, Note=2, Wave=3, Freq=4 };
+public enum NoteType { Empty=0, Note=1, Wave=2, Volume=3, Freq=4 };
