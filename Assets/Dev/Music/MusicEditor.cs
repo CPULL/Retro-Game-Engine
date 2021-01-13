@@ -44,6 +44,7 @@ public class MusicEditor : MonoBehaviour {
     waves = new List<Wave>();
     foreach (Transform t in Contents)
       Destroy(t.gameObject);
+    ShowNote(null);
   }
 
   float timeForNextBeat = 0;
@@ -147,7 +148,11 @@ public class MusicEditor : MonoBehaviour {
           SetWave();
           return;
         }
-
+        // Remove cell values
+        if (Input.GetKeyDown(KeyCode.Delete)) {
+          currentBlock.chs[col][row].Zero();
+          blines[row].note[col].SetZeroValues(NoteTypeSprites);
+        }
         // Change length
         if (l.note[col].type == NoteType.Note || l.note[col].type == NoteType.Freq|| l.note[col].type == NoteType.Volume) {
           if (Input.GetKeyDown(KeyCode.PageUp) && l.note[col].len > 1) {
@@ -800,6 +805,7 @@ public class MusicEditor : MonoBehaviour {
       note.LenTxt.text = "";
       note.back.sizeDelta = new Vector2(38, 0 * 32);
       bn.len = 0;
+      ShowNote(bn);
       return;
     }
 
@@ -808,12 +814,12 @@ public class MusicEditor : MonoBehaviour {
     bn.len = val;
     note.LenTxt.text = val.ToString();
     note.back.sizeDelta = new Vector2(38, val * 32);
+    ShowNote(bn);
   }
 
   public Image CellTypeImg;
   public Text CellTypeTxt;
   public GameObject CellValContainer;
-  public Text CellValPreText;
   public InputField CellValInput;
   public Text CellValPostText;
   public GameObject CellLenContainer;
@@ -823,20 +829,28 @@ public class MusicEditor : MonoBehaviour {
   public Text CellInfoTxt;
 
   private void ShowNote(BlockNote note) {
+    if (note==null) {
+      CellTypeImg.sprite = NoteTypeSprites[0];
+      CellTypeTxt.text = "";
+      CellValContainer.SetActive(false);
+      CellLenContainer.SetActive(false);
+      CellInfoTxt.text = "<i>select a cell...</i>";
+      return;
+    }
+
     switch (note.type) {
       case NoteType.Empty:
-        CellTypeImg.sprite = NoteTypeSprites[0];
+        CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
         CellTypeTxt.text = "";
         CellValContainer.SetActive(false);
         CellLenContainer.SetActive(false);
         break;
 
       case NoteType.Note:
-        CellTypeImg.sprite = NoteTypeSprites[1];
+        CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
         CellTypeTxt.text = "Note";
         CellValContainer.SetActive(true);
         CellLenContainer.SetActive(true);
-        CellValPreText.gameObject.SetActive(false);
         CellValPostText.gameObject.SetActive(true);
         // Find the closest note and the freq
         {
@@ -856,9 +870,8 @@ public class MusicEditor : MonoBehaviour {
           }
           if (nv == null) nv = note.val.ToString();
           CellValInput.SetTextWithoutNotify(nv);
-          CellValInput.SetTextWithoutNotify(nv);
+          CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(224, 48);
         }
-        CellValPreText.text = "";
         CellValPostText.text = "Hz";
         CellLenPreText.gameObject.SetActive(true);
         CellLenPostText.gameObject.SetActive(true);
@@ -868,12 +881,13 @@ public class MusicEditor : MonoBehaviour {
         break;
 
       case NoteType.Wave:
-        CellTypeImg.sprite = NoteTypeSprites[2];
-        CellTypeTxt.text = "Wave change";
+        CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
+        CellTypeTxt.text = "Wave";
         CellValContainer.SetActive(true);
         CellLenContainer.SetActive(false);
         // Find the closest note and the freq
         {
+          CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(64, 48);
           CellValInput.SetTextWithoutNotify("");
           CellValPostText.text = "???";
           foreach (Wave w in waves) {
@@ -884,21 +898,18 @@ public class MusicEditor : MonoBehaviour {
             }
           }
         }
-        CellValPreText.gameObject.SetActive(false);
         CellValPostText.gameObject.SetActive(true);
-        CellValPreText.text = "";
         break;
 
       case NoteType.Volume:
-        CellTypeImg.sprite = NoteTypeSprites[3];
-        CellTypeTxt.text = "Volume";
+        CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
+        CellTypeTxt.text = "Volume" + ((note.len > 1) ? " slide" : "");
         CellValContainer.SetActive(true);
         CellLenContainer.SetActive(note.len > 1);
-        CellValPreText.gameObject.SetActive(false);
         CellValPostText.gameObject.SetActive(true);
-        CellValPreText.text = "";
         CellValPostText.text = "%";
         CellValInput.SetTextWithoutNotify(((int)((note.val / 255f) * 100)).ToString());
+        CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(224, 48);
         CellLenPreText.gameObject.SetActive(false);
         CellLenPostText.gameObject.SetActive(true);
         CellLenPreText.text = "In ";
@@ -907,16 +918,15 @@ public class MusicEditor : MonoBehaviour {
         break;
 
       case NoteType.Freq:
-        CellTypeImg.sprite = NoteTypeSprites[4];
-        CellTypeTxt.text = "Freq";
+        CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
+        CellTypeTxt.text = "Freq" + ((note.len > 1) ? " slide" : "");
         CellValContainer.SetActive(true);
         CellLenContainer.SetActive(note.len > 1);
-        CellValPreText.gameObject.SetActive(false);
         CellValPostText.gameObject.SetActive(true);
-        CellValPreText.text = "";
         CellValPostText.text = "Hz";
         CellValInput.SetTextWithoutNotify(note.val.ToString());
-        CellLenPreText.gameObject.SetActive(false);
+        CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(224, 48);
+        CellLenPreText.gameObject.SetActive(true);
         CellLenPostText.gameObject.SetActive(true);
         CellLenPreText.text = "In ";
         CellLenInput.SetTextWithoutNotify(note.len.ToString());
@@ -1361,6 +1371,12 @@ public class BlockNote {
     val = note.val;
     len = note.len;
   }
+
+  internal void Zero() {
+    type = NoteType.Empty;
+    val = 0;
+    len = 0;
+  }
 }
 
 
@@ -1368,7 +1384,7 @@ public class BlockNote {
 
 Space in blockedit does not really do what it should do
 
-pgup/down to change len of note or wave index
+pgup/down to change wave index
 
 add multiple selection of rows to enalbe cleanup and copy/paste
  */

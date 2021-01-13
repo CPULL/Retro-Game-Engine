@@ -87,4 +87,4 @@ public class MusicNote : MonoBehaviour {
 }
 
 
-public enum NoteType { Empty=0, Volume=1, Note=2, Wave = 3, Freq=4 };
+public enum NoteType { Empty=0, Volume=1, Note=2, Wave=3, Freq=4 };
