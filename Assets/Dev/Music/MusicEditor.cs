@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class MusicEditor : MonoBehaviour {
@@ -8,6 +9,7 @@ public class MusicEditor : MonoBehaviour {
   public Transform Contents;
   public RectTransform SelectedCol;
   public Scrollbar scroll;
+  public EventSystem EventSystemManager;
 
   private List<Block> blocks = null;
   private List<Wave> waves = null;
@@ -55,7 +57,7 @@ public class MusicEditor : MonoBehaviour {
 
 
       if (status == MusicEditorStatus.Music) {
-        if (timeForNextBeat == 0) {
+        if (timeForNextBeat == 0) { // FIXME
 
         }
       }
@@ -103,8 +105,15 @@ public class MusicEditor : MonoBehaviour {
         }
       }
     }
+    else if (inputsSelected) {
+      if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Return)) {
+        BlockPickContainer.parent.gameObject.SetActive(false);
+        WavePickContainer.parent.gameObject.SetActive(false);
+        inputsSelected = false;
+        EventSystemManager.SetSelectedGameObject(null);
+      }
+    }
     else {
-
       if (status == MusicEditorStatus.BlockEdit) {
         if (Input.GetKeyDown(KeyCode.LeftArrow) && col > 0) { col--; update = true; autoRepeat = .25f; }
         if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7) { col++; update = true; autoRepeat = .25f; }
@@ -126,7 +135,14 @@ public class MusicEditor : MonoBehaviour {
         if (Input.GetKey(KeyCode.DownArrow) && bllines != null && row < bllines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
       }
 
-      if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count && !inputsSelected) {
+
+      if (status == MusicEditorStatus.Music && row > -1 && row < mlines.Count) {
+        if (Input.GetKeyDown(KeyCode.Return)) {
+          PickBlock();
+        }
+      }
+
+      if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count) {
         BlockLine l = blines[row];
         // Space change type
         if (Input.GetKeyDown(KeyCode.Space)) {
@@ -157,7 +173,7 @@ public class MusicEditor : MonoBehaviour {
         }
       }
 
-      if (status == MusicEditorStatus.Waveforms && row > -1 && row < wlines.Count && !inputsSelected) {
+      if (status == MusicEditorStatus.Waveforms && row > -1 && row < wlines.Count) {
         // Piano keys
         for (int i = 0; i < keyNotes.Length; i++) {
           if (Input.GetKeyDown(keyNotes[i])) {
@@ -275,6 +291,7 @@ public class MusicEditor : MonoBehaviour {
   public Text CurrentBlockID;
   public InputField BlockNameInput;
   public InputField WaveNameInput;
+  public Text WaveNameID;
   public Text WaveTypeName;
   public Image WaveTypeImg;
 
@@ -500,7 +517,10 @@ public class MusicEditor : MonoBehaviour {
   public void PickBlock() {
     bool active = !BlockPickContainer.parent.gameObject.activeSelf;
     BlockPickContainer.parent.gameObject.SetActive(active);
-    if (active) PickBlockSetup();
+    if (active) {
+      PickBlockSetup();
+      inputsSelected = true;
+    }
   }
 
   void PickBlockSetup() {
@@ -512,17 +532,21 @@ public class MusicEditor : MonoBehaviour {
     foreach (Transform t in BlockPickContainer)
       Destroy(t.gameObject);
 
+    GameObject first = null;
     foreach(Block b in blocks) {
       GameObject sbb = Instantiate(SelectBlockButton, BlockPickContainer);
       sbb.SetActive(true);
       sbb.transform.GetChild(0).GetComponent<Text>().text = "[" + b.id + "] " + b.name;
       sbb.GetComponent<Button>().onClick.AddListener(() => { DoPickBlock(b); });
+      if (first == null) first = sbb;
     }
+    EventSystemManager.SetSelectedGameObject(first);
   }
 
   private void DoPickBlock(Block b) {
     BlockPickContainer.parent.gameObject.SetActive(false);
     currentBlock = b;
+    inputsSelected = false;
 
     if (status == MusicEditorStatus.Music) {
       music.blocks[row] = b.id;
@@ -537,8 +561,11 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void CreateBlock() {
-    int id = 1;
-    if (blocks.Count > 0) id = blocks[blocks.Count - 1].id + 1;
+    // Find the ID
+    int id = 0;
+    foreach (Block bb in blocks)
+      if (bb.id > id) id = bb.id;
+    id++;
     Block b = new Block() { id = id, name = "New Block", bpm = music.bpm };
     b.chs = new List<BlockNote>[8];
     for (int i = 0; i < 8; i++) {
@@ -848,7 +875,11 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void CreateNewWave() {
-    int id = waves.Count > 0 ? waves[waves.Count - 1].id + 1 : 1;
+    // Find the ID
+    int id = 0;
+    foreach (Wave ww in waves)
+      if (ww.id > id) id = ww.id;
+    id++;
     Wave w = new Wave() { id = id, name = "No name" };
     waves.Add(w);
     currentWave = w;
@@ -864,7 +895,7 @@ public class MusicEditor : MonoBehaviour {
     WaveNameInput.SetTextWithoutNotify(currentWave.name);
     WaveTypeName.text = currentWave.wave.ToString();
     WaveTypeImg.sprite = WaveSprites[(int)currentWave.wave];
-
+    WaveNameID.text = "[" + currentWave.id.ToString() + "]";
     sounds.Wave(0, currentWave.wave, currentWave.phase);
     sounds.ADSR(0, currentWave.a, currentWave.d, currentWave.s, currentWave.r);
   }
@@ -1184,13 +1215,7 @@ public class BlockNote {
 
 /*
 
-what should be the len of the note and the step to jump to?
-how to change len of note with just keyboard?
-how to change music bpm?
-Add typable numebrs for len/bpm
-
-remove text for id+name, and just put id before the name field
-
+handle better inputSelected
 
 If enter is pressed select block (music editor) or wave (block editor)
 
