@@ -162,6 +162,41 @@ public class MusicEditor : MonoBehaviour {
             UpdateNoteLength(l.note[col].len + 1);
           }
         }
+        // Change wave
+        if (l.note[col].type == NoteType.Wave) {
+          if (Input.GetKeyDown(KeyCode.PageUp)) {
+            int id = l.note[col].val;
+            int pos;
+            for (pos = 0; pos < waves.Count; pos++) {
+              if (waves[pos].id == id) {
+                if (pos == 0) {
+                  l.note[col].val = waves[waves.Count - 1].id;
+                }
+                else {
+                  l.note[col].val = waves[pos - 1].id;
+                }
+              }
+            }
+            blines[row].note[col].SetValues(currentBlock.chs[col][row], NoteTypeSprites, freqs, noteNames, waves);
+            // FIXME update not working
+          }
+          if (Input.GetKeyDown(KeyCode.PageDown)) {
+            int id = l.note[col].val;
+            int pos;
+            for (pos = 0; pos < waves.Count; pos++) {
+              if (waves[pos].id == id) {
+                if (pos == waves.Count - 1) {
+                  l.note[col].val = waves[0].id;
+                }
+                else {
+                  l.note[col].val = waves[pos + 1].id;
+                }
+              }
+            }
+            blines[row].note[col].SetValues(currentBlock.chs[col][row], NoteTypeSprites, freqs, noteNames, waves);
+            // FIXME update not working
+          }
+        }
 
 
         // Space change type FIXME
@@ -752,7 +787,7 @@ public class MusicEditor : MonoBehaviour {
       bl.LineButton.onClick.AddListener(() => SelectRow(linenum));
       for (int j = 0; j < music.NumVoices; j++) {
         int colnum = j;
-        bl.note[j].SetValues(currentBlock.chs[j][i], NoteTypeSprites, freqs, noteNames);
+        bl.note[j].SetValues(currentBlock.chs[j][i], NoteTypeSprites, freqs, noteNames, waves);
         bl.note[j].ColButton.onClick.AddListener(() => SelectRowColumn(linenum, colnum));
       }
       for (int j = music.NumVoices; j < 8; j++) {
@@ -948,7 +983,7 @@ public class MusicEditor : MonoBehaviour {
     note.TypeImg.sprite = NoteTypeSprites[type];
     BlockNote bn = currentBlock.chs[col][row];
     bn.Set(note);
-    blines[row].note[col].SetValues(bn, NoteTypeSprites, freqs, noteNames);
+    blines[row].note[col].SetValues(bn, NoteTypeSprites, freqs, noteNames, waves);
     ShowNote(bn);
     CellTypeContainer.SetActive(false);
   }
@@ -957,7 +992,7 @@ public class MusicEditor : MonoBehaviour {
     if (currentBlock == null || currentBlock.chs[col][row] == null) return;
     BlockNote bn = currentBlock.chs[col][row];
     if (up) bn.val++; else bn.val--;
-    blines[row].note[col].SetValues(bn, NoteTypeSprites, freqs, noteNames);
+    blines[row].note[col].SetValues(bn, NoteTypeSprites, freqs, noteNames, waves);
     ShowNote(bn);
   }
 

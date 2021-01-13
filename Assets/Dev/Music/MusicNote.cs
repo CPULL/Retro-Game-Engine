@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class MusicNote : MonoBehaviour {
@@ -11,7 +12,7 @@ public class MusicNote : MonoBehaviour {
   public RectTransform back;
   public Button ColButton;
 
-  internal void SetValues(BlockNote blockNote, Sprite[] sprites,  int[] freqs, string[] notenames) {
+  internal void SetValues(BlockNote blockNote, Sprite[] sprites,  int[] freqs, string[] notenames, List<Wave> waves) {
     type = blockNote.type;
     TypeImg.sprite = sprites[(int)blockNote.type];
     val = blockNote.val;
@@ -38,9 +39,15 @@ public class MusicNote : MonoBehaviour {
         break;
 
       case NoteType.Wave: // val should be the wave id
-        ValTxt.text = val.ToString();
+        ValTxt.fontSize = 14;
         LenTxt.text = "";
         back.sizeDelta = new Vector2(38, 0);
+        ValTxt.text = val.ToString();
+        foreach (Wave w in waves)
+          if (w.id == val) {
+            ValTxt.text = w.id + "\n" + w.name;
+            break;
+          }
         break;
 
       case NoteType.Volume: // val should be the volume
