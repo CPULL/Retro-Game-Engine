@@ -16074,7 +16074,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1090031087}
         m_TargetAssemblyTypeName: MusicEditor, Assembly-CSharp
-        m_MethodName: ChangeBlockLength
+        m_MethodName: ChangeStepLen
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -21088,7 +21088,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1090031087}
         m_TargetAssemblyTypeName: MusicEditor, Assembly-CSharp
-        m_MethodName: ChangeBlockLength
+        m_MethodName: ChangeNoteLen
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -25863,7 +25863,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1090031087}
         m_TargetAssemblyTypeName: MusicEditor, Assembly-CSharp
-        m_MethodName: ChangeMusicVoicesType
+        m_MethodName: ChangeNoteLenType
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -25878,7 +25878,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1090031087}
         m_TargetAssemblyTypeName: MusicEditor, Assembly-CSharp
-        m_MethodName: ChangeMusicVoicesType
+        m_MethodName: ChangeNoteLenType
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -26174,7 +26174,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1090031087}
         m_TargetAssemblyTypeName: MusicEditor, Assembly-CSharp
-        m_MethodName: ChangeBlockLength
+        m_MethodName: ChangeStepLen
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -38339,7 +38339,6 @@ MonoBehaviour:
   CreateNewWaveInList: {fileID: 1822673399}
   BlockPickContainer: {fileID: 43615554}
   SelectBlockButton: {fileID: 1287057350}
-  NoteLengthText: {fileID: 0}
   WavePickContainer: {fileID: 521545384}
   SelectWaveButton: {fileID: 1185441943}
   editor: {fileID: 695468629}
@@ -43482,7 +43481,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1090031087}
         m_TargetAssemblyTypeName: MusicEditor, Assembly-CSharp
-        m_MethodName: ChangeMusicVoicesType
+        m_MethodName: ChangeStepLenType
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -43497,7 +43496,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1090031087}
         m_TargetAssemblyTypeName: MusicEditor, Assembly-CSharp
-        m_MethodName: ChangeMusicVoicesType
+        m_MethodName: ChangeStepLenType
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -51880,7 +51879,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1090031087}
         m_TargetAssemblyTypeName: MusicEditor, Assembly-CSharp
-        m_MethodName: ChangeBlockLength
+        m_MethodName: ChangeNoteLen
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

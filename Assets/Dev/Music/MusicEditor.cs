@@ -150,7 +150,7 @@ public class MusicEditor : MonoBehaviour {
             l.note[col].back.sizeDelta = new Vector2(38, noteLen * 32);
             currentBlock.chs[col][row].Set(l.note[col]);
             // Move to the next row
-            if (row + noteLen < currentBlock.chs[0].Count) { row += noteLen; update = true; }
+            if (row + stepLen < currentBlock.chs[0].Count) { row += stepLen; update = true; }
             // Play the actual sound (find the wave that should be used, if none is defined use a basic triangle wave)
             sounds.Play(col, freqs[i + 24], .25f);
           }
@@ -652,13 +652,42 @@ public class MusicEditor : MonoBehaviour {
 
 
   int noteLen = 1;
-  public Text NoteLengthText;
-  public void ChangeNoteLength(bool up) {
-    if (currentBlock == null) return;
+  int stepLen = 2;
+
+  public void ChangeNoteLen(bool up) {
     if (up && noteLen < 16) noteLen++;
     if (!up && noteLen > 1) noteLen--;
-    NoteLengthText.text = " Note Len: " + noteLen;
+    NoteLenInputField.SetTextWithoutNotify(noteLen.ToString());
+    inputsSelected = false;
   }
+  public void ChangeNoteLenType(bool completed) {
+    int.TryParse(NoteLenInputField.text, out int len);
+    if (len < 20 || len > 16) {
+      NoteLenInputField.SetTextWithoutNotify(len.ToString());
+      return;
+    }
+    noteLen = len;
+    inputsSelected = !completed;
+  }
+
+  public void ChangeStepLen(bool up) {
+    if (up && stepLen < 16) stepLen++;
+    if (!up && stepLen > 1) stepLen--;
+    StepLenInputField.SetTextWithoutNotify(stepLen.ToString());
+    inputsSelected = false;
+  }
+  public void ChangeStepLenType(bool completed) {
+    int.TryParse(NoteLenInputField.text, out int len);
+    if (len < 20 || len > 16) {
+      StepLenInputField.SetTextWithoutNotify(len.ToString());
+      return;
+    }
+    stepLen = len;
+    inputsSelected = !completed;
+  }
+
+
+
 
   public void ShowBlock() { // Show the current block
     if (currentBlock == null) return;
