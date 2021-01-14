@@ -998,10 +998,92 @@ public class MusicEditor : MonoBehaviour {
     ShowNote(bn);
   }
 
+  public void ChangeCellInputVal(bool completed) {
+    if (currentBlock == null) return;
+    NoteData note = currentBlock.chs[col][row];
+    inputsSelected = !completed;
 
+    switch (note.type) {
+      case NoteType.Empty: break;
 
-  // FIXME input val
-  // FIXME input len
+      case NoteType.Note: {
+        string val = CellValInput.text.Trim().ToLowerInvariant();
+        // The value can be a note or a frequency
+        int notepos = -1;
+        for (int i = 0; i < noteNames.Length; i++) {
+          if (noteNames[i].ToLowerInvariant() == val) {
+            notepos = i;
+            break;
+          }
+        }
+        if (notepos != -1) {
+          note.val = freqs[notepos];
+          blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
+          ShowNote(note);
+        }
+        else {
+          if (int.TryParse(val, out int freq)) {
+            note.val = freq;
+            blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
+            ShowNote(note);
+          }
+        }
+      }
+      break;
+
+      case NoteType.Wave: {
+        string val = CellValInput.text.Trim().ToLowerInvariant();
+        // The value can be an id or a name
+        int.TryParse(val, out int waveid);
+        for (int i = 0; i < waves.Count; i++) {
+          if (waves[i].name.Trim().ToLowerInvariant() == val || waves[i].id == waveid) {
+            note.val = waves[i].id;
+            blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
+            ShowNote(note);
+            break;
+          }
+        }
+      }
+      break;
+
+      case NoteType.Volume: {
+        if (int.TryParse(CellValInput.text.Trim(), out int vol)) {
+          if (vol < 0) vol = 0;
+          if (vol > 100) vol = 100;
+          note.val = (int)(vol * 255f / 100);
+          blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
+          ShowNote(note);
+          break;
+        }
+      }
+        break;
+      case NoteType.Freq:
+        if (int.TryParse(CellValInput.text.Trim(), out int fval)) {
+          if (fval < 50) fval = 50;
+          if (fval > 22000) fval = 22000;
+          note.val = fval;
+          blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
+          ShowNote(note);
+          break;
+        }
+        break;
+    }
+  }
+
+  public void ChangeCellInputLen(bool completed) {
+    if (currentBlock == null) return;
+    NoteData note = currentBlock.chs[col][row];
+    inputsSelected = !completed;
+
+    if (int.TryParse(CellValInput.text.Trim(), out int len)) {
+      if (len < 1) len = 1;
+      if (len > 16) len = 16;
+      note.len = len;
+      blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
+      ShowNote(note);
+    }
+  }
+
 
 
   #endregion
@@ -1445,8 +1527,6 @@ public class NoteData {
 
 /*
 
-
-pgup/down to change wave index
 
 add multiple selection of rows to enalbe cleanup and copy/paste
  */

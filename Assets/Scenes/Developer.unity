@@ -1246,7 +1246,7 @@ RectTransform:
   m_Children:
   - {fileID: 2029024915}
   m_Father: {fileID: 1090031088}
-  m_RootOrder: 20
+  m_RootOrder: 21
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
@@ -28800,7 +28800,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1090031087}
         m_TargetAssemblyTypeName: MusicEditor, Assembly-CSharp
-        m_MethodName: ChangeNoteLenType
+        m_MethodName: ChangeCellInputVal
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -28815,7 +28815,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1090031087}
         m_TargetAssemblyTypeName: MusicEditor, Assembly-CSharp
-        m_MethodName: ChangeNoteLenType
+        m_MethodName: ChangeCellInputVal
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -31750,7 +31750,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 1396, y: 895.4}
+  m_AnchoredPosition: {x: 1380, y: 895.4}
   m_SizeDelta: {x: 256, y: 32}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &873863370
@@ -38238,12 +38238,12 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1.00008, y: 1.00008, z: 1.00008}
   m_Children: []
-  m_Father: {fileID: 1114915730}
-  m_RootOrder: 3
+  m_Father: {fileID: 1090031088}
+  m_RootOrder: 19
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 1380, y: -600}
   m_SizeDelta: {x: 256, y: 64}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1044717778
@@ -40112,6 +40112,7 @@ RectTransform:
   - {fileID: 974666446}
   - {fileID: 370415379}
   - {fileID: 873863369}
+  - {fileID: 1044717777}
   - {fileID: 1114915730}
   - {fileID: 28515856}
   - {fileID: 1663554200}
@@ -41029,13 +41030,12 @@ RectTransform:
   - {fileID: 125807411}
   - {fileID: 1607150919}
   - {fileID: 1000276489}
-  - {fileID: 1044717777}
   m_Father: {fileID: 1090031088}
-  m_RootOrder: 19
+  m_RootOrder: 20
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 444, y: 116.5}
+  m_AnchoredPosition: {x: 428, y: 116.5}
   m_SizeDelta: {x: 288, y: 512}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1114915731
@@ -41054,7 +41054,7 @@ MonoBehaviour:
     m_Left: 8
     m_Right: 8
     m_Top: 8
-    m_Bottom: 8
+    m_Bottom: 128
   m_ChildAlignment: 0
   m_Spacing: 0
   m_ChildForceExpandWidth: 1
@@ -47773,7 +47773,7 @@ RectTransform:
   m_Children:
   - {fileID: 521545384}
   m_Father: {fileID: 1090031088}
-  m_RootOrder: 22
+  m_RootOrder: 23
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
@@ -53575,7 +53575,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1090031087}
         m_TargetAssemblyTypeName: MusicEditor, Assembly-CSharp
-        m_MethodName: ChangeNoteLenType
+        m_MethodName: ChangeCellInputLen
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -53590,7 +53590,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1090031087}
         m_TargetAssemblyTypeName: MusicEditor, Assembly-CSharp
-        m_MethodName: ChangeNoteLenType
+        m_MethodName: ChangeCellInputLen
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -61418,7 +61418,7 @@ RectTransform:
   m_Children:
   - {fileID: 43615554}
   m_Father: {fileID: 1090031088}
-  m_RootOrder: 21
+  m_RootOrder: 22
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
