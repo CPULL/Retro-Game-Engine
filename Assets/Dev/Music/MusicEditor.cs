@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -1345,6 +1346,243 @@ public class MusicEditor : MonoBehaviour {
 
   #endregion
 
+
+  #region Load/Save **********************************************************************************************************************************************************
+
+  public InputField Values;
+  public Button LoadSubButton;
+
+  /*
+ musicname:
+  numvoices, numblocks, numwaves, numlines
+  [for each line]
+    block id
+
+ [for each block]
+  blockname:
+   id, len, bpm
+   [for each line]
+    [for each note]
+      type, val, len
+ [for each wave]
+  wavename:
+  type, phase[2bytes], a, d, s, r
+  [in case PCM] len[4 bytes] [pcm data]
+ */
+
+  public void Save() {
+    int numv = music.NumVoices;
+    string res = music.name.Replace(":", "") + ":\n" +
+                numv.ToString("X2") + " " +
+                blocks.Count.ToString("X2") + " " +
+                waves.Count.ToString("X2") + " " +
+                music.blocks.Count.ToString("X2") + "\n";
+    for (int i = 0; i < music.blocks.Count; i++) {
+      byte val = (byte)(music.blocks[i] < 1 ? 255 : music.blocks[i]);
+      res += val.ToString("X2") + " ";
+    }
+    res += "\n";
+
+    foreach(BlockData b in blocks) {
+      int len = b.chs[0].Count;
+      res += b.name.Replace(":", "") + ":\n" +
+            b.id.ToString("X2") + " " +
+            len.ToString("X2") + " " +
+            b.bpm.ToString("X2") + "\n";
+      for (int r = 0; r < len; r++) {
+        for (int c = 0; c < numv; c++) {
+          NoteData note = b.chs[c][r];
+          byte ph = (byte)((note.val & 0xff00) >> 8);
+          byte pl = (byte)(note.val & 0xff);
+          res += ((int)note.type).ToString("X2") + " " +
+                ph.ToString("X2") + " " + pl.ToString("X2") + " " +
+                note.len.ToString("X2") + " ";
+        }
+      }
+      res += "\n";
+    }
+
+    foreach(Wave w in waves) {
+      byte ph = (byte)((((int)(w.phase * 100)) & 0xff00) >> 8);
+      byte pl = (byte)(((int)(w.phase * 100)) & 0xff);
+
+      res += w.name.Replace(":", "") + ":\n" +
+            w.id.ToString("X2") + " " +
+            w.wave.ToString("X2") + " " +
+            ph.ToString("X2") + " " +
+            pl.ToString("X2") + " " +
+            w.a.ToString("X2") + " " +
+            w.d.ToString("X2") + " " +
+            w.s.ToString("X2") + " " +
+            w.r.ToString("X2");
+      if (w.wave == Waveform.PCM) {
+        res += "\n";
+        byte l3 = (byte)((w.rawPCM.Length & 0xff000000) >> 24);
+        byte l2 = (byte)((w.rawPCM.Length & 0xff0000) >> 16);
+        byte l1 = (byte)((w.rawPCM.Length & 0xff00) >> 8);
+        byte l0 = (byte)((w.rawPCM.Length & 0xff) >> 0);
+        res += l3.ToString("X2") + " " +
+              l2.ToString("X2") + " " +
+              l1.ToString("X2") + " " +
+              l0.ToString("X2") + "\n";
+        for (int i = 0; i < w.rawPCM.Length; i++) {
+          res += w.rawPCM[i].ToString("X2") + " ";
+        }
+      }
+      res += "\n";
+
+      Values.gameObject.SetActive(true);
+      LoadSubButton.enabled = false;
+      Values.text = res;
+    }
+  }
+
+  public void PreLoad() {
+    Values.gameObject.SetActive(true);
+    LoadSubButton.enabled = true;
+  }
+  readonly Regex rgComments = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgLabels = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgHex = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
+  public void PostLoad() {
+    if (!gameObject.activeSelf) return;
+    string data = Values.text.Trim();
+    data = rgComments.Replace(data, " ").Trim();
+    while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
+
+    waves.Clear();
+    blocks.Clear();
+    MusicData m = new MusicData() {
+      bpm = 120,
+      voices = new byte[] { 0, 1, 2, 3, 255, 255, 255, 255 },
+      blocks = new List<int>()
+    };
+    int pos = data.IndexOf(':');
+    if (pos == -1) throw new Exception("Missing Music label");
+    m.name = data.Substring(0, pos).Trim();
+    data = data.Substring(pos + 1).Trim();
+    byte data1, data2, data3, data4;
+    byte numw, numb, numv;
+
+    data = ReadNextByte(data, out data1);
+    numv = data1;
+    for (int i = 0; i < 8; i++)
+      m.voices[i] = (byte)((i < numv) ? i : 255);
+    data = ReadNextByte(data, out numb);
+    data = ReadNextByte(data, out numw);
+    data = ReadNextByte(data, out data2);
+    for (int i = 0; i < data2; i++) {
+      data = ReadNextByte(data, out data1);
+      m.blocks.Add(data1 == 255 ? -1 : data1);
+    }
+
+    for (int i = 0; i < numb; i++) {
+      pos = data.IndexOf(':');
+      if (pos == -1) throw new Exception("Missing Block label for block #" + (i + 1));
+      BlockData b = new BlockData {
+        name = data.Substring(0, pos).Trim()
+      };
+      data = data.Substring(pos + 1).Trim();
+
+      data = ReadNextByte(data, out data1);
+      data = ReadNextByte(data, out byte lenb);
+      data = ReadNextByte(data, out data3);
+      b.id = data1;
+      b.bpm = data3;
+
+      for (int r = 0; r < lenb; r++) {
+        for (int c = 0; c < numv; c++) {
+          data = ReadNextByte(data, out data1);
+          data = ReadNextByte(data, out data2);
+          data = ReadNextByte(data, out data3);
+          data = ReadNextByte(data, out data4);
+
+          NoteData note = new NoteData() {
+            type = (NoteType)data1,
+            val = data2 << 8 + data3,
+            len = data4
+          };
+
+          b.chs[c].Add(note);
+        }
+      }
+
+      blocks.Add(b);
+    }
+
+    for (int i = 0; i < numw; i++) {
+      pos = data.IndexOf(':');
+      if (pos == -1) throw new Exception("Missing Wave label for wave #" + (i + 1));
+      Wave w = new Wave {
+        name = data.Substring(0, pos).Trim()
+      };
+      data = data.Substring(pos + 1).Trim();
+
+      data = ReadNextByte(data, out data1);
+      data = ReadNextByte(data, out data2);
+      data = ReadNextByte(data, out data3);
+      data = ReadNextByte(data, out data4);
+
+      w.id = data1;
+      w.wave = (Waveform)data2;
+
+      w.phase = ((data3 << 8) + data4) / 100f;
+      data = ReadNextByte(data, out w.a);
+      data = ReadNextByte(data, out w.d);
+      data = ReadNextByte(data, out w.s);
+      data = ReadNextByte(data, out w.r);
+
+      if (w.wave == Waveform.PCM) {
+        data = ReadNextByte(data, out data1);
+        data = ReadNextByte(data, out data2);
+        data = ReadNextByte(data, out data3);
+        data = ReadNextByte(data, out data4);
+
+        int len = (data1 << 24) + (data2 << 16) + (data3 << 8) + (data4 << 0);
+        w.rawPCM = new byte[len];
+        for (int b = 0; b < len; b++) {
+          data = ReadNextByte(data, out data1);
+          w.rawPCM[b] = data1;
+        }
+      }
+
+      waves.Add(w);
+    }
+
+    music = m;
+
+    Values.gameObject.SetActive(false);
+    LoadSubButton.enabled = false;
+  }
+
+  string ReadNextByte(string data, out byte res) {
+    int pos1 = data.IndexOf(' ');
+    int pos2 = data.Length;
+    if (pos1 == -1) pos1 = int.MaxValue;
+    if (pos2 == -1) pos1 = int.MaxValue;
+    int pos = pos1;
+    if (pos > pos2) pos = pos2;
+    if (pos < 1) {
+      res = 0;
+      return "";
+    }
+
+    string part = data.Substring(0, pos);
+    Match m = rgHex.Match(part);
+    if (m.Success) {
+      res = (byte)Convert.ToInt32(m.Groups[1].Value, 16);
+      return data.Substring(pos).Trim();
+    }
+
+    res = 0;
+    return data;
+  }
+
+
+
+  #endregion
+
   readonly KeyCode[] keyNotes = new KeyCode[] {
     KeyCode.Q, KeyCode.Alpha2, // C4 C4#
     KeyCode.W, KeyCode.Alpha3, // D4 E4b
@@ -1527,6 +1765,9 @@ public class NoteData {
 
 /*
 
+play full music
+record block
+load/save
 
 add multiple selection of rows to enalbe cleanup and copy/paste
  */
