@@ -428,11 +428,14 @@ public class WaveformEditor : MonoBehaviour {
 
   string ReadNextByte(string data, out byte res) {
     int pos1 = data.IndexOf(' ');
-    int pos2 = data.Length;
+    int pos2 = data.IndexOf('\n');
+    int pos3 = data.Length;
     if (pos1 == -1) pos1 = int.MaxValue;
-    if (pos2 == -1) pos1 = int.MaxValue;
+    if (pos2 == -1) pos2 = int.MaxValue;
+    if (pos3 == -1) pos3 = int.MaxValue;
     int pos = pos1;
     if (pos > pos2) pos = pos2;
+    if (pos > pos3) pos = pos3;
     if (pos < 1) {
       res = 0;
       return "";

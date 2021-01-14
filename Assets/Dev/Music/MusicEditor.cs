@@ -50,56 +50,38 @@ public class MusicEditor : MonoBehaviour {
 
   float timeForNextBeat = 0;
   float autoRepeat = 0;
+  int currentPlayedMusicBlock = 0;
   private void Update() {
     bool update = false;
     autoRepeat -= Time.deltaTime;
 
     if (playing) {
-      float timeForBeat = 15f / currentBlock.bpm;
-
-
       if (status == MusicEditorStatus.Music) {
-        if (timeForNextBeat == 0) { // FIXME
+        if (timeForNextBeat == 0) {
+          BlockData block = null;
+          int id = music.blocks[currentPlayedMusicBlock];
+          foreach(BlockData b in blocks)
+            if (b.id == id) {
+              block = b;
+              break;
+            }
 
+          if (PlayLine(block)) {
+            currentPlayedMusicBlock++;
+            row = 0;
+            if (currentPlayedMusicBlock >= music.blocks.Count) {
+              if (repeat) {
+                currentPlayedMusicBlock = 0;
+                row = 0;
+              }
+            }
+          }
         }
       }
       else if (status == MusicEditorStatus.BlockEdit) {
         if (timeForNextBeat == 0) {
-          row++;
           update = true;
-          if (row >= currentBlock.chs[0].Count) {
-            if (repeat)
-              row = -1;
-            else {
-              playing = false;
-              SetTapeButtonColor(-1);
-            }
-            return;
-          }
-          // Beat completed, check if we need to play a note, stop it or anything else
-          timeForNextBeat = timeForBeat;
-
-          for (int c = 0; c < music.NumVoices; c++) {
-            NoteData n = currentBlock.chs[c][row];
-            switch (n.type) {
-              case NoteType.Empty: break;
-              case NoteType.Volume: break; // FIXME
-              case NoteType.Freq: break; // FIXME
-
-              case NoteType.Note:
-                sounds.Play(c, n.val, n.len * timeForBeat);
-                break;
-
-              case NoteType.Wave:
-                Wave w = GetWave(n.val);
-                if (w != null) {
-                  sounds.Wave(c, w.wave, w.phase);
-                  sounds.ADSR(c, w.a, w.d, w.s, w.r);
-                  if (w.rawPCM != null) sounds.Wave(c, w.rawPCM);
-                }
-                break;
-            }
-          }
+          PlayLine(currentBlock);
         }
         else {
           timeForNextBeat -= Time.deltaTime;
@@ -252,6 +234,47 @@ public class MusicEditor : MonoBehaviour {
     }
   }
 
+  private bool PlayLine(BlockData block) {
+    if (block == null) return true;
+    if (row >= block.chs[0].Count - 1) {
+      if (repeat)
+        row = -1;
+      else {
+        playing = false;
+        SetTapeButtonColor(-1);
+      }
+      return true;
+    }
+    else if (row < 0) row = 0;
+    // Beat completed, check if we need to play a note, stop it or anything else
+    float timeForBeat = 15f / block.bpm;
+    timeForNextBeat = timeForBeat;
+
+    for (int c = 0; c < music.NumVoices; c++) {
+      NoteData n = block.chs[c][row];
+      switch (n.type) {
+        case NoteType.Empty: break;
+        case NoteType.Volume: break; // FIXME
+        case NoteType.Freq: break; // FIXME
+
+        case NoteType.Note:
+          sounds.Play(c, n.val, n.len * timeForBeat);
+          break;
+
+        case NoteType.Wave:
+          Wave w = GetWave(n.val);
+          if (w != null) {
+            sounds.Wave(c, w.wave, w.phase);
+            sounds.ADSR(c, w.a, w.d, w.s, w.r);
+            if (w.rawPCM != null) sounds.Wave(c, w.rawPCM);
+          }
+          break;
+      }
+    }
+    row++;
+    return false;
+  }
+
   void SelectRow(int line) {
     if (status == MusicEditorStatus.Music) {
       if (mlines.Count == 0) return;
@@ -281,7 +304,7 @@ public class MusicEditor : MonoBehaviour {
       if (row >= blines.Count) row = blines.Count - 1;
       for (int i = 0; i < blines.Count; i++)
         blines[i].Background.color = Transparent;
-      blines[line].Background.color = SelectedColor;
+      blines[row].Background.color = SelectedColor;
 
       List<NoteData> notes = currentBlock.chs[col];
       for (int i = row; i >= 0; i--) {
@@ -1456,12 +1479,13 @@ public class MusicEditor : MonoBehaviour {
   }
   readonly Regex rgComments = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgLabels = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgHex = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgHex1 = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgHex2 = new Regex("[\\s]*([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
     string data = Values.text.Trim();
-    data = rgComments.Replace(data, " ").Trim();
+    data = rgComments.Replace(data, " ").Replace('\n', ' ').Trim();
     while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
     waves.Clear();
@@ -1494,10 +1518,14 @@ public class MusicEditor : MonoBehaviour {
       pos = data.IndexOf(':');
       if (pos == -1) throw new Exception("Missing Block label for block #" + (i + 1));
       BlockData b = new BlockData {
-        name = data.Substring(0, pos).Trim()
+        name = data.Substring(0, pos).Trim(),
+        chs = new List<NoteData>[] {
+          new List<NoteData>(), new List<NoteData>(), new List<NoteData>(), new List<NoteData>(), 
+          new List<NoteData>(), new List<NoteData>(), new List<NoteData>(), new List<NoteData>() 
+        }
       };
-      data = data.Substring(pos + 1).Trim();
 
+      data = data.Substring(pos + 1).Trim();
       data = ReadNextByte(data, out data1);
       data = ReadNextByte(data, out byte lenb);
       data = ReadNextByte(data, out data3);
@@ -1513,7 +1541,7 @@ public class MusicEditor : MonoBehaviour {
 
           NoteData note = new NoteData() {
             type = (NoteType)data1,
-            val = data2 << 8 + data3,
+            val = (data2 << 8) + data3,
             len = data4
           };
 
@@ -1571,21 +1599,31 @@ public class MusicEditor : MonoBehaviour {
 
   string ReadNextByte(string data, out byte res) {
     int pos1 = data.IndexOf(' ');
-    int pos2 = data.Length;
+    int pos2 = data.IndexOf('\n');
+    int pos3 = data.Length;
     if (pos1 == -1) pos1 = int.MaxValue;
-    if (pos2 == -1) pos1 = int.MaxValue;
+    if (pos2 == -1) pos2 = int.MaxValue;
+    if (pos3 == -1) pos3 = int.MaxValue;
     int pos = pos1;
     if (pos > pos2) pos = pos2;
+    if (pos > pos3) pos = pos3;
     if (pos < 1) {
       res = 0;
       return "";
     }
 
     string part = data.Substring(0, pos);
-    Match m = rgHex.Match(part);
+    Match m = rgHex1.Match(part);
     if (m.Success) {
       res = (byte)Convert.ToInt32(m.Groups[1].Value, 16);
       return data.Substring(pos).Trim();
+    }
+    else {
+      m = rgHex2.Match(part);
+      if (m.Success) {
+        res = (byte)Convert.ToInt32(m.Groups[1].Value, 16);
+        return data.Substring(pos).Trim();
+      }
     }
 
     res = 0;
@@ -1777,10 +1815,12 @@ public class NoteData {
 
 
 /*
+Chaning len does not add the current amount of notes
+Have the notes field created at startup, and just update them to make it quicker to switch
+The first note looks like it last for a wrong amount of time
+Looks like we add a line too much (len =16 adds 17 lines)
 
-play full music
 record block
-load/save
 
 add multiple selection of rows to enalbe cleanup and copy/paste
  */
