@@ -626,7 +626,7 @@ public class MusicEditor : MonoBehaviour {
     for (int i = 0; i < 8; i++) {
       b.chs[i] = new List<NoteData>();
     }
-    for (int n = 0; n < 64; n++) {
+    for (int n = 0; n < music.defLen; n++) {
       for (int j = 0; j < 8; j++) {
         b.chs[j].Add(new NoteData()); 
       }
@@ -635,7 +635,10 @@ public class MusicEditor : MonoBehaviour {
     currentBlock = b;
     ShowBlockInfo();
     Blocks();
-    SelectRow(bllines.Count - 1);
+    if (status == MusicEditorStatus.BlockList)
+      SelectRow(bllines.Count - 1);
+    else if (status == MusicEditorStatus.BlockEdit)
+      SelectRow(0);
   }
 
   public void ChangeBlockLen(bool up) {
@@ -1309,7 +1312,7 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void Rewind() {
-    SetTapeButtonColor(1);
+    SetTapeButtonColor(-1);
   }
 
   bool playing = false;
@@ -1331,16 +1334,26 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void Pause() {
-    playing = false;
+    playing = !playing;
+    if (playing) {
+      if (repeat)
+        SetTapeButtonColor(3);
+      else
+        SetTapeButtonColor(2);
+    }
+    else
+      SetTapeButtonColor(4);
   }
 
   public void Stop() {
     playing = false;
     SelectRow(0);
+    SetTapeButtonColor(-1);
   }
 
   public void FastForward() {
     SelectRow(10000);
+    SetTapeButtonColor(-1);
   }
 
 
@@ -1408,7 +1421,7 @@ public class MusicEditor : MonoBehaviour {
 
       res += w.name.Replace(":", "") + ":\n" +
             w.id.ToString("X2") + " " +
-            w.wave.ToString("X2") + " " +
+            ((int)w.wave).ToString("X2") + " " +
             ph.ToString("X2") + " " +
             pl.ToString("X2") + " " +
             w.a.ToString("X2") + " " +
@@ -1430,11 +1443,11 @@ public class MusicEditor : MonoBehaviour {
         }
       }
       res += "\n";
-
-      Values.gameObject.SetActive(true);
-      LoadSubButton.enabled = false;
-      Values.text = res;
     }
+
+    Values.gameObject.SetActive(true);
+    LoadSubButton.enabled = false;
+    Values.text = res;
   }
 
   public void PreLoad() {

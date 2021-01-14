@@ -40504,8 +40504,8 @@ MonoBehaviour:
   WavePickContainer: {fileID: 521545384}
   SelectWaveButton: {fileID: 1185441943}
   editor: {fileID: 695468629}
-  Values: {fileID: 0}
-  LoadSubButton: {fileID: 0}
+  Values: {fileID: 676328907}
+  LoadSubButton: {fileID: 1649149733}
 --- !u!224 &1090031088
 RectTransform:
   m_ObjectHideFlags: 0
