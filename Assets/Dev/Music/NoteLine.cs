@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class MusicNote : MonoBehaviour {
+public class NoteLine : MonoBehaviour {
   public NoteType type;
   public Image TypeImg;
   public int val;
@@ -12,7 +12,7 @@ public class MusicNote : MonoBehaviour {
   public RectTransform back;
   public Button ColButton;
 
-  internal void SetValues(BlockNote blockNote, Sprite[] sprites,  int[] freqs, string[] notenames, List<Wave> waves) {
+  internal void SetValues(NoteData blockNote, Sprite[] sprites,  int[] freqs, string[] notenames, List<Wave> waves) {
     type = blockNote.type;
     TypeImg.sprite = sprites[(int)blockNote.type];
     val = blockNote.val;

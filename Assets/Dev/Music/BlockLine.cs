@@ -1,4 +1,4 @@
 ﻿
 public class BlockLine : ListLine {
-  public MusicNote[] note;
+  public NoteLine[] note;
 }
