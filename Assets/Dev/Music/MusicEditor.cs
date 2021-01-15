@@ -1214,10 +1214,12 @@ public class MusicEditor : MonoBehaviour {
     foreach (Transform t in ContentsWaves)
       Destroy(t.gameObject);
     int pos = 0;
+    wlines.Clear();
     foreach (Wave w in waves) {
       GameObject line = Instantiate(WaveLineTemplate, ContentsWaves);
       WaveLine wl = line.GetComponent<WaveLine>();
       line.SetActive(true);
+      wl.id = w.id;
       wl.WaveID.text = w.id.ToString();
       wl.WaveName.text = w.name;
       wl.WaveType.text = w.wave.ToString();
@@ -1242,7 +1244,6 @@ public class MusicEditor : MonoBehaviour {
     TitleBlockList.SetActive(false);
     TitleWaves.SetActive(true);
     SelectedCol.gameObject.SetActive(false);
-    wlines.Clear();
   }
 
   private void EditWaveFromList(Wave w) {
@@ -1254,6 +1255,8 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void CreateNewWave() {
+    Transform last = ContentsWaves.GetChild(ContentsWaves.childCount - 1);
+
     // Find the ID
     int id = 0;
     foreach (Wave ww in waves)
@@ -1263,6 +1266,21 @@ public class MusicEditor : MonoBehaviour {
     waves.Add(w);
     currentWave = w;
     Waves();
+
+    GameObject line = Instantiate(WaveLineTemplate, ContentsWaves);
+    WaveLine wl = line.GetComponent<WaveLine>();
+    line.SetActive(true);
+    wl.id = w.id;
+    wl.WaveID.text = w.id.ToString();
+    wl.WaveName.text = w.name;
+    wl.WaveType.text = w.wave.ToString();
+    wl.WaveTypeImg.sprite = WaveSprites[(int)w.wave];
+    wl.Delete.onClick.AddListener(() => DeleteWaveFromList(w));
+    wl.Edit.onClick.AddListener(() => EditWaveFromList(w));
+    int linenum = wlines.Count;
+    wl.LineButton.onClick.AddListener(() => SelectRow(linenum));
+    wlines.Add(wl);
+    last.SetAsLastSibling();
     ShowWave();
     SelectRow(waves.Count - 1);
   }
@@ -1285,12 +1303,27 @@ public class MusicEditor : MonoBehaviour {
     if (currentWave == null) return;
     Wave w = editor.Export();
     currentWave.CopyForm(w);
+    foreach(WaveLine wl in wlines) {
+      if (wl.id == currentWave.id) {
+        wl.WaveID.text = currentWave.id.ToString();
+        wl.WaveName.text = currentWave.name;
+        wl.WaveType.text = currentWave.wave.ToString();
+        wl.WaveTypeImg.sprite = WaveSprites[(int)currentWave.wave];
+        break;
+      }
+    }
     ShowWave();
   }
 
   public void CopyToWaveEditor() {
     if (currentWave == null) return;
     editor.Import(currentWave);
+  }
+
+  public void EditInWaveEditor() {
+    CopyToWaveEditor();
+    editor.gameObject.SetActive(true);
+    gameObject.SetActive(false);
   }
 
   public void UpdateWaveName(bool completed) {
@@ -1300,7 +1333,7 @@ public class MusicEditor : MonoBehaviour {
 
     if (status != MusicEditorStatus.Waveforms || wlines == null || wlines.Count == 0) return;
     foreach(WaveLine wl in wlines) {
-      if (wl.WaveID.text == currentWave.id.ToString()) {
+      if (wl.id == currentWave.id) {
         wl.WaveName.text = currentWave.name;
         wl.WaveType.text = currentWave.wave.ToString();
         wl.WaveTypeImg.sprite = editor.WaveSprites[(int)currentWave.wave];

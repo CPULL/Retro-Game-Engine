@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 
 public class WaveLine : ListLine {
+  public int id;
   public Text WaveID;
   public Text WaveName;
   public Text WaveType;
