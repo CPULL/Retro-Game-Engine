@@ -70,6 +70,7 @@ public class MusicEditor : MonoBehaviour {
   float timeForNextBeat = 0;
   float autoRepeat = 0;
   int currentPlayedMusicBlock = 0;
+  int currentPlayedMusicLine = 0;
   bool inputsSelected = false;
   int row = 0;
   int col = 0;
@@ -115,13 +116,15 @@ public class MusicEditor : MonoBehaviour {
     ContainerWaves.SetActive(false);
   }
 
-  private void Update() {
-    bool update = false;
-    autoRepeat -= Time.deltaTime;
-
-    if (playing) {
+  /*
+   old
       if (status == MusicEditorStatus.Music) {
         if (timeForNextBeat == 0) {
+          if (currentPlayedMusicBlock < 0 || currentPlayedMusicBlock >= mlines.Count) {
+            playing = false; // We may need to check the repeat here
+            return;
+          }
+
           BlockData block = null;
           int id = music.blocks[currentPlayedMusicBlock];
           foreach(BlockData b in blocks)
@@ -132,26 +135,120 @@ public class MusicEditor : MonoBehaviour {
 
           if (PlayLine(block)) {
             currentPlayedMusicBlock++;
-            row = 0;
-            if (currentPlayedMusicBlock >= music.blocks.Count) {
-              if (repeat) {
-                currentPlayedMusicBlock = 0;
-                row = 0;
-              }
-            }
+            currentPlayedMusicLine = 0;
+            if (currentPlayedMusicBlock >= 0 && currentPlayedMusicBlock < mlines.Count)
+              SelectRow(currentPlayedMusicBlock);
           }
-        }
-      }
-      else if (status == MusicEditorStatus.BlockEdit) {
-        if (timeForNextBeat == 0) {
-          update = true;
-          PlayLine(currentBlock);
         }
         else {
           timeForNextBeat -= Time.deltaTime;
           if (timeForNextBeat < 0) timeForNextBeat = 0;
         }
       }
+      else if (status == MusicEditorStatus.BlockEdit) {
+        if (timeForNextBeat == 0) {
+          update = true;
+          PlayLine(currentBlock);
+          if (currentPlayedMusicLine >= 0 && currentPlayedMusicLine < blines.Count)
+            SelectRow(currentPlayedMusicLine);
+        }
+        else {
+        }
+      }
+   
+   */
+  /*
+   if playing.
+  if block>max or <0 start from 0
+
+  has block current note?
+  if note<0 start from 0
+  if note>blen go to next block
+  no next block? restart if repeat
+
+  music: get and play note.
+  increase note and eventually increase block
+  wait bpm time
+   */
+
+
+  void PlayMusic() {
+    // Wait the time to play
+    if (timeForNextBeat > 0) {
+      timeForNextBeat -= Time.deltaTime;
+      if (timeForNextBeat < 0)
+        timeForNextBeat = 0;
+      else
+        return;
+    }
+
+    // if block>max or <0 start from 0
+    if (currentPlayedMusicBlock < 0 || currentPlayedMusicBlock >= music.blocks.Count) {
+      currentPlayedMusicBlock = 0;
+      currentPlayedMusicLine = 0;
+    }
+
+    // Pick block
+    BlockData block = null;
+    int id = music.blocks[currentPlayedMusicBlock];
+    foreach (BlockData b in blocks) {
+      if (b.id == id) {
+        block = b;
+        break;
+      }
+    }
+    if (block == null) {
+      playing = false;
+      currentPlayedMusicBlock = 0;
+      currentPlayedMusicLine = 0;
+      SetTapeButtonColor(-1);
+      return;
+    }
+
+    // has block current note?
+    // if note<0 start from 0
+    if (currentPlayedMusicLine < 0) currentPlayedMusicLine = 0;
+    // if note > blen go to next block
+    if (currentPlayedMusicLine >= block.len) {
+      currentPlayedMusicLine = 0;
+      currentPlayedMusicBlock++;
+      // no next block? restart if repeat
+      if (currentPlayedMusicBlock >= music.blocks.Count) {
+        currentPlayedMusicBlock = 0;
+        currentPlayedMusicLine = 0;
+        if (!repeat) {
+          playing = false;
+          SetTapeButtonColor(-1);
+        }
+      }
+      return;
+    }
+
+    // music: get and play note.
+    PlayNote(block);
+    currentPlayedMusicLine++;
+
+    // Show the line
+    SelectRow(currentPlayedMusicBlock);
+  }
+
+  void PlayBlock() {
+
+  }
+
+
+  private void Update() {
+    bool update = false;
+    autoRepeat -= Time.deltaTime;
+
+
+
+
+    if (playing && status == MusicEditorStatus.Music) {
+      PlayMusic();
+    }
+    else if (playing && status == MusicEditorStatus.BlockEdit) {
+      PlayBlock();
     }
     else if (inputsSelected) {
       if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Return)) {
@@ -311,7 +408,7 @@ public class MusicEditor : MonoBehaviour {
         break;
       case MusicEditorStatus.BlockEdit:
         ContainerBlock.SetActive(false);
-        TitleBlock.SetActive(true);
+        TitleBlock.SetActive(false);
         break;
       case MusicEditorStatus.Waveforms:
         ContainerWaves.SetActive(false);
@@ -340,31 +437,20 @@ public class MusicEditor : MonoBehaviour {
     }
   }
 
-  private bool PlayLine(BlockData block) {
+  private bool PlayNote(BlockData block) {
     if (block == null) return true;
-    if (row >= block.len - 1) {
-      if (repeat)
-        row = -1;
-      else {
-        playing = false;
-        SetTapeButtonColor(-1);
-      }
-      return true;
-    }
-    else if (row < 0) row = 0;
-    // Beat completed, check if we need to play a note, stop it or anything else
-    float timeForBeat = 15f / block.bpm;
-    timeForNextBeat = timeForBeat;
+
+    timeForNextBeat = 7.5f / block.bpm;
 
     for (int c = 0; c < music.NumVoices; c++) {
-      NoteData n = block.chs[c][row];
+      NoteData n = block.chs[c][currentPlayedMusicLine];
       switch (n.type) {
         case NoteType.Empty: break;
         case NoteType.Volume: break; // FIXME
         case NoteType.Freq: break; // FIXME
 
         case NoteType.Note:
-          sounds.Play(c, n.val, n.len * timeForBeat);
+          sounds.Play(c, n.val, n.len * timeForNextBeat);
           break;
 
         case NoteType.Wave:
@@ -377,7 +463,7 @@ public class MusicEditor : MonoBehaviour {
           break;
       }
     }
-    row++;
+    currentPlayedMusicLine++;
     return false;
   }
 
@@ -839,7 +925,6 @@ public class MusicEditor : MonoBehaviour {
 
   IEnumerator UpdateVisiblityOfColumnsDelayed() {
     yield return null;
-    float t = Time.realtimeSinceStartup;
     int numv = music.NumVoices;
     for (int r = 0; r < currentBlock.len; r++) {
       BlockLine bl = blines[r];
@@ -847,7 +932,6 @@ public class MusicEditor : MonoBehaviour {
         bl.note[c].gameObject.SetActive(c < numv);
       }
     }
-    Debug.Log(Time.realtimeSinceStartup - t);
   }
 
   void ShowBlockInfo() {
@@ -1509,12 +1593,11 @@ public class MusicEditor : MonoBehaviour {
     res += "\n";
 
     foreach(BlockData b in blocks) {
-      int len = b.len;
       res += b.name.Replace(":", "") + ":\n" +
             b.id.ToString("X2") + " " +
-            len.ToString("X2") + " " +
+            b.len.ToString("X2") + " " +
             b.bpm.ToString("X2") + "\n";
-      for (int r = 0; r < len; r++) {
+      for (int r = 0; r < b.len; r++) {
         for (int c = 0; c < numv; c++) {
           NoteData note = b.chs[c][r];
           byte ph = (byte)((note.val & 0xff00) >> 8);
@@ -1616,12 +1699,13 @@ public class MusicEditor : MonoBehaviour {
 
       data = data.Substring(pos + 1).Trim();
       data = ReadNextByte(data, out data1);
-      data = ReadNextByte(data, out byte lenb);
+      data = ReadNextByte(data, out data2);
       data = ReadNextByte(data, out data3);
       b.id = data1;
+      b.len = data2;
       b.bpm = data3;
 
-      for (int r = 0; r < lenb; r++) {
+      for (int r = 0; r < b.len; r++) {
         for (int c = 0; c < numv; c++) {
           data = ReadNextByte(data, out data1);
           data = ReadNextByte(data, out data2);
