@@ -639,17 +639,19 @@ public class MusicEditor : MonoBehaviour {
     if (status == MusicEditorStatus.BlockEdit) StartCoroutine(UpdateVisiblityOfColumnsDelayed());
   }
   public void ChangeMusicVoicesType(bool completed) {
-    int.TryParse(NumVoicesInputField.text, out int numv);
-    if (numv < 1 || numv > 8) {
-      NumVoicesInputField.SetTextWithoutNotify(music.NumVoices.ToString());
-      return;
+    if (completed) {
+      int.TryParse(NumVoicesInputField.text, out int numv);
+      if (numv < 1 || numv > 8) {
+        NumVoicesInputField.SetTextWithoutNotify(music.NumVoices.ToString());
+        return;
+      }
+      int prev = music.NumVoices;
+      for (int i = 0; i < 8; i++)
+        music.voices[i] = (byte)((i < numv) ? i : 255);
+      if (prev != numv && status == MusicEditorStatus.BlockEdit) ShowBlock();
+      if (status == MusicEditorStatus.BlockEdit) StartCoroutine(UpdateVisiblityOfColumnsDelayed());
     }
-    int prev = music.NumVoices;
-    for (int i = 0; i < 8; i++)
-      music.voices[i] = (byte)((i < numv) ? i : 255);
-    if (prev != numv && status == MusicEditorStatus.BlockEdit) ShowBlock();
     inputsSelected = !completed;
-    if (status == MusicEditorStatus.BlockEdit) StartCoroutine(UpdateVisiblityOfColumnsDelayed());
   }
 
   public void ChangeMusicBPM(bool up) {
@@ -659,12 +661,14 @@ public class MusicEditor : MonoBehaviour {
     inputsSelected = false;
   }
   public void ChangeMusicBPMType(bool completed) {
-    int.TryParse(MusicBPMInputField.text, out int bpm);
-    if (bpm < 20 || bpm > 240) {
-      MusicBPMInputField.SetTextWithoutNotify(music.bpm.ToString());
-      return;
+    if (completed) {
+      int.TryParse(MusicBPMInputField.text, out int bpm);
+      if (bpm < 20 || bpm > 240) {
+        MusicBPMInputField.SetTextWithoutNotify(music.bpm.ToString());
+        return;
+      }
+      music.bpm = bpm;
     }
-    music.bpm = bpm;
     inputsSelected = !completed;
   }
 
@@ -675,12 +679,14 @@ public class MusicEditor : MonoBehaviour {
     inputsSelected = false;
   }
   public void ChangeMusicLenType(bool completed) {
-    int.TryParse(MusicDefLenInputField.text, out int len);
-    if (len < 1 || len > 128) {
-      MusicDefLenInputField.SetTextWithoutNotify(music.defLen.ToString());
-      return;
+    if (completed) {
+      int.TryParse(MusicDefLenInputField.text, out int len);
+      if (len < 1 || len > 128) {
+        MusicDefLenInputField.SetTextWithoutNotify(music.defLen.ToString());
+        return;
+      }
+      music.defLen = len;
     }
-    music.defLen = len;
     inputsSelected = !completed;
   }
 
@@ -845,14 +851,16 @@ public class MusicEditor : MonoBehaviour {
   }
   public void ChangeBlockLenType(bool completed) {
     if (currentBlock == null) return;
-    BlockData b = currentBlock;
-    int.TryParse(BlockLenInputField.text, out int len);
-    if (len < 1 || len > 128) {
-      BlockLenInputField.SetTextWithoutNotify(b.len.ToString());
-      return;
+    if (completed) {
+      BlockData b = currentBlock;
+      int.TryParse(BlockLenInputField.text, out int len);
+      if (len < 1 || len > 128) {
+        BlockLenInputField.SetTextWithoutNotify(b.len.ToString());
+        return;
+      }
+      UpdateBlockLen(b, len);
     }
     inputsSelected = !completed;
-    UpdateBlockLen(b, len);
   }
   void UpdateBlockLen(BlockData b, int len) {
     if (currentBlock == null) return;
@@ -888,13 +896,15 @@ public class MusicEditor : MonoBehaviour {
   }
   public void ChangeBlockBPMType(bool completed) {
     if (currentBlock == null) return;
-    BlockData b = currentBlock;
-    int.TryParse(BlockBPMInputField.text, out int bpm);
-    if (bpm < 20 || bpm > 240) {
-      BlockBPMInputField.SetTextWithoutNotify(b.bpm.ToString());
-      return;
+    if (completed) {
+      BlockData b = currentBlock;
+      int.TryParse(BlockBPMInputField.text, out int bpm);
+      if (bpm < 20 || bpm > 240) {
+        BlockBPMInputField.SetTextWithoutNotify(b.bpm.ToString());
+        return;
+      }
+      b.bpm = bpm;
     }
-    b.bpm = bpm;
     inputsSelected = !completed;
   }
 
@@ -909,14 +919,16 @@ public class MusicEditor : MonoBehaviour {
     UpdateNoteLength();
   }
   public void ChangeNoteLenType(bool completed) {
-    int.TryParse(NoteLenInputField.text, out int len);
-    if (len < 20 || len > 16) {
-      NoteLenInputField.SetTextWithoutNotify(len.ToString());
-      return;
+    if (completed) {
+      int.TryParse(NoteLenInputField.text, out int len);
+      if (len < 20 || len > 16) {
+        NoteLenInputField.SetTextWithoutNotify(len.ToString());
+        return;
+      }
+      noteLen = len;
+      UpdateNoteLength();
     }
-    noteLen = len;
     inputsSelected = !completed;
-    UpdateNoteLength();
   }
 
   public void ChangeStepLen(bool up) {
@@ -926,12 +938,14 @@ public class MusicEditor : MonoBehaviour {
     inputsSelected = false;
   }
   public void ChangeStepLenType(bool completed) {
-    int.TryParse(NoteLenInputField.text, out int len);
-    if (len < 20 || len > 16) {
-      StepLenInputField.SetTextWithoutNotify(len.ToString());
-      return;
+    if (completed) {
+      int.TryParse(NoteLenInputField.text, out int len);
+      if (len < 20 || len > 16) {
+        StepLenInputField.SetTextWithoutNotify(len.ToString());
+        return;
+      }
+      stepLen = len;
     }
-    stepLen = len;
     inputsSelected = !completed;
   }
 
@@ -981,23 +995,25 @@ public class MusicEditor : MonoBehaviour {
 
   public void UpdateBlockName(bool completed) {
     if (currentBlock == null) return;
-    currentBlock.name = BlockNameInput.text;
-    inputsSelected = !completed;
+    if (completed) {
+      currentBlock.name = BlockNameInput.text;
 
-    if (status == MusicEditorStatus.BlockList) {
-      foreach(BlockListLine bl in bllines) {
-        if (bl.BlockID.text == currentBlock.id.ToString()) {
-          bl.BlockName.text = currentBlock.name;
+      if (status == MusicEditorStatus.BlockList) {
+        foreach (BlockListLine bl in bllines) {
+          if (bl.BlockID.text == currentBlock.id.ToString()) {
+            bl.BlockName.text = currentBlock.name;
+          }
+        }
+      }
+      else if (status == MusicEditorStatus.Music) {
+        foreach (MusicLine ml in mlines) {
+          if (ml.BlockID.text == currentBlock.id.ToString()) {
+            ml.BlockName.text = currentBlock.name;
+          }
         }
       }
     }
-    else if (status == MusicEditorStatus.Music) {
-      foreach(MusicLine ml in mlines) {
-        if (ml.BlockID.text == currentBlock.id.ToString()) {
-          ml.BlockName.text = currentBlock.name;
-        }
-      }
-    }
+    inputsSelected = !completed;
   }
 
   private void UpdateNoteLength(int len = -1) {
@@ -1170,88 +1186,91 @@ public class MusicEditor : MonoBehaviour {
 
   public void ChangeCellInputVal(bool completed) {
     if (currentBlock == null) return;
-    NoteData note = currentBlock.chs[col][row];
-    inputsSelected = !completed;
+    if (completed) {
+      NoteData note = currentBlock.chs[col][row];
+      switch (note.type) {
+        case NoteType.Empty: break;
 
-    switch (note.type) {
-      case NoteType.Empty: break;
-
-      case NoteType.Note: {
-        string val = CellValInput.text.Trim().ToLowerInvariant();
-        // The value can be a note or a frequency
-        int notepos = -1;
-        for (int i = 0; i < noteNames.Length; i++) {
-          if (noteNames[i].ToLowerInvariant() == val) {
-            notepos = i;
-            break;
+        case NoteType.Note: {
+          string val = CellValInput.text.Trim().ToLowerInvariant();
+          // The value can be a note or a frequency
+          int notepos = -1;
+          for (int i = 0; i < noteNames.Length; i++) {
+            if (noteNames[i].ToLowerInvariant() == val) {
+              notepos = i;
+              break;
+            }
           }
-        }
-        if (notepos != -1) {
-          note.val = freqs[notepos];
-          blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
-          ShowNote(note);
-        }
-        else {
-          if (int.TryParse(val, out int freq)) {
-            note.val = freq;
+          if (notepos != -1) {
+            note.val = freqs[notepos];
             blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
             ShowNote(note);
           }
+          else {
+            if (int.TryParse(val, out int freq)) {
+              note.val = freq;
+              blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
+              ShowNote(note);
+            }
+          }
         }
-      }
-      break;
+        break;
 
-      case NoteType.Wave: {
-        string val = CellValInput.text.Trim().ToLowerInvariant();
-        // The value can be an id or a name
-        int.TryParse(val, out int waveid);
-        for (int i = 0; i < waves.Count; i++) {
-          if (waves[i].name.Trim().ToLowerInvariant() == val || waves[i].id == waveid) {
-            note.val = waves[i].id;
+        case NoteType.Wave: {
+          string val = CellValInput.text.Trim().ToLowerInvariant();
+          // The value can be an id or a name
+          int.TryParse(val, out int waveid);
+          for (int i = 0; i < waves.Count; i++) {
+            if (waves[i].name.Trim().ToLowerInvariant() == val || waves[i].id == waveid) {
+              note.val = waves[i].id;
+              blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
+              ShowNote(note);
+              break;
+            }
+          }
+        }
+        break;
+
+        case NoteType.Volume: {
+          if (int.TryParse(CellValInput.text.Trim(), out int vol)) {
+            if (vol < 0) vol = 0;
+            if (vol > 100) vol = 100;
+            note.val = (int)(vol * 255f / 100);
             blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
             ShowNote(note);
             break;
           }
         }
-      }
-      break;
-
-      case NoteType.Volume: {
-        if (int.TryParse(CellValInput.text.Trim(), out int vol)) {
-          if (vol < 0) vol = 0;
-          if (vol > 100) vol = 100;
-          note.val = (int)(vol * 255f / 100);
-          blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
-          ShowNote(note);
-          break;
-        }
-      }
         break;
-      case NoteType.Freq:
-        if (int.TryParse(CellValInput.text.Trim(), out int fval)) {
-          if (fval < 50) fval = 50;
-          if (fval > 22000) fval = 22000;
-          note.val = fval;
-          blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
-          ShowNote(note);
+        case NoteType.Freq:
+          if (int.TryParse(CellValInput.text.Trim(), out int fval)) {
+            if (fval < 50) fval = 50;
+            if (fval > 22000) fval = 22000;
+            note.val = fval;
+            blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
+            ShowNote(note);
+            break;
+          }
           break;
-        }
-        break;
+      }
     }
+    inputsSelected = !completed;
   }
 
   public void ChangeCellInputLen(bool completed) {
     if (currentBlock == null) return;
-    NoteData note = currentBlock.chs[col][row];
-    inputsSelected = !completed;
+    if (completed) {
+      NoteData note = currentBlock.chs[col][row];
 
-    if (int.TryParse(CellValInput.text.Trim(), out int len)) {
-      if (len < 1) len = 1;
-      if (len > 16) len = 16;
-      note.len = len;
-      blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
-      ShowNote(note);
+      if (int.TryParse(CellValInput.text.Trim(), out int len)) {
+        if (len < 1) len = 1;
+        if (len > 16) len = 16;
+        note.len = len;
+        blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
+        ShowNote(note);
+      }
     }
+    inputsSelected = !completed;
   }
 
 
@@ -1459,18 +1478,20 @@ public class MusicEditor : MonoBehaviour {
 
   public void UpdateWaveName(bool completed) {
     if (currentWave == null) return;
-    currentWave.name = WaveNameInput.text;
-    inputsSelected = !completed;
+    if (completed) {
+      currentWave.name = WaveNameInput.text;
 
-    if (status != MusicEditorStatus.Waveforms || wlines == null || wlines.Count == 0) return;
-    foreach(WaveLine wl in wlines) {
-      if (wl.id == currentWave.id) {
-        wl.WaveName.text = currentWave.name;
-        wl.WaveType.text = currentWave.wave.ToString();
-        wl.WaveTypeImg.sprite = editor.WaveSprites[(int)currentWave.wave];
-        return;
+      if (status != MusicEditorStatus.Waveforms || wlines == null || wlines.Count == 0) return;
+      foreach (WaveLine wl in wlines) {
+        if (wl.id == currentWave.id) {
+          wl.WaveName.text = currentWave.name;
+          wl.WaveType.text = currentWave.wave.ToString();
+          wl.WaveTypeImg.sprite = editor.WaveSprites[(int)currentWave.wave];
+          return;
+        }
       }
     }
+    inputsSelected = !completed;
   }
 
   public void SetWave() {
@@ -2031,9 +2052,6 @@ public class NoteData {
 
 /*
 
-
-The first note looks like it last for a wrong amount of time
-problems in editing in the cell view. The data should not be altered right away
 
 record block
 
