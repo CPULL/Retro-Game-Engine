@@ -67,10 +67,14 @@ public class MusicEditor : MonoBehaviour {
   public GameObject CreateNewWaveInList;
 
   MusicData music;
-
-  MusicEditorStatus status = MusicEditorStatus.Idle;
+  float timeForNextBeat = 0;
+  float autoRepeat = 0;
+  int currentPlayedMusicBlock = 0;
+  bool inputsSelected = false;
   int row = 0;
   int col = 0;
+
+  MusicEditorStatus status = MusicEditorStatus.Idle;
 
   private void Start() {
     music = new MusicData() {
@@ -111,9 +115,6 @@ public class MusicEditor : MonoBehaviour {
     ContainerWaves.SetActive(false);
   }
 
-  float timeForNextBeat = 0;
-  float autoRepeat = 0;
-  int currentPlayedMusicBlock = 0;
   private void Update() {
     bool update = false;
     autoRepeat -= Time.deltaTime;
@@ -297,6 +298,48 @@ public class MusicEditor : MonoBehaviour {
     }
   }
 
+  private void ShowSection(MusicEditorStatus mode) {
+    switch (status) {
+      case MusicEditorStatus.Idle: break;
+      case MusicEditorStatus.Music:
+        ContainerMusic.SetActive(false);
+        TitleMusic.SetActive(false);
+        break;
+      case MusicEditorStatus.BlockList:
+        ContainerBlocks.SetActive(false);
+        TitleBlockList.SetActive(false);
+        break;
+      case MusicEditorStatus.BlockEdit:
+        ContainerBlock.SetActive(false);
+        TitleBlock.SetActive(true);
+        break;
+      case MusicEditorStatus.Waveforms:
+        ContainerWaves.SetActive(false);
+        TitleWaves.SetActive(false);
+        break;
+    }
+    status = mode;
+    switch (status) {
+      case MusicEditorStatus.Idle: break;
+      case MusicEditorStatus.Music:
+        ContainerMusic.SetActive(true);
+        TitleMusic.SetActive(true);
+        break;
+      case MusicEditorStatus.BlockList:
+        ContainerBlocks.SetActive(true);
+        TitleBlockList.SetActive(true);
+        break;
+      case MusicEditorStatus.BlockEdit:
+        ContainerBlock.SetActive(true);
+        TitleBlock.SetActive(true);
+        break;
+      case MusicEditorStatus.Waveforms:
+        ContainerWaves.SetActive(true);
+        TitleWaves.SetActive(true);
+        break;
+    }
+  }
+
   private bool PlayLine(BlockData block) {
     if (block == null) return true;
     if (row >= block.len - 1) {
@@ -419,9 +462,6 @@ public class MusicEditor : MonoBehaviour {
   }
 
 
-
-  bool inputsSelected = false;
-
   #region Music **********************************************************************************************************************************************************
 
   public void MusicRegenerate() {
@@ -460,15 +500,7 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void Music() { // Show what we have as music
-    status = MusicEditorStatus.Music;
-    ContainerMusic.SetActive(true);
-    ContainerBlocks.SetActive(false);
-    ContainerBlock.SetActive(false);
-    ContainerWaves.SetActive(false);
-    TitleMusic.SetActive(true);
-    TitleBlock.SetActive(false);
-    TitleBlockList.SetActive(false);
-    TitleWaves.SetActive(false);
+    ShowSection(MusicEditorStatus.Music);
     SelectedCol.gameObject.SetActive(false);
     NameInput.SetTextWithoutNotify(music.name);
   }
@@ -782,16 +814,7 @@ public class MusicEditor : MonoBehaviour {
 
   public void ShowBlock() { // Show the current block
     if (currentBlock == null) return;
-    float t = Time.time;
-    status = MusicEditorStatus.BlockEdit;
-    ContainerMusic.SetActive(false);
-    ContainerBlocks.SetActive(false);
-    ContainerBlock.SetActive(true);
-    ContainerWaves.SetActive(false);
-    TitleMusic.SetActive(false);
-    TitleBlock.SetActive(true);
-    TitleBlockList.SetActive(false);
-    TitleWaves.SetActive(false);
+    ShowSection(MusicEditorStatus.BlockEdit);
     SelectedCol.gameObject.SetActive(true);
 
     ShowBlockInfo();
@@ -803,17 +826,20 @@ public class MusicEditor : MonoBehaviour {
         bl.note[c].SetValues(currentBlock.chs[c][r], NoteTypeSprites, freqs, noteNames, waves);
       }
     }
-    for (int r = currentBlock.len; r < 128; r++) {
+    StartCoroutine(HideLinesDelayed(currentBlock.len));
+    StartCoroutine(UpdateVisiblityOfColumnsDelayed());
+  }
+
+  IEnumerator HideLinesDelayed(int start) {
+    yield return null;
+    for (int r = start; r < 128; r++) {
       blines[r].gameObject.SetActive(false);
     }
-    Debug.Log(Time.time - t);
-
-    StartCoroutine(UpdateVisiblityOfColumnsDelayed());
   }
 
   IEnumerator UpdateVisiblityOfColumnsDelayed() {
     yield return null;
-    float t = Time.time;
+    float t = Time.realtimeSinceStartup;
     int numv = music.NumVoices;
     for (int r = 0; r < currentBlock.len; r++) {
       BlockLine bl = blines[r];
@@ -821,7 +847,7 @@ public class MusicEditor : MonoBehaviour {
         bl.note[c].gameObject.SetActive(c < numv);
       }
     }
-    Debug.Log(Time.time - t);
+    Debug.Log(Time.realtimeSinceStartup - t);
   }
 
   void ShowBlockInfo() {
@@ -1136,15 +1162,7 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void Blocks() { // Show a list of blocks
-    status = MusicEditorStatus.BlockList;
-    ContainerMusic.SetActive(false);
-    ContainerBlocks.SetActive(true);
-    ContainerBlock.SetActive(false);
-    ContainerWaves.SetActive(false);
-    TitleMusic.SetActive(false);
-    TitleBlock.SetActive(false);
-    TitleBlockList.SetActive(true);
-    TitleWaves.SetActive(false);
+    ShowSection(MusicEditorStatus.BlockList);
     SelectedCol.gameObject.SetActive(false);
   }
 
@@ -1234,15 +1252,7 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void Waves() { // Show a list of waves
-    status = MusicEditorStatus.Waveforms;
-    ContainerMusic.SetActive(false);
-    ContainerBlocks.SetActive(false);
-    ContainerBlock.SetActive(false);
-    ContainerWaves.SetActive(true);
-    TitleMusic.SetActive(false);
-    TitleBlock.SetActive(false);
-    TitleBlockList.SetActive(false);
-    TitleWaves.SetActive(true);
+    ShowSection(MusicEditorStatus.Waveforms);
     SelectedCol.gameObject.SetActive(false);
   }
 
