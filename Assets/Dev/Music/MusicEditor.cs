@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -24,8 +25,8 @@ public class MusicEditor : MonoBehaviour {
   private BlockData currentBlock = null;
   private Wave currentWave = null;
   readonly private List<MusicLine> mlines = new List<MusicLine>();
-  readonly private List<BlockLine> blines = new List<BlockLine>();
   readonly private List<BlockListLine> bllines = new List<BlockListLine>();
+  readonly private List<BlockLine> blines = new List<BlockLine>();
   readonly private List<WaveLine> wlines = new List<WaveLine>();
 
   private Color32 SelectedColor = new Color32(36, 52, 36, 255);
@@ -92,15 +93,13 @@ public class MusicEditor : MonoBehaviour {
       bl.IndexTxt.text = i.ToString("d2");
       bl.LineButton.onClick.AddListener(() => SelectRow(i));
       int linenum = i;
-      for (int j = 0; j < 8; j++) {
-        int colnum = j;
-        bl.note[j].SetZeroValues(NoteTypeSprites);
-        bl.note[j].ColButton.onClick.AddListener(() => SelectRowColumn(linenum, colnum));
-      }
-      blines.Add(bl);
       for (int c = 0; c < 8; c++) {
+        int colnum = c;
+        bl.note[c].SetZeroValues(NoteTypeSprites);
+        bl.note[c].ColButton.onClick.AddListener(() => SelectRowColumn(linenum, colnum));
         bl.note[c].gameObject.SetActive(c < numv);
       }
+      blines.Add(bl);
     }
     ShowNote(null);
     Instantiate(CreateNewBlockInMusic, ContentsMusic).SetActive(true);
@@ -482,6 +481,7 @@ public class MusicEditor : MonoBehaviour {
       music.voices[i] = (byte)((i < numv) ? i : 255);
     NumVoicesInputField.SetTextWithoutNotify(numv.ToString());
     inputsSelected = false;
+    if (status == MusicEditorStatus.BlockEdit) StartCoroutine(UpdateVisiblityOfColumnsDelayed());
   }
   public void ChangeMusicVoicesType(bool completed) {
     int.TryParse(NumVoicesInputField.text, out int numv);
@@ -494,6 +494,7 @@ public class MusicEditor : MonoBehaviour {
       music.voices[i] = (byte)((i < numv) ? i : 255);
     if (prev != numv && status == MusicEditorStatus.BlockEdit) ShowBlock();
     inputsSelected = !completed;
+    if (status == MusicEditorStatus.BlockEdit) StartCoroutine(UpdateVisiblityOfColumnsDelayed());
   }
 
   public void ChangeMusicBPM(bool up) {
@@ -699,29 +700,10 @@ public class MusicEditor : MonoBehaviour {
     UpdateBlockLen(b, len);
   }
   void UpdateBlockLen(BlockData b, int len) {
-    if (b.len < len) {
-      int numv = music.NumVoices;
-      for (int i = b.len; i <= len; i++) {
-        for (int j = 0; j < 8; j++) {
-          b.chs[j].Add(new NoteData());
-        }
-        Transform line = ContentsBlock.GetChild(i);
-        line.gameObject.SetActive(true);
-        for (int c = 0; c < 8; c++) {
-          blines[i].note[c].gameObject.SetActive(c < numv);
-        }
-      }
-    }
-    else {
-      while (b.len > len) {
-        int pos = b.len - 1;
-        for (int j = 0; j < 8; j++) {
-          b.chs[j].RemoveAt(pos);
-        }
-        pos = blines.Count - 1;
-        Transform line = ContentsBlock.GetChild(pos);
-        line.gameObject.SetActive(true);
-      }
+    if (currentBlock == null) return;
+    currentBlock.len = len;
+    for (int r = 0; r < 128; r++) {
+      blines[r].gameObject.SetActive(r < len);
     }
 
     if (status == MusicEditorStatus.BlockList) {
@@ -800,6 +782,7 @@ public class MusicEditor : MonoBehaviour {
 
   public void ShowBlock() { // Show the current block
     if (currentBlock == null) return;
+    float t = Time.time;
     status = MusicEditorStatus.BlockEdit;
     ContainerMusic.SetActive(false);
     ContainerBlocks.SetActive(false);
@@ -812,17 +795,33 @@ public class MusicEditor : MonoBehaviour {
     SelectedCol.gameObject.SetActive(true);
 
     ShowBlockInfo();
-    for (int i = 0; i < currentBlock.len; i++) {
-      BlockLine bl = blines[i];
+    int numv = music.NumVoices;
+    for (int r = 0; r < currentBlock.len; r++) {
+      BlockLine bl = blines[r];
       bl.gameObject.SetActive(true);
-      for (int j = 0; j < 8; j++) {
-        bl.note[j].gameObject.SetActive(j < music.NumVoices);
-        bl.note[j].SetValues(currentBlock.chs[j][i], NoteTypeSprites, freqs, noteNames, waves);
+      for (int c = 0; c < numv; c++) {
+        bl.note[c].SetValues(currentBlock.chs[c][r], NoteTypeSprites, freqs, noteNames, waves);
       }
     }
-    for (int i = currentBlock.len; i < 128; i++) {
-      blines[i].gameObject.SetActive(false);
+    for (int r = currentBlock.len; r < 128; r++) {
+      blines[r].gameObject.SetActive(false);
     }
+    Debug.Log(Time.time - t);
+
+    StartCoroutine(UpdateVisiblityOfColumnsDelayed());
+  }
+
+  IEnumerator UpdateVisiblityOfColumnsDelayed() {
+    yield return null;
+    float t = Time.time;
+    int numv = music.NumVoices;
+    for (int r = 0; r < currentBlock.len; r++) {
+      BlockLine bl = blines[r];
+      for (int c = 0; c < 8; c++) {
+        bl.note[c].gameObject.SetActive(c < numv);
+      }
+    }
+    Debug.Log(Time.time - t);
   }
 
   void ShowBlockInfo() {
@@ -1867,11 +1866,9 @@ public class NoteData {
 
 
 /*
-Chaning len does not add the current amount of notes
-Have the notes field created at startup, and just update them to make it quicker to switch
-The first note looks like it last for a wrong amount of time
-Looks like we add a line too much (len =16 adds 17 lines)
 
+
+The first note looks like it last for a wrong amount of time
 problems in editing in the cell view. The data should not be altered right away
 
 record block

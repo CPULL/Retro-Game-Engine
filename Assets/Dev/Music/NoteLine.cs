@@ -92,9 +92,6 @@ public class NoteLine : MonoBehaviour {
     back.sizeDelta = new Vector2(38, len * 32);
   }
 
-  internal void Hide() {
-    gameObject.SetActive(false);
-  }
 }
 
 

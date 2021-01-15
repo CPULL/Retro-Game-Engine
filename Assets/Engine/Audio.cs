@@ -34,13 +34,18 @@ public class Audio : MonoBehaviour {
       channels[i] = new Channel(
         srcs[i],
         Waveform.Triangular,
-        AudioClip.Create("Channel" + i, samplerate * 2, 1, samplerate, true, readers[i], positions[i])
-      );
+        AudioClip.Create("Channel" + i, samplerate * 2, 1, samplerate, true, readers[i], positions[i]));
     }
 
     outputs = new float[channels.Length][];
     for (int i = 0; i < channels.Length; i++)
       outputs[i] = new float[512];
+  }
+
+  private void Start() {
+    for (int i = 0; i < channels.Length; i++) {
+      channels[i].Play(440, .001f);
+    }
   }
 
   public float[] Oscillator {
