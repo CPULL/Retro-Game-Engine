@@ -233,7 +233,44 @@ public class MusicEditor : MonoBehaviour {
   }
 
   void PlayBlock() {
+    // Wait the time to play
+    if (timeForNextBeat > 0) {
+      timeForNextBeat -= Time.deltaTime;
+      if (timeForNextBeat < 0)
+        timeForNextBeat = 0;
+      else
+        return;
+    }
 
+    // Pick block
+    BlockData block = currentBlock;
+    if (block == null) {
+      playing = false;
+      currentPlayedMusicBlock = 0;
+      currentPlayedMusicLine = 0;
+      SetTapeButtonColor(-1);
+      return;
+    }
+
+    // has block current note?
+    // if note<0 start from 0
+    if (currentPlayedMusicLine < 0) currentPlayedMusicLine = 0;
+    // if note > blen go to next block
+    if (currentPlayedMusicLine >= block.len) {
+      currentPlayedMusicLine = 0;
+      if (!repeat) {
+        playing = false;
+        SetTapeButtonColor(-1);
+      }
+      return;
+    }
+
+    // Show the line
+    SelectRow(currentPlayedMusicLine);
+
+    // music: get and play note.
+    PlayNote(block);
+    currentPlayedMusicLine++;
   }
 
 
@@ -440,7 +477,7 @@ public class MusicEditor : MonoBehaviour {
   private bool PlayNote(BlockData block) {
     if (block == null) return true;
 
-    timeForNextBeat = 7.5f / block.bpm;
+    timeForNextBeat = 15f / block.bpm;
 
     for (int c = 0; c < music.NumVoices; c++) {
       NoteData n = block.chs[c][currentPlayedMusicLine];
