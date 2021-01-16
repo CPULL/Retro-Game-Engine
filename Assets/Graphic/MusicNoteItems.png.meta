@@ -17,6 +17,9 @@ TextureImporter:
   - first:
       213: 8468567423917572358
     second: MusicNoteItems_4
+  - first:
+      213: -4443422965096846821
+    second: MusicNoteItems_5
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -216,6 +219,27 @@ TextureImporter:
       bones: []
       spriteID: 6014d032435668570800000000000000
       internalID: 8468567423917572358
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MusicNoteItems_5
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b1ae6920b5ac552c0800000000000000
+      internalID: -4443422965096846821
       vertices: []
       indices: 
       edges: []

@@ -404,13 +404,13 @@ public class WaveformEditor : MonoBehaviour {
     Sustain.SetValueWithoutNotify(sustain);
     Release.SetValueWithoutNotify(release);
 
-    float val = Phase.value;
+    float val;
     if (wave == Waveform.Square) {
       if (phase < 0.01f) phase = .01f;
       if (phase > 0.99f) phase = .99f;
       val = 20f * phase - 10;
     }
-    else { // FIXME this may not work
+    else {
       if (phase < 0.01f) phase = .01f;
       if (phase > 10f) phase = 10f;
       val = 10 * phase - 10;
@@ -507,7 +507,7 @@ public class WaveformEditor : MonoBehaviour {
       if (phase > 0.99f) phase = .99f;
       val = 20f * phase - 10;
     }
-    else { // FIXME this may not work
+    else {
       if (phase < 0.01f) phase = .01f;
       if (phase > 10f) phase = 10f;
       val = 10 * phase - 10;

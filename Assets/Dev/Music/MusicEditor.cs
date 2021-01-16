@@ -7,6 +7,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class MusicEditor : MonoBehaviour {
+  #region References and global variables
+
   public Audio sounds;
   public Transform ContentsMusic;
   public Transform ContentsBlocks;
@@ -74,8 +76,15 @@ public class MusicEditor : MonoBehaviour {
   bool inputsSelected = false;
   int row = 0;
   int col = 0;
+  bool recording = false;
+  float countInForRecording = 0;
+  bool playing = false;
+  bool repeat = false;
+  Swipe[] swipes = new Swipe[8];
 
   MusicEditorStatus status = MusicEditorStatus.Idle;
+
+  #endregion
 
   private void Start() {
     music = new MusicData() {
@@ -116,63 +125,45 @@ public class MusicEditor : MonoBehaviour {
     ContainerWaves.SetActive(false);
   }
 
-  /*
-   old
-      if (status == MusicEditorStatus.Music) {
-        if (timeForNextBeat == 0) {
-          if (currentPlayedMusicBlock < 0 || currentPlayedMusicBlock >= mlines.Count) {
-            playing = false; // We may need to check the repeat here
-            return;
-          }
-
-          BlockData block = null;
-          int id = music.blocks[currentPlayedMusicBlock];
-          foreach(BlockData b in blocks)
-            if (b.id == id) {
-              block = b;
-              break;
-            }
-
-          if (PlayLine(block)) {
-            currentPlayedMusicBlock++;
-            currentPlayedMusicLine = 0;
-            if (currentPlayedMusicBlock >= 0 && currentPlayedMusicBlock < mlines.Count)
-              SelectRow(currentPlayedMusicBlock);
-          }
-        }
-        else {
-          timeForNextBeat -= Time.deltaTime;
-          if (timeForNextBeat < 0) timeForNextBeat = 0;
-        }
+  void HandleSwipes() {
+    for (int c = 0; c < 8; c++) {
+      Swipe s = swipes[c];
+      if (s.vollen != 0) {
+        float step = s.voltime / s.vollen;
+        sounds.Volume(c, s.vols * step + s.vole * (1 - step));
       }
-      else if (status == MusicEditorStatus.BlockEdit) {
-        if (timeForNextBeat == 0) {
-          update = true;
-          PlayLine(currentBlock);
-          if (currentPlayedMusicLine >= 0 && currentPlayedMusicLine < blines.Count)
-            SelectRow(currentPlayedMusicLine);
-        }
-        else {
-        }
+      s.voltime += Time.deltaTime;
+      if (s.voltime >= s.vollen) {
+        sounds.Volume(c, s.vole);
+        s.vollen = 0;
       }
-   
-   */
-  /*
-   if playing.
-  if block>max or <0 start from 0
 
-  has block current note?
-  if note<0 start from 0
-  if note>blen go to next block
-  no next block? restart if repeat
+      if (s.freqlen != 0) {
+        float step = s.freqtime / s.freqlen;
+        sounds.Freq(c, s.freqs * step + s.freqe * (1 - step));
+      }
+      s.freqtime += Time.deltaTime;
+      if (s.freqtime >= s.freqlen) {
+        sounds.Freq(c, s.freqe);
+        s.freqlen = 0;
+      }
 
-  music: get and play note.
-  increase note and eventually increase block
-  wait bpm time
-   */
-
+      if (s.panlen != 0) {
+        float step = s.pantime / s.panlen;
+        sounds.Pan(c, s.pans * step + s.pane * (1 - step));
+      }
+      s.pantime += Time.deltaTime;
+      if (s.pantime >= s.panlen) {
+        sounds.Pan(c, s.pane);
+        s.panlen = 0;
+      }
+    }
+  }
 
   void PlayMusic() {
+    // Check for swipes
+    HandleSwipes();
+
     // Wait the time to play
     if (timeForNextBeat > 0) {
       timeForNextBeat -= Time.deltaTime;
@@ -233,6 +224,9 @@ public class MusicEditor : MonoBehaviour {
   }
 
   void PlayBlock() {
+    // Check for swipes
+    HandleSwipes();
+
     // Wait the time to play
     if (timeForNextBeat > 0) {
       timeForNextBeat -= Time.deltaTime;
@@ -278,8 +272,23 @@ public class MusicEditor : MonoBehaviour {
     bool update = false;
     autoRepeat -= Time.deltaTime;
 
+    /*
+     do we have the delayedRecordStar? Just wait and make record flash
+    if we are recording do the normal play but allow also normal block edit
+     */
 
+    if (countInForRecording > 0) {
+      countInForRecording -= Time.deltaTime;
+      if ((countInForRecording % timeForNextBeat) < timeForNextBeat * .75f)
+        SetTapeButtonColor(-1);
+      else
+        SetTapeButtonColor(0);
 
+      if (countInForRecording <= 0) {
+        SetTapeButtonColor(0);
+        recording = true;
+      }
+    }
 
     if (playing && status == MusicEditorStatus.Music) {
       PlayMusic();
@@ -296,100 +305,116 @@ public class MusicEditor : MonoBehaviour {
       }
     }
     else {
-      if (status == MusicEditorStatus.BlockEdit) {
+      if (recording) PlayBlock();
+
+      if (!recording) {
+        if (status == MusicEditorStatus.BlockEdit) {
+          if (Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+          if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < blines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+        }
+        else if (status == MusicEditorStatus.Music) {
+          if (Input.GetKey(KeyCode.UpArrow) && mlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+          if (Input.GetKey(KeyCode.DownArrow) && mlines != null && row < mlines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+        }
+        else if (status == MusicEditorStatus.Waveforms) {
+          if (Input.GetKey(KeyCode.UpArrow) && wlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+          if (Input.GetKey(KeyCode.DownArrow) && wlines != null && row < wlines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+        }
+        else if (status == MusicEditorStatus.BlockList) {
+          if (Input.GetKey(KeyCode.UpArrow) && bllines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+          if (Input.GetKey(KeyCode.DownArrow) && bllines != null && row < bllines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+        }
+      }
+      if (recording && status == MusicEditorStatus.BlockEdit) {
         if (Input.GetKeyDown(KeyCode.LeftArrow) && col > 0) { col--; update = true; autoRepeat = .25f; }
         if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7) { col++; update = true; autoRepeat = .25f; }
-        if (Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
-        if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < blines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
-      }
-      else if (status == MusicEditorStatus.Music) {
-        if (Input.GetKey(KeyCode.UpArrow) && mlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
-        if (Input.GetKey(KeyCode.DownArrow) && mlines != null && row < mlines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
-      }
-      else if (status == MusicEditorStatus.Waveforms) {
-        if (Input.GetKey(KeyCode.UpArrow) && wlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
-        if (Input.GetKey(KeyCode.DownArrow) && wlines != null && row < wlines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
-      }
-      else if (status == MusicEditorStatus.BlockList) {
-        if (Input.GetKey(KeyCode.UpArrow) && bllines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
-        if (Input.GetKey(KeyCode.DownArrow) && bllines != null && row < bllines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
       }
 
+      if (!recording) {
+        if (status == MusicEditorStatus.Music && row > -1 && row < mlines.Count) {
+          if (Input.GetKeyDown(KeyCode.Return)) {
+            PickBlock();
+          }
+        }
 
-      if (status == MusicEditorStatus.Music && row > -1 && row < mlines.Count) {
-        if (Input.GetKeyDown(KeyCode.Return)) {
-          PickBlock();
+        if (status == MusicEditorStatus.Waveforms && row > -1 && row < wlines.Count) {
+          // Piano keys
+          for (int i = 0; i < keyNotes.Length; i++) {
+            if (Input.GetKeyDown(keyNotes[i])) {
+              // Set the current cell as note with the given note/frequency, update the text to be the note notation
+              sounds.Play(0, freqs[i + 24], .25f);
+            }
+          }
         }
       }
 
       if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count) {
         BlockLine l = blines[row];
-        // Enter select wave if there is not a note
-        if (Input.GetKeyDown(KeyCode.Return) && (l.note[col].type == NoteType.Empty || l.note[col].type == NoteType.Wave)) {
-          SetWave();
-          return;
-        }
-        // Remove cell values
-        if (Input.GetKeyDown(KeyCode.Delete)) {
-          currentBlock.chs[col][row].Zero();
-          blines[row].note[col].SetZeroValues(NoteTypeSprites);
-        }
-        // Change length
-        if (l.note[col].type == NoteType.Note || l.note[col].type == NoteType.Freq|| l.note[col].type == NoteType.Volume) {
-          if (Input.GetKeyDown(KeyCode.PageUp) && l.note[col].len > 1) {
-            UpdateNoteLength(l.note[col].len - 1);
+        if (!recording) {
+          // Enter select wave if there is not a note
+          if (Input.GetKeyDown(KeyCode.Return) && (l.note[col].type == NoteType.Empty || l.note[col].type == NoteType.Wave)) {
+            SetWave();
+            return;
           }
-          if (Input.GetKeyDown(KeyCode.PageDown) && l.note[col].len < blines.Count - row) {
-            UpdateNoteLength(l.note[col].len + 1);
+          // Remove cell values
+          if (Input.GetKeyDown(KeyCode.Delete)) {
+            currentBlock.chs[col][row].Zero();
+            blines[row].note[col].SetZeroValues(NoteTypeSprites);
           }
-        }
-        // Change wave
-        if (l.note[col].type == NoteType.Wave) {
-          if (Input.GetKeyDown(KeyCode.PageUp)) {
-            int id = l.note[col].val;
-            int pos;
-            for (pos = 0; pos < waves.Count; pos++) {
-              if (waves[pos].id == id) {
-                if (pos == 0) {
-                  l.note[col].val = waves[waves.Count - 1].id;
-                }
-                else {
-                  l.note[col].val = waves[pos - 1].id;
+          // Change length
+          if (l.note[col].type == NoteType.Note || l.note[col].type == NoteType.Freq || l.note[col].type == NoteType.Volume) {
+            if (Input.GetKeyDown(KeyCode.PageUp) && l.note[col].len > 1) {
+              UpdateNoteLength(l.note[col].len - 1);
+            }
+            if (Input.GetKeyDown(KeyCode.PageDown) && l.note[col].len < blines.Count - row) {
+              UpdateNoteLength(l.note[col].len + 1);
+            }
+          }
+          // Change wave
+          if (l.note[col].type == NoteType.Wave) {
+            if (Input.GetKeyDown(KeyCode.PageUp)) {
+              int id = l.note[col].val;
+              int pos;
+              for (pos = 0; pos < waves.Count; pos++) {
+                if (waves[pos].id == id) {
+                  if (pos == 0) {
+                    l.note[col].val = waves[waves.Count - 1].id;
+                  }
+                  else {
+                    l.note[col].val = waves[pos - 1].id;
+                  }
                 }
               }
+              currentBlock.chs[col][row].val = l.note[col].val;
+              blines[row].note[col].SetValues(currentBlock.chs[col][row], NoteTypeSprites, freqs, noteNames, waves);
+              ShowNote(currentBlock.chs[col][row]);
             }
-            currentBlock.chs[col][row].val = l.note[col].val;
-            blines[row].note[col].SetValues(currentBlock.chs[col][row], NoteTypeSprites, freqs, noteNames, waves);
-            ShowNote(currentBlock.chs[col][row]);
-          }
-          if (Input.GetKeyDown(KeyCode.PageDown)) {
-            int id = l.note[col].val;
-            int pos;
-            for (pos = 0; pos < waves.Count; pos++) {
-              if (waves[pos].id == id) {
-                if (pos == waves.Count - 1) {
-                  l.note[col].val = waves[0].id;
-                }
-                else {
-                  l.note[col].val = waves[pos + 1].id;
+            if (Input.GetKeyDown(KeyCode.PageDown)) {
+              int id = l.note[col].val;
+              int pos;
+              for (pos = 0; pos < waves.Count; pos++) {
+                if (waves[pos].id == id) {
+                  if (pos == waves.Count - 1) {
+                    l.note[col].val = waves[0].id;
+                  }
+                  else {
+                    l.note[col].val = waves[pos + 1].id;
+                  }
                 }
               }
+              currentBlock.chs[col][row].val = l.note[col].val;
+              blines[row].note[col].SetValues(currentBlock.chs[col][row], NoteTypeSprites, freqs, noteNames, waves);
+              ShowNote(currentBlock.chs[col][row]);
             }
-            currentBlock.chs[col][row].val = l.note[col].val;
-            blines[row].note[col].SetValues(currentBlock.chs[col][row], NoteTypeSprites, freqs, noteNames, waves);
-            ShowNote(currentBlock.chs[col][row]);
+          }
+          // Space change type
+          if (Input.GetKeyDown(KeyCode.Space)) {
+            int t = (int)l.note[col].type;
+            t++;
+            if (t == 5) t = 0;
+            ChangeNoteTypePost(t);
           }
         }
-
-
-        // Space change type FIXME
-        if (Input.GetKeyDown(KeyCode.Space)) {
-          int t = (int)l.note[col].type;
-          t++;
-          if (t == 5) t = 0;
-          ChangeNoteTypePost(t);
-        }
-
         // Piano keys
         for (int i = 0; i < keyNotes.Length; i++) {
           if (Input.GetKeyDown(keyNotes[i])) {
@@ -410,15 +435,6 @@ public class MusicEditor : MonoBehaviour {
         }
       }
 
-      if (status == MusicEditorStatus.Waveforms && row > -1 && row < wlines.Count) {
-        // Piano keys
-        for (int i = 0; i < keyNotes.Length; i++) {
-          if (Input.GetKeyDown(keyNotes[i])) {
-            // Set the current cell as note with the given note/frequency, update the text to be the note notation
-            sounds.Play(0, freqs[i + 24], .25f);
-          }
-        }
-      }
     }
 
 
@@ -483,8 +499,42 @@ public class MusicEditor : MonoBehaviour {
       NoteData n = block.chs[c][currentPlayedMusicLine];
       switch (n.type) {
         case NoteType.Empty: break;
-        case NoteType.Volume: break; // FIXME
-        case NoteType.Freq: break; // FIXME
+
+        case NoteType.Volume:
+          if (n.len < 2) {
+            sounds.Volume(c, n.val / 255f);
+          }
+          else {
+            swipes[c].vols = sounds.Volume(c);
+            swipes[c].vole = n.val / 255f;
+            swipes[c].voltime = 0;
+            swipes[c].vollen = (n.len - 1) * 15f / block.bpm;
+          }
+          break;
+
+        case NoteType.Freq:
+          if (n.len < 2) {
+            sounds.Freq(c, n.val);
+          }
+          else {
+            swipes[c].freqs = sounds.Freq(c);
+            swipes[c].freqe = n.val;
+            swipes[c].freqtime = 0;
+            swipes[c].freqlen = (n.len - 1) * 15f / block.bpm;
+          }
+          break;
+
+        case NoteType.Pan:
+          if (n.len < 2) {
+            sounds.Pan(c, n.val / 255f);
+          }
+          else {
+            swipes[c].pans = sounds.Pan(c);
+            swipes[c].pane = n.val / 255f;
+            swipes[c].pantime = 0;
+            swipes[c].panlen = (n.len - 1) * 15f / block.bpm;
+          }
+          break;
 
         case NoteType.Note:
           sounds.Play(c, n.val, n.len * timeForNextBeat);
@@ -1561,7 +1611,15 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void Record() {
-    // FIXME
+    if (currentBlock == null || blocks.Count == 0) return;
+    recording = true;
+    timeForNextBeat = 60f / currentBlock.bpm;
+    countInForRecording = 4 * timeForNextBeat;
+    playing = false;
+    ShowSection(MusicEditorStatus.BlockEdit);
+    row = 0;
+    col = 0;
+    SelectRow(row);
     SetTapeButtonColor(0);
   }
 
@@ -1569,8 +1627,6 @@ public class MusicEditor : MonoBehaviour {
     SetTapeButtonColor(-1);
   }
 
-  bool playing = false;
-  bool repeat = false;
   public void Play() {
     row--;
     timeForNextBeat = 0;
@@ -2050,10 +2106,26 @@ public class NoteData {
 }
 
 
+public class Swipe {
+  public float vols;
+  public float vole;
+  public float voltime;
+  public float vollen;
+  public float freqs;
+  public float freqe;
+  public float freqtime;
+  public float freqlen;
+  public float pans;
+  public float pane;
+  public float pantime;
+  public float panlen;
+}
+
 /*
 
-
-record block
+Implement volume, pan, and freq shifts
+Implement pan note type
+TEST: record block
 
 add multiple selection of rows to enalbe cleanup and copy/paste
  */

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public class Audio : MonoBehaviour {
   public AudioSource[] srcs;
@@ -83,6 +84,12 @@ public class Audio : MonoBehaviour {
     }
   }
 
+  public float Volume(int channel) {
+    if (channel < -1 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
+    return channels[channel].GetVol();
+  }
+
+
   public void Pan(int channel, float pan) {
     if (channel < -1 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
     if (pan < -1) pan = -1;
@@ -94,6 +101,24 @@ public class Audio : MonoBehaviour {
     else
       channels[channel].audio.panStereo = pan;
   }
+  public float Pan(int channel) {
+    if (channel < -1 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
+    return channels[channel].audio.panStereo;
+  }
+
+  internal void Freq(int channel, float freq) {
+    if (channel < -1 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
+    if (freq < 50) freq = 50;
+    if (freq > 18000) freq = 18000;
+    channels[channel].freq = freq;
+  }
+
+  internal float Freq(int channel) {
+    if (channel < -1 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
+    return channels[channel].freq;
+  }
+
+
 
   public void Play(int channel, int freq, float length = -1) {
     if (channel < 0 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
@@ -585,6 +610,10 @@ public struct Channel {
   internal void SetVol(float vol) {
     audio.volume = vol;
     this.vol = vol;
+  }
+
+  internal float GetVol() {
+    return vol;
   }
 
   internal void Play(int frequency, float length) {

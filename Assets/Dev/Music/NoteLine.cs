@@ -95,4 +95,4 @@ public class NoteLine : MonoBehaviour {
 }
 
 
-public enum NoteType { Empty=0, Note=1, Wave=2, Volume=3, Freq=4 };
+public enum NoteType { Empty=0, Note=1, Wave=2, Volume=3, Freq=4, Pan=5 };
