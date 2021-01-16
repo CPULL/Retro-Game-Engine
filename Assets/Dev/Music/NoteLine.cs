@@ -28,6 +28,14 @@ public class NoteLine : MonoBehaviour {
         break;
 
       case NoteType.Note: // val should be the frequency with the text being the visible note
+        if (len == 0) {
+          len = 1;
+          blockNote.len = 1;
+        }
+        if (val == 0) {
+          val = 440;
+          blockNote.val = 440;
+        }
         ValTxt.text = blockNote.val.ToString();
         for (int i = 0; i < freqs.Length; i++)
           if (blockNote.val == freqs[i]) {
@@ -63,6 +71,15 @@ public class NoteLine : MonoBehaviour {
             ValTxt.text = ">" + notenames[i];
             break;
           }
+        LenTxt.text = len.ToString();
+        back.sizeDelta = new Vector2(38, len * 32);
+        break;
+
+      case NoteType.Pan: // val should go from -127 to 127
+        float pan = blockNote.val / 127f;
+        if (pan < -1) pan = -1;
+        if (pan > 1) pan = 1;
+        ValTxt.text = pan.ToString();
         LenTxt.text = len.ToString();
         back.sizeDelta = new Vector2(38, len * 32);
         break;

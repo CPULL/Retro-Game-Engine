@@ -7501,7 +7501,7 @@ GameObject:
   - component: {fileID: 185714602}
   - component: {fileID: 185714601}
   m_Layer: 5
-  m_Name: Scrollbar Vertical
+  m_Name: Scrollbar Waves
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -24749,7 +24749,7 @@ GameObject:
   - component: {fileID: 672943843}
   - component: {fileID: 672943842}
   m_Layer: 5
-  m_Name: Scrollbar Vertical
+  m_Name: Scrollbar Music
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -36356,7 +36356,7 @@ GameObject:
   - component: {fileID: 970685996}
   - component: {fileID: 970685995}
   m_Layer: 5
-  m_Name: Scrollbar Vertical
+  m_Name: Scrollbar Blocks
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -41268,7 +41268,10 @@ MonoBehaviour:
   ContainerBlock: {fileID: 1972347493}
   ContainerWaves: {fileID: 1462583484}
   SelectedCol: {fileID: 1566163651}
-  scroll: {fileID: 672943842}
+  scrollMusic: {fileID: 672943842}
+  scrollBlocks: {fileID: 970685995}
+  scrollBlock: {fileID: 1356992285}
+  scrollWaves: {fileID: 185714601}
   EventSystemManager: {fileID: 2135832982}
   NoteTypeSprites:
   - {fileID: 5428170060190249899, guid: 2f3eb67cfccc23a4cb1c097078cda570, type: 3}
@@ -51567,7 +51570,7 @@ GameObject:
   - component: {fileID: 1356992286}
   - component: {fileID: 1356992285}
   m_Layer: 5
-  m_Name: Scrollbar Vertical
+  m_Name: Scrollbar Block
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

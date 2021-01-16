@@ -19,7 +19,10 @@ public class MusicEditor : MonoBehaviour {
   public GameObject ContainerBlock;
   public GameObject ContainerWaves;
   public RectTransform SelectedCol;
-  public Scrollbar scroll;
+  public Scrollbar scrollMusic;
+  public Scrollbar scrollBlocks;
+  public Scrollbar scrollBlock;
+  public Scrollbar scrollWaves;
   public EventSystem EventSystemManager;
 
   private List<BlockData> blocks = null;
@@ -80,8 +83,10 @@ public class MusicEditor : MonoBehaviour {
   float countInForRecording = 0;
   bool playing = false;
   bool repeat = false;
-  Swipe[] swipes = new Swipe[8];
-
+  readonly Swipe[] swipes = new Swipe[] {
+    new Swipe(), new Swipe(), new Swipe(), new Swipe(),
+    new Swipe(), new Swipe(), new Swipe(), new Swipe()
+  };
   MusicEditorStatus status = MusicEditorStatus.Idle;
 
   #endregion
@@ -130,32 +135,32 @@ public class MusicEditor : MonoBehaviour {
       Swipe s = swipes[c];
       if (s.vollen != 0) {
         float step = s.voltime / s.vollen;
-        sounds.Volume(c, s.vols * step + s.vole * (1 - step));
-      }
-      s.voltime += Time.deltaTime;
-      if (s.voltime >= s.vollen) {
-        sounds.Volume(c, s.vole);
-        s.vollen = 0;
+        sounds.Volume(c, s.vole * step + s.vols * (1 - step));
+        s.voltime += Time.deltaTime;
+        if (s.voltime >= s.vollen) {
+          sounds.Volume(c, s.vole);
+          s.vollen = 0;
+        }
       }
 
       if (s.freqlen != 0) {
         float step = s.freqtime / s.freqlen;
-        sounds.Freq(c, s.freqs * step + s.freqe * (1 - step));
-      }
-      s.freqtime += Time.deltaTime;
-      if (s.freqtime >= s.freqlen) {
-        sounds.Freq(c, s.freqe);
-        s.freqlen = 0;
+        sounds.Freq(c, s.freqe * step + s.freqs * (1 - step));
+        s.freqtime += Time.deltaTime;
+        if (s.freqtime >= s.freqlen) {
+          sounds.Freq(c, s.freqe);
+          s.freqlen = 0;
+        }
       }
 
       if (s.panlen != 0) {
         float step = s.pantime / s.panlen;
-        sounds.Pan(c, s.pans * step + s.pane * (1 - step));
-      }
-      s.pantime += Time.deltaTime;
-      if (s.pantime >= s.panlen) {
-        sounds.Pan(c, s.pane);
-        s.panlen = 0;
+        sounds.Pan(c, s.pane * step + s.pans * (1 - step));
+        s.pantime += Time.deltaTime;
+        if (s.pantime >= s.panlen) {
+          sounds.Pan(c, s.pane);
+          s.panlen = 0;
+        }
       }
     }
   }
@@ -217,7 +222,6 @@ public class MusicEditor : MonoBehaviour {
 
     // music: get and play note.
     PlayNote(block);
-    currentPlayedMusicLine++;
 
     // Show the line
     SelectRow(currentPlayedMusicBlock);
@@ -264,7 +268,6 @@ public class MusicEditor : MonoBehaviour {
 
     // music: get and play note.
     PlayNote(block);
-    currentPlayedMusicLine++;
   }
 
 
@@ -440,11 +443,32 @@ public class MusicEditor : MonoBehaviour {
 
     if (update) {
       // Scroll if needed
-      if (row < 13) scroll.value = 1;
-      else if (row > 48) scroll.value = 0;
-      else scroll.value = -0.0276f * row + 1.333333333333333f;
+      ScrollViews();
       SelectedCol.anchoredPosition = new Vector3(48 + col * 142, 30, 0);
       SelectRow(row);
+    }
+  }
+
+  void ScrollViews() {
+    if (status == MusicEditorStatus.Music) {
+      if (row < 13) scrollMusic.value = 1;
+      else if (row > 48) scrollMusic.value = 0;
+      else scrollMusic.value = -0.0276f * row + 1.333333333333333f;
+    }
+    else if (status == MusicEditorStatus.BlockList) {
+      if (row < 13) scrollBlocks.value = 1;
+      else if (row > 48) scrollBlocks.value = 0;
+      else scrollBlocks.value = -0.0276f * row + 1.333333333333333f;
+    }
+    else if (status == MusicEditorStatus.BlockEdit) {
+      if (row < 13) scrollBlock.value = 1;
+      else if (row > 48) scrollBlock.value = 0;
+      else scrollBlock.value = -0.0276f * row + 1.333333333333333f;
+    }
+    else if (status == MusicEditorStatus.Music) {
+      if (row < 13) scrollBlock.value = 1;
+      else if (row > 48) scrollBlock.value = 0;
+      else scrollBlock.value = -0.0276f * row + 1.333333333333333f;
     }
   }
 
@@ -494,7 +518,6 @@ public class MusicEditor : MonoBehaviour {
     if (block == null) return true;
 
     timeForNextBeat = 15f / block.bpm;
-
     for (int c = 0; c < music.NumVoices; c++) {
       NoteData n = block.chs[c][currentPlayedMusicLine];
       switch (n.type) {
@@ -577,7 +600,7 @@ public class MusicEditor : MonoBehaviour {
       }
     }
     else if (status == MusicEditorStatus.BlockEdit) {
-      if (blines.Count == 0) return;
+      if (line >= blines.Count) return;
       row = line;
       if (row < 0) row = 0;
       if (row >= blines.Count) row = blines.Count - 1;
@@ -626,6 +649,8 @@ public class MusicEditor : MonoBehaviour {
       currentWave = waves[line];
       ShowWave();
     }
+
+    ScrollViews();
   }
 
   void SelectRowColumn(int line, int column) {
@@ -1312,9 +1337,9 @@ public class MusicEditor : MonoBehaviour {
     if (completed) {
       NoteData note = currentBlock.chs[col][row];
 
-      if (int.TryParse(CellValInput.text.Trim(), out int len)) {
+      if (int.TryParse(CellLenInput.text.Trim(), out int len)) {
         if (len < 1) len = 1;
-        if (len > 16) len = 16;
+        if (len > currentBlock.len) len = currentBlock.len;
         note.len = len;
         blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
         ShowNote(note);
@@ -1628,7 +1653,7 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void Play() {
-    row--;
+    currentPlayedMusicLine = row;
     timeForNextBeat = 0;
     playing = true;
     repeat = false;
@@ -2119,6 +2144,21 @@ public class Swipe {
   public float pane;
   public float pantime;
   public float panlen;
+
+  public Swipe() {
+    vols = 0;
+    vole = 0;
+    voltime = 0;
+    vollen = 0;
+    freqs = 0;
+    freqe = 0;
+    freqtime = 0;
+    freqlen = 0;
+    pans = 0;
+    pane = 0;
+    pantime = 0;
+    panlen = 0;
+  }
 }
 
 /*
@@ -2128,6 +2168,9 @@ Implement pan note type
 TEST: record block
 
 add multiple selection of rows to enalbe cleanup and copy/paste
+
+current row does not scroll correctly
+
  */
 
 
