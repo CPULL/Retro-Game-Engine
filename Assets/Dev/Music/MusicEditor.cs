@@ -1203,7 +1203,7 @@ public class MusicEditor : MonoBehaviour {
         CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
         CellTypeTxt.text = "Volume" + ((note.len > 1) ? " slide" : "");
         CellValContainer.SetActive(true);
-        CellLenContainer.SetActive(note.len > 1);
+        CellLenContainer.SetActive(true);
         CellValPostText.gameObject.SetActive(true);
         CellValPostText.text = "%";
         CellValInput.SetTextWithoutNotify(((int)((note.val / 255f) * 100)).ToString());
@@ -1219,10 +1219,28 @@ public class MusicEditor : MonoBehaviour {
         CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
         CellTypeTxt.text = "Freq" + ((note.len > 1) ? " slide" : "");
         CellValContainer.SetActive(true);
-        CellLenContainer.SetActive(note.len > 1);
+        CellLenContainer.SetActive(true);
         CellValPostText.gameObject.SetActive(true);
         CellValPostText.text = "Hz";
         CellValInput.SetTextWithoutNotify(note.val.ToString());
+        CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(224, 48);
+        CellLenPreText.gameObject.SetActive(true);
+        CellLenPostText.gameObject.SetActive(true);
+        CellLenPreText.text = "In ";
+        CellLenInput.SetTextWithoutNotify(note.len.ToString());
+        CellLenPostText.text = " beats";
+        break;
+
+      case NoteType.Pan:
+        CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
+        CellTypeTxt.text = "Pan" + ((note.len > 1) ? " slide" : "");
+        CellValContainer.SetActive(true);
+        CellLenContainer.SetActive(true);
+        CellValPostText.gameObject.SetActive(false);
+        float pan = (note.val - 127) / 127f;
+        if (pan < -1) pan = -1;
+        if (pan > 1) pan = 1;
+        CellValInput.SetTextWithoutNotify(pan.ToString());
         CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(224, 48);
         CellLenPreText.gameObject.SetActive(true);
         CellLenPostText.gameObject.SetActive(true);
@@ -1239,7 +1257,7 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void ChangeNoteTypePost(int type) {
-    // Empty=0, Volume=1, Note=2, Wave=3, Freq=4
+    // Empty=0, Note=1, Wave=2, Volume=3, Freq=4, Pan=5
 
     NoteLine note = blines[row].note[col];
     note.type = (NoteType)type;
@@ -1317,7 +1335,8 @@ public class MusicEditor : MonoBehaviour {
           }
         }
         break;
-        case NoteType.Freq:
+
+        case NoteType.Freq: {
           if (int.TryParse(CellValInput.text.Trim(), out int fval)) {
             if (fval < 50) fval = 50;
             if (fval > 22000) fval = 22000;
@@ -1326,7 +1345,20 @@ public class MusicEditor : MonoBehaviour {
             ShowNote(note);
             break;
           }
-          break;
+        }
+        break;
+
+        case NoteType.Pan: {
+          if (float.TryParse(CellValInput.text.Trim(), out float pval)) {
+            if (pval < -1) pval = -1;
+            if (pval > 1) pval = 1;
+            note.val = (int)(pval * 127 + 127);
+            blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
+            ShowNote(note);
+            break;
+          }
+        }
+        break;
       }
     }
     inputsSelected = !completed;
@@ -1964,7 +1996,6 @@ public class MusicEditor : MonoBehaviour {
     KeyCode.P,                 // E5
     KeyCode.LeftBracket, KeyCode.Equals, // F5 F5#
     KeyCode.RightBracket, KeyCode.Backslash, // G5 G5#
-    KeyCode.Return,            // A5
   };
 
   readonly string[] noteNames = new string[] {
@@ -2163,13 +2194,12 @@ public class Swipe {
 
 /*
 
-Implement volume, pan, and freq shifts
 Implement pan note type
 TEST: record block
+we lose the ability to use keys to set notes after using the inputs
 
 add multiple selection of rows to enalbe cleanup and copy/paste
 
-current row does not scroll correctly
 
  */
 
