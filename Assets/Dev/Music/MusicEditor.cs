@@ -64,7 +64,6 @@ public class MusicEditor : MonoBehaviour {
   public Image WaveTypeImg;
 
   public GameObject MusicLineTempate;
-  public GameObject BlockLineTempate;
   public GameObject BlockListLineTemplate;
   public GameObject WaveLineTemplate;
   public GameObject CreateNewBlockInMusic;
@@ -105,9 +104,7 @@ public class MusicEditor : MonoBehaviour {
     int numv = music.NumVoices;
 
     for (int i = 0; i < 128; i++) {
-      GameObject line = Instantiate(BlockLineTempate, ContentsBlock);
-      line.SetActive(true);
-      BlockLine bl = line.GetComponent<BlockLine>();
+      BlockLine bl = ContentsBlock.GetChild(i).GetComponent<BlockLine>();
       bl.index = i;
       bl.IndexTxt.text = i.ToString("d2");
       bl.LineButton.onClick.AddListener(() => SelectRow(i));
