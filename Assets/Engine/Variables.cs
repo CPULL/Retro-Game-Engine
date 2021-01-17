@@ -59,6 +59,8 @@ public class Variables {
 
 
 public struct Value {
+  const System.Globalization.NumberStyles numberstyle = System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint;
+
   public MD mode;
   public int idx; // Used for reg and mem
 
@@ -100,30 +102,30 @@ public struct Value {
     sVal = s;
   }
 
-  public byte ToByte() {
+  public byte ToByte(System.Globalization.CultureInfo culture) {
     if (type == VT.None) return 0;
     if (type == VT.Int) return (byte)(iVal & 255);
     if (type == VT.Float) return (byte)((int)fVal & 255);
     if (string.IsNullOrEmpty(sVal)) return 0;
-    if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) return (byte)((int)f & 255);
+    if (float.TryParse(sVal, numberstyle, culture, out float f)) return (byte)((int)f & 255);
     if (int.TryParse(sVal, out int i)) return (byte)(i & 255);
     return 0;
   }
-  public int ToInt() {
+  public int ToInt(System.Globalization.CultureInfo culture) {
     if (type == VT.None) return 0;
     if (type == VT.Int) return iVal;
     if (type == VT.Float) return (int)fVal;
     if (string.IsNullOrEmpty(sVal)) return 0;
-    if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) return (int)f;
+    if (float.TryParse(sVal, numberstyle, culture, out float f)) return (int)f;
     if (int.TryParse(sVal, out int i)) return i;
     return 0;
   }
-  public float ToFlt() {
+  public float ToFlt(System.Globalization.CultureInfo culture) {
     if (type == VT.None) return 0;
     if (type == VT.Int) return iVal;
     if (type == VT.Float) return fVal;
     if (string.IsNullOrEmpty(sVal)) return 0;
-    if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) return f;
+    if (float.TryParse(sVal, numberstyle, culture, out float f)) return f;
     if (int.TryParse(sVal, out int i)) return i;
     return 0;
   }
@@ -135,8 +137,8 @@ public struct Value {
     return sVal;
   }
 
-  public bool ToBool() {
-    return ToInt() != 0;
+  public bool ToBool(System.Globalization.CultureInfo culture) {
+    return ToInt(culture) != 0;
   }
 
   public override string ToString() {
@@ -179,7 +181,7 @@ public struct Value {
     return this;
   }
 
-  internal Value Sub(Value s) {
+  internal Value Sub(Value s, System.Globalization.CultureInfo culture) {
     mode = MD.Dir;
     if (type == VT.None && s.type == VT.None) return this;
 
@@ -193,7 +195,7 @@ public struct Value {
         fVal = -s.fVal;
       }
       else if (s.type == VT.String) {
-        if (float.TryParse(s.sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
+        if (float.TryParse(s.sVal, numberstyle, culture, out float f)) {
           type = VT.Float;
           fVal = -f;
         }
@@ -208,7 +210,7 @@ public struct Value {
     if (type == VT.Int && s.type == VT.Int) { iVal -= s.iVal; return this; }
     if (type == VT.Int && s.type == VT.Float) { type = VT.Float; fVal = iVal - s.fVal; return this; }
     if (type == VT.Int && s.type == VT.String) {
-      if (float.TryParse(s.sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
+      if (float.TryParse(s.sVal, numberstyle, culture, out float f)) {
         type = VT.Float;
         fVal = iVal - f;
       }
@@ -221,7 +223,7 @@ public struct Value {
     if (type == VT.Float && s.type == VT.Int) { fVal -= s.iVal; return this; }
     if (type == VT.Float && s.type == VT.Float) { fVal -= s.fVal; return this; }
     if (type == VT.Float && s.type == VT.String) {
-      if (float.TryParse(s.sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
+      if (float.TryParse(s.sVal, numberstyle, culture, out float f)) {
         fVal -= f;
       }
       else if (int.TryParse(s.sVal, out int i)) {
@@ -233,7 +235,7 @@ public struct Value {
     return this;
   }
 
-  internal Value Mul(Value s) {
+  internal Value Mul(Value s, System.Globalization.CultureInfo culture) {
     mode = MD.Dir;
     if (type == VT.None || s.type == VT.None) return this;
 
@@ -243,21 +245,21 @@ public struct Value {
     if (type == VT.Float && s.type == VT.Float) { fVal *= s.fVal; return this; }
 
     if (type == VT.String) {
-      if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
+      if (float.TryParse(sVal, numberstyle, culture, out float f)) {
         type = VT.Float;
         fVal = f;
-        return Mul(s);
+        return Mul(s, culture);
       }
       else if (int.TryParse(sVal, out int i)) {
         type = VT.Int;
         iVal = i;
-        return Mul(s);
+        return Mul(s, culture);
       }
       return this;
     }
 
     if (s.type == VT.String) {
-      if (float.TryParse(s.sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
+      if (float.TryParse(s.sVal, numberstyle, culture, out float f)) {
         if (type == VT.Int) {
           type = VT.Float;
           fVal = iVal * f;
@@ -280,7 +282,7 @@ public struct Value {
     return this;
   }
 
-  internal Value Div(Value s) {
+  internal Value Div(Value s, System.Globalization.CultureInfo culture) {
     mode = MD.Dir;
     if (type == VT.None || s.type == VT.None) return this;
 
@@ -290,21 +292,21 @@ public struct Value {
     if (type == VT.Float && s.type == VT.Float) { fVal /= s.fVal; return this; }
 
     if (type == VT.String) {
-      if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
+      if (float.TryParse(sVal, numberstyle, culture, out float f)) {
         type = VT.Float;
         fVal = f;
-        return Div(s);
+        return Div(s, culture);
       }
       else if (int.TryParse(sVal, out int i)) {
         type = VT.Int;
         iVal = i;
-        return Div(s);
+        return Div(s, culture);
       }
       return this;
     }
 
     if (s.type == VT.String) {
-      if (float.TryParse(s.sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
+      if (float.TryParse(s.sVal, numberstyle, culture, out float f)) {
         if (type == VT.Int) {
           type = VT.Float;
           fVal = iVal / f;
@@ -327,7 +329,7 @@ public struct Value {
     return this;
   }
 
-  internal Value Mod(Value s) {
+  internal Value Mod(Value s, System.Globalization.CultureInfo culture) {
     mode = MD.Dir;
     if (type == VT.None || s.type == VT.None) return this;
 
@@ -337,21 +339,21 @@ public struct Value {
     if (type == VT.Float && s.type == VT.Float) { fVal %= s.fVal; return this; }
 
     if (type == VT.String) {
-      if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
+      if (float.TryParse(sVal, numberstyle, culture, out float f)) {
         type = VT.Float;
         fVal = f;
-        return Mod(s);
+        return Mod(s, culture);
       }
       else if (int.TryParse(sVal, out int i)) {
         type = VT.Int;
         iVal = i;
-        return Mod(s);
+        return Mod(s, culture);
       }
       return this;
     }
 
     if (s.type == VT.String) {
-      if (float.TryParse(s.sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
+      if (float.TryParse(s.sVal, numberstyle, culture, out float f)) {
         if (type == VT.Int) {
           type = VT.Float;
           fVal = iVal % f;
@@ -374,59 +376,57 @@ public struct Value {
     return this;
   }
 
-  internal Value And(Value s) {
+  internal Value And(Value s, System.Globalization.CultureInfo culture) {
     mode = MD.Dir;
     if (type != VT.Int || s.type != VT.Int) {
-      if (s.ToInt() == 0) {
+      if (s.ToInt(culture) == 0) {
         iVal = 0;
         type = VT.Int;
       }
       return this;
     }
 
-    iVal &= s.ToInt();
+    iVal &= s.ToInt(culture);
     return this;
   }
 
-  internal Value Or(Value s) {
+  internal Value Or(Value s, System.Globalization.CultureInfo culture) {
     mode = MD.Dir;
     if (type != VT.Int || s.type != VT.Int) return this;
 
-    iVal |= s.ToInt();
+    iVal |= s.ToInt(culture);
     return this;
   }
 
-  internal Value Xor(Value s) {
+  internal Value Xor(Value s, System.Globalization.CultureInfo culture) {
     mode = MD.Dir;
     if (type != VT.Int || s.type != VT.Int) return this;
 
-    iVal ^= s.ToInt();
+    iVal ^= s.ToInt(culture);
     return this;
   }
 
-  internal Value Lsh(Value s) {
+  internal Value Lsh(Value s, System.Globalization.CultureInfo culture) {
     mode = MD.Dir;
     if (type != VT.Int) return this;
-    iVal <<= s.ToInt();
+    iVal <<= s.ToInt(culture);
     return this;
   }
 
-  internal Value Rsh(Value s) {
+  internal Value Rsh(Value s, System.Globalization.CultureInfo culture) {
     mode = MD.Dir;
     if (type != VT.Int) return this;
-    iVal >>= s.ToInt();
+    iVal >>= s.ToInt(culture);
     return this;
   }
 
 
-
-
-  internal Value Sub() {
+  internal Value Sub(System.Globalization.CultureInfo culture) {
     mode = MD.Dir;
     if (type == VT.Int) iVal = -iVal;
     if (type == VT.Float) fVal = -fVal;
     if (type == VT.None || sVal == null) return this;
-    if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) fVal = -f;
+    if (float.TryParse(sVal, numberstyle, culture, out float f)) fVal = -f;
     if (int.TryParse(sVal, out int i)) iVal = -i;
     return this;
   }
@@ -446,13 +446,13 @@ public struct Value {
     return new Value();
   }
 
-  internal int Compare(Value r, BNF mode) {
+  internal int Compare(Value r, BNF mode, System.Globalization.CultureInfo culture) {
     switch (mode) {
       case BNF.COMPeq:
         if (type == VT.None) return r.type == VT.None ? -1 : 0;
-        if (type == VT.Int) return iVal == r.ToInt() ? -1 : 0;
+        if (type == VT.Int) return iVal == r.ToInt(culture) ? -1 : 0;
         if (type == VT.Float) {
-          float diff = fVal - r.ToFlt();
+          float diff = fVal - r.ToFlt(culture);
           return (diff < .01f && diff > -.01f) ? -1 : 0;
         }
         if (type == VT.String) return sVal == r.ToStr() ? -1 : 0;
@@ -460,9 +460,9 @@ public struct Value {
 
       case BNF.COMPne:
         if (type == VT.None) return r.type == VT.None ? 0 : -1;
-        if (type == VT.Int) return iVal == r.ToInt() ? 0 : -1;
+        if (type == VT.Int) return iVal == r.ToInt(culture) ? 0 : -1;
         if (type == VT.Float) {
-          float diff = fVal - r.ToFlt();
+          float diff = fVal - r.ToFlt(culture);
           return (diff < .01f && diff > -.01f) ? 0 : -1;
         }
         if (type == VT.String) return sVal == r.ToStr() ? 0 : -1;
@@ -470,29 +470,29 @@ public struct Value {
 
       case BNF.COMPlt:
         if (type == VT.None) return 0;
-        if (type == VT.Int) return iVal < r.ToInt() ? -1 : 0;
-        if (type == VT.Float) return fVal < r.ToFlt() ? -1 : 0;
+        if (type == VT.Int) return iVal < r.ToInt(culture) ? -1 : 0;
+        if (type == VT.Float) return fVal < r.ToFlt(culture) ? -1 : 0;
         if (type == VT.String) return sVal.CompareTo(r.ToStr()) < 0 ? -1 : 0;
         break;
 
       case BNF.COMPle:
         if (type == VT.None) return 0;
-        if (type == VT.Int) return iVal <= r.ToInt() ? -1 : 0;
-        if (type == VT.Float) return fVal <= r.ToFlt() ? -1 : 0;
+        if (type == VT.Int) return iVal <= r.ToInt(culture) ? -1 : 0;
+        if (type == VT.Float) return fVal <= r.ToFlt(culture) ? -1 : 0;
         if (type == VT.String) return sVal.CompareTo(r.ToStr()) <= 0 ? -1 : 0;
         break;
 
       case BNF.COMPgt:
         if (type == VT.None) return 0;
-        if (type == VT.Int) return iVal > r.ToInt() ? -1 : 0;
-        if (type == VT.Float) return fVal > r.ToFlt() ? -1 : 0;
+        if (type == VT.Int) return iVal > r.ToInt(culture) ? -1 : 0;
+        if (type == VT.Float) return fVal > r.ToFlt(culture) ? -1 : 0;
         if (type == VT.String) return sVal.CompareTo(r.ToStr()) > 0 ? -1 : 0;
         break;
 
       case BNF.COMPge:
         if (type == VT.None) return 0;
-        if (type == VT.Int) return iVal >= r.ToInt() ? -1 : 0;
-        if (type == VT.Float) return fVal >= r.ToFlt() ? -1 : 0;
+        if (type == VT.Int) return iVal >= r.ToInt(culture) ? -1 : 0;
+        if (type == VT.Float) return fVal >= r.ToFlt(culture) ? -1 : 0;
         if (type == VT.String) return sVal.CompareTo(r.ToStr()) >= 0 ? -1 : 0;
         break;
     }

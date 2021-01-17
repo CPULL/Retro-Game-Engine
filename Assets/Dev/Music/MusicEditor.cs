@@ -34,7 +34,8 @@ public class MusicEditor : MonoBehaviour {
   readonly private List<BlockLine> blines = new List<BlockLine>();
   readonly private List<WaveLine> wlines = new List<WaveLine>();
 
-  public RectTransform Selection;
+  public Transform Selection;
+  public RectTransform SelectionBox;
   private Color32 SelectedColor = new Color32(36, 52, 36, 255);
   private Color32 Transparent = new Color32(0, 0, 0, 0);
   private Color32 TapeButtonColor = new Color32(191, 202, 219, 255);
@@ -87,6 +88,10 @@ public class MusicEditor : MonoBehaviour {
     new Swipe(), new Swipe(), new Swipe(), new Swipe()
   };
   MusicEditorStatus status = MusicEditorStatus.Idle;
+  readonly List<NoteData> CopiedNotes = new List<NoteData>();
+
+  System.Globalization.NumberStyles numberstyle = System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint;
+  System.Globalization.CultureInfo culture = new System.Globalization.CultureInfo("en-US");
 
   #endregion
 
@@ -445,13 +450,16 @@ public class MusicEditor : MonoBehaviour {
       }
     }
     if (Input.GetKeyDown(KeyCode.C) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) { // Ctrl+C
+      Selection.SetParent(blines[row].transform);
       Vector2 pos = Vector2.zero;
-      pos.x = 48 + col * 142;
+      pos.x = - (8 - col) * 148;
       pos.y = 1;
-      Selection.anchoredPosition = pos;
-      Selection.sizeDelta = new Vector2(142, 34);
+      SelectionBox.anchoredPosition = pos;
+      SelectionBox.sizeDelta = new Vector2(142, 34);
       Selection.gameObject.SetActive(true);
-      Selection.transform.SetParent(blines[row].transform);
+      CopiedNotes.Clear();
+      CopiedNotes.Add(currentBlock.chs[col][row]);
+      Debug.Log(col);
     }
 
 
@@ -1369,7 +1377,7 @@ public class MusicEditor : MonoBehaviour {
         case NoteType.Pitch: {
           // 1.05946^numsemitones
           // Values can be +[0-9]+(.[0-9]+)? and -[0-9]+(.[0-9]+)?
-          if (float.TryParse(CellValInput.text.Trim(), out float fVal)) {
+          if (float.TryParse(CellValInput.text.Trim(), numberstyle, culture, out float fVal)) {
             // The result is stored as value multiplied by 100 truncated to 2 bytes
             int val = (int)(fVal * 100);
             if (val > 32767) val = 32767;
@@ -1383,7 +1391,7 @@ public class MusicEditor : MonoBehaviour {
         break;
 
         case NoteType.Pan: {
-          if (float.TryParse(CellValInput.text.Trim(), out float pval)) {
+          if (float.TryParse(CellValInput.text.Trim(), numberstyle, culture, out float pval)) {
             if (pval < -1) pval = -1;
             if (pval > 1) pval = 1;
             note.val = (int)(pval * 127 + 127);
@@ -2229,6 +2237,8 @@ public class Swipe {
 
 /*
 
+Find a way to keep the selection highlight in the right place.
+We cannot attach it to the line
 
 add multiple selection of rows to enalbe cleanup and copy/paste
 

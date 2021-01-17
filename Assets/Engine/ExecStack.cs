@@ -1,4 +1,5 @@
 ﻿public class ExecStacks {
+  readonly System.Globalization.CultureInfo culture = new System.Globalization.CultureInfo("en-US");
   readonly ExecStack[] stacks;
   int level;
 
@@ -24,7 +25,7 @@
     }
 
     // If we are here we completed the sequence
-    if (stack.cond != null && vm.Evaluate(stack.cond).ToBool()) {
+    if (stack.cond != null && vm.Evaluate(stack.cond).ToBool(culture)) {
       // Restart
       stack.step = 0;
       if (stack.node.type != BNF.BLOCK || stack.node.children == null || stack.node.children.Count == 0) {
