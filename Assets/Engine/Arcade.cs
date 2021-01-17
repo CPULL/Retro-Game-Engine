@@ -1614,7 +1614,10 @@ public class Arcade : MonoBehaviour {
 
 /*  TODO
 
-  FPS looks really unrealistic
+  looks like th eparsing of floats is problematic, we should use a pre-defined locale
+
+
+  FPS looks really unrealistic, replace with the standard function from UNity Time.frames
 
   Tiles, with priority byte
   Sounds

@@ -1029,7 +1029,7 @@ public class CodeParser : MonoBehaviour {
 
     // Replace FLT => `FTx
     line = rgFloat.Replace(line, m => {
-      float.TryParse(m.Value, out float fVal);
+      float.TryParse(m.Value, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float fVal);
       CodeNode n = new CodeNode(BNF.FLT, GenId("FT"), origForException, linenumber) {
         fVal = fVal
       };

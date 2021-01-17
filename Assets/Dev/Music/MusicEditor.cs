@@ -34,6 +34,7 @@ public class MusicEditor : MonoBehaviour {
   readonly private List<BlockLine> blines = new List<BlockLine>();
   readonly private List<WaveLine> wlines = new List<WaveLine>();
 
+  public RectTransform Selection;
   private Color32 SelectedColor = new Color32(36, 52, 36, 255);
   private Color32 Transparent = new Color32(0, 0, 0, 0);
   private Color32 TapeButtonColor = new Color32(191, 202, 219, 255);
@@ -41,7 +42,6 @@ public class MusicEditor : MonoBehaviour {
   public Sprite[] NoteTypeSprites;
   public Sprite[] WaveSprites;
   public Button[] TapeButtons;
-
   public GameObject TitleMusic;
   public GameObject TitleBlock;
   public GameObject TitleBlockList;
@@ -125,6 +125,7 @@ public class MusicEditor : MonoBehaviour {
     ContainerBlocks.SetActive(false);
     ContainerBlock.SetActive(false);
     ContainerWaves.SetActive(false);
+    Selection.gameObject.SetActive(false);
   }
 
   void HandleSwipes() {
@@ -274,12 +275,7 @@ public class MusicEditor : MonoBehaviour {
     bool update = false;
     autoRepeat -= Time.deltaTime;
 
-    /*
-     do we have the delayedRecordStar? Just wait and make record flash
-    if we are recording do the normal play but allow also normal block edit
-     */
-
-    if (countInForRecording > 0) {
+    if (countInForRecording > 0) { // Handle count-in for recording
       countInForRecording -= Time.deltaTime;
       if ((countInForRecording % timeForNextBeat) < timeForNextBeat * .75f)
         SetTapeButtonColor(-1);
@@ -328,7 +324,7 @@ public class MusicEditor : MonoBehaviour {
           if (Input.GetKey(KeyCode.DownArrow) && bllines != null && row < bllines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
         }
       }
-      if (recording && status == MusicEditorStatus.BlockEdit) {
+      if (status == MusicEditorStatus.BlockEdit) {
         if (Input.GetKeyDown(KeyCode.LeftArrow) && col > 0) { col--; update = true; autoRepeat = .25f; }
         if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7) { col++; update = true; autoRepeat = .25f; }
       }
@@ -438,6 +434,26 @@ public class MusicEditor : MonoBehaviour {
         }
       }
     }
+
+    // Ctrl+C, Ctrl+V, Ctrl+X, ShiftUp, ShiftDown
+    if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) { // FIXME all the times?
+      if (Input.GetKeyDown(KeyCode.DownArrow)) {
+
+      }
+      if (Input.GetKeyDown(KeyCode.UpArrow)) {
+
+      }
+    }
+    if (Input.GetKeyDown(KeyCode.C) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) { // Ctrl+C
+      Vector2 pos = Vector2.zero;
+      pos.x = 48 + col * 142;
+      pos.y = 1;
+      Selection.anchoredPosition = pos;
+      Selection.sizeDelta = new Vector2(142, 34);
+      Selection.gameObject.SetActive(true);
+      Selection.transform.SetParent(blines[row].transform);
+    }
+
 
     if (update) {
       // Scroll if needed
@@ -2213,8 +2229,6 @@ public class Swipe {
 
 /*
 
-
-TEST: record block
 
 add multiple selection of rows to enalbe cleanup and copy/paste
 

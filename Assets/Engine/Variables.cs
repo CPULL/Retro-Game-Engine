@@ -105,7 +105,7 @@ public struct Value {
     if (type == VT.Int) return (byte)(iVal & 255);
     if (type == VT.Float) return (byte)((int)fVal & 255);
     if (string.IsNullOrEmpty(sVal)) return 0;
-    if (float.TryParse(sVal, out float f)) return (byte)((int)f & 255);
+    if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) return (byte)((int)f & 255);
     if (int.TryParse(sVal, out int i)) return (byte)(i & 255);
     return 0;
   }
@@ -114,7 +114,7 @@ public struct Value {
     if (type == VT.Int) return iVal;
     if (type == VT.Float) return (int)fVal;
     if (string.IsNullOrEmpty(sVal)) return 0;
-    if (float.TryParse(sVal, out float f)) return (int)f;
+    if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) return (int)f;
     if (int.TryParse(sVal, out int i)) return i;
     return 0;
   }
@@ -123,7 +123,7 @@ public struct Value {
     if (type == VT.Int) return iVal;
     if (type == VT.Float) return fVal;
     if (string.IsNullOrEmpty(sVal)) return 0;
-    if (float.TryParse(sVal, out float f)) return f;
+    if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) return f;
     if (int.TryParse(sVal, out int i)) return i;
     return 0;
   }
@@ -193,7 +193,7 @@ public struct Value {
         fVal = -s.fVal;
       }
       else if (s.type == VT.String) {
-        if (float.TryParse(s.sVal, out float f)) {
+        if (float.TryParse(s.sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
           type = VT.Float;
           fVal = -f;
         }
@@ -208,7 +208,7 @@ public struct Value {
     if (type == VT.Int && s.type == VT.Int) { iVal -= s.iVal; return this; }
     if (type == VT.Int && s.type == VT.Float) { type = VT.Float; fVal = iVal - s.fVal; return this; }
     if (type == VT.Int && s.type == VT.String) {
-      if (float.TryParse(s.sVal, out float f)) {
+      if (float.TryParse(s.sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
         type = VT.Float;
         fVal = iVal - f;
       }
@@ -221,7 +221,7 @@ public struct Value {
     if (type == VT.Float && s.type == VT.Int) { fVal -= s.iVal; return this; }
     if (type == VT.Float && s.type == VT.Float) { fVal -= s.fVal; return this; }
     if (type == VT.Float && s.type == VT.String) {
-      if (float.TryParse(s.sVal, out float f)) {
+      if (float.TryParse(s.sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
         fVal -= f;
       }
       else if (int.TryParse(s.sVal, out int i)) {
@@ -243,7 +243,7 @@ public struct Value {
     if (type == VT.Float && s.type == VT.Float) { fVal *= s.fVal; return this; }
 
     if (type == VT.String) {
-      if (float.TryParse(sVal, out float f)) {
+      if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
         type = VT.Float;
         fVal = f;
         return Mul(s);
@@ -257,7 +257,7 @@ public struct Value {
     }
 
     if (s.type == VT.String) {
-      if (float.TryParse(s.sVal, out float f)) {
+      if (float.TryParse(s.sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
         if (type == VT.Int) {
           type = VT.Float;
           fVal = iVal * f;
@@ -290,7 +290,7 @@ public struct Value {
     if (type == VT.Float && s.type == VT.Float) { fVal /= s.fVal; return this; }
 
     if (type == VT.String) {
-      if (float.TryParse(sVal, out float f)) {
+      if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
         type = VT.Float;
         fVal = f;
         return Div(s);
@@ -304,7 +304,7 @@ public struct Value {
     }
 
     if (s.type == VT.String) {
-      if (float.TryParse(s.sVal, out float f)) {
+      if (float.TryParse(s.sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
         if (type == VT.Int) {
           type = VT.Float;
           fVal = iVal / f;
@@ -337,7 +337,7 @@ public struct Value {
     if (type == VT.Float && s.type == VT.Float) { fVal %= s.fVal; return this; }
 
     if (type == VT.String) {
-      if (float.TryParse(sVal, out float f)) {
+      if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
         type = VT.Float;
         fVal = f;
         return Mod(s);
@@ -351,7 +351,7 @@ public struct Value {
     }
 
     if (s.type == VT.String) {
-      if (float.TryParse(s.sVal, out float f)) {
+      if (float.TryParse(s.sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) {
         if (type == VT.Int) {
           type = VT.Float;
           fVal = iVal % f;
@@ -426,7 +426,7 @@ public struct Value {
     if (type == VT.Int) iVal = -iVal;
     if (type == VT.Float) fVal = -fVal;
     if (type == VT.None || sVal == null) return this;
-    if (float.TryParse(sVal, out float f)) fVal = -f;
+    if (float.TryParse(sVal, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float f)) fVal = -f;
     if (int.TryParse(sVal, out int i)) iVal = -i;
     return this;
   }
