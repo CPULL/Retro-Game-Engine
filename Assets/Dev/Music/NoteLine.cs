@@ -59,21 +59,31 @@ public class NoteLine : MonoBehaviour {
         break;
 
       case NoteType.Volume: // val should be the volume
-        ValTxt.text = val.ToString();
+        ValTxt.text = ((int)(100 * val / 255f)).ToString();
         LenTxt.text = len.ToString();
         back.sizeDelta = new Vector2(38, len * 32);
         break;
 
-      case NoteType.Freq: // val should be the frequency
-        ValTxt.text = ">" + blockNote.val.ToString();
-        for (int i = 0; i < freqs.Length; i++)
-          if (blockNote.val == freqs[i]) {
-            ValTxt.text = ">" + notenames[i];
-            break;
-          }
+      case NoteType.Pitch: { // val should be the number of semitones to alter, multiplied by 100
+        float val = blockNote.val / 100f;
+        if (val == 0)
+          ValTxt.text = "reset";
+        else if (val - (int)val == 0) {
+          if (val > 0)
+            ValTxt.text = "+" + ((int)val).ToString();
+          else
+            ValTxt.text = ((int)val).ToString();
+        }
+        else {
+          if (val > 0)
+            ValTxt.text = "+" + val.ToString();
+          else
+            ValTxt.text = val.ToString();
+        }
         LenTxt.text = len.ToString();
         back.sizeDelta = new Vector2(38, len * 32);
-        break;
+      }
+      break;
 
       case NoteType.Pan: // val should go from -127 to 127
         float pan = blockNote.val / 127f;
@@ -112,4 +122,4 @@ public class NoteLine : MonoBehaviour {
 }
 
 
-public enum NoteType { Empty=0, Note=1, Wave=2, Volume=3, Freq=4, Pan=5 };
+public enum NoteType { Empty=0, Note=1, Wave=2, Volume=3, Pitch=4, Pan=5 };

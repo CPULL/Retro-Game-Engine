@@ -140,13 +140,13 @@ public class MusicEditor : MonoBehaviour {
         }
       }
 
-      if (s.freqlen != 0) {
-        float step = s.freqtime / s.freqlen;
-        sounds.Freq(c, s.freqe * step + s.freqs * (1 - step));
-        s.freqtime += Time.deltaTime;
-        if (s.freqtime >= s.freqlen) {
-          sounds.Freq(c, s.freqe);
-          s.freqlen = 0;
+      if (s.pitchlen != 0) {
+        float step = s.pitchtime / s.pitchlen;
+        sounds.Pitch(c, s.pitche * step + s.pitchs * (1 - step));
+        s.pitchtime += Time.deltaTime;
+        if (s.pitchtime >= s.pitchlen) {
+          sounds.Pitch(c, s.pitche);
+          s.pitchlen = 0;
         }
       }
 
@@ -362,7 +362,7 @@ public class MusicEditor : MonoBehaviour {
             blines[row].note[col].SetZeroValues(NoteTypeSprites);
           }
           // Change length
-          if (l.note[col].type == NoteType.Note || l.note[col].type == NoteType.Freq || l.note[col].type == NoteType.Volume) {
+          if (l.note[col].type == NoteType.Note || l.note[col].type == NoteType.Pitch || l.note[col].type == NoteType.Volume) {
             if (Input.GetKeyDown(KeyCode.PageUp) && l.note[col].len > 1) {
               UpdateNoteLength(l.note[col].len - 1);
             }
@@ -532,15 +532,15 @@ public class MusicEditor : MonoBehaviour {
           }
           break;
 
-        case NoteType.Freq:
+        case NoteType.Pitch:
           if (n.len < 2) {
-            sounds.Freq(c, n.val);
+            sounds.Pitch(c, n.val);
           }
           else {
-            swipes[c].freqs = sounds.Freq(c);
-            swipes[c].freqe = n.val;
-            swipes[c].freqtime = 0;
-            swipes[c].freqlen = (n.len - 1) * 15f / block.bpm;
+            swipes[c].pitchs = sounds.Pitch(c);
+            swipes[c].pitche = n.val;
+            swipes[c].pitchtime = 0;
+            swipes[c].pitchlen = (n.len - 1) * 15f / block.bpm;
           }
           break;
 
@@ -1091,7 +1091,7 @@ public class MusicEditor : MonoBehaviour {
   private void UpdateNoteLength(int len = -1) {
     NoteLine note = blines[row].note[col];
     NoteData bn = currentBlock.chs[col][row];
-    if (note.type != NoteType.Note && note.type != NoteType.Freq && note.type != NoteType.Volume) {
+    if (note.type != NoteType.Note && note.type != NoteType.Pitch && note.type != NoteType.Volume) {
       note.len = 0;
       note.LenTxt.text = "";
       note.back.sizeDelta = new Vector2(38, 0 * 32);
@@ -1134,69 +1134,68 @@ public class MusicEditor : MonoBehaviour {
     }
 
     switch (note.type) {
-      case NoteType.Empty:
+      case NoteType.Empty: {
         CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
         CellTypeTxt.text = "";
         CellValContainer.SetActive(false);
         CellLenContainer.SetActive(false);
-        break;
+      }
+      break;
 
-      case NoteType.Note:
+      case NoteType.Note: {
         CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
         CellTypeTxt.text = "Note";
         CellValContainer.SetActive(true);
         CellLenContainer.SetActive(true);
         CellValPostText.gameObject.SetActive(true);
         // Find the closest note and the freq
-        {
-          string nv = null;
-          for (int i = 0; i < freqs.Length - 1; i++) {
-            if (note.val == freqs[i]) {
-              nv = noteNames[i] + " - " + note.val;
-              break;
-            }
-            if (note.val > freqs[i] && note.val < freqs[i + 1]) {
-              if (note.val - freqs[i] < freqs[i + 1] - note.val)
-                nv = "~" + noteNames[i] + " - " + note.val;
-              else
-                nv = "~" + noteNames[i + 1] + " - " + note.val;
-              break;
-            }
+        string nv = null;
+        for (int i = 0; i < freqs.Length - 1; i++) {
+          if (note.val == freqs[i]) {
+            nv = noteNames[i] + " - " + note.val;
+            break;
           }
-          if (nv == null) nv = note.val.ToString();
-          CellValInput.SetTextWithoutNotify(nv);
-          CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(224, 48);
+          if (note.val > freqs[i] && note.val < freqs[i + 1]) {
+            if (note.val - freqs[i] < freqs[i + 1] - note.val)
+              nv = "~" + noteNames[i] + " - " + note.val;
+            else
+              nv = "~" + noteNames[i + 1] + " - " + note.val;
+            break;
+          }
         }
+        if (nv == null) nv = note.val.ToString();
+        CellValInput.SetTextWithoutNotify(nv);
+        CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(224, 48);
         CellValPostText.text = "Hz";
         CellLenPreText.gameObject.SetActive(true);
         CellLenPostText.gameObject.SetActive(true);
         CellLenPreText.text = "For ";
         CellLenInput.SetTextWithoutNotify(note.len.ToString());
         CellLenPostText.text = " beats";
-        break;
+      }
+      break;
 
-      case NoteType.Wave:
+      case NoteType.Wave: {
         CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
         CellTypeTxt.text = "Wave";
         CellValContainer.SetActive(true);
         CellLenContainer.SetActive(false);
         // Find the closest note and the freq
-        {
-          CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(64, 48);
-          CellValInput.SetTextWithoutNotify("");
-          CellValPostText.text = "???";
-          foreach (Wave w in waves) {
-            if (w.id == note.val) {
-              CellValInput.SetTextWithoutNotify(w.id.ToString());
-              CellValPostText.text = w.name;
-              break;
-            }
+        CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(64, 48);
+        CellValInput.SetTextWithoutNotify("");
+        CellValPostText.text = "???";
+        foreach (Wave w in waves) {
+          if (w.id == note.val) {
+            CellValInput.SetTextWithoutNotify(w.id.ToString());
+            CellValPostText.text = w.name;
+            break;
           }
         }
         CellValPostText.gameObject.SetActive(true);
-        break;
+      }
+      break;
 
-      case NoteType.Volume:
+      case NoteType.Volume: {
         CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
         CellTypeTxt.text = "Volume" + ((note.len > 1) ? " slide" : "");
         CellValContainer.SetActive(true);
@@ -1210,25 +1209,41 @@ public class MusicEditor : MonoBehaviour {
         CellLenPreText.text = "In ";
         CellLenInput.SetTextWithoutNotify(note.len.ToString());
         CellLenPostText.text = " beats";
-        break;
+      }
+      break;
 
-      case NoteType.Freq:
+      case NoteType.Pitch: {
         CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
-        CellTypeTxt.text = "Freq" + ((note.len > 1) ? " slide" : "");
+        CellTypeTxt.text = "Pitch" + ((note.len > 1) ? " slide" : "");
         CellValContainer.SetActive(true);
         CellLenContainer.SetActive(true);
         CellValPostText.gameObject.SetActive(true);
-        CellValPostText.text = "Hz";
-        CellValInput.SetTextWithoutNotify(note.val.ToString());
-        CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(224, 48);
+        CellValPostText.text = "Semitones";
+        float val = note.val / 100f;
+        if (val==0)
+          CellValInput.SetTextWithoutNotify("0");
+        else if (val - (int)val == 0) {
+          if (val > 0)
+            CellValInput.SetTextWithoutNotify("+" + ((int)val).ToString());
+          else
+            CellValInput.SetTextWithoutNotify(((int)val).ToString());
+        }
+        else {
+          if (val > 0)
+            CellValInput.SetTextWithoutNotify(val.ToString());
+          else
+            CellValInput.SetTextWithoutNotify(val.ToString());
+        }
+        CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 48);
         CellLenPreText.gameObject.SetActive(true);
         CellLenPostText.gameObject.SetActive(true);
         CellLenPreText.text = "In ";
         CellLenInput.SetTextWithoutNotify(note.len.ToString());
         CellLenPostText.text = " beats";
-        break;
+      }
+      break;
 
-      case NoteType.Pan:
+      case NoteType.Pan: {
         CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
         CellTypeTxt.text = "Pan" + ((note.len > 1) ? " slide" : "");
         CellValContainer.SetActive(true);
@@ -1244,7 +1259,8 @@ public class MusicEditor : MonoBehaviour {
         CellLenPreText.text = "In ";
         CellLenInput.SetTextWithoutNotify(note.len.ToString());
         CellLenPostText.text = " beats";
-        break;
+      }
+      break;
     }
     CellInfoTxt.text = "Row: " + row + "\nChannel: " + (col + 1);
   }
@@ -1333,11 +1349,15 @@ public class MusicEditor : MonoBehaviour {
         }
         break;
 
-        case NoteType.Freq: {
-          if (int.TryParse(CellValInput.text.Trim(), out int fval)) {
-            if (fval < 50) fval = 50;
-            if (fval > 22000) fval = 22000;
-            note.val = fval;
+        case NoteType.Pitch: {
+          // 1.05946^numsemitones
+          // Values can be +[0-9]+(.[0-9]+)? and -[0-9]+(.[0-9]+)?
+          if (float.TryParse(CellValInput.text.Trim(), out float fVal)) {
+            // The result is stored as value multiplied by 100 truncated to 2 bytes
+            int val = (int)(fVal * 100);
+            if (val > 32767) val = 32767;
+            if (val < -32767) val = -32767;
+            note.val = val;
             blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
             ShowNote(note);
             break;
@@ -2164,10 +2184,10 @@ public class Swipe {
   public float vole;
   public float voltime;
   public float vollen;
-  public float freqs;
-  public float freqe;
-  public float freqtime;
-  public float freqlen;
+  public float pitchs;
+  public float pitche;
+  public float pitchtime;
+  public float pitchlen;
   public float pans;
   public float pane;
   public float pantime;
@@ -2178,10 +2198,10 @@ public class Swipe {
     vole = 0;
     voltime = 0;
     vollen = 0;
-    freqs = 0;
-    freqe = 0;
-    freqtime = 0;
-    freqlen = 0;
+    pitchs = 0;
+    pitche = 0;
+    pitchtime = 0;
+    pitchlen = 0;
     pans = 0;
     pane = 0;
     pantime = 0;
@@ -2191,9 +2211,7 @@ public class Swipe {
 
 /*
 
-Implement pan note type
 TEST: record block
-we lose the ability to use keys to set notes after using the inputs
 
 add multiple selection of rows to enalbe cleanup and copy/paste
 

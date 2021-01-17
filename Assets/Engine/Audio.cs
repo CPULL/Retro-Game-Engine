@@ -106,16 +106,22 @@ public class Audio : MonoBehaviour {
     return channels[channel].audio.panStereo;
   }
 
-  internal void Freq(int channel, float freq) {
+  internal void Pitch(int channel, float pitch) {
     if (channel < -1 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
-    if (freq < 50) freq = 50;
-    if (freq > 18000) freq = 18000;
-    channels[channel].freq = freq;
+
+    // 1.05946^numsemitones
+    float numsemi = pitch / 100f;
+    float p = Mathf.Pow(1.05946f, numsemi);
+    channels[channel].audio.pitch = p;
   }
 
-  internal float Freq(int channel) {
+  internal float Pitch(int channel) {
     if (channel < -1 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
-    return channels[channel].freq;
+
+    // p = 1.05946^numsemitones
+    float p = channels[channel].audio.pitch;
+    float numsemi = 17.3132f * Mathf.Log(p);
+    return (int)(numsemi * 100);
   }
 
 
