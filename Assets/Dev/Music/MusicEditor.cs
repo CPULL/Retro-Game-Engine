@@ -7,7 +7,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class MusicEditor : MonoBehaviour {
-  #region References and global variables
+  #region References and global variables **********************************************************************************************************************************************************
 
   public Audio sounds;
   public Transform ContentsMusic;
@@ -217,11 +217,12 @@ public class MusicEditor : MonoBehaviour {
       return;
     }
 
-    // music: get and play note.
-    PlayNote(block);
-
     // Show the line
     SelectRow(currentPlayedMusicBlock);
+    ScrollViews(currentPlayedMusicBlock);
+
+    // music: get and play note.
+    PlayNote(block);
   }
 
   void PlayBlock() {
@@ -261,6 +262,7 @@ public class MusicEditor : MonoBehaviour {
     }
 
     // Show the line
+    ScrollViews(currentPlayedMusicLine);
     SelectRow(currentPlayedMusicLine);
 
     // music: get and play note.
@@ -288,6 +290,7 @@ public class MusicEditor : MonoBehaviour {
         SetTapeButtonColor(0);
         recording = true;
       }
+      return;
     }
 
     if (playing && status == MusicEditorStatus.Music) {
@@ -428,45 +431,41 @@ public class MusicEditor : MonoBehaviour {
             l.note[col].back.sizeDelta = new Vector2(38, noteLen * 32);
             currentBlock.chs[col][row].Set(l.note[col]);
             // Move to the next row
-            if (row + stepLen < currentBlock.len) { row += stepLen; update = true; }
+            if (!recording && row + stepLen < currentBlock.len) { row += stepLen; update = true; }
             // Play the actual sound (find the wave that should be used, if none is defined use a basic triangle wave)
             sounds.Play(col, freqs[i + 24], .25f);
           }
         }
       }
-
     }
-
 
     if (update) {
       // Scroll if needed
-      ScrollViews();
+      ScrollViews(row);
       SelectedCol.anchoredPosition = new Vector3(48 + col * 142, 30, 0);
       SelectRow(row);
     }
   }
 
-  void ScrollViews() {
+  void ScrollViews(int where) {
+    Scrollbar bar;
     if (status == MusicEditorStatus.Music) {
-      if (row < 13) scrollMusic.value = 1;
-      else if (row > 48) scrollMusic.value = 0;
-      else scrollMusic.value = -0.0276f * row + 1.333333333333333f;
+      bar = scrollMusic;
     }
     else if (status == MusicEditorStatus.BlockList) {
-      if (row < 13) scrollBlocks.value = 1;
-      else if (row > 48) scrollBlocks.value = 0;
-      else scrollBlocks.value = -0.0276f * row + 1.333333333333333f;
+      bar = scrollBlocks;
     }
     else if (status == MusicEditorStatus.BlockEdit) {
-      if (row < 13) scrollBlock.value = 1;
-      else if (row > 48) scrollBlock.value = 0;
-      else scrollBlock.value = -0.0276f * row + 1.333333333333333f;
+      bar = scrollBlock;
     }
     else if (status == MusicEditorStatus.Music) {
-      if (row < 13) scrollBlock.value = 1;
-      else if (row > 48) scrollBlock.value = 0;
-      else scrollBlock.value = -0.0276f * row + 1.333333333333333f;
+      bar = scrollBlock;
     }
+    else return;
+
+    if (where < 13) bar.value = 1;
+    else if (where > 48) bar.value = 0;
+    else bar.value = -0.0276f * where + 1.333333333333333f;
   }
 
   private void ShowSection(MusicEditorStatus mode) {
@@ -571,6 +570,7 @@ public class MusicEditor : MonoBehaviour {
       }
     }
     currentPlayedMusicLine++;
+
     return false;
   }
 
@@ -647,7 +647,7 @@ public class MusicEditor : MonoBehaviour {
       ShowWave();
     }
 
-    ScrollViews();
+    ScrollViews(line);
   }
 
   void SelectRowColumn(int line, int column) {
@@ -711,6 +711,7 @@ public class MusicEditor : MonoBehaviour {
     if (status == MusicEditorStatus.BlockEdit) StartCoroutine(UpdateVisiblityOfColumnsDelayed());
   }
   public void ChangeMusicVoicesType(bool completed) {
+    inputsSelected = !completed;
     if (completed) {
       int.TryParse(NumVoicesInputField.text, out int numv);
       if (numv < 1 || numv > 8) {
@@ -723,7 +724,6 @@ public class MusicEditor : MonoBehaviour {
       if (prev != numv && status == MusicEditorStatus.BlockEdit) ShowBlock();
       if (status == MusicEditorStatus.BlockEdit) StartCoroutine(UpdateVisiblityOfColumnsDelayed());
     }
-    inputsSelected = !completed;
   }
 
   public void ChangeMusicBPM(bool up) {
@@ -733,6 +733,7 @@ public class MusicEditor : MonoBehaviour {
     inputsSelected = false;
   }
   public void ChangeMusicBPMType(bool completed) {
+    inputsSelected = !completed;
     if (completed) {
       int.TryParse(MusicBPMInputField.text, out int bpm);
       if (bpm < 20 || bpm > 240) {
@@ -741,7 +742,6 @@ public class MusicEditor : MonoBehaviour {
       }
       music.bpm = bpm;
     }
-    inputsSelected = !completed;
   }
 
   public void ChangeMusicLen(bool up) {
@@ -751,6 +751,7 @@ public class MusicEditor : MonoBehaviour {
     inputsSelected = false;
   }
   public void ChangeMusicLenType(bool completed) {
+    inputsSelected = !completed;
     if (completed) {
       int.TryParse(MusicDefLenInputField.text, out int len);
       if (len < 1 || len > 128) {
@@ -759,7 +760,6 @@ public class MusicEditor : MonoBehaviour {
       }
       music.defLen = len;
     }
-    inputsSelected = !completed;
   }
 
   public void AddNewBlockInMusic() {
@@ -855,8 +855,8 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void UpdateMusicName(bool completed) {
-    music.name = NameInput.text;
     inputsSelected = !completed;
+    music.name = NameInput.text;
   }
 
   #endregion
@@ -922,6 +922,7 @@ public class MusicEditor : MonoBehaviour {
     UpdateBlockLen(b, len);
   }
   public void ChangeBlockLenType(bool completed) {
+    inputsSelected = !completed;
     if (currentBlock == null) return;
     if (completed) {
       BlockData b = currentBlock;
@@ -932,7 +933,6 @@ public class MusicEditor : MonoBehaviour {
       }
       UpdateBlockLen(b, len);
     }
-    inputsSelected = !completed;
   }
   void UpdateBlockLen(BlockData b, int len) {
     if (currentBlock == null) return;
@@ -967,6 +967,7 @@ public class MusicEditor : MonoBehaviour {
     inputsSelected = false;
   }
   public void ChangeBlockBPMType(bool completed) {
+    inputsSelected = !completed;
     if (currentBlock == null) return;
     if (completed) {
       BlockData b = currentBlock;
@@ -977,7 +978,6 @@ public class MusicEditor : MonoBehaviour {
       }
       b.bpm = bpm;
     }
-    inputsSelected = !completed;
   }
 
   int noteLen = 1;
@@ -991,6 +991,7 @@ public class MusicEditor : MonoBehaviour {
     UpdateNoteLength();
   }
   public void ChangeNoteLenType(bool completed) {
+    inputsSelected = !completed;
     if (completed) {
       int.TryParse(NoteLenInputField.text, out int len);
       if (len < 20 || len > 16) {
@@ -1000,7 +1001,6 @@ public class MusicEditor : MonoBehaviour {
       noteLen = len;
       UpdateNoteLength();
     }
-    inputsSelected = !completed;
   }
 
   public void ChangeStepLen(bool up) {
@@ -1010,6 +1010,7 @@ public class MusicEditor : MonoBehaviour {
     inputsSelected = false;
   }
   public void ChangeStepLenType(bool completed) {
+    inputsSelected = !completed;
     if (completed) {
       int.TryParse(NoteLenInputField.text, out int len);
       if (len < 20 || len > 16) {
@@ -1018,7 +1019,6 @@ public class MusicEditor : MonoBehaviour {
       }
       stepLen = len;
     }
-    inputsSelected = !completed;
   }
 
   public void ShowBlock() { // Show the current block
@@ -1066,6 +1066,7 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void UpdateBlockName(bool completed) {
+    inputsSelected = !completed;
     if (currentBlock == null) return;
     if (completed) {
       currentBlock.name = BlockNameInput.text;
@@ -1085,7 +1086,6 @@ public class MusicEditor : MonoBehaviour {
         }
       }
     }
-    inputsSelected = !completed;
   }
 
   private void UpdateNoteLength(int len = -1) {
@@ -1291,6 +1291,7 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void ChangeCellInputVal(bool completed) {
+    inputsSelected = !completed;
     if (currentBlock == null) return;
     if (completed) {
       NoteData note = currentBlock.chs[col][row];
@@ -1378,10 +1379,10 @@ public class MusicEditor : MonoBehaviour {
         break;
       }
     }
-    inputsSelected = !completed;
   }
 
   public void ChangeCellInputLen(bool completed) {
+    inputsSelected = !completed;
     if (currentBlock == null) return;
     if (completed) {
       NoteData note = currentBlock.chs[col][row];
@@ -1394,10 +1395,7 @@ public class MusicEditor : MonoBehaviour {
         ShowNote(note);
       }
     }
-    inputsSelected = !completed;
   }
-
-
 
   #endregion
 
@@ -1601,6 +1599,7 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void UpdateWaveName(bool completed) {
+    inputsSelected = !completed;
     if (currentWave == null) return;
     if (completed) {
       currentWave.name = WaveNameInput.text;
@@ -1615,7 +1614,6 @@ public class MusicEditor : MonoBehaviour {
         }
       }
     }
-    inputsSelected = !completed;
   }
 
   public void SetWave() {
@@ -1686,13 +1684,17 @@ public class MusicEditor : MonoBehaviour {
 
   public void Record() {
     if (currentBlock == null || blocks.Count == 0) return;
+    if (recording) {
+      recording = false;
+      SetTapeButtonColor(-1);
+      return;
+    }
     recording = true;
     timeForNextBeat = 60f / currentBlock.bpm;
     countInForRecording = 4 * timeForNextBeat;
     playing = false;
     ShowSection(MusicEditorStatus.BlockEdit);
     row = 0;
-    col = 0;
     SelectRow(row);
     SetTapeButtonColor(0);
   }
@@ -1730,6 +1732,7 @@ public class MusicEditor : MonoBehaviour {
   }
 
   public void Stop() {
+    recording = false;
     playing = false;
     SelectRow(0);
     SetTapeButtonColor(-1);
@@ -1739,7 +1742,6 @@ public class MusicEditor : MonoBehaviour {
     SelectRow(10000);
     SetTapeButtonColor(-1);
   }
-
 
   #endregion
 
@@ -2211,9 +2213,15 @@ public class Swipe {
 
 /*
 
+
 TEST: record block
 
 add multiple selection of rows to enalbe cleanup and copy/paste
+
+Define better the way the cells are done. So we can save meory and have cells with multiple infos.
+
+[type] if 0 then next cell, used also as terminator (len=0 can be a terminator and in this case len will be set as 1)
+[type=note] [freq] [len]
 
 
  */
