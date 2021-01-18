@@ -552,6 +552,8 @@ public enum BNF {
   SROT,
   STINT,
   SSCALE,
+  SET,
+  GET,
   LINE,
   BOX,
   CIRCLE,
