@@ -20,6 +20,24 @@ TextureImporter:
   - first:
       213: -4443422965096846821
     second: MusicNoteItems_5
+  - first:
+      213: 3408682218136733767
+    second: MusicNoteItems_6
+  - first:
+      213: -6472438231487077152
+    second: MusicNoteItems_7
+  - first:
+      213: -8182923855277772717
+    second: MusicNoteItems_8
+  - first:
+      213: -1258927500607952722
+    second: MusicNoteItems_9
+  - first:
+      213: 6320454779953122419
+    second: MusicNoteItems_10
+  - first:
+      213: -4649565188770766372
+    second: MusicNoteItems_11
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -123,7 +141,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 0
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -144,7 +162,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 64
-        y: 0
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -165,7 +183,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 128
-        y: 0
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -186,7 +204,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 192
-        y: 0
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -207,7 +225,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 256
-        y: 0
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -228,7 +246,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 320
-        y: 0
+        y: 64
         width: 64
         height: 64
       alignment: 0
@@ -240,6 +258,132 @@ TextureImporter:
       bones: []
       spriteID: b1ae6920b5ac552c0800000000000000
       internalID: -4443422965096846821
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MusicNoteItems_6
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7480b3cda621e4f20800000000000000
+      internalID: 3408682218136733767
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MusicNoteItems_7
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0e42e8d88b74d26a0800000000000000
+      internalID: -6472438231487077152
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MusicNoteItems_8
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 350391ecb1a607e80800000000000000
+      internalID: -8182923855277772717
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MusicNoteItems_9
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ea8ea48bb14678ee0800000000000000
+      internalID: -1258927500607952722
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MusicNoteItems_10
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 37c860a9224c6b750800000000000000
+      internalID: 6320454779953122419
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MusicNoteItems_11
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cd1eb43681d697fb0800000000000000
+      internalID: -4649565188770766372
       vertices: []
       indices: 
       edges: []

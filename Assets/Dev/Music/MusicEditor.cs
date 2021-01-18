@@ -2268,16 +2268,16 @@ public class BlockData {
   public List<NoteData>[] chs;
 }
 
-public class NoteData {
+public class Note {
   public NoteType type;
   public int val;
   public int len;
 
-  internal NoteData Duplicate() {
-    return new NoteData { type = this.type, val = this.val, len = this.len };
+  internal Note Duplicate() {
+    return new Note { type = this.type, val = this.val, len = this.len };
   }
 
-  internal void Set(NoteData src) {
+  internal void Set(Note src) {
     type = src.type;
     val = src.val;
     len = src.len;
@@ -2351,8 +2351,8 @@ Pan=5
  */
 
 
-public class Note {
-  private byte type;
+public class NoteData {
+  public byte type { get; private set; }
 
   struct vl {
     public short val;
@@ -2411,5 +2411,27 @@ public class Note {
     type |= (byte)(1 << pos);
     vls[pos].len = len;
   }
+
+  internal NoteData Duplicate() {
+    NoteData n = new NoteData { type = this.type };
+    for (int i = 0; i < 5; i++) {
+      n.vls[i].val = vls[i].val;
+      n.vls[i].len = vls[i].len;
+    }
+    return n;
+  }
+
+  internal void Set(NoteData src) {
+    type = src.type;
+    for (int i = 0; i < 5; i++) {
+      vls[i].val = src.vls[i].val;
+      vls[i].len = src.vls[i].len;
+    }
+  }
+
+  internal void Set(NoteLine note) {
+    // FIXME this will not work anymore
+  }
+
 
 }

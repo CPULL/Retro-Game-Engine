@@ -3,97 +3,356 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class NoteLine : MonoBehaviour {
-  public NoteType type;
+  public byte type;
   public Image TypeImg;
-  public int val;
   public Text ValTxt;
-  public int len;
   public Text LenTxt;
   public RectTransform back;
   public Button ColButton;
 
   internal void SetValues(NoteData blockNote, Sprite[] sprites,  int[] freqs, string[] notenames, List<Wave> waves) {
     type = blockNote.type;
-    TypeImg.sprite = sprites[(int)blockNote.type];
-    val = blockNote.val;
-    len = blockNote.len;
     gameObject.SetActive(true);
     ValTxt.fontSize = 28;
+    LenTxt.fontSize = 28;
 
     switch (type) {
-      case NoteType.Empty: // Nothing required
+      case 0: // Empty
+        TypeImg.sprite = sprites[0];
         ValTxt.text = "";
         LenTxt.text = "";
         back.sizeDelta = new Vector2(38, 0);
         break;
 
-      case NoteType.Note: // val should be the frequency with the text being the visible note
-        if (len == 0) {
-          len = 1;
-          blockNote.len = 1;
-        }
-        if (val == 0) {
-          val = 440;
-          blockNote.val = 440;
-        }
-        ValTxt.text = blockNote.val.ToString();
-        for (int i = 0; i < freqs.Length; i++)
-          if (blockNote.val == freqs[i]) {
-            ValTxt.text = notenames[i];
-            break;
-          }
-        LenTxt.text = len.ToString();
-        back.sizeDelta = new Vector2(38, len * 32);
-        break;
-
-      case NoteType.Wave: // val should be the wave id
-        ValTxt.fontSize = 14;
-        LenTxt.text = "";
-        back.sizeDelta = new Vector2(38, 0);
-        ValTxt.text = val.ToString();
-        foreach (Wave w in waves)
-          if (w.id == val) {
-            ValTxt.text = w.id + "\n" + w.name;
-            break;
-          }
-        break;
-
-      case NoteType.Volume: // val should be the volume
-        ValTxt.text = ((int)(100 * val / 255f)).ToString();
-        LenTxt.text = len.ToString();
-        back.sizeDelta = new Vector2(38, len * 32);
-        break;
-
-      case NoteType.Pitch: { // val should be the number of semitones to alter, multiplied by 100
-        float val = blockNote.val / 100f;
-        if (val == 0)
-          ValTxt.text = "reset";
-        else if (val - (int)val == 0) {
-          if (val > 0)
-            ValTxt.text = "+" + ((int)val).ToString();
-          else
-            ValTxt.text = ((int)val).ToString();
-        }
-        else {
-          if (val > 0)
-            ValTxt.text = "+" + val.ToString();
-          else
-            ValTxt.text = val.ToString();
-        }
+      // Note
+      case 1: {
+        TypeImg.sprite = sprites[1];
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames);
+        int len = GetNoteLen(blockNote);
         LenTxt.text = len.ToString();
         back.sizeDelta = new Vector2(38, len * 32);
       }
       break;
 
-      case NoteType.Pan: // val should go from -127 to 127
-        float pan = blockNote.val / 127f;
-        if (pan < -1) pan = -1;
-        if (pan > 1) pan = 1;
-        ValTxt.text = pan.ToString();
+      // Wave
+      case 2: {
+        TypeImg.sprite = sprites[2];
+        ValTxt.text = GetWaveVal(blockNote, waves);
+        LenTxt.text = "";
+        back.sizeDelta = new Vector2(38, 0);
+      }
+      break;
+
+      // Note + wave
+      case 3: {
+        TypeImg.sprite = sprites[8];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n"+ GetWaveVal(blockNote, waves);
+        int len = GetNoteLen(blockNote);
         LenTxt.text = len.ToString();
         back.sizeDelta = new Vector2(38, len * 32);
-        break;
+      }
+      break;
+
+      // Volume
+      case 4: {
+        TypeImg.sprite = sprites[3];
+        ValTxt.text = GetVolVal(blockNote);
+        int len = GetVolLen(blockNote);
+        LenTxt.text = len.ToString();
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+
+      case 29: // Note + Vol + Pitch + Pan
+      case 21: // Note + Vol + Pan
+      case 13: // Note + Vol + Pitch
+      // Note + Volume
+      case 5: {
+        TypeImg.sprite = sprites[9];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + GetVolVal(blockNote);
+        int len = GetNoteLen(blockNote);
+        int lenv = GetVolLen(blockNote);
+        LenTxt.text = len + "\n" + lenv;
+        if (len < lenv) len = lenv;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      case 30: // Wave + Vol + Pitch + Pan
+      case 22: // Wave + Vol + Pan
+      case 14: // Wave + Vol + Pitch
+      // Wave + Volume
+      case 6: {
+        TypeImg.sprite = sprites[7];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetWaveVal(blockNote, waves) + "\n" + GetVolVal(blockNote);
+        int len = GetVolLen(blockNote);
+        LenTxt.text = "\n" + len;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      case 23: // Note + Wave + Vol + Pan
+      case 15: // Note + Wave + Vol + Pitch
+      // Note + Wave + Volume
+      case 7: {
+        TypeImg.sprite = sprites[8];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + GetWaveVal(blockNote, waves) + " " + GetVolVal(blockNote);
+        int len = GetNoteLen(blockNote);
+        int lenv = GetVolLen(blockNote);
+        LenTxt.text = len + "\n" + lenv;
+        if (len < lenv) len = lenv;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      // Pitch
+      case 8: {
+        TypeImg.sprite = sprites[4];
+        ValTxt.text = GetPitchVal(blockNote);
+        int len = GetPitchLen(blockNote);
+        LenTxt.text = len.ToString();
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      case 25: // Note + Pitch + Pan
+      // Note + Pitch
+      case 9: {
+        TypeImg.sprite = sprites[10];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + GetPitchVal(blockNote);
+        int len = GetNoteLen(blockNote);
+        int lenv = GetPitchLen(blockNote);
+        LenTxt.text = len + "\n" + lenv;
+        if (len < lenv) len = lenv;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      
+      case 26: // Wave + Pitch + Pan
+      // Wave + Pitch
+      case 10: {
+        TypeImg.sprite = sprites[2];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetWaveVal(blockNote, waves) + "\n" + GetPitchVal(blockNote);
+        int len = GetPitchLen(blockNote);
+        LenTxt.text = "\n" + len;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      
+      case 27: // Note + Wave + Pitch + Pan
+      // Note + Wave + Pitch
+      case 11: {
+        TypeImg.sprite = sprites[8];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + " " + GetWaveVal(blockNote, waves) + "\n" + GetPitchVal(blockNote);
+        int len = GetNoteLen(blockNote);
+        int lenv = GetPitchLen(blockNote);
+        LenTxt.text = len + "\n" + lenv;
+        if (len < lenv) len = lenv;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      case 28: // Vol + Pitch + Pan
+      // Vol + Pitch
+      case 12: {
+        TypeImg.sprite = sprites[7];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetVolVal(blockNote) + "\n" + GetPitchVal(blockNote);
+        int len = GetVolLen(blockNote);
+        int lenv = GetPitchLen(blockNote);
+        LenTxt.text = len + "\n" + lenv;
+        if (len < lenv) len = lenv;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      // Pan
+      case 16: {
+        TypeImg.sprite = sprites[5];
+        ValTxt.text = GetPanVal(blockNote);
+        int len = GetPanLen(blockNote);
+        LenTxt.text = len.ToString();
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      // Note + Pan
+      case 17: {
+        TypeImg.sprite = sprites[11];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + GetPanVal(blockNote);
+        int len = GetNoteLen(blockNote);
+        int lenv = GetPanLen(blockNote);
+        LenTxt.text = len + "\n" + lenv;
+        if (len < lenv) len = lenv;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      // Wave + Pan
+      case 18: {
+        TypeImg.sprite = sprites[2];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetWaveVal(blockNote, waves) + "\n" + GetPanVal(blockNote);
+        int len = GetPanLen(blockNote);
+        LenTxt.text = "\n" + len;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      // Note + Wave + Pan
+      case 19: {
+        TypeImg.sprite = sprites[8];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + " " + GetWaveVal(blockNote, waves) + "\n" + GetPanVal(blockNote);
+        int len = GetNoteLen(blockNote);
+        int lenv = GetPanLen(blockNote);
+        LenTxt.text = len + "\n" + lenv;
+        if (len < lenv) len = lenv;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      // Vol + Pan
+      case 20: {
+        TypeImg.sprite = sprites[3];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetVolVal(blockNote) + "\n" + GetPanVal(blockNote);
+        int len = GetVolLen(blockNote);
+        int lenv = GetPanLen(blockNote);
+        LenTxt.text = len + "\n" + lenv;
+        if (len < lenv) len = lenv;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      // Pitch + Pan
+      case 24: {
+        TypeImg.sprite = sprites[4];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetPitchVal(blockNote) + "\n" + GetPanVal(blockNote);
+        int len = GetPitchLen(blockNote);
+        int lenv = GetPanLen(blockNote);
+        LenTxt.text = len + "\n" + lenv;
+        if (len < lenv) len = lenv;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
+
+      // All
+      case 31: {
+        TypeImg.sprite = sprites[6];
+        ValTxt.fontSize = 14;
+        LenTxt.fontSize = 14;
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + GetWaveVal(blockNote, waves) + " " + GetVolVal(blockNote);
+        int len = GetNoteLen(blockNote);
+        int lenv = GetVolLen(blockNote);
+        LenTxt.text = len + "\n" + lenv;
+        if (len < lenv) len = lenv;
+        back.sizeDelta = new Vector2(38, len * 32);
+      }
+      break;
     }
+  }
+
+  private string GetNoteVal(NoteData n, int[] freqs, string[] notenames) {
+    int val = n.GetVal(NoteType.Note);
+    if (val == 0) {
+      val = 440;
+      n.SetVal(NoteType.Note, 440);
+    }
+    string res = val.ToString();
+    for (int i = 0; i < freqs.Length; i++)
+      if (val == freqs[i]) {
+        res = notenames[i] + " - " + val;
+        break;
+      }
+    return res;
+  }
+  private int GetNoteLen(NoteData n) {
+    int len = n.GetLen(NoteType.Note);
+    if (len < 1) len = 1;
+    return len;
+  }
+
+  private string GetWaveVal(NoteData n, List<Wave> waves) {
+    int val = n.GetVal(NoteType.Wave);
+    foreach (Wave w in waves)
+      if (w.id == val) {
+        return w.id + " " + w.name;
+      }
+    return val.ToString();
+  }
+  private int GetWaveLen(NoteData n) {
+    return 0;
+  }
+
+  private string GetVolVal(NoteData n) {
+    int val = n.GetVal(NoteType.Volume);
+    return ((int)(val / 1024f)) + "%";
+  }
+  private int GetVolLen(NoteData n) {
+    int len = n.GetLen(NoteType.Volume);
+    if (len < 1) len = 1;
+    return len;
+  }
+
+  private string GetPitchVal(NoteData n) {
+    float val = n.GetVal(NoteType.Pitch) / 100f;
+    if (val == 0)
+      return "reset";
+    else if (val - (int)val == 0) {
+      if (val > 0)
+        return "+" + ((int)val).ToString();
+      else
+        return ((int)val).ToString();
+    }
+    else {
+      if (val > 0)
+        return "+" + val.ToString();
+      else
+        return val.ToString();
+    }
+  }
+  private int GetPitchLen(NoteData n) {
+    int len = n.GetLen(NoteType.Pitch);
+    if (len < 1) len = 1;
+    return len;
+  }
+
+  private string GetPanVal(NoteData n) {
+    float pan = n.GetVal(NoteType.Pan) / 127f;
+    if (pan < -1) pan = -1;
+    if (pan > 1) pan = 1;
+    return pan.ToString();
+  }
+  private int GetPanLen(NoteData n) {
+    int len = n.GetLen(NoteType.Pan);
+    if (len < 1) len = 1;
+    return len;
   }
 
   internal void SetWave(int id, string name, Sprite spr) {
