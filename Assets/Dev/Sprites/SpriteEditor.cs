@@ -701,3 +701,8 @@ public class SpriteEditor : MonoBehaviour {
 
 public enum ActionVal { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, Fill, FreeDraw }
 
+/*
+ Add right click to keep the current draw item
+lines do not end correctly (check Bispoo video)
+ 
+ */

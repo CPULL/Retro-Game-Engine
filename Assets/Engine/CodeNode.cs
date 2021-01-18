@@ -374,6 +374,7 @@ public class CodeNode {
       case BNF.KEYy:
       case BNF.RETURN:
       case BNF.FunctionCall:
+      case BNF.GETP:
         return true;
     }
     return false;
@@ -552,8 +553,8 @@ public enum BNF {
   SROT,
   STINT,
   SSCALE,
-  SET,
-  GET,
+  SETP,
+  GETP,
   LINE,
   BOX,
   CIRCLE,

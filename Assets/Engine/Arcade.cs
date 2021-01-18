@@ -59,66 +59,7 @@ public class Arcade : MonoBehaviour {
   int FpsFrames = 0;
   float FpsTime = 0;
 
-  byte vala = 0;
-  byte vald = 0;
-  byte vals = 255;
-  byte valr = 0;
-
-  byte[] music = new byte[] {
-  };
-
   private void Update() {
-    if (Input.GetKeyDown(KeyCode.Alpha1)) audioManager.Play(0, 440, .5f);
-    if (Input.GetKeyDown(KeyCode.Alpha2)) audioManager.Play(0, 494, .5f);
-    if (Input.GetKeyDown(KeyCode.Alpha3)) audioManager.Play(0, 523, .5f);
-    if (Input.GetKeyDown(KeyCode.Alpha4)) audioManager.Play(0, 587, .5f);
-    if (Input.GetKeyDown(KeyCode.Alpha5)) audioManager.Play(0, 659, .5f);
-    if (Input.GetKeyDown(KeyCode.Alpha6)) audioManager.Play(0, 698, .5f);
-    if (Input.GetKeyDown(KeyCode.Alpha7)) audioManager.Play(0, 784, .5f);
-    if (Input.GetKeyDown(KeyCode.Alpha8)) audioManager.Play(0, 880, .5f);
-
-    if (Input.GetKeyDown(KeyCode.Q) && vala > 0) {
-      vala--;
-      Write("A" + vala.ToString() + "  ", 0, 0, 63, 0);
-      CompleteFrame();
-      audioManager.ADSR(0, vala, vald, vals, valr);
-    }
-    if (Input.GetKeyDown(KeyCode.W) && vala < 255) {
-      vala++;
-      Write("A" + vala.ToString() + "  ", 0, 0, 63, 0);
-      CompleteFrame();
-      audioManager.ADSR(0, vala, vald, vals, valr);
-    }
-
-    if (Input.GetKeyDown(KeyCode.A) && vald > 0) {
-      vald--;
-      Write("D" + vald.ToString() + "  ", 0, 10, 63, 0);
-      CompleteFrame();
-      audioManager.ADSR(0, vala, vald, vals, valr);
-    }
-    if (Input.GetKeyDown(KeyCode.S) && vald < 255) {
-      vald++;
-      Write("D" + vald.ToString() + "  ", 0, 10, 63, 0);
-      CompleteFrame();
-      audioManager.ADSR(0, vala, vald, vals, valr);
-    }
-
-    if (Input.GetKeyDown(KeyCode.Z) && valr > 0) {
-      valr--;
-      Write("R" + valr.ToString() + "  ", 0, 20, 63, 0);
-      CompleteFrame();
-      audioManager.ADSR(0, vala, vald, vals, valr);
-    }
-    if (Input.GetKeyDown(KeyCode.X) && valr < 255) {
-      valr++;
-      Write("R" + valr.ToString() + "  ", 0, 20, 63, 0);
-      CompleteFrame();
-      audioManager.ADSR(0, vala, vald, vals, valr);
-    }
-
-
-
-
     if (updateDelay < 0) return;
     if (updateDelay > 0) {
       updateDelay -= Time.deltaTime;
@@ -496,6 +437,12 @@ public class Arcade : MonoBehaviour {
     pixel.g = g;
     pixel.b = b;
     texture.SetPixel(x, hm1 - y, pixel);
+  }
+
+  int GetPixel(int x, int y) {
+    if (x < 0 || x > wm1 || y < 0 || y > hm1) return 0;
+    Color32 pixel = texture.GetPixel(x, hm1 - y);
+    return ((pixel.r / 85) << 4) + ((pixel.g / 85) << 2) + (pixel.b / 85);
   }
 
   void Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0) {
@@ -1038,12 +985,20 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
+        case BNF.SETP: {
+          Value x = Evaluate(n.CN1);
+          Value y = Evaluate(n.CN2);
+          Value c = Evaluate(n.CN3);
+          SetPixel(x.ToInt(culture), y.ToInt(culture), c.ToByte(culture));
+        }
+        break;
+
         case BNF.LINE: {
-          Value x1 = Evaluate(n.children[0]);
-          Value y1 = Evaluate(n.children[1]);
-          Value x2 = Evaluate(n.children[2]);
-          Value y2 = Evaluate(n.children[3]);
-          Value col = Evaluate(n.children[4]);
+          Value x1 = Evaluate(n.CN1);
+          Value y1 = Evaluate(n.CN2);
+          Value x2 = Evaluate(n.CN3);
+          Value y2 = Evaluate(n.CN4);
+          Value col = Evaluate(n.CN5);
           Line(x1.ToInt(culture), y1.ToInt(culture), x2.ToInt(culture), y2.ToInt(culture), col.ToByte(culture));
         }
         break;
@@ -1267,6 +1222,8 @@ public class Arcade : MonoBehaviour {
       case BNF.OPxor: return Evaluate(n.CN1).Xor(Evaluate(n.CN2), culture);
       case BNF.OPlsh: return Evaluate(n.CN1).Lsh(Evaluate(n.CN2), culture);
       case BNF.OPrsh: return Evaluate(n.CN1).Rsh(Evaluate(n.CN2), culture);
+
+      case BNF.GETP: return new Value(GetPixel(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture)));
 
       case BNF.LEN: 
         return new Value(Evaluate(n.CN1).ToStr().Length);

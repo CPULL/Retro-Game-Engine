@@ -1,6 +1,15 @@
 Name: Pong
 
 Start {
+	Clr(0)
+	SetP(10,10, c333)
+	write(GetP(10,10), 20, 10, c330)
+	write(GetP(11,10), 20, 20, c330, c003)
+	write(GetP(10,10), 30, 30, c300, c033)
+}
+
+
+xStart {
 	clr(c001)
 	sprite(0, PaddleSize:)
 	sprite(1, PaddleSize:)
@@ -19,7 +28,7 @@ Start {
 	score2 = 0
 }
 
-Update {
+xUpdate {
 	if (by > 180-14 & vy > 0) vy = -vy
 	if (by < 14 & vy < 0) vy = -vy
 

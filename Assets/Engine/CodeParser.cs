@@ -120,16 +120,15 @@ public class CodeParser : MonoBehaviour {
 
   readonly Regex rgClr = new Regex("[\\s]*clr\\((.+)\\)[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgFrame = new Regex("frame", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgWrite1 = new Regex("[\\s]*(write\\()(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgWrite2 = new Regex("[\\s]*(write\\()(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgWrite3 = new Regex("[\\s]*(write\\()(.*),(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgSetP = new Regex("[\\s]*(line\\()(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgGetP = new Regex("[\\s]*(line\\()(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgLine = new Regex("[\\s]*(line\\()(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgBox1 = new Regex("[\\s]*(box\\()(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgBox2 = new Regex("[\\s]*(box\\()(.*),(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCircle1 = new Regex("[\\s]*(circle\\()(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgCircle2 = new Regex("[\\s]*(circle\\()(.*),(.*),(.*),(.*),(.*),(.*)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  
+  
+  readonly Regex rgWrite = new Regex("[\\s]*write[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
+  readonly Regex rgLine = new Regex("[\\s]*line[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgGetP = new Regex("[\\s]*getp[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSetP = new Regex("[\\s]*setp[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgBox = new Regex("[\\s]*box[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCircle = new Regex("[\\s]*circle[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgInc = new Regex("(.*)\\+\\+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDec = new Regex("(.*)\\-\\-", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgIf = new Regex("[\\s]*if[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -506,114 +505,59 @@ public class CodeParser : MonoBehaviour {
 
     // [WRITE] = write([EXPR], [EXPR], [EXPR], [EXPR], [EXPR]) ; text, x, y, col(front), col(back)
     if (expected.IsGood(Expected.Val.Statement)) {
-      if (rgWrite3.IsMatch(line)) {
-        Match m = rgWrite3.Match(line);
-        if (m.Groups.Count < 8) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
+      if (rgWrite.IsMatch(line)) {
+        Match m = rgWrite.Match(line);
+        if (m.Groups.Count < 2) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
         CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
-        node.Add(ParseExpression(m.Groups[2].Value));
-        node.Add(ParseExpression(m.Groups[3].Value));
-        node.Add(ParseExpression(m.Groups[4].Value));
-        node.Add(ParseExpression(m.Groups[5].Value));
-        node.Add(ParseExpression(m.Groups[6].Value));
-        node.Add(ParseExpression(m.Groups[7].Value));
+        string pars = m.Groups[1].Value.Trim();
+        ParsePars(node, pars);
         parent.Add(node);
         return;
       }
-      else if (rgWrite2.IsMatch(line)) {
-        Match m = rgWrite2.Match(line);
-        if (m.Groups.Count < 7) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
-        node.Add(ParseExpression(m.Groups[2].Value));
-        node.Add(ParseExpression(m.Groups[3].Value));
-        node.Add(ParseExpression(m.Groups[4].Value));
-        node.Add(ParseExpression(m.Groups[5].Value));
-        node.Add(ParseExpression(m.Groups[6].Value));
-        parent.Add(node);
-        return;
-      }
-      else if (rgWrite1.IsMatch(line)) {
-        Match m = rgWrite1.Match(line);
-        if (m.Groups.Count < 6) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
-        node.Add(ParseExpression(m.Groups[2].Value));
-        node.Add(ParseExpression(m.Groups[3].Value));
-        node.Add(ParseExpression(m.Groups[4].Value));
-        node.Add(ParseExpression(m.Groups[5].Value));
-        parent.Add(node);
-        return;
-      }
+    }
+
+    // [SetP] = SetP([EXPR], [EXPR])
+    if (expected.IsGood(Expected.Val.Statement) && rgSetP.IsMatch(line)) {
+      Match m = rgSetP.Match(line);
+      if (m.Groups.Count < 2) throw new Exception("Invalid SetP() command. Line: " + (linenumber + 1));
+      CodeNode node = new CodeNode(BNF.SETP, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      ParsePars(node, pars);
+      parent.Add(node);
+      return;
     }
 
     // [LINE] = line([EXPR], [EXPR], [EXPR], [EXPR], [EXPR])
     if (expected.IsGood(Expected.Val.Statement) && rgLine.IsMatch(line)) {
       Match m = rgLine.Match(line);
-      if (m.Groups.Count < 7) throw new Exception("Invalid Line() command. Line: " + (linenumber + 1));
+      if (m.Groups.Count < 2) throw new Exception("Invalid Line() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.LINE, line, linenumber);
-      node.Add(ParseExpression(m.Groups[2].Value));
-      node.Add(ParseExpression(m.Groups[3].Value));
-      node.Add(ParseExpression(m.Groups[4].Value));
-      node.Add(ParseExpression(m.Groups[5].Value));
-      node.Add(ParseExpression(m.Groups[6].Value));
+      string pars = m.Groups[1].Value.Trim();
+      ParsePars(node, pars);
       parent.Add(node);
       return;
     }
 
     // [BOX] = box([EXP], [EXP], [EXP], [EXP], [EXP], [[EXP]])
-    if (expected.IsGood(Expected.Val.Statement)) {
-      if (rgBox2.IsMatch(line)) {
-        Match m = rgBox2.Match(line);
-        if (m.Groups.Count < 8) throw new Exception("Invalid Box() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.BOX, line, linenumber);
-        node.Add(ParseExpression(m.Groups[2].Value));
-        node.Add(ParseExpression(m.Groups[3].Value));
-        node.Add(ParseExpression(m.Groups[4].Value));
-        node.Add(ParseExpression(m.Groups[5].Value));
-        node.Add(ParseExpression(m.Groups[6].Value));
-        node.Add(ParseExpression(m.Groups[7].Value));
-        parent.Add(node);
-        return;
-      }
-      if (rgBox1.IsMatch(line)) {
-        Match m = rgBox1.Match(line);
-        if (m.Groups.Count < 7) throw new Exception("Invalid Box() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.BOX, line, linenumber);
-        node.Add(ParseExpression(m.Groups[2].Value));
-        node.Add(ParseExpression(m.Groups[3].Value));
-        node.Add(ParseExpression(m.Groups[4].Value));
-        node.Add(ParseExpression(m.Groups[5].Value));
-        node.Add(ParseExpression(m.Groups[6].Value));
-        parent.Add(node);
-        return;
-      }
+    if (expected.IsGood(Expected.Val.Statement) && rgBox.IsMatch(line)) {
+      Match m = rgBox.Match(line);
+      if (m.Groups.Count < 2) throw new Exception("Invalid Box() command. Line: " + (linenumber + 1));
+      CodeNode node = new CodeNode(BNF.BOX, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      ParsePars(node, pars);
+      parent.Add(node);
+      return;
     }
 
     // [CIRCLE] = circle([EXP], [EXP], [EXP], [EXP], [EXP], [[EXP]])
-    if (expected.IsGood(Expected.Val.Statement)) {
-      if (rgCircle2.IsMatch(line)) {
-        Match m = rgCircle2.Match(line);
-        if (m.Groups.Count < 8) throw new Exception("Invalid Circle() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.CIRCLE, line, linenumber);
-        node.Add(ParseExpression(m.Groups[2].Value));
-        node.Add(ParseExpression(m.Groups[3].Value));
-        node.Add(ParseExpression(m.Groups[4].Value));
-        node.Add(ParseExpression(m.Groups[5].Value));
-        node.Add(ParseExpression(m.Groups[6].Value));
-        node.Add(ParseExpression(m.Groups[7].Value));
-        parent.Add(node);
-        return;
-      }
-      if (rgCircle1.IsMatch(line)) {
-        Match m = rgCircle1.Match(line);
-        if (m.Groups.Count < 7) throw new Exception("Invalid Circle() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.CIRCLE, line, linenumber);
-        node.Add(ParseExpression(m.Groups[2].Value));
-        node.Add(ParseExpression(m.Groups[3].Value));
-        node.Add(ParseExpression(m.Groups[4].Value));
-        node.Add(ParseExpression(m.Groups[5].Value));
-        node.Add(ParseExpression(m.Groups[6].Value));
-        parent.Add(node);
-        return;
-      }
+    if (expected.IsGood(Expected.Val.Statement) && rgCircle.IsMatch(line)) {
+      Match m = rgCircle.Match(line);
+      if (m.Groups.Count < 8) throw new Exception("Invalid Circle() command. Line: " + (linenumber + 1));
+      CodeNode node = new CodeNode(BNF.CIRCLE, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      ParsePars(node, pars);
+      parent.Add(node);
+      return;
     }
 
     // [SCREEN] width, heigth, tiles, filter
@@ -1115,6 +1059,20 @@ public class CodeParser : MonoBehaviour {
     bool atLeastOneReplacement = true;
     while (atLeastOneReplacement) {
       atLeastOneReplacement = false;
+
+      // [GetP] = GetP([EXPR], [EXPR])
+      // GETP
+      // Replace GETP => `GPx
+      line = rgGetP.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.GETP, GenId("GP"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        ParsePars(n, pars);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
       // functions => `FNx
       line = rgFunctionCall.Replace(line, m => {
         // Check that the function is defined and it is not a reserved keywork: m.Groups[1]
@@ -1127,34 +1085,13 @@ public class CodeParser : MonoBehaviour {
         string pars = m.Groups[2].Value.Trim();
         CodeNode ps = new CodeNode(BNF.Params, line, linenumber);
         n.Add(ps);
-
-        // We need to grab each single parameter, they are separated by commas (,) but other functions can be nested
-        int nump = 0;
-        string parline = "";
-        foreach (char c in pars) {
-          if (c == '(') { parline += c; nump++; }
-          else if (c == ')') { parline += c; nump--; }
-          else if (c == ',' && nump == 0) {
-            // Parse
-            parline = parline.Trim(' ', ',');
-            ps.Add(ParseExpression(parline));
-            parline = "";
-          }
-          else parline += c;
-        }
-        // parse the remaining part
-        parline = parline.Trim(' ', ',');
-        if (!string.IsNullOrEmpty(parline)) {
-          ps.Add(ParseExpression(parline));
-        }
+        ParsePars(ps, pars);
 
         atLeastOneReplacement = true;
         nodes[n.id] = n;
         return n.id;
       });
       if (atLeastOneReplacement) continue;
-
-
 
       // PAR
       // Replace PAR => `PRx
@@ -1446,6 +1383,28 @@ public class CodeParser : MonoBehaviour {
       throw new Exception("Invalid expression at " + (linenumber + 1) + "\n" + origForException + "\n" + line);
     }
     return nodes[line];
+  }
+
+  private void ParsePars(CodeNode ps, string pars) {
+    // We need to grab each single parameter, they are separated by commas (,) but other functions can be nested
+    int nump = 0;
+    string parline = "";
+    foreach (char c in pars) {
+      if (c == '(') { parline += c; nump++; }
+      else if (c == ')') { parline += c; nump--; }
+      else if (c == ',' && nump == 0) {
+        // Parse
+        parline = parline.Trim(' ', ',');
+        ps.Add(ParseExpression(parline));
+        parline = "";
+      }
+      else parline += c;
+    }
+    // parse the remaining part
+    parline = parline.Trim(' ', ',');
+    if (!string.IsNullOrEmpty(parline)) {
+      ps.Add(ParseExpression(parline));
+    }
   }
 
   void ParseAssignment(string line, CodeNode parent, BNF bnf, string match) {
