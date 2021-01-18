@@ -71,6 +71,11 @@ public class MusicEditor : MonoBehaviour {
   public GameObject CreateNewBlockInList;
   public GameObject CreateNewWaveInList;
 
+  public Text SelInfo;
+  int selectionYStart = -1;
+  int selectionYEnd = -1;
+  int selectionYDir = 0;
+
   MusicData music;
   float timeForNextBeat = 0;
   float autoRepeat = 0;
@@ -275,7 +280,6 @@ public class MusicEditor : MonoBehaviour {
     PlayNote(block);
   }
 
-
   private void Update() {
     bool update = false;
     autoRepeat -= Time.deltaTime;
@@ -314,7 +318,7 @@ public class MusicEditor : MonoBehaviour {
       if (!recording) {
         if (status == MusicEditorStatus.BlockEdit) {
           if (Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
-          if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < blines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+          if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < currentBlock.len - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
         }
         else if (status == MusicEditorStatus.Music) {
           if (Input.GetKey(KeyCode.UpArrow) && mlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
@@ -441,54 +445,132 @@ public class MusicEditor : MonoBehaviour {
     }
 
     // Ctrl+C, Ctrl+V, Ctrl+X, ShiftUp, ShiftDown
-    if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) { // FIXME all the times?
+    if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
+
       if (Input.GetKeyDown(KeyCode.DownArrow)) {
-
+        if (selectionYStart == -1 || row > selectionYEnd + 1 || row < selectionYStart - 1) { // No selection
+          selectionYStart = row - 1;
+          selectionYEnd = row;
+          selectionYDir = 1;
+        }
+        else {
+          if (selectionYDir == 1) selectionYEnd++;
+          else if (selectionYDir == -1) selectionYStart++;
+          if (selectionYEnd > currentBlock.len - 1) selectionYEnd = currentBlock.len - 1;
+          if (selectionYEnd < selectionYStart) {
+            selectionYStart = -1;
+            selectionYEnd = -1;
+          }
+        }
+        ShowSelection();
       }
-      if (Input.GetKeyDown(KeyCode.UpArrow)) {
 
+      if (Input.GetKeyDown(KeyCode.UpArrow)) {
+        if (selectionYStart == -1 || row > selectionYEnd + 1 || row < selectionYStart - 1) { // No selection
+          selectionYStart = row;
+          selectionYEnd = row + 1;
+          selectionYDir = -1;
+        }
+        else {
+          if (selectionYDir == 1) selectionYEnd--;
+          else if (selectionYDir == -1) selectionYStart--;
+          if (selectionYStart < 0) selectionYStart = 0;
+          if (selectionYEnd < selectionYStart) {
+            selectionYStart = -1;
+            selectionYEnd = -1;
+          }
+        }
+        ShowSelection();
       }
     }
     if (Input.GetKeyDown(KeyCode.C) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) { // Ctrl+C
-      Selection.SetParent(blines[row].transform);
-      Vector2 pos = Vector2.zero;
-      pos.x = - (8 - col) * 148;
-      pos.y = 1;
-      SelectionBox.anchoredPosition = pos;
-      SelectionBox.sizeDelta = new Vector2(142, 34);
-      Selection.gameObject.SetActive(true);
       CopiedNotes.Clear();
-      CopiedNotes.Add(currentBlock.chs[col][row]);
-      Debug.Log(col);
+      for (int i = selectionYStart; i <= selectionYEnd; i++) {
+        CopiedNotes.Add(currentBlock.chs[col][i].Duplicate());
+      }
+      HideSelection();
+      if (CopiedNotes.Count == 0)
+        SelInfo.text = "";
+      else if (CopiedNotes.Count == 1)
+        SelInfo.text = CopiedNotes.Count + " cell copied";
+      else
+        SelInfo.text = CopiedNotes.Count + " cells copied";
+    }
+    if (Input.GetKeyDown(KeyCode.X) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) { // Ctrl+X
+      CopiedNotes.Clear();
+      for (int i = selectionYStart; i <= selectionYEnd; i++) {
+        CopiedNotes.Add(currentBlock.chs[col][i].Duplicate());
+        currentBlock.chs[col][i].Zero();
+        blines[i].note[col].SetZeroValues(NoteTypeSprites);
+      }
+      HideSelection();
+      if (CopiedNotes.Count == 0)
+        SelInfo.text = "";
+      else if (CopiedNotes.Count == 1)
+        SelInfo.text = CopiedNotes.Count + " cell copied";
+      else
+        SelInfo.text = CopiedNotes.Count + " cells copied";
+    }
+    if (Input.GetKeyDown(KeyCode.V) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && CopiedNotes.Count > 0) { // Ctrl+V
+      // If we have something, paste starting from the current position
+      for (int i = 0; i < CopiedNotes.Count && row + i < currentBlock.len; i++) {
+        currentBlock.chs[col][row + i].Set(CopiedNotes[i]);
+        blines[row + i].note[col].SetValues(CopiedNotes[i], NoteTypeSprites, freqs, noteNames, waves);
+      }
+      HideSelection();
     }
 
-
     if (update) {
-      // Scroll if needed
-      ScrollViews(row);
+      ScrollViews(row); // Scroll if needed
       SelectedCol.anchoredPosition = new Vector3(48 + col * 142, 30, 0);
       SelectRow(row);
     }
   }
 
+  void ShowSelection() {
+    Selection.SetParent(ContentsBlock);
+    Selection.SetAsLastSibling();
+    Selection.gameObject.SetActive(true);
+    if (selectionYStart == -1) {
+      selectionYStart = row;
+      selectionYEnd = row;
+    }
+    Vector2 pos = Vector2.zero;
+    pos.x = 48 + col * 142;
+    pos.y = -blines[currentBlock.len - 1].GetComponent<RectTransform>().anchoredPosition.y + 32.5f - 32 * selectionYStart;
+    SelectionBox.anchoredPosition = pos;
+    SelectionBox.sizeDelta = new Vector2(142, 34 * (selectionYEnd - selectionYStart + 1) * .95f);
+  }
+
+  void HideSelection() {
+    selectionYStart = -1;
+    selectionYEnd = -1;
+    Selection.gameObject.SetActive(false);
+  }
+
   void ScrollViews(int where) {
     Scrollbar bar;
+    int len;
     if (status == MusicEditorStatus.Music) {
       bar = scrollMusic;
+      len = mlines.Count - 14;
     }
     else if (status == MusicEditorStatus.BlockList) {
       bar = scrollBlocks;
+      len = bllines.Count - 14;
     }
     else if (status == MusicEditorStatus.BlockEdit) {
       bar = scrollBlock;
+      len = currentBlock.len - 14;
     }
-    else if (status == MusicEditorStatus.Music) {
-      bar = scrollBlock;
+    else if (status == MusicEditorStatus.Waveforms) {
+      bar = scrollWaves;
+      len = wlines.Count - 14;
     }
     else return;
 
     if (where < 13) bar.value = 1;
-    else if (where > 48) bar.value = 0;
+    else if (where > len) bar.value = 0;
     else bar.value = -0.0276f * where + 1.333333333333333f;
   }
 
@@ -2191,6 +2273,16 @@ public class NoteData {
   public int val;
   public int len;
 
+  internal NoteData Duplicate() {
+    return new NoteData { type = this.type, val = this.val, len = this.len };
+  }
+
+  internal void Set(NoteData src) {
+    type = src.type;
+    val = src.val;
+    len = src.len;
+  }
+
   internal void Set(NoteLine note) {
     type = note.type;
     val = note.val;
@@ -2237,16 +2329,10 @@ public class Swipe {
 
 /*
 
-Find a way to keep the selection highlight in the right place.
-We cannot attach it to the line
-
-add multiple selection of rows to enalbe cleanup and copy/paste
-
 Define better the way the cells are done. So we can save meory and have cells with multiple infos.
 
 [type] if 0 then next cell, used also as terminator (len=0 can be a terminator and in this case len will be set as 1)
 [type=note] [freq] [len]
-
 
  */
 
