@@ -2334,6 +2334,82 @@ Define better the way the cells are done. So we can save meory and have cells wi
 [type] if 0 then next cell, used also as terminator (len=0 can be a terminator and in this case len will be set as 1)
 [type=note] [freq] [len]
 
+
+
+Empty=0
+Note=1
+Wave=2
+Volume=3
+Pitch=4
+Pan=5
+
+[byte] -> bitfield with items
+[2 bytes] -> value + len <= for each of the selected types
+
+
+
  */
 
 
+public class Note {
+  private byte type;
+
+  struct vl {
+    public short val;
+    public byte len;
+  };
+
+  vl[] vls = new vl[5];
+
+  public void Zero() {
+    type = 0;
+    for (int i = 0; i < 5; i++) {
+      vls[i].val = 0;
+      vls[i].len = 0;
+    }
+  }
+
+  public void Zero(NoteType t) {
+    if (t == NoteType.Empty) {
+      Zero();
+      return;
+    }
+    int pos = (byte)type - 1;
+    type &= (byte)(255 - (1 << pos));
+    vls[pos].val = 0;
+    vls[pos].len = 0;
+  }
+
+  public bool IsType(NoteType t) {
+    if (t == NoteType.Empty) return type == 0;
+    int pos = (byte)type - 1;
+    return (type & (1 << pos)) != 0;
+  }
+
+  public short GetVal(NoteType t) {
+    if (t == NoteType.Empty) return 0;
+    int pos = (byte)type - 1;
+    return vls[pos].val;
+  }
+
+  public short GetLen(NoteType t) {
+    if (t == NoteType.Empty) return 0;
+    int pos = (byte)type - 1;
+    return vls[pos].len;
+  }
+
+  public void SetVal(NoteType t, short val) {
+    if (t == NoteType.Empty) return;
+    int pos = (byte)type - 1;
+    type |= (byte)(1 << pos);
+    vls[pos].val = val;
+  }
+
+  public void SetLen(NoteType t, byte len) {
+    if (t == NoteType.Empty) return;
+    int pos = (byte)type - 1;
+    type |= (byte)(1 << pos);
+    vls[pos].len = len;
+  }
+
+}

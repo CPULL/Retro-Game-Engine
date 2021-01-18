@@ -375,6 +375,12 @@ public class CodeNode {
       case BNF.RETURN:
       case BNF.FunctionCall:
       case BNF.GETP:
+      case BNF.SIN:
+      case BNF.COS:
+      case BNF.TAN:
+      case BNF.ATAN2:
+      case BNF.SQR:
+      case BNF.EXP:
         return true;
     }
     return false;
@@ -565,6 +571,12 @@ public enum BNF {
   KEY,
   KEYx,
   KEYy,
+  SIN,
+  COS,
+  TAN,
+  ATAN2,
+  SQR,
+  EXP,
   NOP,
 }
 

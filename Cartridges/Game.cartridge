@@ -2,7 +2,7 @@ Name: Pong
 
 Start {
 	Clr(0)
-	box(0,0,319,179,c333)
+	write(sin(2.141592), 0, 0, c330)
 }
 
 

@@ -139,6 +139,13 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgWait = new Regex("[\\s]*wait[\\s]*\\(([^,]+)(,[\\s]*([fn]))?\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDestroy = new Regex("[\\s]*destroy[\\s]*\\(([^,]+)\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
+  readonly Regex rgSin = new Regex("[\\s]*sin[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCos = new Regex("[\\s]*cos[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgTan = new Regex("[\\s]*tan[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgAtan2 = new Regex("[\\s]*atan2[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSqr = new Regex("[\\s]*sqr[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgExp = new Regex("[\\s]*exp[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
   readonly Regex rgSpriteSz = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*),([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(([^,]+),([^,]+),([^,]+)(,([^,]+))?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -503,14 +510,16 @@ public class CodeParser : MonoBehaviour {
       return;
     }
 
-    // [WRITE] = write([EXPR], [EXPR], [EXPR], [EXPR], [EXPR]) ; text, x, y, col(front), col(back)
+    // [WRITE] = write([EXPR], [EXPR], [EXPR], [EXPR], [EXPR]) ; text, x, y, col(front), [col(back), size]
     if (expected.IsGood(Expected.Val.Statement)) {
       if (rgWrite.IsMatch(line)) {
         Match m = rgWrite.Match(line);
         if (m.Groups.Count < 2) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
         CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
         string pars = m.Groups[1].Value.Trim();
-        ParsePars(node, pars);
+        int num = ParsePars(node, pars);
+        if (num < 4) throw new Exception("Invalid Write(), not enough parameters. Line: " + (linenumber + 1));
+        if (num > 6) throw new Exception("Invalid Write(), too many parameters. Line: " + (linenumber + 1));
         parent.Add(node);
         return;
       }
@@ -522,7 +531,9 @@ public class CodeParser : MonoBehaviour {
       if (m.Groups.Count < 2) throw new Exception("Invalid SetP() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.SETP, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
-      ParsePars(node, pars);
+      int num = ParsePars(node, pars);
+      if (num < 3) throw new Exception("Invalid SetP(), not enough parameters. Line: " + (linenumber + 1));
+      if (num > 3) throw new Exception("Invalid SetP(), too many parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }
@@ -533,7 +544,9 @@ public class CodeParser : MonoBehaviour {
       if (m.Groups.Count < 2) throw new Exception("Invalid Line() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.LINE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
-      ParsePars(node, pars);
+      int num = ParsePars(node, pars);
+      if (num < 5) throw new Exception("Invalid Line(), not enough parameters. Line: " + (linenumber + 1));
+      if (num > 5) throw new Exception("Invalid Line(), too many parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }
@@ -544,7 +557,9 @@ public class CodeParser : MonoBehaviour {
       if (m.Groups.Count < 2) throw new Exception("Invalid Box() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.BOX, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
-      ParsePars(node, pars);
+      int num = ParsePars(node, pars);
+      if (num < 5) throw new Exception("Invalid Box(), not enough parameters. Line: " + (linenumber + 1));
+      if (num > 6) throw new Exception("Invalid Box(), too many parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }
@@ -555,7 +570,9 @@ public class CodeParser : MonoBehaviour {
       if (m.Groups.Count < 8) throw new Exception("Invalid Circle() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.CIRCLE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
-      ParsePars(node, pars);
+      int num = ParsePars(node, pars);
+      if (num < 5) throw new Exception("Invalid Circle(), not enough parameters. Line: " + (linenumber + 1));
+      if (num > 6) throw new Exception("Invalid Circle(), too many parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }
@@ -1060,6 +1077,79 @@ public class CodeParser : MonoBehaviour {
     while (atLeastOneReplacement) {
       atLeastOneReplacement = false;
 
+      // [Sin] = Sin([EXPR])
+      line = rgSin.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.SIN, GenId("SI"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num != 1) throw new Exception("Invalid Sin(), one and only one parameter is required. Line: " + (linenumber + 1));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // [Cos] = Cos([EXPR])
+      line = rgCos.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.COS, GenId("CO"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num != 1) throw new Exception("Invalid Cos(), one and only one parameter is required. Line: " + (linenumber + 1));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // [Tan] = Tan([EXPR])
+      line = rgTan.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.TAN, GenId("TA"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num != 1) throw new Exception("Invalid Tan(), one and only one parameter is required. Line: " + (linenumber + 1));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // [aTan2] = aTan2([EXPR],[EXPR])
+      line = rgTan.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.ATAN2, GenId("AT"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        ParsePars(n, pars);
+        int num = ParsePars(n, pars);
+        if (num != 2) throw new Exception("Invalid Atan2(), 2 parameters are required. Line: " + (linenumber + 1));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // [Sqr] = Sqr([EXPR])
+      line = rgTan.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.SQR, GenId("SQ"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num != 1) throw new Exception("Invalid Sqr(), one and only one parameter is required. Line: " + (linenumber + 1));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // [aTan2] = exp([EXPR],[EXPR])
+      line = rgTan.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.EXP, GenId("EX"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num != 2) throw new Exception("Invalid Sin(), 2 parameters are required. Line: " + (linenumber + 1));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
       // [GetP] = GetP([EXPR], [EXPR])
       // GETP
       // Replace GETP => `GPx
@@ -1067,7 +1157,8 @@ public class CodeParser : MonoBehaviour {
         atLeastOneReplacement = true;
         CodeNode n = new CodeNode(BNF.GETP, GenId("GP"), origForException, linenumber);
         string pars = m.Groups[1].Value.Trim();
-        ParsePars(n, pars);
+        int num = ParsePars(n, pars);
+        if (num != 2) throw new Exception("Invalid GetP(), 2 parameters are required. Line: " + (linenumber + 1));
         nodes[n.id] = n;
         return n.id;
       });
@@ -1385,8 +1476,9 @@ public class CodeParser : MonoBehaviour {
     return nodes[line];
   }
 
-  private void ParsePars(CodeNode ps, string pars) {
+  private int ParsePars(CodeNode ps, string pars) {
     // We need to grab each single parameter, they are separated by commas (,) but other functions can be nested
+    int num = 0;
     int nump = 0;
     string parline = "";
     foreach (char c in pars) {
@@ -1396,6 +1488,7 @@ public class CodeParser : MonoBehaviour {
         // Parse
         parline = parline.Trim(' ', ',');
         ps.Add(ParseExpression(parline));
+        num++;
         parline = "";
       }
       else parline += c;
@@ -1404,7 +1497,9 @@ public class CodeParser : MonoBehaviour {
     parline = parline.Trim(' ', ',');
     if (!string.IsNullOrEmpty(parline)) {
       ps.Add(ParseExpression(parline));
+      num++;
     }
+    return num;
   }
 
   void ParseAssignment(string line, CodeNode parent, BNF bnf, string match) {

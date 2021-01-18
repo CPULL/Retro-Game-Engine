@@ -1279,6 +1279,14 @@ public class Arcade : MonoBehaviour {
         return new Value(labels[n.sVal]);
       }
 
+
+      case BNF.SIN: return new Value(Mathf.Sin(Evaluate(n.CN1).ToFlt(culture)));
+      case BNF.COS: return new Value(Mathf.Cos(Evaluate(n.CN1).ToFlt(culture)));
+      case BNF.TAN: return new Value(Mathf.Tan(Evaluate(n.CN1).ToFlt(culture)));
+      case BNF.ATAN2: return new Value(Mathf.Atan2(Evaluate(n.CN1).ToFlt(culture), Evaluate(n.CN2).ToFlt(culture)));
+      case BNF.SQR: return new Value(Mathf.Sqrt(Evaluate(n.CN1).ToFlt(culture)));
+      case BNF.EXP: return new Value(Mathf.Pow(Evaluate(n.CN1).ToFlt(culture), Evaluate(n.CN2).ToFlt(culture)));
+
       case BNF.FunctionCall: {
         // Evaluate all parameters, assign all values to the registers, run the statements like a stack, return the value from a "return" (or 0 if there is no return)
         CodeNode fDef = functions[n.sVal];
