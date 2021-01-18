@@ -58,6 +58,8 @@ public class Arcade : MonoBehaviour {
 
   int FpsFrames = 0;
   float FpsTime = 0;
+  int lastScreenW;
+  int lastScreenH;
 
   private void Update() {
     if (updateDelay < 0) return;
@@ -80,6 +82,20 @@ public class Arcade : MonoBehaviour {
       sprites[0].Pos(0, 0, scaleW, scaleH, false);
       updateDelay = 0;
     }
+
+    int nowScreenW = UnityEngine.Screen.width;
+    int nowScreenH = UnityEngine.Screen.height;
+    if (nowScreenW != lastScreenW || nowScreenH != lastScreenH) {
+      lastScreenW = nowScreenW;
+      lastScreenH = nowScreenH;
+      scaleW = lastScreenW / 256f;
+      scaleH = lastScreenW / 160f;
+
+      // update the height according to the aspect ratio
+      float heightAccordingToWidth = nowScreenW / 16.0f * 9.0f;
+      UnityEngine.Screen.SetResolution(nowScreenW, Mathf.RoundToInt(heightAccordingToWidth), false, 0);
+    }
+
 
     FpsTime += Time.deltaTime;
     if (FpsTime > 1f) {
@@ -182,6 +198,11 @@ public class Arcade : MonoBehaviour {
       sprites[i] = new Grob(spriteImgs[i], sw, sh);
       spriteImgs[i].enabled = false;
     }
+
+    lastScreenW = UnityEngine.Screen.width;
+    lastScreenH = UnityEngine.Screen.height;
+    scaleW = lastScreenW / 256f;
+    scaleH = lastScreenW / 160f;
 
     sprites[0].Init(0, 6, sw, sh);
 
