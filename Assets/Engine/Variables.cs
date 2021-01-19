@@ -154,7 +154,7 @@ public struct Value {
     if (type == VT.None) return res + "<none>";
     if (type == VT.Int) return res + iVal;
     if (type == VT.Float) return res + fVal.ToString("F3");
-    if (type == VT.String) return res + sVal;
+    if (type == VT.String) return res + (string.IsNullOrEmpty(sVal) ? "\"\"" : sVal);
     return "<unknown>";
   }
 

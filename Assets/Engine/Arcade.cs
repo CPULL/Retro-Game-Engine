@@ -801,7 +801,7 @@ public class Arcade : MonoBehaviour {
   #endregion Sprites
 
   bool Execute(CodeNode n) {
-    Debug.Log(n);
+//    Debug.Log(n);
     try {
       switch (n.type) {
         case BNF.CLR: {

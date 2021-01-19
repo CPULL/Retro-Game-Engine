@@ -16,7 +16,7 @@ public class NoteLine : MonoBehaviour {
   public Button ColButton;
 
   internal void SetValues(NoteData blockNote, Sprite[] sprites,  int[] freqs, string[] notenames, List<Wave> waves) {
-    btype = blockNote.btype;
+    btype = blockNote.type;
     gameObject.SetActive(true);
     ValTxt.fontSize = 28;
     LenTxt.fontSize = 28;

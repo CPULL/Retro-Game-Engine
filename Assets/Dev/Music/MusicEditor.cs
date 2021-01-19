@@ -415,13 +415,6 @@ public class MusicEditor : MonoBehaviour {
               ShowNote(currentBlock.chs[col][row]);
             }
           }
-          // Space change type
-          if (Input.GetKeyDown(KeyCode.Space)) {
-            int t = (int)l.note[col].type;
-            t++;
-            if (t == 5) t = 0;
-            ChangeNoteTypePost(t);
-          }
         }
         // Piano keys
         for (int i = 0; i < keyNotes.Length; i++) {
@@ -622,57 +615,49 @@ public class MusicEditor : MonoBehaviour {
     timeForNextBeat = 15f / block.bpm;
     for (int c = 0; c < music.NumVoices; c++) {
       NoteData n = block.chs[c][currentPlayedMusicLine];
-      switch (n.type) {
-        case NoteType.Empty: break;
-
-        case NoteType.Volume:
-          if (n.len < 2) {
-            sounds.Volume(c, n.val / 255f);
-          }
-          else {
-            swipes[c].vols = sounds.Volume(c);
-            swipes[c].vole = n.val / 255f;
-            swipes[c].voltime = 0;
-            swipes[c].vollen = (n.len - 1) * 15f / block.bpm;
-          }
-          break;
-
-        case NoteType.Pitch:
-          if (n.len < 2) {
-            sounds.Pitch(c, n.val);
-          }
-          else {
-            swipes[c].pitchs = sounds.Pitch(c);
-            swipes[c].pitche = n.val;
-            swipes[c].pitchtime = 0;
-            swipes[c].pitchlen = (n.len - 1) * 15f / block.bpm;
-          }
-          break;
-
-        case NoteType.Pan:
-          if (n.len < 2) {
-            sounds.Pan(c, n.val / 255f);
-          }
-          else {
-            swipes[c].pans = sounds.Pan(c);
-            swipes[c].pane = n.val / 255f;
-            swipes[c].pantime = 0;
-            swipes[c].panlen = (n.len - 1) * 15f / block.bpm;
-          }
-          break;
-
-        case NoteType.Note:
-          sounds.Play(c, n.val, n.len * timeForNextBeat);
-          break;
-
-        case NoteType.Wave:
-          Wave w = GetWave(n.val);
-          if (w != null) {
-            sounds.Wave(c, w.wave, w.phase);
-            sounds.ADSR(c, w.a, w.d, w.s, w.r);
-            if (w.rawPCM != null) sounds.Wave(c, w.rawPCM);
-          }
-          break;
+      if (n.IsType(NoteType.Note)) {
+        sounds.Play(c, n.val, n.len * timeForNextBeat);
+      }
+      if (n.IsType(NoteType.Wave)) {
+        Wave w = GetWave(n.val);
+        if (w != null) {
+          sounds.Wave(c, w.wave, w.phase);
+          sounds.ADSR(c, w.a, w.d, w.s, w.r);
+          if (w.rawPCM != null) sounds.Wave(c, w.rawPCM);
+        }
+      }
+      if (n.IsType(NoteType.Volume)) {
+        if (n.len < 2) {
+          sounds.Volume(c, n.val / 255f);
+        }
+        else {
+          swipes[c].vols = sounds.Volume(c);
+          swipes[c].vole = n.val / 255f;
+          swipes[c].voltime = 0;
+          swipes[c].vollen = (n.len - 1) * 15f / block.bpm;
+        }
+      }
+      if (n.IsType(NoteType.Pitch)) {
+        if (n.len < 2) {
+          sounds.Pitch(c, n.val);
+        }
+        else {
+          swipes[c].pitchs = sounds.Pitch(c);
+          swipes[c].pitche = n.val;
+          swipes[c].pitchtime = 0;
+          swipes[c].pitchlen = (n.len - 1) * 15f / block.bpm;
+        }
+      }
+      if (n.IsType(NoteType.Pan)) {
+        if (n.len < 2) {
+          sounds.Pan(c, n.val / 255f);
+        }
+        else {
+          swipes[c].pans = sounds.Pan(c);
+          swipes[c].pane = n.val / 255f;
+          swipes[c].pantime = 0;
+          swipes[c].panlen = (n.len - 1) * 15f / block.bpm;
+        }
       }
     }
     currentPlayedMusicLine++;
@@ -713,7 +698,7 @@ public class MusicEditor : MonoBehaviour {
 
       List<NoteData> notes = currentBlock.chs[col];
       for (int i = row; i >= 0; i--) {
-        if (notes[i].type == NoteType.Wave) {
+        if (notes[i].IsType(NoteType.Wave)) {
           Wave w = null;
           for (int widx = 0; widx < waves.Count; widx++) {
             if (waves[widx].id== notes[i].val) {
@@ -1217,291 +1202,296 @@ public class MusicEditor : MonoBehaviour {
   #endregion
 
   #region Cell **********************************************************************************************************************************************************
-  public Image CellTypeImg;
-  public Text CellTypeTxt;
-  public GameObject CellValContainer;
-  public InputField CellValInput;
-  public Text CellValPostText;
-  public GameObject CellLenContainer;
-  public Text CellLenPreText;
-  public InputField CellLenInput;
-  public Text CellLenPostText;
   public Text CellInfoTxt;
-  public GameObject CellTypeContainer;
+
+  public InputField[] CellValInputs;
+  public InputField[] CellLenInputs;
+  public Image[] CellSelecteds;
+  public Sprite Unchecked;
+  public Sprite Checked;
 
   private void ShowNote(NoteData note) {
-    if (note==null) {
-      CellTypeImg.sprite = NoteTypeSprites[(int)NoteType.Empty];
-      CellTypeTxt.text = "";
-      CellValContainer.SetActive(false);
-      CellLenContainer.SetActive(false);
+    if (note == null) {
+      for (int i = 0; i < 5; i++)
+        CellSelecteds[i].sprite = Checked;
       CellInfoTxt.text = "<i>select a cell...</i>";
       return;
     }
 
-    switch (note.type) {
-      case NoteType.Empty: {
-        CellTypeImg.sprite = NoteTypeSprites[(int)note.btype];
-        CellTypeTxt.text = "";
-        CellValContainer.SetActive(false);
-        CellLenContainer.SetActive(false);
-      }
-      break;
-
-      case NoteType.Note: {
-        CellTypeImg.sprite = NoteTypeSprites[(int)note.btype];
-        CellTypeTxt.text = "Note";
-        CellValContainer.SetActive(true);
-        CellLenContainer.SetActive(true);
-        CellValPostText.gameObject.SetActive(true);
-        // Find the closest note and the freq
-        string nv = null;
-        for (int i = 0; i < freqs.Length - 1; i++) {
-          if (note.val == freqs[i]) {
-            nv = noteNames[i] + " - " + note.val;
-            break;
-          }
-          if (note.val > freqs[i] && note.val < freqs[i + 1]) {
-            if (note.val - freqs[i] < freqs[i + 1] - note.val)
-              nv = "~" + noteNames[i] + " - " + note.val;
-            else
-              nv = "~" + noteNames[i + 1] + " - " + note.val;
-            break;
-          }
+    if (note.IsType(NoteType.Note)) {
+      CellSelecteds[0].sprite = Checked;
+      // Find the closest note and the freq
+      string nv = null;
+      int num = note.GetVal(NoteType.Note);
+      for (int i = 0; i < freqs.Length - 1; i++) {
+        if (num == freqs[i]) {
+          nv = noteNames[i] + " - " + num;
+          break;
         }
-        if (nv == null) nv = note.val.ToString();
-        CellValInput.SetTextWithoutNotify(nv);
-        CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(224, 48);
-        CellValPostText.text = "Hz";
-        CellLenPreText.gameObject.SetActive(true);
-        CellLenPostText.gameObject.SetActive(true);
-        CellLenPreText.text = "For ";
-        CellLenInput.SetTextWithoutNotify(note.len.ToString());
-        CellLenPostText.text = " beats";
+        if (num > freqs[i] && num < freqs[i + 1]) {
+          if (num - freqs[i] < freqs[i + 1] - num)
+            nv = "~" + noteNames[i] + " - " + num;
+          else
+            nv = "~" + noteNames[i + 1] + " - " + num;
+          break;
+        }
+      }
+      if (nv == null) nv = num.ToString();
+      CellValInputs[0].SetTextWithoutNotify(nv);
+      CellLenInputs[0].SetTextWithoutNotify(note.GetLen(NoteType.Note).ToString());
+    }
+    else {
+      CellSelecteds[0].sprite = Unchecked;
+    }
+
+    if (note.IsType(NoteType.Wave)) {
+      CellSelecteds[1].sprite = Checked;
+      int num = note.GetVal(NoteType.Wave);
+      CellValInputs[1].SetTextWithoutNotify(num.ToString());
+      foreach (Wave w in waves) {
+        if (w.id == num) {
+          CellValInputs[1].SetTextWithoutNotify(num.ToString() + " " + w.name);
+          break;
+        }
+      }
+    }
+    else {
+      CellSelecteds[1].sprite = Unchecked;
+    }
+
+    if (note.IsType(NoteType.Volume)) {
+      CellSelecteds[2].sprite = Checked;
+      CellValInputs[2].SetTextWithoutNotify(NoteData.ConvertVal2Vol(note.GetVal(NoteType.Volume)));
+      CellLenInputs[2].SetTextWithoutNotify(note.GetLen(NoteType.Volume).ToString());
+    }
+    else {
+      CellSelecteds[2].sprite = Unchecked;
+    }
+
+    if (note.IsType(NoteType.Pitch)) {
+      CellSelecteds[3].sprite = Checked;
+      CellValInputs[3].SetTextWithoutNotify(NoteData.ConvertVal2Pitch(note.GetVal(NoteType.Pitch)));
+      CellLenInputs[3].SetTextWithoutNotify(note.GetLen(NoteType.Pitch).ToString());
+    }
+    else {
+      CellSelecteds[3].sprite = Unchecked;
+    }
+
+    if (note.IsType(NoteType.Pan)) {
+      CellSelecteds[4].sprite = Checked;
+      CellValInputs[4].SetTextWithoutNotify(NoteData.ConvertVal2Pan(note.GetVal(NoteType.Pan)));
+      CellLenInputs[4].SetTextWithoutNotify(note.GetLen(NoteType.Pan).ToString());
+    }
+    else {
+      CellSelecteds[4].sprite = Unchecked;
+    }
+
+    CellInfoTxt.text = "Row: " + row + "\nChannel: " + (col + 1);
+  }
+
+  public void CellAlterNote(int mode) {
+    CellAlterType(0, mode);
+  }
+  public void CellAlterWave(int mode) {
+    CellAlterType(1, mode);
+  }
+  public void CellAlterVol(int mode) {
+    CellAlterType(2, mode);
+  }
+  public void CellAlterPitch(int mode) {
+    CellAlterType(3, mode);
+  }
+  public void CellAlterPan(int mode) {
+    CellAlterType(4, mode);
+  }
+
+  void CellAlterType(int type, int mode) {
+    if (mode == 0) { // Used to only start typing on input fields
+      inputsSelected = true;
+      return;
+    }
+
+    NoteData nd = currentBlock.chs[col][row];
+    NoteType t = (NoteType)(type + 1);
+    if (mode == 1) { // Completed typing on input fields
+      inputsSelected = false ;
+    }
+    else if (mode == 2) { // Just changed the type
+      inputsSelected = false ;
+    }
+    if (nd.IsType(t)) {
+      nd.Zero(t);
+      CellSelecteds[type].sprite = Unchecked;
+    }
+    else {
+      CellSelecteds[type].sprite = Checked;
+    }
+    // Val depends on the type
+    short val = 0;
+    switch(t) {
+      case NoteType.Empty: break;
+      case NoteType.Note: {
+        string note = CellValInputs[type].text.Trim().ToLowerInvariant();
+        // The value can be a note or a frequency
+        int notepos = -1;
+        for (int i = 0; i < noteNames.Length; i++)
+          if (noteNames[i].ToLowerInvariant() == note) {
+            notepos = i;
+            break;
+          }
+        if (notepos != -1) val = (short)freqs[notepos];
+        else if (int.TryParse(note, out int freq)) val = (short)freq;
       }
       break;
 
       case NoteType.Wave: {
-        CellTypeImg.sprite = NoteTypeSprites[(int)note.btype];
-        CellTypeTxt.text = "Wave";
-        CellValContainer.SetActive(true);
-        CellLenContainer.SetActive(false);
-        // Find the closest note and the freq
-        CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(64, 48);
-        CellValInput.SetTextWithoutNotify("");
-        CellValPostText.text = "???";
-        foreach (Wave w in waves) {
-          if (w.id == note.val) {
-            CellValInput.SetTextWithoutNotify(w.id.ToString());
-            CellValPostText.text = w.name;
+        string note = CellValInputs[type].text.Trim().ToLowerInvariant();
+        // The value can be an id or a name
+        int.TryParse(note, out int waveid);
+        for (int i = 0; i < waves.Count; i++) {
+          if (waves[i].name.Trim().ToLowerInvariant() == note || waves[i].id == waveid) {
+            val = (short)waves[i].id;
             break;
           }
         }
-        CellValPostText.gameObject.SetActive(true);
       }
       break;
 
       case NoteType.Volume: {
-        CellTypeImg.sprite = NoteTypeSprites[(int)note.btype];
-        CellTypeTxt.text = "Volume" + ((note.len > 1) ? " slide" : "");
-        CellValContainer.SetActive(true);
-        CellLenContainer.SetActive(true);
-        CellValPostText.gameObject.SetActive(true);
-        CellValPostText.text = "%";
-        CellValInput.SetTextWithoutNotify(((int)((note.val / 255f) * 100)).ToString());
-        CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(224, 48);
-        CellLenPreText.gameObject.SetActive(false);
-        CellLenPostText.gameObject.SetActive(true);
-        CellLenPreText.text = "In ";
-        CellLenInput.SetTextWithoutNotify(note.len.ToString());
-        CellLenPostText.text = " beats";
+        if (int.TryParse(CellValInputs[type].text.Trim(), out int vol)) {
+          if (vol < 0) vol = 0;
+          if (vol > 100) vol = 100;
+          val = (short)(vol * 1024f / 100);
+          break;
+        }
       }
       break;
 
       case NoteType.Pitch: {
-        CellTypeImg.sprite = NoteTypeSprites[(int)note.btype];
-        CellTypeTxt.text = "Pitch" + ((note.len > 1) ? " slide" : "");
-        CellValContainer.SetActive(true);
-        CellLenContainer.SetActive(true);
-        CellValPostText.gameObject.SetActive(true);
-        CellValPostText.text = "Semitones";
-        float val = note.val / 100f;
-        if (val==0)
-          CellValInput.SetTextWithoutNotify("0");
-        else if (val - (int)val == 0) {
-          if (val > 0)
-            CellValInput.SetTextWithoutNotify("+" + ((int)val).ToString());
-          else
-            CellValInput.SetTextWithoutNotify(((int)val).ToString());
+        // 1.05946^numsemitones
+        // Values can be +[0-9]+(.[0-9]+)? and -[0-9]+(.[0-9]+)?
+        if (float.TryParse(CellValInputs[type].text.Trim(), numberstyle, culture, out float fVal)) {
+          // The result is stored as value multiplied by 100 truncated to 2 bytes
+          val = (short)(fVal * 100);
+          if (val > 32767) val = 32767;
+          if (val < -32767) val = -32767;
+          break;
         }
-        else {
-          if (val > 0)
-            CellValInput.SetTextWithoutNotify(val.ToString());
-          else
-            CellValInput.SetTextWithoutNotify(val.ToString());
-        }
-        CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 48);
-        CellLenPreText.gameObject.SetActive(true);
-        CellLenPostText.gameObject.SetActive(true);
-        CellLenPreText.text = "In ";
-        CellLenInput.SetTextWithoutNotify(note.len.ToString());
-        CellLenPostText.text = " beats";
       }
       break;
 
       case NoteType.Pan: {
-        CellTypeImg.sprite = NoteTypeSprites[(int)note.btype];
-        CellTypeTxt.text = "Pan" + ((note.len > 1) ? " slide" : "");
-        CellValContainer.SetActive(true);
-        CellLenContainer.SetActive(true);
-        CellValPostText.gameObject.SetActive(false);
-        float pan = (note.val - 127) / 127f;
-        if (pan < -1) pan = -1;
-        if (pan > 1) pan = 1;
-        CellValInput.SetTextWithoutNotify(pan.ToString());
-        CellValInput.GetComponent<RectTransform>().sizeDelta = new Vector2(224, 48);
-        CellLenPreText.gameObject.SetActive(true);
-        CellLenPostText.gameObject.SetActive(true);
-        CellLenPreText.text = "In ";
-        CellLenInput.SetTextWithoutNotify(note.len.ToString());
-        CellLenPostText.text = " beats";
+        if (float.TryParse(CellValInputs[type].text.Trim(), numberstyle, culture, out float pval)) {
+          if (pval < -1) pval = -1;
+          if (pval > 1) pval = 1;
+          val = (short)(pval * 127 + 127);
+          break;
+        }
       }
       break;
     }
-    CellInfoTxt.text = "Row: " + row + "\nChannel: " + (col + 1);
+
+    int.TryParse(CellLenInputs[type].text.Trim(), out int len);
+    nd.Set(t, val, (byte)len);
+
+    NoteLine nl = blines[row].note[col];
+    nl.SetValues(nd, NoteTypeSprites, freqs, noteNames, waves);
+
+    ShowNote(nd);
   }
 
-  public void ChangeNoteType() {
-    CellTypeContainer.SetActive(!CellTypeContainer.activeSelf);
+
+
+
+  public void CellAlterNoteVal(bool up) {
+    CellAlterVal(0, up);
+  }
+  public void CellAlterWaveVal(bool up) {
+    CellAlterVal(1, up);
+  }
+  public void CellAlterVolVal(bool up) {
+    CellAlterVal(2, up);
+  }
+  public void CellAlterPitchVal(bool up) {
+    CellAlterVal(3, up);
+  }
+  public void CellAlterPanVal(bool up) {
+    CellAlterVal(4, up);
   }
 
-  public void ChangeNoteTypePost(int type) {
-    // Empty=0, Note=1, Wave=2, Volume=3, Freq=4, Pan=5
-
-    NoteLine note = blines[row].note[col];
-    note.type = (NoteType)type;
-    note.TypeImg.sprite = NoteTypeSprites[type];
-    NoteData bn = currentBlock.chs[col][row];
-    bn.Set(note);
-    blines[row].note[col].SetValues(bn, NoteTypeSprites, freqs, noteNames, waves);
-    ShowNote(bn);
-    CellTypeContainer.SetActive(false);
-  }
-
-  public void ChangeNoteVal(bool up) {
+  void CellAlterVal(int type, bool up) {
     if (currentBlock == null || currentBlock.chs[col][row] == null) return;
-    NoteData bn = currentBlock.chs[col][row];
-    if (up) bn.val++; else bn.val--;
-    blines[row].note[col].SetValues(bn, NoteTypeSprites, freqs, noteNames, waves);
-    ShowNote(bn);
-  }
-
-  public void ChangeCellInputVal(bool completed) {
-    inputsSelected = !completed;
-    if (currentBlock == null) return;
-    if (completed) {
-      NoteData note = currentBlock.chs[col][row];
-      switch (note.type) {
-        case NoteType.Empty: break;
-
-        case NoteType.Note: {
-          string val = CellValInput.text.Trim().ToLowerInvariant();
-          // The value can be a note or a frequency
-          int notepos = -1;
-          for (int i = 0; i < noteNames.Length; i++) {
-            if (noteNames[i].ToLowerInvariant() == val) {
-              notepos = i;
-              break;
-            }
-          }
-          if (notepos != -1) {
-            note.val = freqs[notepos];
-            blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
-            ShowNote(note);
-          }
-          else {
-            if (int.TryParse(val, out int freq)) {
-              note.val = freq;
-              blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
-              ShowNote(note);
-            }
-          }
-        }
+    NoteData nd = currentBlock.chs[col][row];
+    short num;
+    NoteType t = (NoteType)(type + 1);
+    num = nd.GetVal(t);
+    if (up) num++;
+    else num--;
+    switch (t) {
+      case NoteType.Note:
+        if (num < 50) num = 50;
+        if (num > 22000) num = 22000;
+        nd.SetVal(NoteType.Note, num);
         break;
 
-        case NoteType.Wave: {
-          string val = CellValInput.text.Trim().ToLowerInvariant();
-          // The value can be an id or a name
-          int.TryParse(val, out int waveid);
-          for (int i = 0; i < waves.Count; i++) {
-            if (waves[i].name.Trim().ToLowerInvariant() == val || waves[i].id == waveid) {
-              note.val = waves[i].id;
-              blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
-              ShowNote(note);
-              break;
-            }
-          }
-        }
+      case NoteType.Wave:
+        if (num < 1) num = 1;
+        if (num > waves.Count - 1) num = (short)(waves.Count - 1);
+        nd.SetVal(NoteType.Wave, num);
         break;
 
-        case NoteType.Volume: {
-          if (int.TryParse(CellValInput.text.Trim(), out int vol)) {
-            if (vol < 0) vol = 0;
-            if (vol > 100) vol = 100;
-            note.val = (int)(vol * 255f / 100);
-            blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
-            ShowNote(note);
-            break;
-          }
-        }
+      case NoteType.Volume:
+        if (num < 0) num = 0;
+        if (num > 1024) num = 1024;
+        nd.SetVal(NoteType.Volume, num);
         break;
 
-        case NoteType.Pitch: {
-          // 1.05946^numsemitones
-          // Values can be +[0-9]+(.[0-9]+)? and -[0-9]+(.[0-9]+)?
-          if (float.TryParse(CellValInput.text.Trim(), numberstyle, culture, out float fVal)) {
-            // The result is stored as value multiplied by 100 truncated to 2 bytes
-            int val = (int)(fVal * 100);
-            if (val > 32767) val = 32767;
-            if (val < -32767) val = -32767;
-            note.val = val;
-            blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
-            ShowNote(note);
-            break;
-          }
-        }
+      case NoteType.Pitch:
+        if (num < -32767) num = -32767;
+        if (num > 32767) num = 32767;
+        nd.SetVal(NoteType.Pitch, num);
         break;
 
-        case NoteType.Pan: {
-          if (float.TryParse(CellValInput.text.Trim(), numberstyle, culture, out float pval)) {
-            if (pval < -1) pval = -1;
-            if (pval > 1) pval = 1;
-            note.val = (int)(pval * 127 + 127);
-            blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
-            ShowNote(note);
-            break;
-          }
-        }
+      case NoteType.Pan:
+        if (num < 0) num = 0;
+        if (num > 255) num = 255;
+        nd.SetVal(NoteType.Pan, num);
         break;
-      }
     }
+    blines[row].note[col].SetValues(nd, NoteTypeSprites, freqs, noteNames, waves);
+    ShowNote(nd);
   }
 
-  public void ChangeCellInputLen(bool completed) {
-    inputsSelected = !completed;
-    if (currentBlock == null) return;
-    if (completed) {
-      NoteData note = currentBlock.chs[col][row];
 
-      if (int.TryParse(CellLenInput.text.Trim(), out int len)) {
-        if (len < 1) len = 1;
-        if (len > currentBlock.len) len = currentBlock.len;
-        note.len = len;
-        blines[row].note[col].SetValues(note, NoteTypeSprites, freqs, noteNames, waves);
-        ShowNote(note);
-      }
-    }
+
+  public void CellAlterNoteLen(bool up) {
+    CellAlterLen(0, up);
   }
+  public void CellAlterVolLen(bool up) {
+    CellAlterLen(2, up);
+  }
+  public void CellAlterPitchLen(bool up) {
+    CellAlterLen(3, up);
+  }
+  public void CellAlterPanLen(bool up) {
+    CellAlterLen(4, up);
+  }
+
+  void CellAlterLen(int type, bool up) {
+    if (currentBlock == null || currentBlock.chs[col][row] == null) return;
+    NoteData nd = currentBlock.chs[col][row];
+    byte num;
+    NoteType t = (NoteType)(type + 1);
+    num = nd.GetLen(t);
+    if (up) num++;
+    else num--;
+    if (num < 1) num = 1;
+    if (num > currentBlock.len - row - 2) num = (byte)(currentBlock.len - row - 2);
+    nd.SetLen(t, num);
+    blines[row].note[col].SetValues(nd, NoteTypeSprites, freqs, noteNames, waves);
+    ShowNote(nd);
+  }
+
 
   #endregion
 
@@ -1757,8 +1747,7 @@ public class MusicEditor : MonoBehaviour {
     if (row < 0 || row >= currentBlock.chs[col].Count) return;
 
     NoteData bn = currentBlock.chs[col][row];
-    bn.type = NoteType.Wave;
-    bn.val = w.id;
+    bn.SetVal(NoteType.Wave, (short)w.id);
     blines[row].note[col].SetWave(w.id, w.name, NoteTypeSprites[(int)NoteType.Wave]);
     ShowNote(bn);
   }
@@ -1898,7 +1887,7 @@ public class MusicEditor : MonoBehaviour {
           NoteData note = b.chs[c][r];
           byte ph = (byte)((note.val & 0xff00) >> 8);
           byte pl = (byte)(note.val & 0xff);
-          res += ((int)note.btype).ToString("X2") + " " +
+          res += ((int)note.type).ToString("X2") + " " +
                 ph.ToString("X2") + " " + pl.ToString("X2") + " " +
                 note.len.ToString("X2") + " ";
         }
@@ -1953,7 +1942,8 @@ public class MusicEditor : MonoBehaviour {
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
     string data = Values.text.Trim();
-    data = rgComments.Replace(data, " ").Replace('\n', ' ').Trim();
+    data = rgComments.Replace(data, " ");
+    data = rgLabels.Replace(data, " ").Replace('\n', ' ').Trim();
     while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
     waves.Clear();
@@ -2004,16 +1994,37 @@ public class MusicEditor : MonoBehaviour {
       for (int r = 0; r < b.len; r++) {
         for (int c = 0; c < numv; c++) {
           data = ReadNextByte(data, out data1);
-          data = ReadNextByte(data, out data2);
-          data = ReadNextByte(data, out data3);
-          data = ReadNextByte(data, out data4);
-
-          NoteData note = new NoteData() {
-            type = (NoteType)data1,
-            val = (data2 << 8) + data3,
-            len = data4
-          };
-
+          NoteData note = new NoteData();
+          // data1 has the types, according to the required ones read the due amount of bytes
+          if ((data1 & 1) == 1) { // Note
+            data = ReadNextByte(data, out data2);
+            data = ReadNextByte(data, out data3);
+            data = ReadNextByte(data, out data4);
+            note.Set(NoteType.Note, (short)(data2 << 8 + data3), data4);
+          }
+          if ((data1 & 2) == 2) { // Wave
+            data = ReadNextByte(data, out data2);
+            data = ReadNextByte(data, out data3);
+            note.Set(NoteType.Wave, (short)(data2 << 8 + data3), 0);
+          }
+          if ((data1 & 4) == 4) { // Vol
+            data = ReadNextByte(data, out data2);
+            data = ReadNextByte(data, out data3);
+            data = ReadNextByte(data, out data4);
+            note.Set(NoteType.Volume, (short)(data2 << 8 + data3), data4);
+          }
+          if ((data1 & 8) == 8) { // Pitch
+            data = ReadNextByte(data, out data2);
+            data = ReadNextByte(data, out data3);
+            data = ReadNextByte(data, out data4);
+            note.Set(NoteType.Pitch, (short)(data2 << 8 + data3), data4);
+          }
+          if ((data1 & 16) == 16) { // Pan
+            data = ReadNextByte(data, out data2);
+            data = ReadNextByte(data, out data3);
+            data = ReadNextByte(data, out data4);
+            note.Set(NoteType.Pan, (short)(data2 << 8 + data3), data4);
+          }
           b.chs[c].Add(note);
         }
       }
@@ -2218,225 +2229,4 @@ public class MusicEditor : MonoBehaviour {
 
 public enum MusicEditorStatus {
   Idle, Music, BlockList, BlockEdit, Waveforms
-}
-
-
-public class Wave {
-  public int id;
-  public string name;
-  public Waveform wave;
-  public float phase;
-  public byte a;
-  public byte d;
-  public byte s;
-  public byte r;
-  public byte[] rawPCM;
-
-  internal void CopyForm(Wave w) {
-    wave = w.wave;
-    phase = w.phase;
-    a = w.a;
-    d = w.d;
-    s = w.s;
-    r = w.r;
-    rawPCM = w.rawPCM;
-  }
-}
-
-
-public class MusicData {
-  public string name;
-  public int bpm;
-  public int defLen;
-  public byte[] voices;
-  public List<int> blocks;
-
-  public int NumVoices { get {
-      int numv = 0;
-      for (int i = 0; i < voices.Length; i++)
-        if (voices[i] != 255) numv++;
-      return numv;
-    }
-  }
-}
-
-public class BlockData {
-  public int id;
-  public string name;
-  public int bpm;
-  public int len;
-  public List<NoteData>[] chs;
-}
-
-public class Note {
-  public NoteType type;
-  public int val;
-  public int len;
-
-  internal Note Duplicate() {
-    return new Note { type = this.type, val = this.val, len = this.len };
-  }
-
-  internal void Set(Note src) {
-    type = src.type;
-    val = src.val;
-    len = src.len;
-  }
-
-  internal void Set(NoteLine note) {
-    type = note.type;
-    val = note.val;
-    len = note.len;
-  }
-
-  internal void Zero() {
-    type = NoteType.Empty;
-    val = 0;
-    len = 0;
-  }
-}
-
-
-public class Swipe {
-  public float vols;
-  public float vole;
-  public float voltime;
-  public float vollen;
-  public float pitchs;
-  public float pitche;
-  public float pitchtime;
-  public float pitchlen;
-  public float pans;
-  public float pane;
-  public float pantime;
-  public float panlen;
-
-  public Swipe() {
-    vols = 0;
-    vole = 0;
-    voltime = 0;
-    vollen = 0;
-    pitchs = 0;
-    pitche = 0;
-    pitchtime = 0;
-    pitchlen = 0;
-    pans = 0;
-    pane = 0;
-    pantime = 0;
-    panlen = 0;
-  }
-}
-
-/*
-
-Define better the way the cells are done. So we can save meory and have cells with multiple infos.
-
-[type] if 0 then next cell, used also as terminator (len=0 can be a terminator and in this case len will be set as 1)
-[type=note] [freq] [len]
-
-
-
-Empty=0
-Note=1
-Wave=2
-Volume=3
-Pitch=4
-Pan=5
-
-[byte] -> bitfield with items
-[2 bytes] -> value + len <= for each of the selected types
-
-
-
- */
-
-
-public class NoteData {
-
-  public int val; // FIXME remove
-  public int len; // FIXME remove
-
-  public NoteType type;
-  public byte btype { get; private set; }
-
-  struct vl {
-    public short val;
-    public byte len;
-  };
-
-  vl[] vls = new vl[5];
-
-  public void Zero() {
-    btype = 0;
-    for (int i = 0; i < 5; i++) {
-      vls[i].val = 0;
-      vls[i].len = 0;
-    }
-  }
-
-  public void Zero(NoteType t) {
-    if (t == NoteType.Empty) {
-      Zero();
-      return;
-    }
-    int pos = (byte)btype - 1;
-    btype &= (byte)(255 - (1 << pos));
-    vls[pos].val = 0;
-    vls[pos].len = 0;
-  }
-
-  public bool IsType(NoteType t) {
-    if (t == NoteType.Empty) return btype == 0;
-    int pos = (byte)btype - 1;
-    return (btype & (1 << pos)) != 0;
-  }
-
-  public short GetVal(NoteType t) {
-    if (t == NoteType.Empty) return 0;
-    int pos = (byte)btype - 1;
-    return vls[pos].val;
-  }
-
-  public short GetLen(NoteType t) {
-    if (t == NoteType.Empty) return 0;
-    int pos = (byte)btype - 1;
-    return vls[pos].len;
-  }
-
-  public void SetVal(NoteType t, short val) {
-    if (t == NoteType.Empty) return;
-    int pos = (byte)btype - 1;
-    btype |= (byte)(1 << pos);
-    vls[pos].val = val;
-  }
-
-  public void SetLen(NoteType t, byte len) {
-    if (t == NoteType.Empty) return;
-    int pos = (byte)btype - 1;
-    btype |= (byte)(1 << pos);
-    vls[pos].len = len;
-  }
-
-  internal NoteData Duplicate() {
-    NoteData n = new NoteData { btype = this.btype };
-    for (int i = 0; i < 5; i++) {
-      n.vls[i].val = vls[i].val;
-      n.vls[i].len = vls[i].len;
-    }
-    return n;
-  }
-
-  internal void Set(NoteData src) {
-    btype = src.btype;
-    for (int i = 0; i < 5; i++) {
-      vls[i].val = src.vls[i].val;
-      vls[i].len = src.vls[i].len;
-    }
-  }
-
-  internal void Set(NoteLine note) {
-    // FIXME this will not work anymore
-  }
-
-
 }
