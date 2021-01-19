@@ -1,12 +1,22 @@
 Name: Pong
 
 Start {
-	Clr(0)
-	write(sin(2.141592), 0, 0, c330)
+	clr(0)
+	SubString("Bispoo", 0 , 3)
+  write([100@s], 10, 10, c300)
 }
 
+#SubString(str, start, totallen) {
+    [0@s] = str;
+    result = ""
+    for(i=2+start,i<2+start+totallen, i++) {
+				result+=[i@c]
+				write(result, 0, i*10, c330)
+    }
+		[100@s] = result
+}
 
-xStart {
+aStart {
 	clr(c001)
 	sprite(0, PaddleSize:)
 	sprite(1, PaddleSize:)

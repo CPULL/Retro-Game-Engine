@@ -1003,6 +1003,12 @@ public class Arcade : MonoBehaviour {
             mem[pos] = (byte)(vals.Length >> 8);
             mem[pos + 1] = (byte)(vals.Length & 0xFF);
           }
+          else if (n.CN1.type == BNF.MEMchar) {
+            int pos = Evaluate(n.CN1.CN1).ToInt(culture);
+            if (pos < 0 || pos > memsize) throw new Exception("Memory violation:" + pos + "\nfrom:" + n);
+            byte[] vals = System.Text.Encoding.UTF8.GetBytes(r.ToStr());
+            mem[pos] = vals[0];
+          }
         }
         break;
 
@@ -1222,6 +1228,11 @@ public class Arcade : MonoBehaviour {
         return new Value(System.Text.Encoding.UTF8.GetString(mem, pos+2, len));
       }
 
+      case BNF.MEMchar: {
+        int pos = Evaluate(n.CN1).ToInt(culture);
+        return new Value(System.Text.Encoding.UTF8.GetString(mem, pos, 1));
+      }
+
       case BNF.INT: return new Value(n.iVal);
       case BNF.FLT: return new Value(n.fVal);
       case BNF.COLOR: return new Value(n.iVal);
@@ -1285,7 +1296,7 @@ public class Arcade : MonoBehaviour {
       case BNF.TAN: return new Value(Mathf.Tan(Evaluate(n.CN1).ToFlt(culture)));
       case BNF.ATAN2: return new Value(Mathf.Atan2(Evaluate(n.CN1).ToFlt(culture), Evaluate(n.CN2).ToFlt(culture)));
       case BNF.SQR: return new Value(Mathf.Sqrt(Evaluate(n.CN1).ToFlt(culture)));
-      case BNF.EXP: return new Value(Mathf.Pow(Evaluate(n.CN1).ToFlt(culture), Evaluate(n.CN2).ToFlt(culture)));
+      case BNF.POW: return new Value(Mathf.Pow(Evaluate(n.CN1).ToFlt(culture), Evaluate(n.CN2).ToFlt(culture)));
 
       case BNF.FunctionCall: {
         // Evaluate all parameters, assign all values to the registers, run the statements like a stack, return the value from a "return" (or 0 if there is no return)
@@ -1324,6 +1335,7 @@ public class Arcade : MonoBehaviour {
 
       case BNF.RETURN: {
         if (n.CN1 == null) return new Value(0);
+        Debug.Log("returning: " + Evaluate(n.CN1).ToStr());
         return Evaluate(n.CN1);
       }
     }
@@ -1602,7 +1614,7 @@ public class Arcade : MonoBehaviour {
 
 /*  TODO
 
-  looks like th eparsing of floats is problematic, we should use a pre-defined locale
+functions with numbers at the end are not working
 
 
   FPS looks really unrealistic, replace with the standard function from UNity Time.frames

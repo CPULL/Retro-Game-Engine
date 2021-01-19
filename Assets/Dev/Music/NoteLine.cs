@@ -3,7 +3,12 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class NoteLine : MonoBehaviour {
-  public byte type;
+  public NoteType type;
+  public byte btype;
+
+  public int val; // FIXME remove
+  public int len; // FIXME remove
+
   public Image TypeImg;
   public Text ValTxt;
   public Text LenTxt;
@@ -11,12 +16,12 @@ public class NoteLine : MonoBehaviour {
   public Button ColButton;
 
   internal void SetValues(NoteData blockNote, Sprite[] sprites,  int[] freqs, string[] notenames, List<Wave> waves) {
-    type = blockNote.type;
+    btype = blockNote.btype;
     gameObject.SetActive(true);
     ValTxt.fontSize = 28;
     LenTxt.fontSize = 28;
 
-    switch (type) {
+    switch (btype) {
       case 0: // Empty
         TypeImg.sprite = sprites[0];
         ValTxt.text = "";
@@ -356,6 +361,8 @@ public class NoteLine : MonoBehaviour {
   }
 
   internal void SetWave(int id, string name, Sprite spr) {
+    /* FIXME
+
     type = NoteType.Wave;
     TypeImg.sprite = spr;
     val = id;
@@ -365,17 +372,20 @@ public class NoteLine : MonoBehaviour {
     ValTxt.fontSize = 14;
     ValTxt.text = id + "\n" + name;
     LenTxt.text = "";
+    */
   }
 
     internal void SetZeroValues(Sprite[] sprites) {
     gameObject.SetActive(true);
+    /* FIXME
     type = NoteType.Empty;
     TypeImg.sprite = sprites[0];
     val = 0;
     ValTxt.text = "";
     len = 0;
     LenTxt.text = "";
-    back.sizeDelta = new Vector2(38, len * 32);
+    */
+    back.sizeDelta = new Vector2(38, 0 * 32);
   }
 
 }

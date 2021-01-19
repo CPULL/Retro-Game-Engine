@@ -128,6 +128,7 @@ public class CodeNode {
         case BNF.MEMlongi: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@i]" + (sameLine ? " " : "\n"); break;
         case BNF.MEMlongf: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@f]" + (sameLine ? " " : "\n"); break;
         case BNF.MEMlongs: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@s]" + (sameLine ? " " : "\n"); break;
+        case BNF.MEMchar: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@c]" + (sameLine ? " " : "\n"); break;
 
         case BNF.OPpar:
           res += "(" + CN1.ToString(indent + 1, true) + ")";
@@ -339,6 +340,7 @@ public class CodeNode {
       case BNF.MEMlongi:
       case BNF.MEMlongf:
       case BNF.MEMlongs:
+      case BNF.MEMchar:
       case BNF.OPpar:
       case BNF.OPsum:
       case BNF.OPsub:
@@ -380,7 +382,7 @@ public class CodeNode {
       case BNF.TAN:
       case BNF.ATAN2:
       case BNF.SQR:
-      case BNF.EXP:
+      case BNF.POW:
         return true;
     }
     return false;
@@ -507,6 +509,7 @@ public enum BNF {
   MEMlongi,
   MEMlongf,
   MEMlongs,
+  MEMchar,
   OPpar,
   OPsum,
   OPsub,
@@ -576,7 +579,7 @@ public enum BNF {
   TAN,
   ATAN2,
   SQR,
-  EXP,
+  POW,
   NOP,
 }
 

@@ -1241,7 +1241,7 @@ public class MusicEditor : MonoBehaviour {
 
     switch (note.type) {
       case NoteType.Empty: {
-        CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
+        CellTypeImg.sprite = NoteTypeSprites[(int)note.btype];
         CellTypeTxt.text = "";
         CellValContainer.SetActive(false);
         CellLenContainer.SetActive(false);
@@ -1249,7 +1249,7 @@ public class MusicEditor : MonoBehaviour {
       break;
 
       case NoteType.Note: {
-        CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
+        CellTypeImg.sprite = NoteTypeSprites[(int)note.btype];
         CellTypeTxt.text = "Note";
         CellValContainer.SetActive(true);
         CellLenContainer.SetActive(true);
@@ -1282,7 +1282,7 @@ public class MusicEditor : MonoBehaviour {
       break;
 
       case NoteType.Wave: {
-        CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
+        CellTypeImg.sprite = NoteTypeSprites[(int)note.btype];
         CellTypeTxt.text = "Wave";
         CellValContainer.SetActive(true);
         CellLenContainer.SetActive(false);
@@ -1302,7 +1302,7 @@ public class MusicEditor : MonoBehaviour {
       break;
 
       case NoteType.Volume: {
-        CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
+        CellTypeImg.sprite = NoteTypeSprites[(int)note.btype];
         CellTypeTxt.text = "Volume" + ((note.len > 1) ? " slide" : "");
         CellValContainer.SetActive(true);
         CellLenContainer.SetActive(true);
@@ -1319,7 +1319,7 @@ public class MusicEditor : MonoBehaviour {
       break;
 
       case NoteType.Pitch: {
-        CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
+        CellTypeImg.sprite = NoteTypeSprites[(int)note.btype];
         CellTypeTxt.text = "Pitch" + ((note.len > 1) ? " slide" : "");
         CellValContainer.SetActive(true);
         CellLenContainer.SetActive(true);
@@ -1350,7 +1350,7 @@ public class MusicEditor : MonoBehaviour {
       break;
 
       case NoteType.Pan: {
-        CellTypeImg.sprite = NoteTypeSprites[(int)note.type];
+        CellTypeImg.sprite = NoteTypeSprites[(int)note.btype];
         CellTypeTxt.text = "Pan" + ((note.len > 1) ? " slide" : "");
         CellValContainer.SetActive(true);
         CellLenContainer.SetActive(true);
@@ -1898,7 +1898,7 @@ public class MusicEditor : MonoBehaviour {
           NoteData note = b.chs[c][r];
           byte ph = (byte)((note.val & 0xff00) >> 8);
           byte pl = (byte)(note.val & 0xff);
-          res += ((int)note.type).ToString("X2") + " " +
+          res += ((int)note.btype).ToString("X2") + " " +
                 ph.ToString("X2") + " " + pl.ToString("X2") + " " +
                 note.len.ToString("X2") + " ";
         }
@@ -2352,7 +2352,12 @@ Pan=5
 
 
 public class NoteData {
-  public byte type { get; private set; }
+
+  public int val; // FIXME remove
+  public int len; // FIXME remove
+
+  public NoteType type;
+  public byte btype { get; private set; }
 
   struct vl {
     public short val;
@@ -2362,7 +2367,7 @@ public class NoteData {
   vl[] vls = new vl[5];
 
   public void Zero() {
-    type = 0;
+    btype = 0;
     for (int i = 0; i < 5; i++) {
       vls[i].val = 0;
       vls[i].len = 0;
@@ -2374,46 +2379,46 @@ public class NoteData {
       Zero();
       return;
     }
-    int pos = (byte)type - 1;
-    type &= (byte)(255 - (1 << pos));
+    int pos = (byte)btype - 1;
+    btype &= (byte)(255 - (1 << pos));
     vls[pos].val = 0;
     vls[pos].len = 0;
   }
 
   public bool IsType(NoteType t) {
-    if (t == NoteType.Empty) return type == 0;
-    int pos = (byte)type - 1;
-    return (type & (1 << pos)) != 0;
+    if (t == NoteType.Empty) return btype == 0;
+    int pos = (byte)btype - 1;
+    return (btype & (1 << pos)) != 0;
   }
 
   public short GetVal(NoteType t) {
     if (t == NoteType.Empty) return 0;
-    int pos = (byte)type - 1;
+    int pos = (byte)btype - 1;
     return vls[pos].val;
   }
 
   public short GetLen(NoteType t) {
     if (t == NoteType.Empty) return 0;
-    int pos = (byte)type - 1;
+    int pos = (byte)btype - 1;
     return vls[pos].len;
   }
 
   public void SetVal(NoteType t, short val) {
     if (t == NoteType.Empty) return;
-    int pos = (byte)type - 1;
-    type |= (byte)(1 << pos);
+    int pos = (byte)btype - 1;
+    btype |= (byte)(1 << pos);
     vls[pos].val = val;
   }
 
   public void SetLen(NoteType t, byte len) {
     if (t == NoteType.Empty) return;
-    int pos = (byte)type - 1;
-    type |= (byte)(1 << pos);
+    int pos = (byte)btype - 1;
+    btype |= (byte)(1 << pos);
     vls[pos].len = len;
   }
 
   internal NoteData Duplicate() {
-    NoteData n = new NoteData { type = this.type };
+    NoteData n = new NoteData { btype = this.btype };
     for (int i = 0; i < 5; i++) {
       n.vls[i].val = vls[i].val;
       n.vls[i].len = vls[i].len;
@@ -2422,7 +2427,7 @@ public class NoteData {
   }
 
   internal void Set(NoteData src) {
-    type = src.type;
+    btype = src.btype;
     for (int i = 0; i < 5; i++) {
       vls[i].val = src.vls[i].val;
       vls[i].len = src.vls[i].len;

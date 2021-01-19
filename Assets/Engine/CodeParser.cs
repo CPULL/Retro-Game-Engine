@@ -68,7 +68,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgBlockClose = new Regex("^[\\s]*\\}[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgTag = new Regex("([\\s]*`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgVar = new Regex("(?<=[^a-z0-9`]|^)([a-z][0-9a-z]{0,7})([^a-z0-9\\(¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgVar = new Regex("(?<=[^a-z0-9`@_]|^)([a-z][0-9a-z]{0,7})([^a-z0-9\\(¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgHex = new Regex("0x([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgCol = new Regex("c([0-3])([0-3])([0-3])", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgQString = new Regex("\\\\\"", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -85,6 +85,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgMemI = new Regex("\\[[\\s]*(`[a-z]{3,}¶)[\\s]*@i[\\s]*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMemF = new Regex("\\[[\\s]*(`[a-z]{3,}¶)[\\s]*@f[\\s]*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMemS = new Regex("\\[[\\s]*(`[a-z]{3,}¶)[\\s]*@s[\\s]*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgMemC = new Regex("\\[[\\s]*(`[a-z]{3,}¶)[\\s]*@c[\\s]*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMemUnparsed = new Regex("[\\s]*\\[.+\\][\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgUOneg = new Regex("(^([^0-9a-z\\*/\\<\\>\\)\\=&\\|\\^]*))(\\![\\s]*[a-z0-9\\.]+)($|[\\+\\-\\*/&\\|^\\s:\\)])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -143,8 +144,8 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgCos = new Regex("[\\s]*cos[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgTan = new Regex("[\\s]*tan[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgAtan2 = new Regex("[\\s]*atan2[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgSqr = new Regex("[\\s]*sqr[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgExp = new Regex("[\\s]*exp[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSqrt = new Regex("[\\s]*sqrt[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgPow = new Regex("[\\s]*pow[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSpriteSz = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*),([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -411,6 +412,7 @@ public class CodeParser : MonoBehaviour {
       if (!string.IsNullOrEmpty(m.Groups[3].Value.Trim())) { // The last parst is added at the end of the block
         ParseLine(b, m.Groups[3].Value.Trim(), lines);
       }
+      return;
     }
 
 
@@ -511,18 +513,16 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [WRITE] = write([EXPR], [EXPR], [EXPR], [EXPR], [EXPR]) ; text, x, y, col(front), [col(back), size]
-    if (expected.IsGood(Expected.Val.Statement)) {
-      if (rgWrite.IsMatch(line)) {
-        Match m = rgWrite.Match(line);
-        if (m.Groups.Count < 2) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
-        CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
-        string pars = m.Groups[1].Value.Trim();
-        int num = ParsePars(node, pars);
-        if (num < 4) throw new Exception("Invalid Write(), not enough parameters. Line: " + (linenumber + 1));
-        if (num > 6) throw new Exception("Invalid Write(), too many parameters. Line: " + (linenumber + 1));
-        parent.Add(node);
-        return;
-      }
+    if (expected.IsGood(Expected.Val.Statement) && rgWrite.IsMatch(line)) {
+      Match m = rgWrite.Match(line);
+      if (m.Groups.Count < 2) throw new Exception("Invalid Write() command. Line: " + (linenumber + 1));
+      CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num < 4) throw new Exception("Invalid Write(), not enough parameters. Line: " + (linenumber + 1));
+      if (num > 6) throw new Exception("Invalid Write(), too many parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
     }
 
     // [SetP] = SetP([EXPR], [EXPR])
@@ -743,6 +743,14 @@ public class CodeParser : MonoBehaviour {
       throw new Exception("Invalid block after WHILE statement: " + (linenumber + 1));
     }
 
+    // [MEM]= \[<exp>\] | \[<exp>@<exp>\]
+    if (expected.IsGood(Expected.Val.MemReg) && rgMemUnparsed.IsMatch(line)) {
+      CodeNode node = ParseExpression(rgMemUnparsed.Match(line).Value);
+      if (node.type != BNF.MEM && node.type != BNF.MEMlong && node.type != BNF.MEMlongb && node.type != BNF.MEMlongi && node.type != BNF.MEMlongf && node.type != BNF.MEMlongs && node.type != BNF.MEMchar)
+        throw new Exception("Expected Memory,\nfound " + node.type + "  at line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
 
     // [REG]=a-z[a-z0-9]*
     if (expected.IsGood(Expected.Val.MemReg) && rgVar.IsMatch(line)) {
@@ -763,16 +771,6 @@ public class CodeParser : MonoBehaviour {
         parent.Add(node);
         return;
       }
-    }
-
-    // [MEM]= \[<exp>\] | \[<exp>@<exp>\]
-    if (expected.IsGood(Expected.Val.MemReg) && rgMemUnparsed.IsMatch(line)) {
-      CodeNode node = ParseExpression(rgMemUnparsed.Match(line).Value);
-      if (node.type != BNF.MEM && node.type != BNF.MEMlong && node.type != BNF.MEMlongb && node.type != BNF.MEMlongi && node.type != BNF.MEMlongf && node.type != BNF.MEMlongs)
-        throw new Exception("Expected Memory,\nfound " + node.type + "  at line: " + (linenumber + 1));
-      parent.Add(node);
-      Debug.Log("match Mem: " + line + " <=> " + node);
-      return;
     }
 
     // {
@@ -1036,6 +1034,16 @@ public class CodeParser : MonoBehaviour {
       return n.id;
     });
 
+    // Replace INT => `INx
+    line = rgInt.Replace(line, m => {
+      int.TryParse(m.Value, out int iVal);
+      CodeNode n = new CodeNode(BNF.INT, GenId("IN"), origForException, linenumber) {
+        iVal = iVal
+      };
+      nodes[n.id] = n;
+      return n.id;
+    });
+
     // Replace REG => `RGx
     line = rgVar.Replace(line, m => {
       string var = m.Groups[1].Value.ToLowerInvariant();
@@ -1058,16 +1066,6 @@ public class CodeParser : MonoBehaviour {
         return n.id + m.Groups[2].Value;
       }
       return m.Value;
-    });
-
-    // Replace INT => `INx
-    line = rgInt.Replace(line, m => {
-      int.TryParse(m.Value, out int iVal);
-      CodeNode n = new CodeNode(BNF.INT, GenId("IN"), origForException, linenumber) {
-        iVal = iVal
-      };
-      nodes[n.id] = n;
-      return n.id;
     });
 
 
@@ -1114,7 +1112,7 @@ public class CodeParser : MonoBehaviour {
       if (atLeastOneReplacement) continue;
 
       // [aTan2] = aTan2([EXPR],[EXPR])
-      line = rgTan.Replace(line, m => {
+      line = rgAtan2.Replace(line, m => {
         atLeastOneReplacement = true;
         CodeNode n = new CodeNode(BNF.ATAN2, GenId("AT"), origForException, linenumber);
         string pars = m.Groups[1].Value.Trim();
@@ -1126,25 +1124,25 @@ public class CodeParser : MonoBehaviour {
       });
       if (atLeastOneReplacement) continue;
 
-      // [Sqr] = Sqr([EXPR])
-      line = rgTan.Replace(line, m => {
+      // [Sqrt] = Sqrt([EXPR])
+      line = rgSqrt.Replace(line, m => {
         atLeastOneReplacement = true;
         CodeNode n = new CodeNode(BNF.SQR, GenId("SQ"), origForException, linenumber);
         string pars = m.Groups[1].Value.Trim();
         int num = ParsePars(n, pars);
-        if (num != 1) throw new Exception("Invalid Sqr(), one and only one parameter is required. Line: " + (linenumber + 1));
+        if (num != 1) throw new Exception("Invalid Sqrt(), one and only one parameter is required. Line: " + (linenumber + 1));
         nodes[n.id] = n;
         return n.id;
       });
       if (atLeastOneReplacement) continue;
 
-      // [aTan2] = exp([EXPR],[EXPR])
-      line = rgTan.Replace(line, m => {
+      // [pow] = exp([EXPR],[EXPR])
+      line = rgPow.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.EXP, GenId("EX"), origForException, linenumber);
+        CodeNode n = new CodeNode(BNF.POW, GenId("PW"), origForException, linenumber);
         string pars = m.Groups[1].Value.Trim();
         int num = ParsePars(n, pars);
-        if (num != 2) throw new Exception("Invalid Sin(), 2 parameters are required. Line: " + (linenumber + 1));
+        if (num != 2) throw new Exception("Invalid Pow(), 2 parameters are required. Line: " + (linenumber + 1));
         nodes[n.id] = n;
         return n.id;
       });
@@ -1224,48 +1222,56 @@ public class CodeParser : MonoBehaviour {
       if (atLeastOneReplacement) continue;
 
 
-      // MEM
-      // Replace MEM => `MMx
-      line = rgMem.Replace(line, m => { 
-        atLeastOneReplacement = true;
-        return ParseMem(BNF.MEM, "MM", line, m);
-      });
-      if (atLeastOneReplacement) continue;
-
-      // Replace MEM@ => `MDx
+      // Replace MEM@l => `MDx
       line = rgMemL.Replace(line, m => {
         atLeastOneReplacement = true;
         return ParseMem(BNF.MEMlong, "MD", line, m);
       });
       if (atLeastOneReplacement) continue;
 
-      // Replace MEM@ => `MDx
+      // Replace MEM@b => `MDx
       line = rgMemB.Replace(line, m => {
         atLeastOneReplacement = true;
         return ParseMem(BNF.MEMlongb, "MD", line, m);
       });
       if (atLeastOneReplacement) continue;
 
-      // Replace MEM@ => `MDx
+      // Replace MEM@i => `MDx
       line = rgMemI.Replace(line, m => {
         atLeastOneReplacement = true;
         return ParseMem(BNF.MEMlongi, "MD", line, m);
       });
       if (atLeastOneReplacement) continue;
 
-      // Replace MEM@ => `MDx
+      // Replace MEM@f => `MDx
       line = rgMemF.Replace(line, m => {
         atLeastOneReplacement = true;
         return ParseMem(BNF.MEMlongf, "MD", line, m);
       });
       if (atLeastOneReplacement) continue;
 
-      // Replace MEM@ => `MDx
+      // Replace MEM@s => `MDx
       line = rgMemS.Replace(line, m => {
         atLeastOneReplacement = true;
         return ParseMem(BNF.MEMlongs, "MD", line, m);
       });
       if (atLeastOneReplacement) continue;
+
+      // Replace MEM@c => `MDx
+      line = rgMemC.Replace(line, m => {
+        atLeastOneReplacement = true;
+        return ParseMem(BNF.MEMchar, "MD", line, m);
+      });
+      if (atLeastOneReplacement) continue;
+
+      // MEM
+      // Replace MEM => `MMx
+      line = rgMem.Replace(line, m => {
+        atLeastOneReplacement = true;
+        return ParseMem(BNF.MEM, "MM", line, m);
+      });
+      if (atLeastOneReplacement) continue;
+
 
       // [KEY] ([EXP])
       line = rgKey.Replace(line, m => {
