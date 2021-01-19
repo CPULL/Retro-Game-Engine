@@ -772,13 +772,12 @@ public class MusicEditor : MonoBehaviour {
       ml.BlockID.text = bi.ToString();
       ml.BlockName.text = bi == -1 || b == null ? "" : b.name;
       ml.BlockLen.text = bi == -1 || b == null ? "0" : b.len.ToString();
-      ml.Delete.onClick.AddListener(() => RemoveCurrentMusicLine(ml));
+      ml.Delete.onClick.AddListener(() => RemoveCurrentMusicLine(ml)); // Fixme, when the lines are deleted th eindex are no more valid.
       ml.Up.onClick.AddListener(() => MoveCurrentMusicLineUp(ml));
       ml.Down.onClick.AddListener(() => MoveCurrentMusicLineDown(ml));
-      int linenum = i;
-      ml.Edit.onClick.AddListener(() => EditCurrentMusicLineBlock(linenum));
-      ml.Pick.onClick.AddListener(() => PickCurrentMusicLineBlock(linenum));
-      ml.LineButton.onClick.AddListener(() => SelectRow(linenum));
+      ml.Edit.onClick.AddListener(() => EditCurrentMusicLineBlock(ml));
+      ml.Pick.onClick.AddListener(() => PickCurrentMusicLineBlock(ml));
+      ml.LineButton.onClick.AddListener(() => SelectMusicLineRow(ml));
       pos++;
       mlines.Add(ml);
     }
@@ -868,10 +867,9 @@ public class MusicEditor : MonoBehaviour {
     ml.Delete.onClick.AddListener(() => RemoveCurrentMusicLine(ml));
     ml.Up.onClick.AddListener(() => MoveCurrentMusicLineUp(ml));
     ml.Down.onClick.AddListener(() => MoveCurrentMusicLineDown(ml));
-    int linenum = mlines.Count;
-    ml.Edit.onClick.AddListener(() => EditCurrentMusicLineBlock(linenum));
-    ml.Pick.onClick.AddListener(() => PickCurrentMusicLineBlock(linenum));
-    ml.LineButton.onClick.AddListener(() => SelectRow(linenum));
+    ml.Edit.onClick.AddListener(() => EditCurrentMusicLineBlock(ml));
+    ml.Pick.onClick.AddListener(() => PickCurrentMusicLineBlock(ml));
+    ml.LineButton.onClick.AddListener(() => SelectMusicLineRow(ml));
     last.SetAsLastSibling();
     mlines.Add(ml);
     SelectRow(mlines.Count - 1);
@@ -926,10 +924,14 @@ public class MusicEditor : MonoBehaviour {
     ContentsMusic.GetChild(pos).SetSiblingIndex(pos + 1);
   }
 
-  public void EditCurrentMusicLineBlock(int pos) {
-    // pick the current block and show it, if missing create a new one
-    if (pos == -1 || music.blocks[pos] == -1) return;
-    int id = music.blocks[pos];
+  public void EditCurrentMusicLineBlock(MusicLine line) {
+    int id = -1;
+    for (int i = 0; i < mlines.Count; i++) 
+      if (mlines[i] == line) {
+        id = music.blocks[i];
+        break;
+    }
+    if (id == -1) return;
     foreach (BlockData b in blocks)
       if (b.id == id) {
         currentBlock = b;
@@ -938,11 +940,23 @@ public class MusicEditor : MonoBehaviour {
       }
   }
 
-  public void PickCurrentMusicLineBlock(int rowp) {
+  public void PickCurrentMusicLineBlock(MusicLine line) {
     // pick the current block and show it, if missing create a new one
-    row = rowp;
+    for (int i = 0; i < mlines.Count; i++)
+      if (mlines[i] == line) {
+        row = i;
+        break;
+      }
     BlockPickContainer.parent.gameObject.SetActive(true);
     PickBlockSetup();
+  }
+
+  void SelectMusicLineRow(MusicLine line) {
+    for (int i = 0; i < mlines.Count; i++)
+      if (mlines[i] == line) {
+        SelectRow(i);
+        return;
+      }
   }
 
   public void UpdateMusicName(bool completed) {
@@ -1289,6 +1303,19 @@ public class MusicEditor : MonoBehaviour {
     CellInfoTxt.text = "Row: " + row + "\nChannel: " + (col + 1);
   }
 
+  public void ClearNote() {
+    inputsSelected = false;
+    NoteData nd = currentBlock.chs[col][row];
+    nd.Zero();
+    CellSelecteds[0].sprite = Unchecked;
+    CellSelecteds[1].sprite = Unchecked;
+    CellSelecteds[2].sprite = Unchecked;
+    CellSelecteds[3].sprite = Unchecked;
+    CellSelecteds[4].sprite = Unchecked;
+    NoteLine nl = blines[row].note[col];
+    nl.SetValues(nd, NoteTypeSprites, freqs, noteNames, waves);
+  }
+
   public void CellAlterNote(int mode) {
     CellAlterType(0, mode);
   }
@@ -1314,18 +1341,19 @@ public class MusicEditor : MonoBehaviour {
     NoteData nd = currentBlock.chs[col][row];
     NoteType t = (NoteType)(type + 1);
     if (mode == 1) { // Completed typing on input fields
-      inputsSelected = false ;
+      inputsSelected = false;
     }
     else if (mode == 2) { // Just changed the type
-      inputsSelected = false ;
+      inputsSelected = false;
+      if (nd.IsType(t)) {
+        nd.Zero(t);
+        CellSelecteds[type].sprite = Unchecked;
+        blines[row].note[col].SetValues(nd, NoteTypeSprites, freqs, noteNames, waves);
+        return;
+      }
     }
-    if (nd.IsType(t)) {
-      nd.Zero(t);
-      CellSelecteds[type].sprite = Unchecked;
-    }
-    else {
-      CellSelecteds[type].sprite = Checked;
-    }
+
+    CellSelecteds[type].sprite = Checked;
     // Val depends on the type
     short val = 0;
     switch(t) {
@@ -1348,6 +1376,7 @@ public class MusicEditor : MonoBehaviour {
         string note = CellValInputs[type].text.Trim().ToLowerInvariant();
         // The value can be an id or a name
         int.TryParse(note, out int waveid);
+        if (waveid == 0 && waves.Count > 0) waveid = waves[0].id;
         for (int i = 0; i < waves.Count; i++) {
           if (waves[i].name.Trim().ToLowerInvariant() == note || waves[i].id == waveid) {
             val = (short)waves[i].id;
@@ -1391,12 +1420,16 @@ public class MusicEditor : MonoBehaviour {
       break;
     }
 
-    int.TryParse(CellLenInputs[type].text.Trim(), out int len);
-    nd.Set(t, val, (byte)len);
+    if (t != NoteType.Wave) {
+      int.TryParse(CellLenInputs[type].text.Trim(), out int len);
+      nd.Set(t, val, (byte)len);
+    }
+    else {
+      nd.SetVal(t, val);
+    }
 
     NoteLine nl = blines[row].note[col];
     nl.SetValues(nd, NoteTypeSprites, freqs, noteNames, waves);
-
     ShowNote(nd);
   }
 
@@ -1434,10 +1467,20 @@ public class MusicEditor : MonoBehaviour {
         nd.SetVal(NoteType.Note, num);
         break;
 
-      case NoteType.Wave:
+      case NoteType.Wave: // num is the ID, pick the exact one or the id closest and inferior
         if (num < 1) num = 1;
-        if (num > waves.Count - 1) num = (short)(waves.Count - 1);
-        nd.SetVal(NoteType.Wave, num);
+        short closest = 0;
+        foreach(Wave w in waves) {
+          if (w.id == num) {
+            closest = -1;
+            break;
+          }
+          if (closest < w.id) closest = (short)w.id;
+        }
+        if (closest == -1) 
+          nd.SetVal(NoteType.Wave, num);
+        else
+          nd.SetVal(NoteType.Wave, closest);
         break;
 
       case NoteType.Volume:
@@ -1615,11 +1658,23 @@ public class MusicEditor : MonoBehaviour {
   }
 
   private void EditWaveFromList(Wave w) {
-    throw new NotImplementedException();
+    currentWave = w;
+    ShowWave();
+    CopyToWaveEditor();
+    editor.gameObject.SetActive(true);
+    gameObject.SetActive(false);
   }
 
   private void DeleteWaveFromList(Wave w) {
-    throw new NotImplementedException();
+    for (int i = 0; i < waves.Count; i++) {
+      if (waves[i].id == w.id) {
+        WaveLine wl = wlines[i];
+        wlines.RemoveAt(i);
+        Destroy(wl.gameObject);
+        waves.RemoveAt(i);
+        return;
+      }
+    }
   }
 
   public void CreateNewWave() {
@@ -1646,7 +1701,7 @@ public class MusicEditor : MonoBehaviour {
     wl.Delete.onClick.AddListener(() => DeleteWaveFromList(w));
     wl.Edit.onClick.AddListener(() => EditWaveFromList(w));
     int linenum = wlines.Count;
-    wl.LineButton.onClick.AddListener(() => SelectRow(linenum));
+    wl.LineButton.onClick.AddListener(() => SelectWaveRow(w));
     wlines.Add(wl);
     last.SetAsLastSibling();
     ShowWave();
@@ -1717,7 +1772,14 @@ public class MusicEditor : MonoBehaviour {
     WavePickContainer.parent.gameObject.SetActive(active);
     if (active) PickWaveSetup();
   }
-
+  void SelectWaveRow(Wave w) {
+    for (int i = 0; i < wlines.Count; i++) {
+      if (wlines[i].id == w.id) {
+        SelectRow(i);
+        return;
+      }
+    }
+  }
 
   void PickWaveSetup() {
     if (waves.Count == 0) {
