@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public class Variables {
   private Value[] vars = new Value[32];
   private int count = 0;
-  private Dictionary<string, int> pointers = new Dictionary<string, int>();
+  private readonly Dictionary<string, int> pointers = new Dictionary<string, int>();
 
   public int Add(string name) {
     name = name.ToLowerInvariant();
@@ -53,6 +53,14 @@ public class Variables {
   internal void Decr(int idx) {
     if (vars[idx].type == VT.Int) vars[idx].iVal--;
     if (vars[idx].type == VT.Float) vars[idx].fVal -= 1;
+  }
+
+  public override string ToString() {
+    string res = "";
+    foreach(string key in pointers.Keys) {
+      res += pointers[key] + ") " + key + " = " + vars[pointers[key]] + "\n";
+    }
+    return res;
   }
 }
 

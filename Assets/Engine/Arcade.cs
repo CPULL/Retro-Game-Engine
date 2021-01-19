@@ -801,7 +801,7 @@ public class Arcade : MonoBehaviour {
   #endregion Sprites
 
   bool Execute(CodeNode n) {
-//    Debug.Log(n);
+    Debug.Log(n);
     try {
       switch (n.type) {
         case BNF.CLR: {
@@ -1301,24 +1301,20 @@ public class Arcade : MonoBehaviour {
       case BNF.FunctionCall: {
         // Evaluate all parameters, assign all values to the registers, run the statements like a stack, return the value from a "return" (or 0 if there is no return)
         CodeNode fDef = functions[n.sVal];
-        Debug.Log("Executing Function as expression " + fDef.sVal);
         if (fDef.CN1?.children != null) {
           // Evaluate the parameters
           for (int i = 0; i < fDef.CN1.children.Count; i++) {
             CodeNode par = fDef.CN1.children[i];
             CodeNode val = n.CN1.children[i];
-            Debug.Log("Par#" + i + ": " + par);
-            Debug.Log("Val#" + i + ": " + val);
             Value v = Evaluate(val);
             variables.Set(par.Reg, v);
           }
         }
 
-        ExecStacks functionStack = new ExecStacks();
-        functionStack.AddStack(fDef.CN2, null, fDef.origLine, fDef.origLineNum);
+        stacks.AddStack(fDef.CN2, null, fDef.origLine, fDef.origLineNum);
 
         int numruns = 0;
-        CodeNode sn = functionStack.GetExecutionNode(this);
+        CodeNode sn = stacks.GetExecutionNode(this);
         while (sn != null) {
           if (sn.type == BNF.RETURN) return Evaluate(sn);
           Execute(sn);
@@ -1328,14 +1324,14 @@ public class Arcade : MonoBehaviour {
             CompleteFrame();
             return new Value();
           }
-          sn = functionStack.GetExecutionNode(this);
+          sn = stacks.GetExecutionNode(this);
         }
         return new Value(0);
       }
 
       case BNF.RETURN: {
         if (n.CN1 == null) return new Value(0);
-        Debug.Log("returning: " + Evaluate(n.CN1).ToStr());
+        Debug.Log("returning: " + n.CN1 + " = " + Evaluate(n.CN1).ToStr());
         return Evaluate(n.CN1);
       }
     }
