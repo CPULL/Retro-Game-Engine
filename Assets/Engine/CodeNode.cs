@@ -584,13 +584,14 @@ public enum BNF {
   POW,
   SUBSTRING,
   TRIM,
-  WAVE,
   SOUND,
+  WAVE,
   MUTE,
   VOLUME,
   PITCH,
   PAN,
   MUSIC,
+  MUSICVOICES,
   NOP,
 }
 

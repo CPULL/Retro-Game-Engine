@@ -55,6 +55,14 @@ public class CodeParser : MonoBehaviour {
     "keyed",
     "sprite",
     "spo",
+    "sound",
+    "wave",
+    "mute",
+    "volume",
+    "pitch",
+    "pan",
+    "music",
+    "musicvoices",
     "",
     "",
     "",
@@ -159,6 +167,15 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgSPen = new Regex("[\\s]*spen[\\s]*\\(([^,]+),([^,]+)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSTint = new Regex("[\\s]*stint[\\s]*\\(([^,]+),([^,]+)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSScale = new Regex("[\\s]*sscale[\\s]*\\(([^,]+),([^,]+),([^,]+)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
+  readonly Regex rgSound = new Regex("[\\s]*sound[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgWave = new Regex("[\\s]*wave[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgMute = new Regex("[\\s]*mute[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgVolume = new Regex("[\\s]*volume[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgPitch = new Regex("[\\s]*pitch[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgPan = new Regex("[\\s]*pan[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgMusic = new Regex("[\\s]*music[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgMusicvoices = new Regex("[\\s]*musicvoices[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgCMPlt = new Regex("(`[a-z]{3,}¶)([\\s]*\\<[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPle = new Regex("(`[a-z]{3,}¶)([\\s]*\\<\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -676,6 +693,100 @@ public class CodeParser : MonoBehaviour {
       CodeNode node = new CodeNode(BNF.SPEN, line, linenumber);
       node.Add(ParseExpression(m.Groups[1].Value));
       node.Add(ParseExpression(m.Groups[2].Value));
+      parent.Add(node);
+      return;
+    }
+
+    // [Sound] channel, frequency[, length]
+    if (expected.IsGood(Expected.Val.Statement) && rgSound.IsMatch(line)) {
+      Match m = rgSound.Match(line);
+      CodeNode node = new CodeNode(BNF.SOUND, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num < 2) throw new Exception("Invalid Sound(), channel and frequency are required. Line: " + (linenumber + 1));
+      if (num > 3) throw new Exception("Invalid Sound(), possible parameters are channel, frequency, and length. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [Wave] channel, wave, phase, a, d, s, r
+    // [Wave] channel, address
+    if (expected.IsGood(Expected.Val.Statement) && rgWave.IsMatch(line)) {
+      Match m = rgWave.Match(line);
+      CodeNode node = new CodeNode(BNF.WAVE, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 2 && num != 7)
+        throw new Exception("Invalid Wave(), wrong number of parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [Mute] channel
+    if (expected.IsGood(Expected.Val.Statement) && rgMute.IsMatch(line)) {
+      Match m = rgMute.Match(line);
+      CodeNode node = new CodeNode(BNF.MUTE, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 1)
+        throw new Exception("Invalid Mute(), channel is required as parameter. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [Volume] channel, volume | volume
+    if (expected.IsGood(Expected.Val.Statement) && rgVolume.IsMatch(line)) {
+      Match m = rgVolume.Match(line);
+      CodeNode node = new CodeNode(BNF.VOLUME, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num == 0) throw new Exception("Invalid Volume(), specify the global volume or the channel and volume. Line: " + (linenumber + 1));
+      if (num > 2) throw new Exception("Invalid Volume(), specify the global volume or the channel and volume only. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [Pitch] channel, pitch
+    if (expected.IsGood(Expected.Val.Statement) && rgPitch.IsMatch(line)) {
+      Match m = rgPitch.Match(line);
+      CodeNode node = new CodeNode(BNF.PITCH, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 2) throw new Exception("Invalid Pitch(), specify the channel and pitch parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [Pan] channel, pan
+    if (expected.IsGood(Expected.Val.Statement) && rgPan.IsMatch(line)) {
+      Match m = rgPan.Match(line);
+      CodeNode node = new CodeNode(BNF.PAN, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 2) throw new Exception("Invalid Pan(), specify the channel and pan parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [Music] address
+    if (expected.IsGood(Expected.Val.Statement) && rgMusic.IsMatch(line)) {
+      Match m = rgMusic.Match(line);
+      CodeNode node = new CodeNode(BNF.MUSIC, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 1) throw new Exception("Invalid Music(), specify the address of the music. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [MusicVoices] address
+    if (expected.IsGood(Expected.Val.Statement) && rgMusicvoices.IsMatch(line)) {
+      Match m = rgMusicvoices.Match(line);
+      CodeNode node = new CodeNode(BNF.MUSICVOICES, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num == 0) throw new Exception("Invalid MusicVoices(), specify the channel numbers to be used. Line: " + (linenumber + 1));
+      if (num > 8) throw new Exception("Invalid MusicVoices(), too many channel numbers specified. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }

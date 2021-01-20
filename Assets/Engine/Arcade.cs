@@ -1625,6 +1625,7 @@ public class Arcade : MonoBehaviour {
 
 /*  TODO
 
+replace parameters in sprites regex and use the generic way to get parameters
 functions with numbers at the end are not working
 
 
