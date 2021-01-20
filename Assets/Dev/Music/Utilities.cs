@@ -1,6 +1,4 @@
-﻿
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 public class Wave {
   public int id;
@@ -107,8 +105,7 @@ Pan=5
 
 public class NoteData {
 
-  public int val; // FIXME remove
-  //public int len; // FIXME remove
+  //public int val; // FIXME remove
 
   public byte type { get; private set; }
 
@@ -144,6 +141,11 @@ public class NoteData {
     return (type & (1 << pos)) != 0;
   }
 
+  public bool isEmpty() {
+    return type == 0;
+  }
+
+
   public short GetVal(NoteType t) {
     if (t == NoteType.Empty) return 0;
     int pos = (byte)t - 1;
@@ -154,6 +156,16 @@ public class NoteData {
     if (t == NoteType.Empty) return 0;
     int pos = (byte)t - 1;
     return vls[pos].len;
+  }
+
+  public float GetVol() {
+    return vls[2].val / 1000f;
+  }
+  public float GetPitch() {
+    return vls[3].val / 100f;
+  }
+  public float GetPan() {
+    return ((vls[4].val - 500) / 500f);
   }
 
   public void Set(NoteType t) {

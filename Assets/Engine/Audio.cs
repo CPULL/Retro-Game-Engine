@@ -110,8 +110,7 @@ public class Audio : MonoBehaviour {
     if (channel < -1 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
 
     // 1.05946^numsemitones
-    float numsemi = pitch / 100f;
-    float p = Mathf.Pow(1.05946f, numsemi);
+    float p = Mathf.Pow(1.05946f, pitch);
     channels[channel].audio.pitch = p;
   }
 
@@ -120,8 +119,7 @@ public class Audio : MonoBehaviour {
 
     // p = 1.05946^numsemitones
     float p = channels[channel].audio.pitch;
-    float numsemi = 17.3132f * Mathf.Log(p);
-    return (int)(numsemi * 100);
+    return 17.3132f * Mathf.Log(p);
   }
 
 

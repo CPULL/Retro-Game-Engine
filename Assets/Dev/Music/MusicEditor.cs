@@ -138,148 +138,6 @@ public class MusicEditor : MonoBehaviour {
     Selection.gameObject.SetActive(false);
   }
 
-  void HandleSwipes() {
-    for (int c = 0; c < 8; c++) {
-      Swipe s = swipes[c];
-      if (s.vollen != 0) {
-        float step = s.voltime / s.vollen;
-        sounds.Volume(c, s.vole * step + s.vols * (1 - step));
-        s.voltime += Time.deltaTime;
-        if (s.voltime >= s.vollen) {
-          sounds.Volume(c, s.vole);
-          s.vollen = 0;
-        }
-      }
-
-      if (s.pitchlen != 0) {
-        float step = s.pitchtime / s.pitchlen;
-        sounds.Pitch(c, s.pitche * step + s.pitchs * (1 - step));
-        s.pitchtime += Time.deltaTime;
-        if (s.pitchtime >= s.pitchlen) {
-          sounds.Pitch(c, s.pitche);
-          s.pitchlen = 0;
-        }
-      }
-
-      if (s.panlen != 0) {
-        float step = s.pantime / s.panlen;
-        sounds.Pan(c, s.pane * step + s.pans * (1 - step));
-        s.pantime += Time.deltaTime;
-        if (s.pantime >= s.panlen) {
-          sounds.Pan(c, s.pane);
-          s.panlen = 0;
-        }
-      }
-    }
-  }
-
-  void PlayMusic() {
-    // Check for swipes
-    HandleSwipes();
-
-    // Wait the time to play
-    if (timeForNextBeat > 0) {
-      timeForNextBeat -= Time.deltaTime;
-      if (timeForNextBeat < 0)
-        timeForNextBeat = 0;
-      else
-        return;
-    }
-
-    // if block>max or <0 start from 0
-    if (currentPlayedMusicBlock < 0 || currentPlayedMusicBlock >= music.blocks.Count) {
-      currentPlayedMusicBlock = 0;
-      currentPlayedMusicLine = 0;
-    }
-
-    // Pick block
-    BlockData block = null;
-    int id = music.blocks[currentPlayedMusicBlock];
-    foreach (BlockData b in blocks) {
-      if (b.id == id) {
-        block = b;
-        break;
-      }
-    }
-    if (block == null) {
-      playing = false;
-      currentPlayedMusicBlock = 0;
-      currentPlayedMusicLine = 0;
-      SetTapeButtonColor(-1);
-      return;
-    }
-
-    // has block current note?
-    // if note<0 start from 0
-    if (currentPlayedMusicLine < 0) currentPlayedMusicLine = 0;
-    // if note > blen go to next block
-    if (currentPlayedMusicLine >= block.len) {
-      currentPlayedMusicLine = 0;
-      currentPlayedMusicBlock++;
-      // no next block? restart if repeat
-      if (currentPlayedMusicBlock >= music.blocks.Count) {
-        currentPlayedMusicBlock = 0;
-        currentPlayedMusicLine = 0;
-        if (!repeat) {
-          playing = false;
-          SetTapeButtonColor(-1);
-        }
-      }
-      return;
-    }
-
-    // Show the line
-    SelectRow(currentPlayedMusicBlock);
-    ScrollViews(currentPlayedMusicBlock);
-
-    // music: get and play note.
-    PlayNote(block);
-  }
-
-  void PlayBlock() {
-    // Check for swipes
-    HandleSwipes();
-
-    // Wait the time to play
-    if (timeForNextBeat > 0) {
-      timeForNextBeat -= Time.deltaTime;
-      if (timeForNextBeat < 0)
-        timeForNextBeat = 0;
-      else
-        return;
-    }
-
-    // Pick block
-    BlockData block = currentBlock;
-    if (block == null) {
-      playing = false;
-      currentPlayedMusicBlock = 0;
-      currentPlayedMusicLine = 0;
-      SetTapeButtonColor(-1);
-      return;
-    }
-
-    // has block current note?
-    // if note<0 start from 0
-    if (currentPlayedMusicLine < 0) currentPlayedMusicLine = 0;
-    // if note > blen go to next block
-    if (currentPlayedMusicLine >= block.len) {
-      currentPlayedMusicLine = 0;
-      if (!repeat) {
-        playing = false;
-        SetTapeButtonColor(-1);
-      }
-      return;
-    }
-
-    // Show the line
-    ScrollViews(currentPlayedMusicLine);
-    SelectRow(currentPlayedMusicLine);
-
-    // music: get and play note.
-    PlayNote(block);
-  }
-
   private void Update() {
     bool update = false;
     autoRepeat -= Time.deltaTime;
@@ -566,6 +424,149 @@ public class MusicEditor : MonoBehaviour {
     }
   }
 
+  void HandleSwipes() {
+    for (int c = 0; c < 8; c++) {
+      Swipe s = swipes[c];
+      if (s.vollen != 0) {
+        float step = s.voltime / s.vollen;
+        sounds.Volume(c, s.vole * step + s.vols * (1 - step));
+        s.voltime += Time.deltaTime;
+        if (s.voltime >= s.vollen) {
+          sounds.Volume(c, s.vole);
+          s.vollen = 0;
+        }
+      }
+
+      if (s.pitchlen != 0) {
+        float step = s.pitchtime / s.pitchlen;
+        sounds.Pitch(c, s.pitche * step + s.pitchs * (1 - step));
+        s.pitchtime += Time.deltaTime;
+        if (s.pitchtime >= s.pitchlen) {
+          sounds.Pitch(c, s.pitche);
+          s.pitchlen = 0;
+        }
+      }
+
+      if (s.panlen != 0) {
+        float step = s.pantime / s.panlen;
+        sounds.Pan(c, s.pane * step + s.pans * (1 - step));
+        s.pantime += Time.deltaTime;
+        if (s.pantime >= s.panlen) {
+          sounds.Pan(c, s.pane);
+          s.panlen = 0;
+        }
+      }
+    }
+  }
+
+  void PlayMusic() {
+    // Check for swipes
+    HandleSwipes();
+
+    // Wait the time to play
+    if (timeForNextBeat > 0) {
+      timeForNextBeat -= Time.deltaTime;
+      if (timeForNextBeat < 0)
+        timeForNextBeat = 0;
+      else
+        return;
+    }
+
+    // if block>max or <0 start from 0
+    if (currentPlayedMusicBlock < 0 || currentPlayedMusicBlock >= music.blocks.Count) {
+      currentPlayedMusicBlock = 0;
+      currentPlayedMusicLine = 0;
+    }
+
+    // Pick block
+    BlockData block = null;
+    int id = music.blocks[currentPlayedMusicBlock];
+    foreach (BlockData b in blocks) {
+      if (b.id == id) {
+        block = b;
+        break;
+      }
+    }
+    if (block == null) {
+      playing = false;
+      currentPlayedMusicBlock = 0;
+      currentPlayedMusicLine = 0;
+      SetTapeButtonColor(-1);
+      return;
+    }
+
+    // has block current note?
+    // if note<0 start from 0
+    if (currentPlayedMusicLine < 0) currentPlayedMusicLine = 0;
+    // if note > blen go to next block
+    if (currentPlayedMusicLine >= block.len) {
+      currentPlayedMusicLine = 0;
+      currentPlayedMusicBlock++;
+      // no next block? restart if repeat
+      if (currentPlayedMusicBlock >= music.blocks.Count) {
+        currentPlayedMusicBlock = 0;
+        currentPlayedMusicLine = 0;
+        if (!repeat) {
+          playing = false;
+          SetTapeButtonColor(-1);
+        }
+      }
+      return;
+    }
+
+    // Show the line
+    SelectRow(currentPlayedMusicBlock);
+    ScrollViews(currentPlayedMusicBlock);
+
+    // music: get and play note.
+    PlayNote(block);
+  }
+
+  void PlayBlock() {
+    // Check for swipes
+    HandleSwipes();
+
+    // Wait the time to play
+    if (timeForNextBeat > 0) {
+      timeForNextBeat -= Time.deltaTime;
+      if (timeForNextBeat < 0)
+        timeForNextBeat = 0;
+      else
+        return;
+    }
+
+    // Pick block
+    BlockData block = currentBlock;
+    if (block == null) {
+      playing = false;
+      currentPlayedMusicBlock = 0;
+      currentPlayedMusicLine = 0;
+      SetTapeButtonColor(-1);
+      return;
+    }
+
+    // has block current note?
+    // if note<0 start from 0
+    if (currentPlayedMusicLine < 0) currentPlayedMusicLine = 0;
+    // if note > blen go to next block
+    if (currentPlayedMusicLine >= block.len) {
+      currentPlayedMusicLine = 0;
+      if (!repeat) {
+        playing = false;
+        SetTapeButtonColor(-1);
+      }
+      return;
+    }
+
+    // Show the line
+    ScrollViews(currentPlayedMusicLine);
+    SelectRow(currentPlayedMusicLine);
+
+    // music: get and play note.
+    PlayNote(block);
+  }
+
+
   private bool PlayNote(BlockData block) {
     if (block == null) return true;
 
@@ -573,10 +574,10 @@ public class MusicEditor : MonoBehaviour {
     for (int c = 0; c < music.NumVoices; c++) {
       NoteData n = block.chs[c][currentPlayedMusicLine];
       if (n.IsType(NoteType.Note)) {
-        sounds.Play(c, n.val, n.GetLen(NoteType.Note) * timeForNextBeat);
+        sounds.Play(c, n.GetVal(NoteType.Note), n.GetLen(NoteType.Note) * timeForNextBeat);
       }
       if (n.IsType(NoteType.Wave)) {
-        Wave w = GetWave(n.val);
+        Wave w = GetWave(n.GetVal(NoteType.Wave));
         if (w != null) {
           sounds.Wave(c, w.wave, w.phase);
           sounds.ADSR(c, w.a, w.d, w.s, w.r);
@@ -585,33 +586,33 @@ public class MusicEditor : MonoBehaviour {
       }
       if (n.IsType(NoteType.Volume)) {
         if (n.GetLen(NoteType.Volume) < 2) {
-          sounds.Volume(c, n.val / 255f);
+          sounds.Volume(c, n.GetVol());
         }
         else {
           swipes[c].vols = sounds.Volume(c);
-          swipes[c].vole = n.val / 255f;
+          swipes[c].vole = n.GetVol();
           swipes[c].voltime = 0;
           swipes[c].vollen = (n.GetLen(NoteType.Volume) - 1) * 15f / block.bpm;
         }
       }
       if (n.IsType(NoteType.Pitch)) {
         if (n.GetLen(NoteType.Pitch) < 2) {
-          sounds.Pitch(c, n.val);
+          sounds.Pitch(c, n.GetPitch());
         }
         else {
           swipes[c].pitchs = sounds.Pitch(c);
-          swipes[c].pitche = n.val;
+          swipes[c].pitche = n.GetPitch();
           swipes[c].pitchtime = 0;
           swipes[c].pitchlen = (n.GetLen(NoteType.Pitch) - 1) * 15f / block.bpm;
         }
       }
       if (n.IsType(NoteType.Pan)) {
         if (n.GetLen(NoteType.Pan) < 2) {
-          sounds.Pan(c, n.val / 255f);
+          sounds.Pan(c, n.GetPan());
         }
         else {
           swipes[c].pans = sounds.Pan(c);
-          swipes[c].pane = n.val / 255f;
+          swipes[c].pane = n.GetPan();
           swipes[c].pantime = 0;
           swipes[c].panlen = (n.GetLen(NoteType.Pan) - 1) * 15f / block.bpm;
         }
@@ -657,8 +658,9 @@ public class MusicEditor : MonoBehaviour {
       for (int i = row; i >= 0; i--) {
         if (notes[i].IsType(NoteType.Wave)) {
           Wave w = null;
+          int id = notes[i].GetVal(NoteType.Wave);
           for (int widx = 0; widx < waves.Count; widx++) {
-            if (waves[widx].id== notes[i].val) {
+            if (waves[widx].id == id) {
               w = waves[widx];
             }
           }
@@ -1888,24 +1890,6 @@ public class MusicEditor : MonoBehaviour {
   public InputField Values;
   public Button LoadSubButton;
 
-  /*
- musicname:
-  numvoices, numblocks, numwaves, numlines
-  [for each line]
-    block id
-
- [for each block]
-  blockname:
-   id, len, bpm
-   [for each line]
-    [for each note]
-      type, val, len
- [for each wave]
-  wavename:
-  type, phase[2bytes], a, d, s, r
-  [in case PCM] len[4 bytes] [pcm data]
- */
-
   public void Save() {
     int numv = music.NumVoices;
     string res = music.name.Replace(":", "") + ":\n" +
@@ -1919,26 +1903,7 @@ public class MusicEditor : MonoBehaviour {
     }
     res += "\n";
 
-    foreach(BlockData b in blocks) {
-      res += b.name.Replace(":", "") + ":\n" +
-            b.id.ToString("X2") + " " +
-            b.len.ToString("X2") + " " +
-            b.bpm.ToString("X2") + "\n";
-      for (int r = 0; r < b.len; r++) {
-        for (int c = 0; c < numv; c++) {
-          NoteData note = b.chs[c][r];
-          byte ph = (byte)((note.val & 0xff00) >> 8);
-          byte pl = (byte)(note.val & 0xff);
-          // FIXME
-          //res += ((int)note.type).ToString("X2") + " " +
-          //      ph.ToString("X2") + " " + pl.ToString("X2") + " " +
-          //      note.len.ToString("X2") + " ";
-        }
-      }
-      res += "\n";
-    }
-
-    foreach(Wave w in waves) {
+    foreach (Wave w in waves) {
       byte ph = (byte)((((int)(w.phase * 100)) & 0xff00) >> 8);
       byte pl = (byte)(((int)(w.phase * 100)) & 0xff);
 
@@ -1966,6 +1931,90 @@ public class MusicEditor : MonoBehaviour {
         }
       }
       res += "\n";
+    }
+
+
+    /*
+    name label
+    num voices [byte]
+    num blocks [byte]
+    num waves [byte]
+    num blocks in music [byte]
+
+    for each block in music
+      id [byte]
+    
+    for each wave
+      name label
+      type [byte]
+      phase [2bytes]
+      a [byte]
+      d [byte]
+      s [byte]
+      r [byte]
+      pcmlen [4bytes, only if tpye is PCM]
+      (pcmlen) bytes of data
+
+    for each block
+      name label
+      id, len, bpm
+      for each row
+        for each column
+          cell type [byte]
+          note info [3bytes, only if has note]
+          wave info [2bytes, only if has wave]
+          vol info [3bytes, only if has vol]
+          pitch info [3bytes, only if has pitch]
+          pan info [3bytes, only if has pan]
+     */
+
+
+    foreach (BlockData b in blocks) {
+      res += b.name.Replace(":", "") + ":\n" +
+            b.id.ToString("X2") + " " +
+            b.len.ToString("X2") + " " +
+            b.bpm.ToString("X2") + "\n";
+      for (int r = 0; r < b.len; r++) {
+        for (int c = 0; c < numv; c++) {
+          NoteData note = b.chs[c][r];
+
+          if (note.isEmpty()) {
+            res += "00  ";
+            continue;
+          }
+          if (note.IsType(NoteType.Note)) {
+            short val = note.GetVal(NoteType.Note);
+            byte ph = (byte)((val & 0xff00) >> 8);
+            byte pl = (byte)(val & 0xff);
+            res += ph.ToString("X2") + " " + pl.ToString("X2") + " " + note.GetLen(NoteType.Note) + "  ";
+          }
+          if (note.IsType(NoteType.Wave)) {
+            short val = note.GetVal(NoteType.Wave);
+            byte ph = (byte)((val & 0xff00) >> 8);
+            byte pl = (byte)(val & 0xff);
+            res += ph.ToString("X2") + " " + pl.ToString("X2") + "  ";
+          }
+          if (note.IsType(NoteType.Volume)) {
+            short val = note.GetVal(NoteType.Volume);
+            byte ph = (byte)((val & 0xff00) >> 8);
+            byte pl = (byte)(val & 0xff);
+            res += ph.ToString("X2") + " " + pl.ToString("X2") + " " + note.GetLen(NoteType.Volume) + "  ";
+          }
+          if (note.IsType(NoteType.Pitch)) {
+            short val = note.GetVal(NoteType.Pitch);
+            byte ph = (byte)((val & 0xff00) >> 8);
+            byte pl = (byte)(val & 0xff);
+            res += ph.ToString("X2") + " " + pl.ToString("X2") + " " + note.GetLen(NoteType.Pitch) + "  ";
+          }
+          if (note.IsType(NoteType.Pan)) {
+            short val = note.GetVal(NoteType.Pan);
+            byte ph = (byte)((val & 0xff00) >> 8);
+            byte pl = (byte)(val & 0xff);
+            res += ph.ToString("X2") + " " + pl.ToString("X2") + " " + note.GetLen(NoteType.Pan) + "  ";
+          }
+        }
+        res += "\n";
+      }
     }
 
     Values.gameObject.SetActive(true);
@@ -2014,6 +2063,46 @@ public class MusicEditor : MonoBehaviour {
       data = ReadNextByte(data, out data1);
       m.blocks.Add(data1 == 255 ? -1 : data1);
     }
+
+    for (int i = 0; i < numw; i++) {
+      pos = data.IndexOf(':');
+      if (pos == -1) throw new Exception("Missing Wave label for wave #" + (i + 1));
+      Wave w = new Wave {
+        name = data.Substring(0, pos).Trim()
+      };
+      data = data.Substring(pos + 1).Trim();
+
+      data = ReadNextByte(data, out data1);
+      data = ReadNextByte(data, out data2);
+      data = ReadNextByte(data, out data3);
+      data = ReadNextByte(data, out data4);
+
+      w.id = data1;
+      w.wave = (Waveform)data2;
+
+      w.phase = ((data3 << 8) + data4) / 100f;
+      data = ReadNextByte(data, out w.a);
+      data = ReadNextByte(data, out w.d);
+      data = ReadNextByte(data, out w.s);
+      data = ReadNextByte(data, out w.r);
+
+      if (w.wave == Waveform.PCM) {
+        data = ReadNextByte(data, out data1);
+        data = ReadNextByte(data, out data2);
+        data = ReadNextByte(data, out data3);
+        data = ReadNextByte(data, out data4);
+
+        int len = (data1 << 24) + (data2 << 16) + (data3 << 8) + (data4 << 0);
+        w.rawPCM = new byte[len];
+        for (int b = 0; b < len; b++) {
+          data = ReadNextByte(data, out data1);
+          w.rawPCM[b] = data1;
+        }
+      }
+
+      waves.Add(w);
+    }
+
 
     for (int i = 0; i < numb; i++) {
       pos = data.IndexOf(':');
@@ -2073,45 +2162,6 @@ public class MusicEditor : MonoBehaviour {
       }
 
       blocks.Add(b);
-    }
-
-    for (int i = 0; i < numw; i++) {
-      pos = data.IndexOf(':');
-      if (pos == -1) throw new Exception("Missing Wave label for wave #" + (i + 1));
-      Wave w = new Wave {
-        name = data.Substring(0, pos).Trim()
-      };
-      data = data.Substring(pos + 1).Trim();
-
-      data = ReadNextByte(data, out data1);
-      data = ReadNextByte(data, out data2);
-      data = ReadNextByte(data, out data3);
-      data = ReadNextByte(data, out data4);
-
-      w.id = data1;
-      w.wave = (Waveform)data2;
-
-      w.phase = ((data3 << 8) + data4) / 100f;
-      data = ReadNextByte(data, out w.a);
-      data = ReadNextByte(data, out w.d);
-      data = ReadNextByte(data, out w.s);
-      data = ReadNextByte(data, out w.r);
-
-      if (w.wave == Waveform.PCM) {
-        data = ReadNextByte(data, out data1);
-        data = ReadNextByte(data, out data2);
-        data = ReadNextByte(data, out data3);
-        data = ReadNextByte(data, out data4);
-
-        int len = (data1 << 24) + (data2 << 16) + (data3 << 8) + (data4 << 0);
-        w.rawPCM = new byte[len];
-        for (int b = 0; b < len; b++) {
-          data = ReadNextByte(data, out data1);
-          w.rawPCM[b] = data1;
-        }
-      }
-
-      waves.Add(w);
     }
 
     music = m;
