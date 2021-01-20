@@ -2,8 +2,14 @@ Name: Pong
 
 Start {
 	clr(0)
-	val = SubString("Bispoo", 0 , 3)
-  write(val, 10, 10, c300)
+	str = "  Hey Claudio, nice to meet you.  "
+	l = str.len
+	t = str.trim
+	write("|"+str.trim+"|", 0, 0, c300, 255, 1)
+	write("|"+str+"|", 0, 8, c300, 255, 1)
+	for(i=0, i<str.len, i++) {
+		write(str.substring(i, str.len - i * 2), 4*i, 6*i+16, c330, 255, 1)
+	}
 }
 
 #SubString(str, start, totallen) {

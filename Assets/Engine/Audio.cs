@@ -484,7 +484,7 @@ public class Audio : MonoBehaviour {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
 
-          float x = channels[channel].freq * channels[channel].position / 1760;
+          float x = channels[channel].freq * channels[channel].position / 1760 + Squirrel3Norm(channels[channel].position, (uint)channels[channel].freq);
           float y = Mathf.Sin(piP2 * Mathf.Sqrt(.5f * (x + 31.5f))) * Mathf.Cos(Mathf.PI * (x + 31.5f) * .0001245f) * (-.25f * x + 1000) / 1000;
           if (channels[channel].position < 2500 * channels[channel].phase)
             y += Squirrel3Norm((int)x, seed) * x * maxn * (-.25f * x + 1000) / 1000;

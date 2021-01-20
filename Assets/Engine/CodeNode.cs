@@ -383,6 +383,8 @@ public class CodeNode {
       case BNF.ATAN2:
       case BNF.SQR:
       case BNF.POW:
+      case BNF.SUBSTRING:
+      case BNF.TRIM:
         return true;
     }
     return false;
@@ -580,6 +582,15 @@ public enum BNF {
   ATAN2,
   SQR,
   POW,
+  SUBSTRING,
+  TRIM,
+  WAVE,
+  SOUND,
+  MUTE,
+  VOLUME,
+  PITCH,
+  PAN,
+  MUSIC,
   NOP,
 }
 

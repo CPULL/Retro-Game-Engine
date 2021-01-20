@@ -23,6 +23,9 @@ public class CodeParser : MonoBehaviour {
     "dateTime",
     "clr",
     "len",
+    "plen",
+    "trim",
+    "substring",
     "keyl",
     "keyr",
     "keyu",
@@ -108,6 +111,8 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgCastS = new Regex("(`[a-z]{3,}¶)_s", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgLen = new Regex("([\\s]*`[a-z]{3,}¶)\\.len[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgPLen = new Regex("([\\s]*`[a-z]{3,}¶)\\.plen[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgTrim = new Regex("([\\s]*`[a-z]{3,}¶)\\.trim[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSubstring = new Regex("([\\s]*`[a-z]{3,}¶)\\.substring\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgAssign = new Regex("[\\s]*=[^=]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgAssSum = new Regex("[\\s]*\\+=[^(\\+=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1162,6 +1167,21 @@ public class CodeParser : MonoBehaviour {
       });
       if (atLeastOneReplacement) continue;
 
+      // STR.Substring(start, len)
+      line = rgSubstring.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.SUBSTRING, GenId("SS"), origForException, linenumber);
+        string left = m.Groups[1].Value.Trim();
+        n.Add(nodes[left]);
+        string pars = m.Groups[2].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num < 1) throw new Exception("Invalid Substring(), at least the start of th estring is required. Line: " + (linenumber + 1));
+        if (num > 2) throw new Exception("Invalid Substring(), max two parameters are possible. Line: " + (linenumber + 1));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
       // functions => `FNx
       line = rgFunctionCall.Replace(line, m => {
         // Check that the function is defined and it is not a reserved keywork: m.Groups[1]
@@ -1221,6 +1241,17 @@ public class CodeParser : MonoBehaviour {
       });
       if (atLeastOneReplacement) continue;
 
+      // STR.trim
+      line = rgTrim.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.TRIM, GenId("TR"), origForException, linenumber);
+        if (m.Groups.Count < 2) throw new Exception("Unhandled TRIM case: " + m.Groups.Count + " Line:" + (linenumber + 1));
+        string left = m.Groups[1].Value.Trim();
+        n.Add(nodes[left]);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
       // Replace MEM@l => `MDx
       line = rgMemL.Replace(line, m => {

@@ -1280,7 +1280,6 @@ public class Arcade : MonoBehaviour {
       case BNF.CASTf: return new Value(Evaluate(n.CN1).ToFlt(culture));
       case BNF.CASTs: return new Value(Evaluate(n.CN1).ToStr());
 
-
       case BNF.KEY: return new Value(inputs[n.iVal] ? -1 : 0);
       case BNF.KEYx: return new Value(Input.GetAxis("Horixontal"));
       case BNF.KEYy: return new Value(Input.GetAxis("Vertical"));
@@ -1290,13 +1289,29 @@ public class Arcade : MonoBehaviour {
         return new Value(labels[n.sVal]);
       }
 
-
       case BNF.SIN: return new Value(Mathf.Sin(Evaluate(n.CN1).ToFlt(culture)));
       case BNF.COS: return new Value(Mathf.Cos(Evaluate(n.CN1).ToFlt(culture)));
       case BNF.TAN: return new Value(Mathf.Tan(Evaluate(n.CN1).ToFlt(culture)));
       case BNF.ATAN2: return new Value(Mathf.Atan2(Evaluate(n.CN1).ToFlt(culture), Evaluate(n.CN2).ToFlt(culture)));
       case BNF.SQR: return new Value(Mathf.Sqrt(Evaluate(n.CN1).ToFlt(culture)));
       case BNF.POW: return new Value(Mathf.Pow(Evaluate(n.CN1).ToFlt(culture), Evaluate(n.CN2).ToFlt(culture)));
+
+      case BNF.SUBSTRING: {
+        string s = Evaluate(n.CN1).ToStr();
+        int start = Evaluate(n.CN2).ToInt(culture);
+        if (start < 0) start = 0;
+        if (start >= s.Length) start = s.Length - 1;
+        if (n.CN3 == null)
+          return new Value(s.Substring(start));
+        else {
+          int end = Evaluate(n.CN3).ToInt(culture);
+          if (start + end > s.Length) end = s.Length - start;
+          if (end < 0) end = 0;
+          return new Value(s.Substring(start, end));
+        }
+      }
+
+      case BNF.TRIM: return new Value(Evaluate(n.CN1).ToStr().Trim());
 
       case BNF.FunctionCall: {
         // Evaluate all parameters, assign all values to the registers, run the statements like a stack, return the value from a "return" (or 0 if there is no return)

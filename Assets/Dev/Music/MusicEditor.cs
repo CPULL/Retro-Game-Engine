@@ -252,6 +252,7 @@ public class MusicEditor : MonoBehaviour {
       }
     }
 
+    // FIXME we shoul avoid the keys if we are with wrong lines selected or saving/loading
     // Ctrl+C, Ctrl+V, Ctrl+X, ShiftUp, ShiftDown
     if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
 
@@ -574,9 +575,11 @@ public class MusicEditor : MonoBehaviour {
     for (int c = 0; c < music.NumVoices; c++) {
       NoteData n = block.chs[c][currentPlayedMusicLine];
       if (n.IsType(NoteType.Note)) {
+Debug.Log("note");
         sounds.Play(c, n.GetVal(NoteType.Note), n.GetLen(NoteType.Note) * timeForNextBeat);
       }
       if (n.IsType(NoteType.Wave)) {
+Debug.Log("wave");
         Wave w = GetWave(n.GetVal(NoteType.Wave));
         if (w != null) {
           sounds.Wave(c, w.wave, w.phase);
@@ -585,6 +588,7 @@ public class MusicEditor : MonoBehaviour {
         }
       }
       if (n.IsType(NoteType.Volume)) {
+Debug.Log("vol");
         if (n.GetLen(NoteType.Volume) < 2) {
           sounds.Volume(c, n.GetVol());
         }
@@ -596,6 +600,7 @@ public class MusicEditor : MonoBehaviour {
         }
       }
       if (n.IsType(NoteType.Pitch)) {
+Debug.Log("pitch");
         if (n.GetLen(NoteType.Pitch) < 2) {
           sounds.Pitch(c, n.GetPitch());
         }
@@ -607,6 +612,7 @@ public class MusicEditor : MonoBehaviour {
         }
       }
       if (n.IsType(NoteType.Pan)) {
+Debug.Log("pan");
         if (n.GetLen(NoteType.Pan) < 2) {
           sounds.Pan(c, n.GetPan());
         }
@@ -1840,6 +1846,7 @@ public class MusicEditor : MonoBehaviour {
 
   public void Rewind() {
     SetTapeButtonColor(-1);
+    SelectRow(0);
   }
 
   public void Play() {
@@ -1982,11 +1989,12 @@ public class MusicEditor : MonoBehaviour {
             res += "00  ";
             continue;
           }
+          else res += note.type.ToString("X2") + " ";
           if (note.IsType(NoteType.Note)) {
             short val = note.GetVal(NoteType.Note);
             byte ph = (byte)((val & 0xff00) >> 8);
             byte pl = (byte)(val & 0xff);
-            res += ph.ToString("X2") + " " + pl.ToString("X2") + " " + note.GetLen(NoteType.Note) + "  ";
+            res += ph.ToString("X2") + " " + pl.ToString("X2") + " " + note.GetLen(NoteType.Note).ToString("X2") + "  ";
           }
           if (note.IsType(NoteType.Wave)) {
             short val = note.GetVal(NoteType.Wave);
@@ -1998,19 +2006,19 @@ public class MusicEditor : MonoBehaviour {
             short val = note.GetVal(NoteType.Volume);
             byte ph = (byte)((val & 0xff00) >> 8);
             byte pl = (byte)(val & 0xff);
-            res += ph.ToString("X2") + " " + pl.ToString("X2") + " " + note.GetLen(NoteType.Volume) + "  ";
+            res += ph.ToString("X2") + " " + pl.ToString("X2") + " " + note.GetLen(NoteType.Volume).ToString("X2") + "  ";
           }
           if (note.IsType(NoteType.Pitch)) {
             short val = note.GetVal(NoteType.Pitch);
             byte ph = (byte)((val & 0xff00) >> 8);
             byte pl = (byte)(val & 0xff);
-            res += ph.ToString("X2") + " " + pl.ToString("X2") + " " + note.GetLen(NoteType.Pitch) + "  ";
+            res += ph.ToString("X2") + " " + pl.ToString("X2") + " " + note.GetLen(NoteType.Pitch).ToString("X2") + "  ";
           }
           if (note.IsType(NoteType.Pan)) {
             short val = note.GetVal(NoteType.Pan);
             byte ph = (byte)((val & 0xff00) >> 8);
             byte pl = (byte)(val & 0xff);
-            res += ph.ToString("X2") + " " + pl.ToString("X2") + " " + note.GetLen(NoteType.Pan) + "  ";
+            res += ph.ToString("X2") + " " + pl.ToString("X2") + " " + note.GetLen(NoteType.Pan).ToString("X2") + "  ";
           }
         }
         res += "\n";
@@ -2027,15 +2035,13 @@ public class MusicEditor : MonoBehaviour {
     LoadSubButton.enabled = true;
   }
   readonly Regex rgComments = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgLabels = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgHex1 = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgHex2 = new Regex("[\\s]*([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
     string data = Values.text.Trim();
-    data = rgComments.Replace(data, " ");
-    data = rgLabels.Replace(data, " ").Replace('\n', ' ').Trim();
+    data = rgComments.Replace(data, " ").Replace('\n', ' ').Trim();
     while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
     waves.Clear();
@@ -2132,30 +2138,30 @@ public class MusicEditor : MonoBehaviour {
             data = ReadNextByte(data, out data2);
             data = ReadNextByte(data, out data3);
             data = ReadNextByte(data, out data4);
-            note.Set(NoteType.Note, (short)(data2 << 8 + data3), data4);
+            note.Set(NoteType.Note, (short)(data3 + (short)(data2 << 8)), data4);
           }
           if ((data1 & 2) == 2) { // Wave
             data = ReadNextByte(data, out data2);
             data = ReadNextByte(data, out data3);
-            note.Set(NoteType.Wave, (short)(data2 << 8 + data3), 0);
+            note.Set(NoteType.Wave, (short)(data3 + (short)(data2 << 8)), 0);
           }
           if ((data1 & 4) == 4) { // Vol
             data = ReadNextByte(data, out data2);
             data = ReadNextByte(data, out data3);
             data = ReadNextByte(data, out data4);
-            note.Set(NoteType.Volume, (short)(data2 << 8 + data3), data4);
+            note.Set(NoteType.Volume, (short)(data3 + (short)(data2 << 8)), data4);
           }
           if ((data1 & 8) == 8) { // Pitch
             data = ReadNextByte(data, out data2);
             data = ReadNextByte(data, out data3);
             data = ReadNextByte(data, out data4);
-            note.Set(NoteType.Pitch, (short)(data2 << 8 + data3), data4);
+            note.Set(NoteType.Pitch, (short)(data3 + (short)(data2 << 8)), data4);
           }
           if ((data1 & 16) == 16) { // Pan
             data = ReadNextByte(data, out data2);
             data = ReadNextByte(data, out data3);
             data = ReadNextByte(data, out data4);
-            note.Set(NoteType.Pan, (short)(data2 << 8 + data3), data4);
+            note.Set(NoteType.Pan, (short)(data3 + (short)(data2 << 8)), data4);
           }
           b.chs[c].Add(note);
         }
