@@ -359,60 +359,22 @@ public class MusicEditor : MonoBehaviour {
       if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count) {
         BlockLine l = blines[row];
         if (!recording) {
-          // Enter select wave if there is not a note
-          if (Input.GetKeyDown(KeyCode.Return) && (l.note[col].type == NoteType.Empty || l.note[col].type == NoteType.Wave)) {
-            SetWave();
-            return;
-          }
           // Remove cell values
           if (Input.GetKeyDown(KeyCode.Delete)) {
             currentBlock.chs[col][row].Zero();
             blines[row].note[col].SetZeroValues(NoteTypeSprites);
           }
           // Change length
-          if (l.note[col].type == NoteType.Note || l.note[col].type == NoteType.Pitch || l.note[col].type == NoteType.Volume) {
-            if (Input.GetKeyDown(KeyCode.PageUp) && l.note[col].len > 1) {
-              UpdateNoteLength(l.note[col].len - 1);
-            }
-            if (Input.GetKeyDown(KeyCode.PageDown) && l.note[col].len < blines.Count - row) {
-              UpdateNoteLength(l.note[col].len + 1);
-            }
+          if (l.note[col].IsNote()) {
+            if (Input.GetKeyDown(KeyCode.PageUp)) UpdateNoteLength(currentBlock.chs[col][row].GetLen(NoteType.Note) - 1, currentBlock.len - row);
+            if (Input.GetKeyDown(KeyCode.PageDown)) UpdateNoteLength(currentBlock.chs[col][row].GetLen(NoteType.Note) + 1, currentBlock.len - row);
           }
-          // Change wave
-          if (l.note[col].type == NoteType.Wave) {
+          else if (l.note[col].IsWave()) { // Change wave
             if (Input.GetKeyDown(KeyCode.PageUp)) {
-              int id = l.note[col].val;
-              int pos;
-              for (pos = 0; pos < waves.Count; pos++) {
-                if (waves[pos].id == id) {
-                  if (pos == 0) {
-                    l.note[col].val = waves[waves.Count - 1].id;
-                  }
-                  else {
-                    l.note[col].val = waves[pos - 1].id;
-                  }
-                }
-              }
-              currentBlock.chs[col][row].val = l.note[col].val;
-              blines[row].note[col].SetValues(currentBlock.chs[col][row], NoteTypeSprites, freqs, noteNames, waves);
-              ShowNote(currentBlock.chs[col][row]);
+              UpdateNoteWave(currentBlock.chs[col][row], -1);
             }
             if (Input.GetKeyDown(KeyCode.PageDown)) {
-              int id = l.note[col].val;
-              int pos;
-              for (pos = 0; pos < waves.Count; pos++) {
-                if (waves[pos].id == id) {
-                  if (pos == waves.Count - 1) {
-                    l.note[col].val = waves[0].id;
-                  }
-                  else {
-                    l.note[col].val = waves[pos + 1].id;
-                  }
-                }
-              }
-              currentBlock.chs[col][row].val = l.note[col].val;
-              blines[row].note[col].SetValues(currentBlock.chs[col][row], NoteTypeSprites, freqs, noteNames, waves);
-              ShowNote(currentBlock.chs[col][row]);
+              UpdateNoteWave(currentBlock.chs[col][row], +1);
             }
           }
         }
@@ -420,14 +382,9 @@ public class MusicEditor : MonoBehaviour {
         for (int i = 0; i < keyNotes.Length; i++) {
           if (Input.GetKeyDown(keyNotes[i])) {
             // Set the current cell as note with the given note/frequency, update the text to be the note notation
-            l.note[col].type = NoteType.Note;
-            l.note[col].TypeImg.sprite = NoteTypeSprites[(int)NoteType.Note];
-            l.note[col].ValTxt.text = noteNames[i + 24];
-            l.note[col].val = freqs[i + 24];
-            l.note[col].len = noteLen;
-            l.note[col].LenTxt.text = noteLen.ToString();
-            l.note[col].back.sizeDelta = new Vector2(38, noteLen * 32);
-            currentBlock.chs[col][row].Set(l.note[col]);
+            NoteData nd = currentBlock.chs[col][row];
+            nd.Set(NoteType.Note, (short)freqs[i + 24], (byte)noteLen);
+            l.note[col].SetValues(nd, NoteTypeSprites, freqs, noteNames, waves);
             // Move to the next row
             if (!recording && row + stepLen < currentBlock.len) { row += stepLen; update = true; }
             // Play the actual sound (find the wave that should be used, if none is defined use a basic triangle wave)
@@ -616,7 +573,7 @@ public class MusicEditor : MonoBehaviour {
     for (int c = 0; c < music.NumVoices; c++) {
       NoteData n = block.chs[c][currentPlayedMusicLine];
       if (n.IsType(NoteType.Note)) {
-        sounds.Play(c, n.val, n.len * timeForNextBeat);
+        sounds.Play(c, n.val, n.GetLen(NoteType.Note) * timeForNextBeat);
       }
       if (n.IsType(NoteType.Wave)) {
         Wave w = GetWave(n.val);
@@ -627,36 +584,36 @@ public class MusicEditor : MonoBehaviour {
         }
       }
       if (n.IsType(NoteType.Volume)) {
-        if (n.len < 2) {
+        if (n.GetLen(NoteType.Volume) < 2) {
           sounds.Volume(c, n.val / 255f);
         }
         else {
           swipes[c].vols = sounds.Volume(c);
           swipes[c].vole = n.val / 255f;
           swipes[c].voltime = 0;
-          swipes[c].vollen = (n.len - 1) * 15f / block.bpm;
+          swipes[c].vollen = (n.GetLen(NoteType.Volume) - 1) * 15f / block.bpm;
         }
       }
       if (n.IsType(NoteType.Pitch)) {
-        if (n.len < 2) {
+        if (n.GetLen(NoteType.Pitch) < 2) {
           sounds.Pitch(c, n.val);
         }
         else {
           swipes[c].pitchs = sounds.Pitch(c);
           swipes[c].pitche = n.val;
           swipes[c].pitchtime = 0;
-          swipes[c].pitchlen = (n.len - 1) * 15f / block.bpm;
+          swipes[c].pitchlen = (n.GetLen(NoteType.Pitch) - 1) * 15f / block.bpm;
         }
       }
       if (n.IsType(NoteType.Pan)) {
-        if (n.len < 2) {
+        if (n.GetLen(NoteType.Pan) < 2) {
           sounds.Pan(c, n.val / 255f);
         }
         else {
           swipes[c].pans = sounds.Pan(c);
           swipes[c].pane = n.val / 255f;
           swipes[c].pantime = 0;
-          swipes[c].panlen = (n.len - 1) * 15f / block.bpm;
+          swipes[c].panlen = (n.GetLen(NoteType.Pan) - 1) * 15f / block.bpm;
         }
       }
     }
@@ -1193,24 +1150,40 @@ public class MusicEditor : MonoBehaviour {
     }
   }
 
-  private void UpdateNoteLength(int len = -1) {
+  private void UpdateNoteLength(int len = -1, int max = 99999) {
     NoteLine note = blines[row].note[col];
     NoteData bn = currentBlock.chs[col][row];
-    if (note.type != NoteType.Note && note.type != NoteType.Pitch && note.type != NoteType.Volume) {
-      note.len = 0;
+    if (!note.IsNote()) {
       note.LenTxt.text = "";
       note.back.sizeDelta = new Vector2(38, 0 * 32);
-      bn.len = 0;
       ShowNote(bn);
       return;
     }
 
-    int val = (len == -1) ? noteLen : len;
-    note.len = val;
-    bn.len = val;
+    byte val = (byte)((len == -1) ? noteLen : len);
+    if (val < 1) val = 1;
+    if (val > max) val = (byte)max;
+    bn.SetLen(NoteType.Note, val);
     note.LenTxt.text = val.ToString();
     note.back.sizeDelta = new Vector2(38, val * 32);
     ShowNote(bn);
+  }
+
+  private void UpdateNoteWave(NoteData nd, int dir) {
+    int id = nd.GetVal(NoteType.Wave);
+    int newid = id;
+    for (int i = 0; i < waves.Count; i++) {
+      if (waves[i].id == id) {
+        if (i == waves.Count - 1)
+          newid = waves[0].id;
+        else
+          newid = waves[i + 1].id;
+      }
+    }
+    nd.SetVal(NoteType.Wave, (short)newid);
+    NoteLine nl = blines[row].note[col];
+    nl.SetValues(nd, NoteTypeSprites, freqs, noteNames, waves);
+    ShowNote(nd);
   }
 
   #endregion
@@ -1390,7 +1363,7 @@ public class MusicEditor : MonoBehaviour {
         if (int.TryParse(CellValInputs[type].text.Trim(), out int vol)) {
           if (vol < 0) vol = 0;
           if (vol > 100) vol = 100;
-          val = (short)(vol * 1024f / 100);
+          val = NoteData.ConvertVol2Val(vol);
           break;
         }
       }
@@ -1400,10 +1373,9 @@ public class MusicEditor : MonoBehaviour {
         // 1.05946^numsemitones
         // Values can be +[0-9]+(.[0-9]+)? and -[0-9]+(.[0-9]+)?
         if (float.TryParse(CellValInputs[type].text.Trim(), numberstyle, culture, out float fVal)) {
-          // The result is stored as value multiplied by 100 truncated to 2 bytes
-          val = (short)(fVal * 100);
-          if (val > 32767) val = 32767;
-          if (val < -32767) val = -32767;
+          if (fVal > 320) fVal = 320;
+          if (fVal < -320) fVal = -320;
+          val = NoteData.ConvertPitch2Val(fVal);
           break;
         }
       }
@@ -1413,7 +1385,7 @@ public class MusicEditor : MonoBehaviour {
         if (float.TryParse(CellValInputs[type].text.Trim(), numberstyle, culture, out float pval)) {
           if (pval < -1) pval = -1;
           if (pval > 1) pval = 1;
-          val = (short)(pval * 127 + 127);
+          val = NoteData.ConvertPan2Val(pval);
           break;
         }
       }
@@ -1458,16 +1430,18 @@ public class MusicEditor : MonoBehaviour {
     short num;
     NoteType t = (NoteType)(type + 1);
     num = nd.GetVal(t);
-    if (up) num++;
-    else num--;
     switch (t) {
       case NoteType.Note:
+        if (up) num++;
+        else num--;
         if (num < 50) num = 50;
         if (num > 22000) num = 22000;
         nd.SetVal(NoteType.Note, num);
         break;
 
       case NoteType.Wave: // num is the ID, pick the exact one or the id closest and inferior
+        if (up) num++;
+        else num--;
         if (num < 1) num = 1;
         short closest = 0;
         foreach(Wave w in waves) {
@@ -1484,20 +1458,26 @@ public class MusicEditor : MonoBehaviour {
         break;
 
       case NoteType.Volume:
+        if (up) num += 10;
+        else num -= 10;
         if (num < 0) num = 0;
         if (num > 1024) num = 1024;
         nd.SetVal(NoteType.Volume, num);
         break;
 
       case NoteType.Pitch:
+        if (up) num += 50;
+        else num -= 50;
         if (num < -32767) num = -32767;
         if (num > 32767) num = 32767;
         nd.SetVal(NoteType.Pitch, num);
         break;
 
       case NoteType.Pan:
+        if (up) num += 25;
+        else num -= 25;
         if (num < 0) num = 0;
-        if (num > 255) num = 255;
+        if (num > 1000) num = 1000;
         nd.SetVal(NoteType.Pan, num);
         break;
     }
@@ -1949,9 +1929,10 @@ public class MusicEditor : MonoBehaviour {
           NoteData note = b.chs[c][r];
           byte ph = (byte)((note.val & 0xff00) >> 8);
           byte pl = (byte)(note.val & 0xff);
-          res += ((int)note.type).ToString("X2") + " " +
-                ph.ToString("X2") + " " + pl.ToString("X2") + " " +
-                note.len.ToString("X2") + " ";
+          // FIXME
+          //res += ((int)note.type).ToString("X2") + " " +
+          //      ph.ToString("X2") + " " + pl.ToString("X2") + " " +
+          //      note.len.ToString("X2") + " ";
         }
       }
       res += "\n";

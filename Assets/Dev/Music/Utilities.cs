@@ -50,34 +50,6 @@ public class BlockData {
   public List<NoteData>[] chs;
 }
 
-public class Note {
-  public NoteType type;
-  public int val;
-  public int len;
-
-  internal Note Duplicate() {
-    return new Note { type = this.type, val = this.val, len = this.len };
-  }
-
-  internal void Set(Note src) {
-    type = src.type;
-    val = src.val;
-    len = src.len;
-  }
-
-  internal void Set(NoteLine note) {
-    type = note.type;
-    val = note.val;
-    len = note.len;
-  }
-
-  internal void Zero() {
-    type = NoteType.Empty;
-    val = 0;
-    len = 0;
-  }
-}
-
 
 public class Swipe {
   public float vols;
@@ -136,7 +108,7 @@ Pan=5
 public class NoteData {
 
   public int val; // FIXME remove
-  public int len; // FIXME remove
+  //public int len; // FIXME remove
 
   public byte type { get; private set; }
 
@@ -160,7 +132,7 @@ public class NoteData {
       Zero();
       return;
     }
-    int pos = (byte)type - 1;
+    int pos = (byte)t - 1;
     type &= (byte)(255 - (1 << pos));
     vls[pos].val = 0;
     vls[pos].len = 0;
@@ -236,16 +208,16 @@ public class NoteData {
 
   // note -> ushort with frequency
   // wave -> ushort with id
-  // vol -> 0-1024 short -> 0-100%
+  // vol -> 0-1000 short -> 0-100%
   // Pitch -> -32768 - +32768
   // Pan -> 0-1000 short -> -1<->+1 (val-500)/500
 
 
   public static string ConvertVal2Vol(short num) {
-    return (num * 100 / 1024) + "%";
+    return (num * 100 / 1000) + "%";
   }
   public static short ConvertVol2Val(int vol) {
-    return (short)(vol * 1024 / 100);
+    return (short)(vol * 1000 / 100);
   }
 
   public static string ConvertVal2Pitch(short num) {
@@ -269,11 +241,14 @@ public class NoteData {
   }
 
   public static string ConvertVal2Pan(short num) {
-    return ((num - 127) / 127f).ToString();
-
+    float val = ((num - 500) / 500f);
+    if (val > 0)
+      return "+" + val.ToString("0.00");
+    else
+      return val.ToString("0.00");
   }
   public static short ConvertPan2Val(float pan) {
-    return (short)((pan + 1) * 127);
+    return (short)((pan + 1) * 500);
   }
 
 }

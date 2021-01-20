@@ -3,11 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class NoteLine : MonoBehaviour {
-  public NoteType type;
-  public byte btype;
-
-  public int val; // FIXME remove
-  public int len; // FIXME remove
+  private byte type;
 
   public Image TypeImg;
   public Text ValTxt;
@@ -15,13 +11,20 @@ public class NoteLine : MonoBehaviour {
   public RectTransform back;
   public Button ColButton;
 
-  internal void SetValues(NoteData blockNote, Sprite[] sprites,  int[] freqs, string[] notenames, List<Wave> waves) {
-    btype = blockNote.type;
-    gameObject.SetActive(true);
-    ValTxt.fontSize = 28;
-    LenTxt.fontSize = 28;
+  internal bool IsNote() {
+    return (type & 1) == 1;
+  }
+  internal bool IsWave() {
+    return (type & 2) == 2;
+  }
 
-    switch (btype) {
+  internal void SetValues(NoteData blockNote, Sprite[] sprites,  int[] freqs, string[] notenames, List<Wave> waves) {
+    type = blockNote.type;
+    gameObject.SetActive(true);
+    ValTxt.fontSize = 24;
+    LenTxt.fontSize = 24;
+
+    switch (type) {
       case 0: // Empty
         TypeImg.sprite = sprites[0];
         ValTxt.text = "";
@@ -42,6 +45,7 @@ public class NoteLine : MonoBehaviour {
       // Wave
       case 2: {
         TypeImg.sprite = sprites[2];
+        ValTxt.fontSize = 14;
         ValTxt.text = GetWaveVal(blockNote, waves);
         LenTxt.text = "";
         back.sizeDelta = new Vector2(38, 0);
@@ -63,7 +67,7 @@ public class NoteLine : MonoBehaviour {
       // Volume
       case 4: {
         TypeImg.sprite = sprites[3];
-        ValTxt.text = GetVolVal(blockNote);
+        ValTxt.text = NoteData.ConvertVal2Vol(blockNote.GetVal(NoteType.Volume));
         int len = GetVolLen(blockNote);
         LenTxt.text = len.ToString();
         back.sizeDelta = new Vector2(38, len * 32);
@@ -79,7 +83,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[9];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + GetVolVal(blockNote);
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + NoteData.ConvertVal2Vol(blockNote.GetVal(NoteType.Volume));
         int len = GetNoteLen(blockNote);
         int lenv = GetVolLen(blockNote);
         LenTxt.text = len + "\n" + lenv;
@@ -96,7 +100,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[7];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetWaveVal(blockNote, waves) + "\n" + GetVolVal(blockNote);
+        ValTxt.text = GetWaveVal(blockNote, waves) + "\n" + NoteData.ConvertVal2Vol(blockNote.GetVal(NoteType.Volume));
         int len = GetVolLen(blockNote);
         LenTxt.text = "\n" + len;
         back.sizeDelta = new Vector2(38, len * 32);
@@ -110,7 +114,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[8];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + GetWaveVal(blockNote, waves) + " " + GetVolVal(blockNote);
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + GetWaveVal(blockNote, waves) + " " + NoteData.ConvertVal2Vol(blockNote.GetVal(NoteType.Volume));
         int len = GetNoteLen(blockNote);
         int lenv = GetVolLen(blockNote);
         LenTxt.text = len + "\n" + lenv;
@@ -122,7 +126,7 @@ public class NoteLine : MonoBehaviour {
       // Pitch
       case 8: {
         TypeImg.sprite = sprites[4];
-        ValTxt.text = GetPitchVal(blockNote);
+        ValTxt.text = NoteData.ConvertVal2Pitch(blockNote.GetVal(NoteType.Pitch));
         int len = GetPitchLen(blockNote);
         LenTxt.text = len.ToString();
         back.sizeDelta = new Vector2(38, len * 32);
@@ -135,7 +139,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[10];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + GetPitchVal(blockNote);
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + NoteData.ConvertVal2Pitch(blockNote.GetVal(NoteType.Pitch));
         int len = GetNoteLen(blockNote);
         int lenv = GetPitchLen(blockNote);
         LenTxt.text = len + "\n" + lenv;
@@ -151,7 +155,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[2];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetWaveVal(blockNote, waves) + "\n" + GetPitchVal(blockNote);
+        ValTxt.text = GetWaveVal(blockNote, waves) + "\n" + NoteData.ConvertVal2Pitch(blockNote.GetVal(NoteType.Pitch));
         int len = GetPitchLen(blockNote);
         LenTxt.text = "\n" + len;
         back.sizeDelta = new Vector2(38, len * 32);
@@ -165,7 +169,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[8];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + " " + GetWaveVal(blockNote, waves) + "\n" + GetPitchVal(blockNote);
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + " " + GetWaveVal(blockNote, waves) + "\n" + NoteData.ConvertVal2Pitch(blockNote.GetVal(NoteType.Pitch));
         int len = GetNoteLen(blockNote);
         int lenv = GetPitchLen(blockNote);
         LenTxt.text = len + "\n" + lenv;
@@ -180,7 +184,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[7];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetVolVal(blockNote) + "\n" + GetPitchVal(blockNote);
+        ValTxt.text = NoteData.ConvertVal2Vol(blockNote.GetVal(NoteType.Volume)) + "\n" + NoteData.ConvertVal2Pitch(blockNote.GetVal(NoteType.Pitch));
         int len = GetVolLen(blockNote);
         int lenv = GetPitchLen(blockNote);
         LenTxt.text = len + "\n" + lenv;
@@ -192,7 +196,7 @@ public class NoteLine : MonoBehaviour {
       // Pan
       case 16: {
         TypeImg.sprite = sprites[5];
-        ValTxt.text = GetPanVal(blockNote);
+        ValTxt.text = NoteData.ConvertVal2Pan(blockNote.GetVal(NoteType.Pan));
         int len = GetPanLen(blockNote);
         LenTxt.text = len.ToString();
         back.sizeDelta = new Vector2(38, len * 32);
@@ -204,7 +208,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[11];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + GetPanVal(blockNote);
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + NoteData.ConvertVal2Pan(blockNote.GetVal(NoteType.Pan));
         int len = GetNoteLen(blockNote);
         int lenv = GetPanLen(blockNote);
         LenTxt.text = len + "\n" + lenv;
@@ -218,7 +222,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[2];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetWaveVal(blockNote, waves) + "\n" + GetPanVal(blockNote);
+        ValTxt.text = GetWaveVal(blockNote, waves) + "\n" + NoteData.ConvertVal2Pan(blockNote.GetVal(NoteType.Pan));
         int len = GetPanLen(blockNote);
         LenTxt.text = "\n" + len;
         back.sizeDelta = new Vector2(38, len * 32);
@@ -230,7 +234,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[8];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + " " + GetWaveVal(blockNote, waves) + "\n" + GetPanVal(blockNote);
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + " " + GetWaveVal(blockNote, waves) + "\n" + NoteData.ConvertVal2Pan(blockNote.GetVal(NoteType.Pan));
         int len = GetNoteLen(blockNote);
         int lenv = GetPanLen(blockNote);
         LenTxt.text = len + "\n" + lenv;
@@ -244,7 +248,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[3];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetVolVal(blockNote) + "\n" + GetPanVal(blockNote);
+        ValTxt.text = NoteData.ConvertVal2Vol(blockNote.GetVal(NoteType.Volume)) + "\n" + NoteData.ConvertVal2Pan(blockNote.GetVal(NoteType.Pan));
         int len = GetVolLen(blockNote);
         int lenv = GetPanLen(blockNote);
         LenTxt.text = len + "\n" + lenv;
@@ -258,7 +262,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[4];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetPitchVal(blockNote) + "\n" + GetPanVal(blockNote);
+        ValTxt.text = NoteData.ConvertVal2Pitch(blockNote.GetVal(NoteType.Pitch)) + "\n" + NoteData.ConvertVal2Pan(blockNote.GetVal(NoteType.Pan));
         int len = GetPitchLen(blockNote);
         int lenv = GetPanLen(blockNote);
         LenTxt.text = len + "\n" + lenv;
@@ -272,7 +276,7 @@ public class NoteLine : MonoBehaviour {
         TypeImg.sprite = sprites[6];
         ValTxt.fontSize = 14;
         LenTxt.fontSize = 14;
-        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + GetWaveVal(blockNote, waves) + " " + GetVolVal(blockNote);
+        ValTxt.text = GetNoteVal(blockNote, freqs, notenames) + "\n" + GetWaveVal(blockNote, waves) + " " + NoteData.ConvertVal2Vol(blockNote.GetVal(NoteType.Volume));
         int len = GetNoteLen(blockNote);
         int lenv = GetVolLen(blockNote);
         LenTxt.text = len + "\n" + lenv;
@@ -311,49 +315,19 @@ public class NoteLine : MonoBehaviour {
       }
     return val.ToString();
   }
-  private int GetWaveLen(NoteData n) {
-    return 0;
-  }
 
-  private string GetVolVal(NoteData n) {
-    int val = n.GetVal(NoteType.Volume);
-    return ((int)(val / 1024f)) + "%";
-  }
   private int GetVolLen(NoteData n) {
     int len = n.GetLen(NoteType.Volume);
     if (len < 1) len = 1;
     return len;
   }
 
-  private string GetPitchVal(NoteData n) {
-    float val = n.GetVal(NoteType.Pitch) / 100f;
-    if (val == 0)
-      return "reset";
-    else if (val - (int)val == 0) {
-      if (val > 0)
-        return "+" + ((int)val).ToString();
-      else
-        return ((int)val).ToString();
-    }
-    else {
-      if (val > 0)
-        return "+" + val.ToString();
-      else
-        return val.ToString();
-    }
-  }
   private int GetPitchLen(NoteData n) {
     int len = n.GetLen(NoteType.Pitch);
     if (len < 1) len = 1;
     return len;
   }
 
-  private string GetPanVal(NoteData n) {
-    float pan = n.GetVal(NoteType.Pan) / 127f;
-    if (pan < -1) pan = -1;
-    if (pan > 1) pan = 1;
-    return pan.ToString();
-  }
   private int GetPanLen(NoteData n) {
     int len = n.GetLen(NoteType.Pan);
     if (len < 1) len = 1;
