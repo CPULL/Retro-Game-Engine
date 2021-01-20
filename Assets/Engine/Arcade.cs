@@ -1164,6 +1164,71 @@ public class Arcade : MonoBehaviour {
           return false;
         }
 
+        case BNF.SOUND: {
+          if (n.CN3 == null)
+            audioManager.Play(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture));
+          else
+            audioManager.Play(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToFlt(culture));
+          return false;
+        }
+
+        case BNF.WAVE: {
+          if (n.children.Count == 2) {
+            audioManager.Wave(Evaluate(n.CN1).ToInt(culture), mem, Evaluate(n.CN2).ToInt(culture));
+          }
+          else {
+            int c = Evaluate(n.CN1).ToInt(culture);
+            audioManager.Wave(c, (Waveform)Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToFlt(culture));
+            audioManager.ADSR(c,
+                                  Evaluate(n.CN3).ToByte(culture),
+                                  Evaluate(n.CN4).ToByte(culture),
+                                  Evaluate(n.CN5).ToByte(culture),
+                                  Evaluate(n.CN6).ToByte(culture));
+          }
+          return false;
+        }
+
+        case BNF.MUTE: {
+          audioManager.Stop(Evaluate(n.CN1).ToInt(culture));
+          return false;
+        }
+
+        case BNF.VOLUME: {
+          if (n.CN2 == null) {
+            float vol = Evaluate(n.CN1).ToFlt(culture);
+            if (vol < 0) vol = 0;
+            if (vol > 1) vol = 1;
+            for (int i = 0; i < 8; i++)
+              audioManager.Volume(i, vol);
+          }
+          else {
+            float vol = Evaluate(n.CN2).ToFlt(culture);
+            if (vol < 0) vol = 0;
+            if (vol > 1) vol = 1;
+            audioManager.Volume(Evaluate(n.CN1).ToInt(culture), vol);
+          }
+          return false;
+        }
+
+        case BNF.PITCH: {
+          float pitch = Evaluate(n.CN2).ToFlt(culture);
+          if (pitch < 0) pitch = 0;
+          if (pitch > 100) pitch = 100;
+          audioManager.Volume(Evaluate(n.CN1).ToInt(culture), pitch);
+          return false;
+        }
+
+        case BNF.PAN: {
+          float pan = Evaluate(n.CN2).ToFlt(culture);
+          if (pan < -1) pan = -1;
+          if (pan > 1) pan = 1;
+          audioManager.Volume(Evaluate(n.CN1).ToInt(culture), pan);
+          return false;
+        }
+
+        case BNF.MUSIC: throw new Exception("Music is not yet implemented");
+        case BNF.MUSICVOICES: throw new Exception("MusicVoices is not yet implemented");
+
         case BNF.NOP: return false;
 
         default: {

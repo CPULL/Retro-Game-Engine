@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Audio : MonoBehaviour {
   public AudioSource[] srcs;
@@ -148,6 +147,22 @@ public class Audio : MonoBehaviour {
       if (phase > 0.99f) phase = 0.99f;
     }
     channels[channel].phase = phase;
+  }
+
+  public void Wave(int channel, byte[] data, int start) {
+    if (channel < 0 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
+
+    // first byte is ID, we can ignore it
+    channels[channel].wave = (Waveform)data[start + 1];
+    channels[channel].phase = (((short)data[start + 2] << 8) + data[start + 3]) / 100f;
+    ADSR(channel, data[start + 4], data[start + 5], data[start + 6], data[start + 7]);
+    if (channels[channel].wave == Waveform.PCM) {
+      int len = (data[start + 8] << 24) + (data[start + 9] << 16) + (data[start + 10] << 8) + (data[start + 11] << 0);
+      channels[channel].pcmdata = new byte[len];
+      for (int b = 0; b < len; b++) {
+        channels[channel].pcmdata[b] = data[start + 12 + b];
+      }
+    }
   }
 
   public void Wave(int channel, byte[] data) {
