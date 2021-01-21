@@ -1,9 +1,10 @@
-﻿using UnityEngine.UI;
+﻿using TMPro;
+using UnityEngine.UI;
 
 public class MusicLine : ListLine {
-  public Text BlockID;
-  public Text BlockName;
-  public Text BlockLen;
+  public TextMeshProUGUI BlockID;
+  public TextMeshProUGUI BlockName;
+  public TextMeshProUGUI BlockLen;
   public Button Delete;
   public Button Up;
   public Button Down;

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -57,11 +58,11 @@ public class MusicEditor : MonoBehaviour {
   public InputField NoteLenInputField;
   public InputField StepLenInputField;
 
-  public Text CurrentBlockID;
+  public TextMeshProUGUI CurrentBlockID;
   public InputField BlockNameInput;
   public InputField WaveNameInput;
-  public Text WaveNameID;
-  public Text WaveTypeName;
+  public TextMeshProUGUI WaveNameID;
+  public TextMeshProUGUI WaveTypeName;
   public Image WaveTypeImg;
 
   public GameObject MusicLineTempate;
@@ -71,7 +72,7 @@ public class MusicEditor : MonoBehaviour {
   public GameObject CreateNewBlockInList;
   public GameObject CreateNewWaveInList;
 
-  public Text SelInfo;
+  public TextMeshProUGUI SelInfo;
   int selectionYStart = -1;
   int selectionYEnd = -1;
   int selectionYDir = 0;
@@ -961,7 +962,7 @@ public class MusicEditor : MonoBehaviour {
     foreach(BlockData b in blocks) {
       GameObject sbb = Instantiate(SelectBlockButton, BlockPickContainer);
       sbb.SetActive(true);
-      sbb.transform.GetChild(0).GetComponent<Text>().text = "[" + b.id + "] " + b.name;
+      sbb.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = "[" + b.id + "] " + b.name;
       sbb.GetComponent<Button>().onClick.AddListener(() => { DoPickBlock(b); });
       if (first == null) first = sbb;
     }
@@ -1213,7 +1214,7 @@ public class MusicEditor : MonoBehaviour {
   #endregion
 
   #region Cell **********************************************************************************************************************************************************
-  public Text CellInfoTxt;
+  public TextMeshProUGUI CellInfoTxt;
 
   public InputField[] CellValInputs;
   public InputField[] CellLenInputs;
@@ -1555,6 +1556,10 @@ public class MusicEditor : MonoBehaviour {
       bll.BlockName.text = b.name;
       bll.BlockLen.text = b.len.ToString();
       bll.BlockBPM.text = b.bpm.ToString();
+      bll.BlockID.fontSize = 28;
+      bll.BlockName.fontSize = 28;
+      bll.BlockLen.fontSize = 28;
+      bll.BlockBPM.fontSize = 28;
       bll.Delete.onClick.AddListener(() => DeleteBlockFromList(b));
       bll.Edit.onClick.AddListener(() => EditBlockFromList(b));
       bll.LineButton.onClick.AddListener(() => SelectBLockFromList(b));
@@ -1624,6 +1629,10 @@ public class MusicEditor : MonoBehaviour {
     bll.BlockName.text = b.name;
     bll.BlockLen.text = b.len.ToString();
     bll.BlockBPM.text = b.bpm.ToString();
+    bll.BlockID.fontSize = 28;
+    bll.BlockName.fontSize = 28;
+    bll.BlockLen.fontSize = 28;
+    bll.BlockBPM.fontSize = 28;
     bll.Delete.onClick.AddListener(() => DeleteBlockFromList(b));
     bll.Edit.onClick.AddListener(() => EditBlockFromList(b));
     bll.LineButton.onClick.AddListener(() => SelectBLockFromList(b));
@@ -1809,7 +1818,7 @@ public class MusicEditor : MonoBehaviour {
       GameObject sbb = Instantiate(SelectWaveButton, WavePickContainer);
       sbb.SetActive(true);
       sbb.transform.GetChild(0).GetComponent<Image>().sprite = editor.WaveSprites[(int)w.wave];
-      sbb.transform.GetChild(1).GetComponent<Text>().text = "[" + w.id + "] " + w.name;
+      sbb.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = "[" + w.id + "] " + w.name;
       sbb.GetComponent<Button>().onClick.AddListener(() => { DoPickWave(w); });
     }
   }

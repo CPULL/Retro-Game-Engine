@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,8 +7,8 @@ public class NoteLine : MonoBehaviour {
   private byte type;
 
   public Image TypeImg;
-  public Text ValTxt;
-  public Text LenTxt;
+  public TextMeshProUGUI ValTxt;
+  public TextMeshProUGUI LenTxt;
   public RectTransform back;
   public Button ColButton;
 
