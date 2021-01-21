@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -8,7 +9,7 @@ using UnityEngine.UI;
 public class Arcade : MonoBehaviour {
   const float updateTime = .5f;
   public RawImage Screen;
-  public Text FPS;
+  public TextMeshProUGUI FPS;
   public Audio audioManager;
   Texture2D texture;
   Color32[] pixels;

@@ -1,11 +1,11 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using TMPro;
 
 public class Loader : MonoBehaviour {
-  public Text Loading;
-  public Text Help;
+  public TextMeshProUGUI Loading;
+  public TextMeshProUGUI Help;
   public GameObject Buttons;
  
   void Start() {
