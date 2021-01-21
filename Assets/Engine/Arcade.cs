@@ -205,6 +205,7 @@ public class Arcade : MonoBehaviour {
     scaleH = lastScreenW / 160f;
 
     sprites[0].Init(0, 6, sw, sh);
+    audioManager.Init();
 
     if (SceneManager.GetActiveScene().name == "ArcadePlus") {
       // Show cartridge selection menu

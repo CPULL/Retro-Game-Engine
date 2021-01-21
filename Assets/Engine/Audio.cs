@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class Audio : MonoBehaviour {
   public AudioSource[] srcs;
@@ -43,9 +44,24 @@ public class Audio : MonoBehaviour {
   }
 
   private void Start() {
+    StartCoroutine(DelayedInit());
     for (int i = 0; i < channels.Length; i++) {
       channels[i].Play(440, .001f);
     }
+  }
+
+  IEnumerator DelayedInit() {
+    yield return new WaitForSeconds(.2f);
+    Init();
+  }
+
+  internal void Init() {
+    for (int i = 0; i < channels.Length; i++)
+      channels[i].SetVol(0);
+    for (int i = 0; i < channels.Length; i++)
+      channels[i].Play(440, .001f);
+    for (int i = 0; i < channels.Length; i++)
+      channels[i].SetVol(1.0f);
   }
 
   public float[] Oscillator {
