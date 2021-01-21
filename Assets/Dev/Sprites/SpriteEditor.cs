@@ -81,7 +81,7 @@ public class SpriteEditor : MonoBehaviour {
 
   private void ClickPixel(int pos) {
     int x = pos % w;
-    int y = (pos - start.x) / w;
+    int y = (pos - x) / w;
 
     if (action == ActionVal.LineStart) {
       start.x = x;

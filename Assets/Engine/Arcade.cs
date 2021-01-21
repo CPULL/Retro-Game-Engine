@@ -1730,17 +1730,13 @@ public class Arcade : MonoBehaviour {
 
 /*  TODO
 
-start/stop music, load music, get music position
-voices in music (change play to use the defined voices)
+TEXT:start/stop music, load music, get music position
+TEXT:voices in music (change play to use the defined voices)
 
 replace parameters in sprites regex and use the generic way to get parameters
 functions with numbers at the end are not working
 
-
-  FPS looks really unrealistic, replace with the standard function from UNity Time.frames
-
   Tiles, with priority byte
-  Sounds
   Documentation on the Wiki of Github
   
   disable sprites and tilemaps on errors?
