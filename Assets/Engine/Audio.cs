@@ -45,24 +45,22 @@ public class Audio : MonoBehaviour {
   }
 
   private void Start() {
-    StartCoroutine(DelayedInit());
-    for (int i = 0; i < channels.Length; i++) {
-      channels[i].Play(440, .001f);
-    }
   }
 
   IEnumerator DelayedInit() {
-    yield return new WaitForSeconds(.2f);
-    Init();
+    yield return new WaitForSeconds(.1f);
+    for (int i = 0; i < channels.Length; i++)
+      channels[i].SetVol(0);
+    yield return null;
+    for (int i = 0; i < channels.Length; i++)
+      channels[i].Play(440, .001f);
+    yield return new WaitForSeconds(.05f);
+    for (int i = 0; i < channels.Length; i++)
+      channels[i].SetVol(1.0f);
   }
 
   internal void Init() {
-    for (int i = 0; i < channels.Length; i++)
-      channels[i].SetVol(0);
-    for (int i = 0; i < channels.Length; i++)
-      channels[i].Play(440, .001f);
-    for (int i = 0; i < channels.Length; i++)
-      channels[i].SetVol(1.0f);
+    StartCoroutine(DelayedInit());
   }
 
   public float[] Oscillator {

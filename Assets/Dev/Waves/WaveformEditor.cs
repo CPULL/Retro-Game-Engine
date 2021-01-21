@@ -43,10 +43,7 @@ public class WaveformEditor : MonoBehaviour {
     WaveChange(0);
     UpdateWaveforms();
 
-    sounds.Volume(-1, 0);
-    for (int i = 0; i < 8; i++)
-      sounds.Play(i, 440, 0.01f);
-    sounds.Volume(-1, 1);
+    sounds.Init();
 
     for (int i = 0; i < 512; i++)
       oscilloscopeValues[i] = new Vector3(i * 2, 128, 0);

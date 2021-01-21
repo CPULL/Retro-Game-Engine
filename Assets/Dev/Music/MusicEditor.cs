@@ -135,6 +135,7 @@ public class MusicEditor : MonoBehaviour {
     ContainerBlock.SetActive(false);
     ContainerWaves.SetActive(false);
     Selection.gameObject.SetActive(false);
+    sounds.Init();
   }
 
   private void Update() {
@@ -622,6 +623,8 @@ public class MusicEditor : MonoBehaviour {
 
     return false;
   }
+
+  // FIXME Delete blocks is not working
 
   void SelectRow(int line) {
     if (status == MusicEditorStatus.Music) {
@@ -1537,7 +1540,6 @@ public class MusicEditor : MonoBehaviour {
   void BlocksRegenerate() {
     foreach (Transform t in ContentsBlocks)
       Destroy(t.gameObject);
-    int pos = 0;
     foreach (BlockData b in blocks) {
       GameObject line = Instantiate(BlockListLineTemplate, ContentsBlocks);
       line.SetActive(true);
@@ -1548,8 +1550,7 @@ public class MusicEditor : MonoBehaviour {
       bll.BlockBPM.text = b.bpm.ToString();
       bll.Delete.onClick.AddListener(() => DeleteBlockFromList(b));
       bll.Edit.onClick.AddListener(() => EditBlockFromList(b));
-      int linenum = pos++;
-      bll.LineButton.onClick.AddListener(() => SelectRow(linenum));
+      bll.LineButton.onClick.AddListener(() => SelectBLockFromList(b));
       bllines.Add(bll);
     }
 
@@ -1571,8 +1572,22 @@ public class MusicEditor : MonoBehaviour {
     blocks.Remove(b);
     for (int i = 0; i < music.blocks.Count; i++)
       if (music.blocks[i] == id) music.blocks[i] = -1;
-
+    for (int i = 0; i < bllines.Count; i++) {
+      if (bllines[i].BlockID.text == id.ToString()) {
+        BlockListLine bl = bllines[i];
+        bllines.RemoveAt(i);
+        Destroy(bl.gameObject);
+        return;
+      }
+    }
     Blocks();
+  }
+
+  private void SelectBLockFromList(BlockData b) {
+    for (int i = 0; i < blocks.Count; i++)
+      if (blocks[i] == b) {
+        SelectRow(i);
+      }
   }
 
   public void CreateBlock() {
@@ -1604,8 +1619,7 @@ public class MusicEditor : MonoBehaviour {
     bll.BlockBPM.text = b.bpm.ToString();
     bll.Delete.onClick.AddListener(() => DeleteBlockFromList(b));
     bll.Edit.onClick.AddListener(() => EditBlockFromList(b));
-    int linenum = bllines.Count;
-    bll.LineButton.onClick.AddListener(() => SelectRow(linenum));
+    bll.LineButton.onClick.AddListener(() => SelectBLockFromList(b));
     bllines.Add(bll);
     last.SetAsLastSibling();
     ShowBlockInfo();
