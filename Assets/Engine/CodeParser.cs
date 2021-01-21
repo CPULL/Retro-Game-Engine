@@ -61,7 +61,10 @@ public class CodeParser : MonoBehaviour {
     "volume",
     "pitch",
     "pan",
-    "music",
+    "musicload",
+    "musicplay",
+    "musicstop",
+    "musicpos",
     "musicvoices",
     "",
     "",
@@ -87,7 +90,10 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgDeltat = new Regex("deltatime", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFloat = new Regex("[0-9]*\\.[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgInt = new Regex("[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgBin = new Regex("b([0-1]{1,31})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgBin = new Regex("0b([0-1]{1,31})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+
+  readonly Regex rgBinShort = new Regex("([0-1]{1,31})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgHexShort = new Regex("([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
   readonly Regex rgPars = new Regex("\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMem = new Regex("\\[[\\s]*`[a-z]{3,}¶[\\s]*]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1789,6 +1795,8 @@ public class CodeParser : MonoBehaviour {
   private void ParseDataBlock(string[] lines, int start, int end, CodeNode data) {
     CodeNode lastDataLabel = null;
     Dictionary<string, bool> labels = new Dictionary<string, bool>();
+    Regex binRE = rgBin;
+    Regex hexRE = rgHex;
 
     // Find at what line this starts
     for (int linenum = start + 1; linenum < end; linenum++) {
@@ -1832,6 +1840,21 @@ public class CodeParser : MonoBehaviour {
           data.Add(n);
           clean = clean.Substring(pos + 1).Trim(' ', '\n');
         }
+        else if (line.IndexOf("usehex") != -1) {
+          hexRE = rgHexShort;
+          binRE = rgBin;
+          clean = clean.Substring(line.IndexOf("usehex") + 6).Trim(' ', '\n', ',');
+        }
+        else if (line.IndexOf("usebin") != -1) {
+          hexRE = rgHex;
+          binRE = rgBinShort;
+          clean = clean.Substring(line.IndexOf("usebin") + 6).Trim(' ', '\n', ',');
+        }
+        else if (line.IndexOf("usedec") != -1) {
+          hexRE = rgHex;
+          binRE = rgBin;
+          clean = clean.Substring(line.IndexOf("usedec") + 6).Trim(' ', '\n', ',');
+        }
         else if (line.IndexOf(':') != -1) { // Label ****************************************************************** Label
           pos = clean.IndexOf(':');
           line = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
@@ -1841,12 +1864,15 @@ public class CodeParser : MonoBehaviour {
           data.Add(lastDataLabel);
           clean = clean.Substring(pos + 1).Trim(' ', '\n');
         }
-        else if (rgBin.IsMatch(line)) { // Bin ************************************************************************ Bin
+        else if (binRE.IsMatch(line)) { // Bin ************************************************************************ Bin
           if (lastDataLabel == null) throw new Exception("Found data without a label defined: " + line);
-          Match m = rgBin.Match(line);
+          Match m = binRE.Match(line);
           string bin = m.Value.Trim(' ', '\n');
-
-          int b = Convert.ToInt32(bin.Substring(1), 2);
+          int b;
+          if (binRE == rgBinShort) 
+           b = Convert.ToInt32(bin, 2);
+          else
+           b = Convert.ToInt32(bin.Substring(2), 2);
           if (bin.Length < 10) {
             if (lastDataLabel.iVal == lastDataLabel.bVal.Length) {
               byte[] bytes = new byte[1024 + lastDataLabel.bVal.Length];
@@ -1871,12 +1897,16 @@ public class CodeParser : MonoBehaviour {
 
           clean = clean.Substring(bin.Length).Trim(' ', '\n', ',');
         }
-        else if (rgHex.IsMatch(line)) { // Hex ************************************************************************ Hex
+        else if (hexRE.IsMatch(line)) { // Hex ************************************************************************ Hex
           if (lastDataLabel == null) throw new Exception("Found data without a label defined: " + line);
-          Match m = rgHex.Match(line);
+          Match m = hexRE.Match(line);
           string hex = m.Value.Trim(' ', '\n');
+          int hx;
+          if (hexRE == rgHexShort)
+            hx = Convert.ToInt32(hex, 16);
+          else
+            hx = Convert.ToInt32(hex.Substring(2), 16);
 
-          int hx = Convert.ToInt32(hex.Substring(2), 16);
           if (hex.Length < 5) {
             if (lastDataLabel.iVal == lastDataLabel.bVal.Length) {
               byte[] bytes = new byte[1024 + lastDataLabel.bVal.Length];
@@ -1932,7 +1962,7 @@ public class CodeParser : MonoBehaviour {
           clean = clean.Substring(num.Length).Trim(' ', '\n', ',');
         }
         else
-          throw new Exception("Invalid DATA from line: " + 0 + "\n" + clean);
+          throw new Exception("Invalid DATA from line: " + (linenum + 1) + "\n" + line);
         // label:
         // num (1 or 4 bytes)
         // hex (1, 2, 4 bytes)

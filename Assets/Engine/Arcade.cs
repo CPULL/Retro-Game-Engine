@@ -1730,6 +1730,8 @@ public class Arcade : MonoBehaviour {
 
 /*  TODO
 
+Add a way to read data directly from hex without the '0x' prefix
+
 TEXT:start/stop music, load music, get music position
 TEXT:voices in music (change play to use the defined voices)
 
