@@ -1730,8 +1730,6 @@ public class Arcade : MonoBehaviour {
 
 /*  TODO
 
-functions with numbers at the end are not working
-
   Tiles, with priority byte
   Documentation on the Wiki of Github
   

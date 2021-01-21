@@ -89,7 +89,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgString = new Regex("(\")([^\"]*)(\")", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDeltat = new Regex("deltatime", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFloat = new Regex("[0-9]*\\.[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgInt = new Regex("[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgInt = new Regex("(^[0-9]+)|([^a-z\\(\\),\\.\\s\\[\\]:_@][0-9]+)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBin = new Regex("0b([0-1]{1,31})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
   readonly Regex rgBinShort = new Regex("([0-1]{1,31})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
@@ -1176,7 +1176,7 @@ public class CodeParser : MonoBehaviour {
 
     // Replace INT => `INx
     line = rgInt.Replace(line, m => {
-      int.TryParse(m.Value, out int iVal);
+      int.TryParse(m.Groups[1].Value, out int iVal);
       CodeNode n = new CodeNode(BNF.INT, GenId("IN"), origForException, linenumber) {
         iVal = iVal
       };

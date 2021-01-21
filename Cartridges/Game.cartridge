@@ -4,6 +4,14 @@ Start {
 clr(0)
 loadmusic(ToccataDMinor:)
 playmusic()
+
+z = bispoo1("x")
+
+write(z,10,10,c300)
+}
+
+#bispoo1(s) {
+	return s+s
 }
 
 update {
