@@ -104,20 +104,17 @@ Pan=5
 
 
 public class NoteData {
+  public byte NoteType { get; private set; }
 
-  //public int val; // FIXME remove
-
-  public byte type { get; private set; }
-
-  struct vl {
+  struct NoteVal {
     public short val;
     public byte len;
   };
 
-  vl[] vls = new vl[5];
+  readonly NoteVal[] vls = new NoteVal[5];
 
   public void Zero() {
-    type = 0;
+    NoteType = 0;
     for (int i = 0; i < 5; i++) {
       vls[i].val = 0;
       vls[i].len = 0;
@@ -125,35 +122,35 @@ public class NoteData {
   }
 
   public void Zero(NoteType t) {
-    if (t == NoteType.Empty) {
+    if (t == global::NoteType.Empty) {
       Zero();
       return;
     }
     int pos = (byte)t - 1;
-    type &= (byte)(255 - (1 << pos));
+    NoteType &= (byte)(255 - (1 << pos));
     vls[pos].val = 0;
     vls[pos].len = 0;
   }
 
   public bool IsType(NoteType t) {
-    if (t == NoteType.Empty) return type == 0;
+    if (t == global::NoteType.Empty) return NoteType == 0;
     int pos = (byte)t - 1;
-    return (type & (1 << pos)) != 0;
+    return (NoteType & (1 << pos)) != 0;
   }
 
-  public bool isEmpty() {
-    return type == 0;
+  public bool IsEmpty() {
+    return NoteType == 0;
   }
 
 
   public short GetVal(NoteType t) {
-    if (t == NoteType.Empty) return 0;
+    if (t == global::NoteType.Empty) return 0;
     int pos = (byte)t - 1;
     return vls[pos].val;
   }
 
   public byte GetLen(NoteType t) {
-    if (t == NoteType.Empty) return 0;
+    if (t == global::NoteType.Empty) return 0;
     int pos = (byte)t - 1;
     return vls[pos].len;
   }
@@ -169,35 +166,35 @@ public class NoteData {
   }
 
   public void Set(NoteType t) {
-    if (t == NoteType.Empty) return;
+    if (t == global::NoteType.Empty) return;
     int pos = (byte)t - 1;
-    type |= (byte)(1 << pos);
+    NoteType |= (byte)(1 << pos);
   }
 
   public void Set(NoteType t, short val, byte len) {
-    if (t == NoteType.Empty) return;
+    if (t == global::NoteType.Empty) return;
     int pos = (byte)t - 1;
-    type |= (byte)(1 << pos);
+    NoteType |= (byte)(1 << pos);
     vls[pos].val = val;
     vls[pos].len = len;
   }
 
   public void SetVal(NoteType t, short val) {
-    if (t == NoteType.Empty) return;
+    if (t == global::NoteType.Empty) return;
     int pos = (byte)t - 1;
-    type |= (byte)(1 << pos);
+    NoteType |= (byte)(1 << pos);
     vls[pos].val = val;
   }
 
   public void SetLen(NoteType t, byte len) {
-    if (t == NoteType.Empty) return;
+    if (t == global::NoteType.Empty) return;
     int pos = (byte)t - 1;
-    type |= (byte)(1 << pos);
+    NoteType |= (byte)(1 << pos);
     vls[pos].len = len;
   }
 
   internal NoteData Duplicate() {
-    NoteData n = new NoteData { type = this.type };
+    NoteData n = new NoteData { NoteType = this.NoteType };
     for (int i = 0; i < 5; i++) {
       n.vls[i].val = vls[i].val;
       n.vls[i].len = vls[i].len;
@@ -206,15 +203,11 @@ public class NoteData {
   }
 
   internal void Set(NoteData src) {
-    type = src.type;
+    NoteType = src.NoteType;
     for (int i = 0; i < 5; i++) {
       vls[i].val = src.vls[i].val;
       vls[i].len = src.vls[i].len;
     }
-  }
-
-  internal void Set(NoteLine note) {
-    // FIXME this will not work anymore
   }
 
 
@@ -227,6 +220,9 @@ public class NoteData {
 
   public static string ConvertVal2Vol(short num) {
     return (num * 100 / 1000) + "%";
+  }
+  public static float GetVolVal(short num) {
+    return (num * 100 / 1000);
   }
   public static short ConvertVol2Val(int vol) {
     return (short)(vol * 1000 / 100);
@@ -248,6 +244,9 @@ public class NoteData {
         return val.ToString();
     }
   }
+  public static float GetPitchVal(short num) {
+    return num / 100f;
+  }
   public static short ConvertPitch2Val(float pitch) {
     return (short)(pitch * 100);
   }
@@ -258,6 +257,9 @@ public class NoteData {
       return "+" + val.ToString("0.00");
     else
       return val.ToString("0.00");
+  }
+  public static float GetPanVal(short num) {
+    return ((num - 500) / 500f);
   }
   public static short ConvertPan2Val(float pan) {
     return (short)((pan + 1) * 500);

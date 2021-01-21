@@ -667,7 +667,7 @@ public class Arcade : MonoBehaviour {
         if (px < 0)
           px += 2 * dy1;
         else {
-          if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) y = y + 1; else y -= 1;
+          if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) y += 1; else y -= 1;
           px += 2 * (dy1 - dx1);
         }
         SetPixel(x, y, col);
@@ -688,7 +688,7 @@ public class Arcade : MonoBehaviour {
         if (py <= 0)
           py += 2 * dx1;
         else {
-          if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) x = x + 1; else x -= 1;
+          if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) x += 1; else x -= 1;
           py += 2 * (dx1 - dy1);
         }
         SetPixel(x, y, col);
@@ -777,7 +777,7 @@ public class Arcade : MonoBehaviour {
   void SpriteRot(int num, int rot, bool flip) {
     if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
     if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined"); 
-    rot = rot & 3;
+    rot &= 3;
     sprites[num].Rot(rot, flip);
   }
   

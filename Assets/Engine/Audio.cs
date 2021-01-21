@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Audio : MonoBehaviour {
@@ -6,7 +7,7 @@ public class Audio : MonoBehaviour {
   public Channel[] channels;
   const int samplerate = 44100;
   const float oneOversamplerate = 1f / 44100;
-  private float[] oscValues = new float[512];
+  private readonly float[] oscValues = new float[512];
   private float[][] outputs;
 
   void Awake() {
@@ -485,8 +486,7 @@ public class Audio : MonoBehaviour {
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
           float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           if ((i % 3) == 0) {
-            float x = 10 * channels[channel].phase / (pos + channels[channel].phase);
-            x = pos * .25f;
+            float x = pos * .25f;
             data[i] = Mathf.Sin(2 * Mathf.PI * x);
           }
           else
@@ -599,6 +599,93 @@ public class Audio : MonoBehaviour {
   void OnAudioSetPosition7(int pos) { OnAudioSetPosition(pos, 7); }
 
   #endregion
+
+  // Music play
+
+  Music music = null;
+  public void Music(byte[] data, int start) {
+    if (music != null)
+      music.Clear();
+    else
+      music = new Music();
+
+    int pos = start;
+    music.numvoices = data[pos++];
+    int numblocks = data[pos++];
+    int numwaves = data[pos++];
+    music.numblocks = data[pos++];
+    music.mblocks = new byte[music.numblocks];
+    for (int i = 0; i < music.numblocks; i++)
+      music.mblocks[i] = data[pos++];
+
+    for (int i = 0; i < numwaves; i++) {
+      Wave w = new Wave {
+        id = data[pos++],
+        wave = (Waveform)data[pos++],
+        phase = data[pos++] << 8
+      };
+      w.phase += data[pos++];
+      w.phase /= 100f;
+      w.a = data[pos++];
+      w.d = data[pos++];
+      w.s = data[pos++];
+      w.r = data[pos++];
+
+      if (w.wave == Waveform.PCM) {
+        int len = data[pos++];
+        len = (len << 8) + data[pos++];
+        len = (len << 8) + data[pos++];
+        len = (len << 8) + data[pos++];
+        w.rawPCM = new byte[len];
+        for (int b = 0; b < len; b++)
+          w.rawPCM[b] = data[pos++];
+      }
+      music.waves.Add(w.id, w);
+    }
+
+    for (int i = 0; i < numblocks; i++) {
+      Block b = new Block {
+        id = data[pos++],
+        len = data[pos++],
+        bpm = data[pos++]
+      };
+      for (int r = 0; r < b.len; r++)
+        for (int c = 0; c < music.numvoices; c++) {
+          byte type = data[pos++];
+          Note n = new Note();
+          if ((type & 1) == 1) {
+            n.freq = (short)((short)(data[pos++] << 8) + data[pos++]);
+            n.nlen = data[pos++];
+          }
+          else n.freq = 0;
+
+          if ((type & 2) == 2) {
+            n.wave = (byte)((short)(data[pos++] << 8) + data[pos++]);
+          }
+          else n.wave = 0;
+
+          if ((type & 4) == 4) {
+            n.vol = NoteData.GetVolVal((short)((short)(data[pos++] << 8) + data[pos++]));
+            n.vlen = data[pos++];
+          }
+          else n.vol = -1;
+
+          if ((type & 8) == 8) {
+            n.pitch = NoteData.GetPitchVal((short)((short)(data[pos++] << 8) + data[pos++]));
+            n.plen = data[pos++];
+          }
+          else n.plen = 255;
+
+          if ((type & 8) == 8) {
+            n.pan = NoteData.GetPanVal((short)((short)(data[pos++] << 8) + data[pos++]));
+            n.panlen = data[pos++];
+          }
+          else n.panlen = 255;
+        }
+      music.blocks.Add(b.id, b);
+    }
+  }
+
 }
 
 public enum Waveform { Triangular=0, Saw=1, Square=2, Sin=3, Bass1=4, Bass2=5, Noise=6, PinkNoise=7, BrownNoise=8, BlackNoise=9, SoftNoise=10, Drums=11, SuperSaw=12, SuperSin=13, PCM=14 };
@@ -661,7 +748,72 @@ public struct Channel {
   }
 }
 
+public class Music {
+  public int numvoices;
+  public byte[] MusicVoices = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7 };
+  public int numblocks;
+  public byte[] mblocks;
+  public Dictionary<int, Wave> waves = new Dictionary<int, Wave>();
+  public Dictionary<int, Block> blocks = new Dictionary<int, Block>();
 
+  public void Clear() {
+    waves.Clear();
+    blocks.Clear();
+    mblocks = null;
+  }
+  /*
+    name label
+    num voices [byte]
+    num blocks [byte]
+    num waves [byte]
+    num blocks in music [byte]
+
+    for each block in music
+      id [byte]
+    
+    for each wave
+      name label
+      type [byte]
+      phase [2bytes]
+      a [byte]
+      d [byte]
+      s [byte]
+      r [byte]
+      pcmlen [4bytes, only if tpye is PCM]
+      (pcmlen) bytes of data
+
+    for each block
+      name label
+      id, len, bpm
+      for each row
+        for each column
+          cell type [byte]
+          note info [3bytes, only if has note]
+          wave info [2bytes, only if has wave]
+          vol info [3bytes, only if has vol]
+          pitch info [3bytes, only if has pitch]
+          pan info [3bytes, only if has pan]
+     */
+}
+
+public class Block {
+  public int id;
+  public int bpm;
+  public int len;
+  public Note[,] notes;
+}
+
+public struct Note {
+  public short freq;
+  public byte nlen;
+  public byte wave;
+  public float vol;
+  public byte vlen;
+  public float pitch;
+  public byte plen;
+  public float pan;
+  public byte panlen;
+}
 
 /*
  * Define a way to play music: 2 bytes total len + 1 byte num channles + [1 byte channel, 2 bytes freq, 2 bytes len] * num channels

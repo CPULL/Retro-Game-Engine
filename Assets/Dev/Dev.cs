@@ -15,9 +15,6 @@ public class Dev : MonoBehaviour {
   public FontsEditor fontsEditor;
   public CodeEditor codeEditor;
 
-  private void Start() {
-  }
-
   public void SpriteEditor() {
     EmptyEditor.SetActive(false);
     spriteEditor.gameObject.SetActive(true);

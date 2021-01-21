@@ -94,9 +94,8 @@ public class MusicEditor : MonoBehaviour {
   };
   MusicEditorStatus status = MusicEditorStatus.Idle;
   readonly List<NoteData> CopiedNotes = new List<NoteData>();
-
-  System.Globalization.NumberStyles numberstyle = System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint;
-  System.Globalization.CultureInfo culture = new System.Globalization.CultureInfo("en-US");
+  readonly System.Globalization.NumberStyles numberstyle = System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint;
+  readonly System.Globalization.CultureInfo culture = new System.Globalization.CultureInfo("en-US");
 
   #endregion
 
@@ -575,11 +574,9 @@ public class MusicEditor : MonoBehaviour {
     for (int c = 0; c < music.NumVoices; c++) {
       NoteData n = block.chs[c][currentPlayedMusicLine];
       if (n.IsType(NoteType.Note)) {
-Debug.Log("note");
         sounds.Play(c, n.GetVal(NoteType.Note), n.GetLen(NoteType.Note) * timeForNextBeat);
       }
       if (n.IsType(NoteType.Wave)) {
-Debug.Log("wave");
         Wave w = GetWave(n.GetVal(NoteType.Wave));
         if (w != null) {
           sounds.Wave(c, w.wave, w.phase);
@@ -588,7 +585,6 @@ Debug.Log("wave");
         }
       }
       if (n.IsType(NoteType.Volume)) {
-Debug.Log("vol");
         if (n.GetLen(NoteType.Volume) < 2) {
           sounds.Volume(c, n.GetVol());
         }
@@ -600,7 +596,6 @@ Debug.Log("vol");
         }
       }
       if (n.IsType(NoteType.Pitch)) {
-Debug.Log("pitch");
         if (n.GetLen(NoteType.Pitch) < 2) {
           sounds.Pitch(c, n.GetPitch());
         }
@@ -612,7 +607,6 @@ Debug.Log("pitch");
         }
       }
       if (n.IsType(NoteType.Pan)) {
-Debug.Log("pan");
         if (n.GetLen(NoteType.Pan) < 2) {
           sounds.Pan(c, n.GetPan());
         }
@@ -989,7 +983,7 @@ Debug.Log("pan");
     if (!up && len > 1) len--;
     BlockLenInputField.SetTextWithoutNotify(len.ToString());
     inputsSelected = false;
-    UpdateBlockLen(b, len);
+    UpdateBlockLen(len);
   }
   public void ChangeBlockLenType(bool completed) {
     inputsSelected = !completed;
@@ -1001,10 +995,10 @@ Debug.Log("pan");
         BlockLenInputField.SetTextWithoutNotify(b.len.ToString());
         return;
       }
-      UpdateBlockLen(b, len);
+      UpdateBlockLen(len);
     }
   }
-  void UpdateBlockLen(BlockData b, int len) {
+  void UpdateBlockLen(int len) {
     if (currentBlock == null) return;
     currentBlock.len = len;
     for (int r = 0; r < 128; r++) {
@@ -1985,11 +1979,11 @@ Debug.Log("pan");
         for (int c = 0; c < numv; c++) {
           NoteData note = b.chs[c][r];
 
-          if (note.isEmpty()) {
+          if (note.IsEmpty()) {
             res += "00  ";
             continue;
           }
-          else res += note.type.ToString("X2") + " ";
+          else res += note.NoteType.ToString("X2") + " ";
           if (note.IsType(NoteType.Note)) {
             short val = note.GetVal(NoteType.Note);
             byte ph = (byte)((val & 0xff00) >> 8);
@@ -2055,16 +2049,14 @@ Debug.Log("pan");
     if (pos == -1) throw new Exception("Missing Music label");
     m.name = data.Substring(0, pos).Trim();
     data = data.Substring(pos + 1).Trim();
-    byte data1, data2, data3, data4;
-    byte numw, numb, numv;
-
-    data = ReadNextByte(data, out data1);
-    numv = data1;
+    byte data3, data4;
+    data = ReadNextByte(data, out byte data1);
+    byte numv = data1;
     for (int i = 0; i < 8; i++)
       m.voices[i] = (byte)((i < numv) ? i : 255);
-    data = ReadNextByte(data, out numb);
-    data = ReadNextByte(data, out numw);
-    data = ReadNextByte(data, out data2);
+    data = ReadNextByte(data, out byte numb);
+    data = ReadNextByte(data, out byte numw);
+    data = ReadNextByte(data, out byte data2);
     for (int i = 0; i < data2; i++) {
       data = ReadNextByte(data, out data1);
       m.blocks.Add(data1 == 255 ? -1 : data1);
