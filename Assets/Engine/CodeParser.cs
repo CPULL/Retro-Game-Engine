@@ -174,7 +174,10 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgVolume = new Regex("[\\s]*volume[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgPitch = new Regex("[\\s]*pitch[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgPan = new Regex("[\\s]*pan[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgMusic = new Regex("[\\s]*music[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgMusicLoad = new Regex("[\\s]*loadmusic[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgMusicPlay = new Regex("[\\s]*playmusic[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgMusicStop = new Regex("[\\s]*stopmusic[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgMusicPos = new Regex("[\\s]*musicpos[\\s]*[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMusicvoices = new Regex("[\\s]*musicvoices[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgCMPlt = new Regex("(`[a-z]{3,}¶)([\\s]*\\<[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -768,18 +771,40 @@ public class CodeParser : MonoBehaviour {
       return;
     }
 
-    // [Music] address
-    if (expected.IsGood(Expected.Val.Statement) && rgMusic.IsMatch(line)) {
-      Match m = rgMusic.Match(line);
-      CodeNode node = new CodeNode(BNF.MUSIC, line, linenumber);
+    // [MusicLoad] address
+    if (expected.IsGood(Expected.Val.Statement) && rgMusicLoad.IsMatch(line)) {
+      Match m = rgMusicLoad.Match(line);
+      CodeNode node = new CodeNode(BNF.MUSICLOAD, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 1) throw new Exception("Invalid Music(), specify the address of the music. Line: " + (linenumber + 1));
+      if (num != 1) throw new Exception("Invalid MusicLoad(), specify the address of the music. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }
 
-    // [MusicVoices] address
+    // [MusicPlay] [step]
+    if (expected.IsGood(Expected.Val.Statement) && rgMusicPlay.IsMatch(line)) {
+      Match m = rgMusicPlay.Match(line);
+      CodeNode node = new CodeNode(BNF.MUSICPLAY, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num > 1) throw new Exception("Invalid MusicPlay() parameters, max one allowed. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [MusicStop]
+    if (expected.IsGood(Expected.Val.Statement) && rgMusicStop.IsMatch(line)) {
+      Match m = rgMusicStop.Match(line);
+      CodeNode node = new CodeNode(BNF.MUSICSTOP, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 0) throw new Exception("Invalid MusicStop(), it does not support parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [MusicVoices] num[, num]{1-7}
     if (expected.IsGood(Expected.Val.Statement) && rgMusicvoices.IsMatch(line)) {
       Match m = rgMusicvoices.Match(line);
       CodeNode node = new CodeNode(BNF.MUSICVOICES, line, linenumber);
@@ -1100,6 +1125,13 @@ public class CodeParser : MonoBehaviour {
     // Replace DTIME => `DTx
     line = rgDeltat.Replace(line, m => {
       CodeNode n = new CodeNode(BNF.DTIME, GenId("DT"), origForException, linenumber);
+      nodes[n.id] = n;
+      return n.id;
+    });
+
+    // Replace DTIME => `DTx
+    line = rgMusicPos.Replace(line, m => {
+      CodeNode n = new CodeNode(BNF.MUSICPOS, GenId("MP"), origForException, linenumber);
       nodes[n.id] = n;
       return n.id;
     });

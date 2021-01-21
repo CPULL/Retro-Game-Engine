@@ -1227,11 +1227,46 @@ public class Arcade : MonoBehaviour {
           return false;
         }
 
-        case BNF.MUSIC: {
-          audioManager.Music(mem, Evaluate(n.CN1).ToInt(culture));
+        case BNF.MUSICLOAD: {
+          audioManager.LoadMusic(mem, Evaluate(n.CN1).ToInt(culture));
           return false;
         }
-        case BNF.MUSICVOICES: throw new Exception("MusicVoices is not yet implemented");
+        case BNF.MUSICVOICES: {
+          if (n.children.Count == 8) audioManager.MusicVoices(
+            Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture),
+            Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToByte(culture), Evaluate(n.CN6).ToByte(culture),
+            Evaluate(n.children[6]).ToByte(culture), Evaluate(n.children[7]).ToByte(culture));
+          if (n.children.Count == 7) audioManager.MusicVoices(
+            Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture),
+            Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToByte(culture), Evaluate(n.CN6).ToByte(culture),
+            Evaluate(n.children[6]).ToByte(culture));
+          if (n.children.Count == 6) audioManager.MusicVoices(
+            Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture),
+            Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToByte(culture), Evaluate(n.CN6).ToByte(culture));
+          if (n.children.Count == 5) audioManager.MusicVoices(
+            Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture),
+            Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToByte(culture));
+          if (n.children.Count == 4) audioManager.MusicVoices(
+            Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture),
+            Evaluate(n.CN4).ToByte(culture));
+          if (n.children.Count == 3) audioManager.MusicVoices(
+            Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture));
+          if (n.children.Count == 2) audioManager.MusicVoices(
+            Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture));
+          if (n.children.Count == 1) audioManager.MusicVoices(Evaluate(n.CN1).ToByte(culture));
+          return false;
+        }
+
+        case BNF.MUSICPLAY: {
+          if (n.CN1 == null) audioManager.PlayMusic();
+          else audioManager.PlayMusic(Evaluate(n.CN1).ToInt(culture));
+          return false;
+        }
+
+        case BNF.MUSICSTOP: {
+          audioManager.StopMusic();
+          return false;
+        }
 
         case BNF.NOP: return false;
 
@@ -1308,6 +1343,7 @@ public class Arcade : MonoBehaviour {
       case BNF.HEX: return new Value(n.iVal);
       case BNF.STR: return new Value(n.sVal);
 
+      case BNF.MUSICPOS: return new Value(audioManager.GetMusicPos());
       case BNF.DTIME: return new Value(Time.deltaTime);
       case BNF.OPpar: return Evaluate(n.CN1);
       case BNF.OPsum: {
@@ -1693,6 +1729,9 @@ public class Arcade : MonoBehaviour {
 
 
 /*  TODO
+
+start/stop music, load music, get music position
+voices in music (change play to use the defined voices)
 
 replace parameters in sprites regex and use the generic way to get parameters
 functions with numbers at the end are not working

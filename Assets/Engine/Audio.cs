@@ -581,7 +581,7 @@ public class Audio : MonoBehaviour {
   int currentPlayedMusicLine = 0;
   int currentPlayedMusicBlock = 0;
 
-  public void Music(byte[] data, int start) {
+  public void LoadMusic(byte[] data, int start) {
     if (music != null)
       music.Clear();
     else
@@ -671,6 +671,44 @@ public class Audio : MonoBehaviour {
     currentPlayedMusicBlock = 0;
   }
 
+  public void MusicVoices(byte a, byte b = 255, byte c = 255, byte d = 255, byte e = 255, byte f = 255, byte g = 255, byte h = 255) {
+    if (music == null) music = new Music();
+    music.MusicVoices[0] = a;
+    music.MusicVoices[1] = b;
+    music.MusicVoices[2] = c;
+    music.MusicVoices[3] = d;
+    music.MusicVoices[4] = e;
+    music.MusicVoices[5] = f;
+    music.MusicVoices[6] = g;
+    music.MusicVoices[7] = h;
+  }
+
+  public int GetMusicPos() {
+    return currentPlayedMusicBlock * 255 + currentPlayedMusicLine;
+  }
+
+  public void PlayMusic(int pos = -1) {
+    timeForNextBeat = 0;
+    if (pos == -1) {
+      currentPlayedMusicLine = 0;
+      currentPlayedMusicBlock = 0;
+    }
+    else {
+      currentPlayedMusicLine = pos & 255;
+      currentPlayedMusicBlock = pos / 256;
+    }
+    playing = true;
+  }
+
+  public void StopMusic() {
+    playing = false;
+    if (music != null) {
+      for (int i = 0; i < music.numvoices; i++) {
+        Stop(music.MusicVoices[i]);
+      }
+    }
+  }
+
   readonly Swipe[] swipes = new Swipe[] { new Swipe(), new Swipe(), new Swipe(), new Swipe(), new Swipe(), new Swipe(), new Swipe(), new Swipe() };
   void HandleSwipes() {
     for (int c = 0; c < 8; c++) {
@@ -753,7 +791,8 @@ public class Audio : MonoBehaviour {
 
   void PlayNote(Block block) {
     timeForNextBeat = 15f / block.bpm;
-    for (int c = 0; c < music.numvoices; c++) {
+    for (int xc = 0; xc < music.numvoices; xc++) {
+      int c = music.MusicVoices[xc];
       Note n = block.notes[currentPlayedMusicLine, c];
       if (n.freq != 0) Play(c, n.freq, n.nlen * timeForNextBeat);
       if (n.wave != 0) {
