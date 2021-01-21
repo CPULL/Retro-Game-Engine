@@ -1227,7 +1227,10 @@ public class Arcade : MonoBehaviour {
           return false;
         }
 
-        case BNF.MUSIC: throw new Exception("Music is not yet implemented");
+        case BNF.MUSIC: {
+          audioManager.Music(mem, Evaluate(n.CN1).ToInt(culture));
+          return false;
+        }
         case BNF.MUSICVOICES: throw new Exception("MusicVoices is not yet implemented");
 
         case BNF.NOP: return false;

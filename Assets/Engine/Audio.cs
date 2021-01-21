@@ -204,15 +204,9 @@ public class Audio : MonoBehaviour {
     channels[channel].rv = 0.0117607843f * release + 0.001f; // 0.001s -> 3s
   }
 
-  byte[] toplay = null;
-  int playpos = -1;
-  float musicsteplen = 0;
-  public void PlayMusic(byte[] music) {
-    toplay = music;
-    playpos = 0;
-  }
-
   private void Update() {
+    if (playing) PlayMusic();
+
     for (int i = 0; i < channels.Length; i++) {
       if (!channels[i].audio.isPlaying) continue;
 
@@ -252,27 +246,6 @@ public class Audio : MonoBehaviour {
       }
     }
 
-    if (playpos == -1 || toplay == null) return;
-    if (musicsteplen > 0) {
-      musicsteplen -= Time.deltaTime;
-      return;
-    }
-    // Get the next set of notes
-    byte numchannels = toplay[playpos];
-    if (playpos + 2 + numchannels * 5 >= toplay.Length) {
-      playpos = -1;
-      toplay = null;
-      return;
-    }
-    musicsteplen = (toplay[playpos + 2] * 256 + toplay[playpos + 1] + 1) / 65535f;
-    playpos += 3;
-    for (int i = 0; i < numchannels; i++) {
-      byte channel = toplay[playpos];
-      int cfreq = toplay[playpos + 2] * 256 + toplay[playpos];
-      float clen = (toplay[playpos + 4] * 256 + toplay[playpos + 3] + 1) / 65535f;
-      Play(channel, cfreq, clen);
-      playpos += 5;
-    }
   }
 
 
@@ -600,9 +573,14 @@ public class Audio : MonoBehaviour {
 
   #endregion
 
-  // Music play
+  #region Music play *********************************************************************************************************
 
   Music music = null;
+  bool playing = false;
+  float timeForNextBeat = 0;
+  int currentPlayedMusicLine = 0;
+  int currentPlayedMusicBlock = 0;
+
   public void Music(byte[] data, int start) {
     if (music != null)
       music.Clear();
@@ -649,6 +627,7 @@ public class Audio : MonoBehaviour {
         len = data[pos++],
         bpm = data[pos++]
       };
+      b.notes = new Note[b.len, music.numvoices];
       for (int r = 0; r < b.len; r++)
         for (int c = 0; c < music.numvoices; c++) {
           byte type = data[pos++];
@@ -681,11 +660,145 @@ public class Audio : MonoBehaviour {
             n.panlen = data[pos++];
           }
           else n.panlen = 255;
+
+          b.notes[r, c] = n;
         }
       music.blocks.Add(b.id, b);
     }
+    playing = false;
+    timeForNextBeat = 0;
+    currentPlayedMusicLine = 0;
+    currentPlayedMusicBlock = 0;
   }
 
+  readonly Swipe[] swipes = new Swipe[] { new Swipe(), new Swipe(), new Swipe(), new Swipe(), new Swipe(), new Swipe(), new Swipe(), new Swipe() };
+  void HandleSwipes() {
+    for (int c = 0; c < 8; c++) {
+      Swipe s = swipes[c];
+      if (s.vollen != 0) {
+        float step = s.voltime / s.vollen;
+        channels[c].SetVol(s.vole * step + s.vols * (1 - step));
+        s.voltime += Time.deltaTime;
+        if (s.voltime >= s.vollen) {
+          channels[c].SetVol(s.vole);
+          s.vollen = 0;
+        }
+      }
+
+      if (s.pitchlen != 0) {
+        float step = s.pitchtime / s.pitchlen;
+        Pitch(c, s.pitche * step + s.pitchs * (1 - step));
+        s.pitchtime += Time.deltaTime;
+        if (s.pitchtime >= s.pitchlen) {
+          Pitch(c, s.pitche);
+          s.pitchlen = 0;
+        }
+      }
+
+      if (s.panlen != 0) {
+        float step = s.pantime / s.panlen;
+        Pan(c, s.pane * step + s.pans * (1 - step));
+        s.pantime += Time.deltaTime;
+        if (s.pantime >= s.panlen) {
+          Pan(c, s.pane);
+          s.panlen = 0;
+        }
+      }
+    }
+  }
+
+  void PlayMusic() {
+    // Check for swipes
+    HandleSwipes();
+
+    // Wait the time to play
+    if (timeForNextBeat > 0) {
+      timeForNextBeat -= Time.deltaTime;
+      if (timeForNextBeat < 0)
+        timeForNextBeat = 0;
+      else
+        return;
+    }
+
+    // if block>max or <0 start from 0
+    if (currentPlayedMusicBlock < 0 || currentPlayedMusicBlock >= music.blocks.Count) {
+      currentPlayedMusicBlock = 0;
+      currentPlayedMusicLine = 0;
+    }
+
+    // Pick block
+    int id = music.mblocks[currentPlayedMusicBlock];
+    if (!music.blocks.ContainsKey(id)) throw new System.Exception("INvalid music block ID in music (" + currentPlayedMusicBlock + "th)");
+    Block block = music.blocks[id];
+
+    // has block current note?
+    // if note<0 start from 0
+    if (currentPlayedMusicLine < 0) currentPlayedMusicLine = 0;
+    // if note > blen go to next block
+    if (currentPlayedMusicLine >= block.len) {
+      currentPlayedMusicLine = 0;
+      currentPlayedMusicBlock++;
+      // no next block? restart if repeat
+      if (currentPlayedMusicBlock >= music.blocks.Count) {
+        currentPlayedMusicBlock = 0;
+        currentPlayedMusicLine = 0;
+        playing = false;
+      }
+      return;
+    }
+
+    // music: get and play note.
+    PlayNote(block);
+  }
+
+  void PlayNote(Block block) {
+    timeForNextBeat = 15f / block.bpm;
+    for (int c = 0; c < music.numvoices; c++) {
+      Note n = block.notes[currentPlayedMusicLine, c];
+      if (n.freq != 0) Play(c, n.freq, n.nlen * timeForNextBeat);
+      if (n.wave != 0) {
+        Wave w =  music.waves.ContainsKey(n.wave) ? music.waves[n.wave] : null;
+        if (w != null) {
+          Wave(c, w.wave, w.phase);
+          ADSR(c, w.a, w.d, w.s, w.r);
+          if (w.rawPCM != null) Wave(c, w.rawPCM);
+        }
+      }
+      if (n.vol != -1) {
+        if (n.vlen < 2) {
+          Volume(c, n.vol);
+        }
+        else {
+          swipes[c].vols = Volume(c);
+          swipes[c].vole = n.vol;
+          swipes[c].voltime = 0;
+          swipes[c].vollen = (n.vlen - 1) * 15f / block.bpm;
+        }
+      }
+      if (n.plen < 2) {
+        Pitch(c, n.pitch);
+      }
+      else if (n.plen != 255) {
+        swipes[c].pitchs = Pitch(c);
+        swipes[c].pitche = n.pitch;
+        swipes[c].pitchtime = 0;
+        swipes[c].pitchlen = (n.plen - 1) * 15f / block.bpm;
+      }
+      if (n.panlen < 2) {
+        Pan(c, n.pan);
+      }
+      else if (n.panlen != 255) {
+        swipes[c].pans = Pan(c);
+        swipes[c].pane = n.pan;
+        swipes[c].pantime = 0;
+        swipes[c].panlen = (n.panlen - 1) * 15f / block.bpm;
+      }
+    }
+    currentPlayedMusicLine++;
+  }
+
+
+  #endregion
 }
 
 public enum Waveform { Triangular=0, Saw=1, Square=2, Sin=3, Bass1=4, Bass2=5, Noise=6, PinkNoise=7, BrownNoise=8, BlackNoise=9, SoftNoise=10, Drums=11, SuperSaw=12, SuperSin=13, PCM=14 };

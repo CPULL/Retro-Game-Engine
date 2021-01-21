@@ -1174,12 +1174,24 @@ public class MusicEditor : MonoBehaviour {
   private void UpdateNoteWave(NoteData nd, int dir) {
     int id = nd.GetVal(NoteType.Wave);
     int newid = id;
-    for (int i = 0; i < waves.Count; i++) {
-      if (waves[i].id == id) {
-        if (i == waves.Count - 1)
-          newid = waves[0].id;
-        else
-          newid = waves[i + 1].id;
+    if (dir == 1) {
+      for (int i = 0; i < waves.Count; i++) {
+        if (waves[i].id == id) {
+          if (i == waves.Count - 1)
+            newid = waves[0].id;
+          else
+            newid = waves[i + 1].id;
+        }
+      }
+    }
+    else {
+      for (int i = 0; i < waves.Count; i++) {
+        if (waves[i].id == id) {
+          if (i == 0)
+            newid = waves[waves.Count - 1].id;
+          else
+            newid = waves[i - 1].id;
+        }
       }
     }
     nd.SetVal(NoteType.Wave, (short)newid);
