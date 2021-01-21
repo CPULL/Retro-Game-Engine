@@ -44,9 +44,6 @@ public class Audio : MonoBehaviour {
       outputs[i] = new float[512];
   }
 
-  private void Start() {
-  }
-
   IEnumerator DelayedInit() {
     yield return new WaitForSeconds(.1f);
     for (int i = 0; i < channels.Length; i++)

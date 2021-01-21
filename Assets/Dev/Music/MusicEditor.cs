@@ -295,6 +295,10 @@ public class MusicEditor : MonoBehaviour {
       }
       if (Input.GetKeyDown(KeyCode.C) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) { // Ctrl+C
         CopiedNotes.Clear();
+        if (selectionYStart == -1 || selectionYEnd == -1) {
+          selectionYStart = row;
+          selectionYEnd = row;
+        }
         for (int i = selectionYStart; i <= selectionYEnd; i++) {
           CopiedNotes.Add(currentBlock.chs[col][i].Duplicate());
         }
@@ -308,6 +312,10 @@ public class MusicEditor : MonoBehaviour {
       }
       if (Input.GetKeyDown(KeyCode.X) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) { // Ctrl+X
         CopiedNotes.Clear();
+        if (selectionYStart == -1 || selectionYEnd == -1) {
+          selectionYStart = row;
+          selectionYEnd = row;
+        }
         for (int i = selectionYStart; i <= selectionYEnd; i++) {
           CopiedNotes.Add(currentBlock.chs[col][i].Duplicate());
           currentBlock.chs[col][i].Zero();
@@ -624,8 +632,6 @@ public class MusicEditor : MonoBehaviour {
 
     return false;
   }
-
-  // FIXME Delete blocks is not working
 
   void SelectRow(int line) {
     if (status == MusicEditorStatus.Music) {
@@ -1291,7 +1297,7 @@ public class MusicEditor : MonoBehaviour {
       CellSelecteds[4].sprite = Unchecked;
     }
 
-    CellInfoTxt.text = "Row: " + row + "\nChannel: " + (col + 1);
+    CellInfoTxt.text = "Row: " + row + "  Channel: " + (col + 1);
   }
 
   public void ClearNote() {
@@ -1819,7 +1825,7 @@ public class MusicEditor : MonoBehaviour {
 
     NoteData bn = currentBlock.chs[col][row];
     bn.SetVal(NoteType.Wave, (short)w.id);
-    blines[row].note[col].SetWave(w.id, w.name, NoteTypeSprites[(int)NoteType.Wave]);
+    blines[row].note[col].SetValues(bn, NoteTypeSprites, freqs, noteNames, waves);
     ShowNote(bn);
   }
 

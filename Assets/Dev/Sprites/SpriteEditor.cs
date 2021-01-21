@@ -190,7 +190,6 @@ public class SpriteEditor : MonoBehaviour {
     }
   }
 
-  Color32 SelectedButton = new Color32(173, 184, 200, 255);
   public Button[] Buttons;
   public Sprite UISpriteSel;
   public Sprite UISpriteNot;
@@ -295,7 +294,7 @@ public class SpriteEditor : MonoBehaviour {
         if (px < 0)
           px += 2 * dy1;
         else {
-          if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) y = y + 1; else y -= 1;
+          if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) y += 1; else y -= 1;
           px += 2 * (dy1 - dx1);
         }
         DrawPixel(x, y, border);
@@ -314,7 +313,7 @@ public class SpriteEditor : MonoBehaviour {
         if (py <= 0)
           py += 2 * dx1;
         else {
-          if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) x = x + 1; else x -= 1;
+          if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) x += 1; else x -= 1;
           py += 2 * (dx1 - dy1);
         }
         DrawPixel(x, y, border);

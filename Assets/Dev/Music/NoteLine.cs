@@ -334,32 +334,12 @@ public class NoteLine : MonoBehaviour {
     return len;
   }
 
-  internal void SetWave(int id, string name, Sprite spr) {
-    /* FIXME
-
-    type = NoteType.Wave;
-    TypeImg.sprite = spr;
-    val = id;
-    len = 0;
-    back.sizeDelta = new Vector2(38, 0);
+  internal void SetZeroValues(Sprite[] sprites) {
     gameObject.SetActive(true);
-    ValTxt.fontSize = 14;
-    ValTxt.text = id + "\n" + name;
-    LenTxt.text = "";
-    */
-  }
-
-    internal void SetZeroValues(Sprite[] sprites) {
-    gameObject.SetActive(true);
-    /* FIXME
-    type = NoteType.Empty;
     TypeImg.sprite = sprites[0];
-    val = 0;
     ValTxt.text = "";
-    len = 0;
     LenTxt.text = "";
-    */
-    back.sizeDelta = new Vector2(38, 0 * 32);
+    back.sizeDelta = new Vector2(38, 0);
   }
 
 }
