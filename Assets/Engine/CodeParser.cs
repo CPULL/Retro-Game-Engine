@@ -166,13 +166,12 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgSqrt = new Regex("[\\s]*sqrt[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgPow = new Regex("[\\s]*pow[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgSpriteSz = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(([^,]*),([^,]*),([^,]*),([^,]*)(,[\\s]*[fn])?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(([^,]+),([^,]+),([^,]+)(,([^,]+))?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgSrot = new Regex("[\\s]*srot[\\s]*\\(([^,]+),([^,]+),([^,]+)?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgSPen = new Regex("[\\s]*spen[\\s]*\\(([^,]+),([^,]+)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgSTint = new Regex("[\\s]*stint[\\s]*\\(([^,]+),([^,]+)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgSScale = new Regex("[\\s]*sscale[\\s]*\\(([^,]+),([^,]+),([^,]+)\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSrot = new Regex("[\\s]*srot[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSPen = new Regex("[\\s]*spen[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSTint = new Regex("[\\s]*stint[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSScale = new Regex("[\\s]*sscale[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSound = new Regex("[\\s]*sound[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWave = new Regex("[\\s]*wave[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -624,25 +623,11 @@ public class CodeParser : MonoBehaviour {
     // [SPRITE] num, width, heigth, pointer[, filter]
     if (expected.IsGood(Expected.Val.Statement) && rgSprite.IsMatch(line)) {
       Match m = rgSprite.Match(line);
-      if (m.Groups.Count < 5) throw new Exception("Invalid Sprite() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.SPRITE, line, linenumber);
-      node.Add(ParseExpression(m.Groups[1].Value));
-      node.Add(ParseExpression(m.Groups[2].Value));
-      node.Add(ParseExpression(m.Groups[3].Value));
-      node.Add(ParseExpression(m.Groups[4].Value));
-      if (m.Groups.Count > 5 && !string.IsNullOrEmpty(m.Groups[5].Value)) node.sVal = "*";
-      parent.Add(node);
-      return;
-    }
-
-    // [SPRITE] num, pointer[, filter]
-    if (expected.IsGood(Expected.Val.Statement) && rgSpriteSz.IsMatch(line)) {
-      Match m = rgSpriteSz.Match(line);
-      if (m.Groups.Count < 3) throw new Exception("Invalid Sprite() command. Line: " + (linenumber + 1));
-      CodeNode node = new CodeNode(BNF.SPRITE, line, linenumber);
-      node.Add(ParseExpression(m.Groups[1].Value));
-      node.Add(ParseExpression(m.Groups[2].Value));
-      if (m.Groups.Count > 3 && !string.IsNullOrEmpty(m.Groups[3].Value)) node.sVal = "*";
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 4 && num != 5)
+        throw new Exception("Invalid Sprite(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }
@@ -650,12 +635,11 @@ public class CodeParser : MonoBehaviour {
     // [SPOS] num, x, y[, enble]
     if (expected.IsGood(Expected.Val.Statement) && rgSpos.IsMatch(line)) {
       Match m = rgSpos.Match(line);
-      if (m.Groups.Count < 4) throw new Exception("Invalid SPos() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.SPOS, line, linenumber);
-      node.Add(ParseExpression(m.Groups[1].Value));
-      node.Add(ParseExpression(m.Groups[2].Value));
-      node.Add(ParseExpression(m.Groups[3].Value));
-      if (m.Groups.Count > 5 && !string.IsNullOrEmpty(m.Groups[5].Value)) node.Add(ParseExpression(m.Groups[5].Value));
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 3 && num != 4)
+        throw new Exception("Invalid SPos(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }
@@ -663,11 +647,11 @@ public class CodeParser : MonoBehaviour {
     // [SROT] num, dir, flip
     if (expected.IsGood(Expected.Val.Statement) && rgSrot.IsMatch(line)) {
       Match m = rgSrot.Match(line);
-      if (m.Groups.Count < 4) throw new Exception("Invalid SRot() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.SROT, line, linenumber);
-      node.Add(ParseExpression(m.Groups[1].Value));
-      node.Add(ParseExpression(m.Groups[2].Value));
-      node.Add(ParseExpression(m.Groups[3].Value));
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 3)
+        throw new Exception("Invalid SRot(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }
@@ -675,10 +659,11 @@ public class CodeParser : MonoBehaviour {
     // [STINT] num, enable
     if (expected.IsGood(Expected.Val.Statement) && rgSTint.IsMatch(line)) {
       Match m = rgSTint.Match(line);
-      if (m.Groups.Count < 3) throw new Exception("Invalid STint() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.STINT, line, linenumber);
-      node.Add(ParseExpression(m.Groups[1].Value));
-      node.Add(ParseExpression(m.Groups[2].Value));
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 2)
+        throw new Exception("Invalid STint(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }
@@ -686,11 +671,11 @@ public class CodeParser : MonoBehaviour {
     // [SScale] num, enable
     if (expected.IsGood(Expected.Val.Statement) && rgSScale.IsMatch(line)) {
       Match m = rgSScale.Match(line);
-      if (m.Groups.Count < 4) throw new Exception("Invalid SScale() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.SSCALE, line, linenumber);
-      node.Add(ParseExpression(m.Groups[1].Value));
-      node.Add(ParseExpression(m.Groups[2].Value));
-      node.Add(ParseExpression(m.Groups[3].Value));
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 3)
+        throw new Exception("Invalid SScale(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }
@@ -698,10 +683,11 @@ public class CodeParser : MonoBehaviour {
     // [SPEN] num, enable
     if (expected.IsGood(Expected.Val.Statement) && rgSPen.IsMatch(line)) {
       Match m = rgSPen.Match(line);
-      if (m.Groups.Count < 3) throw new Exception("Invalid SPen() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.SPEN, line, linenumber);
-      node.Add(ParseExpression(m.Groups[1].Value));
-      node.Add(ParseExpression(m.Groups[2].Value));
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 2)
+        throw new Exception("Invalid SPen(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }

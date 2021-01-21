@@ -1730,12 +1730,6 @@ public class Arcade : MonoBehaviour {
 
 /*  TODO
 
-Add a way to read data directly from hex without the '0x' prefix
-
-TEXT:start/stop music, load music, get music position
-TEXT:voices in music (change play to use the defined voices)
-
-replace parameters in sprites regex and use the generic way to get parameters
 functions with numbers at the end are not working
 
   Tiles, with priority byte
