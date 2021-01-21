@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,9 +22,9 @@ public class SpriteEditor : MonoBehaviour {
   Pixel[] pixels;
   public Slider WidthSlider;
   public Slider HeightSlider;
-  public Text WidthSliderText;
-  public Text HeightSliderText;
-  public InputField Values;
+  public TextMeshProUGUI WidthSliderText;
+  public TextMeshProUGUI HeightSliderText;
+  public TMP_InputField Values;
   public Button LoadSubButton;
 
   public Image CurrentColor;
@@ -33,7 +34,7 @@ public class SpriteEditor : MonoBehaviour {
   Vector2Int start = Vector2Int.zero;
   int w, h;
   public Sprite[] boxes;
-  public Text Message;
+  public TextMeshProUGUI Message;
   readonly List<Color32[]> undo = new List<Color32[]>();
   Color32 lastPixelColor;
 

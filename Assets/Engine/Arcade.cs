@@ -218,12 +218,12 @@ public class Arcade : MonoBehaviour {
           b.SetActive(true);
           FileInfo fi = new FileInfo(file);
           string name = fi.Name.Substring(0, fi.Name.LastIndexOf('.'));
-          b.GetComponentInChildren<Text>().text = name;
-          if (name.Length > 35) b.GetComponentInChildren<Text>().fontSize = 12;
-          else if (name.Length > 32) b.GetComponentInChildren<Text>().fontSize = 14;
-          else if (name.Length > 29) b.GetComponentInChildren<Text>().fontSize = 16;
-          else if (name.Length > 25) b.GetComponentInChildren<Text>().fontSize = 18;
-          else if (name.Length > 16) b.GetComponentInChildren<Text>().fontSize = 20;
+          b.GetComponentInChildren<TextMeshProUGUI>().text = name;
+          if (name.Length > 35) b.GetComponentInChildren<TextMeshProUGUI>().fontSize = 12;
+          else if (name.Length > 32) b.GetComponentInChildren<TextMeshProUGUI>().fontSize = 14;
+          else if (name.Length > 29) b.GetComponentInChildren<TextMeshProUGUI>().fontSize = 16;
+          else if (name.Length > 25) b.GetComponentInChildren<TextMeshProUGUI>().fontSize = 18;
+          else if (name.Length > 16) b.GetComponentInChildren<TextMeshProUGUI>().fontSize = 20;
 
           b.GetComponent<Button>().onClick.AddListener(
             () => { 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,8 +13,8 @@ public class FileBrowser : MonoBehaviour {
   public GameObject FileTemplate;
   public GameObject FolderTemplate;
   public Transform Items;
-  public Text PathText;
-  public Text FileInfoText;
+  public TextMeshProUGUI PathText;
+  public TextMeshProUGUI FileInfoText;
   public Button LoadButton;
 
   private void Awake() {
@@ -45,7 +46,7 @@ public class FileBrowser : MonoBehaviour {
         GameObject go = Instantiate(FolderTemplate, Items);
         go.SetActive(true);
         go.GetComponent<Button>().onClick.AddListener(() => { SelectFolder(dir.FullName); });
-        go.GetComponentInChildren<Text>().text = dir.Name;
+        go.GetComponentInChildren<TextMeshProUGUI>().text = dir.Name;
       }
       foreach(string dp in fils) {
         FileInfo fi = new FileInfo(dp);
@@ -54,7 +55,7 @@ public class FileBrowser : MonoBehaviour {
         GameObject go = Instantiate(FileTemplate, Items);
         go.SetActive(true);
         go.GetComponent<Button>().onClick.AddListener(() => { SelectFile(fi.FullName); });
-        go.GetComponentInChildren<Text>().text = fi.Name;
+        go.GetComponentInChildren<TextMeshProUGUI>().text = fi.Name;
       }
     }
     catch (Exception e) {

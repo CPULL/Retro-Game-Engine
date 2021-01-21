@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using TMPro;
 
 public class PianoKeyboard : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler {
   public Color32 normalColor;
@@ -16,7 +17,7 @@ public class PianoKeyboard : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     overColor = normalColor;
     overColor.g = 200;
     overColor.b = 150;
-    note = transform.GetChild(0).GetComponent<Text>().text.Trim();
+    note = transform.GetChild(0).GetComponent<TextMeshProUGUI>().text.Trim();
   }
 
   public void OnPointerDown(PointerEventData eventData) {

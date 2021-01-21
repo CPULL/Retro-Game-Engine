@@ -49,18 +49,18 @@ public class MusicEditor : MonoBehaviour {
   public GameObject TitleBlockList;
   public GameObject TitleWaves;
 
-  public InputField NameInput;
-  public InputField NumVoicesInputField;
-  public InputField MusicBPMInputField;
-  public InputField MusicDefLenInputField;
-  public InputField BlockBPMInputField;
-  public InputField BlockLenInputField;
-  public InputField NoteLenInputField;
-  public InputField StepLenInputField;
+  public TMP_InputField NameInput;
+  public TMP_InputField NumVoicesInputField;
+  public TMP_InputField MusicBPMInputField;
+  public TMP_InputField MusicDefLenInputField;
+  public TMP_InputField BlockBPMInputField;
+  public TMP_InputField BlockLenInputField;
+  public TMP_InputField NoteLenInputField;
+  public TMP_InputField StepLenInputField;
 
   public TextMeshProUGUI CurrentBlockID;
-  public InputField BlockNameInput;
-  public InputField WaveNameInput;
+  public TMP_InputField BlockNameInput;
+  public TMP_InputField WaveNameInput;
   public TextMeshProUGUI WaveNameID;
   public TextMeshProUGUI WaveTypeName;
   public Image WaveTypeImg;
@@ -1216,8 +1216,8 @@ public class MusicEditor : MonoBehaviour {
   #region Cell **********************************************************************************************************************************************************
   public TextMeshProUGUI CellInfoTxt;
 
-  public InputField[] CellValInputs;
-  public InputField[] CellLenInputs;
+  public TMP_InputField[] CellValInputs;
+  public TMP_InputField[] CellLenInputs;
   public Image[] CellSelecteds;
   public Sprite Unchecked;
   public Sprite Checked;
@@ -1930,7 +1930,7 @@ public class MusicEditor : MonoBehaviour {
 
   #region Load/Save **********************************************************************************************************************************************************
 
-  public InputField Values;
+  public TMP_InputField Values;
   public Button LoadSubButton;
 
   public void Save() {

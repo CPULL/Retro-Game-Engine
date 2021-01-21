@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Text.RegularExpressions;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
@@ -8,23 +9,23 @@ using UnityEngine.UI;
 public class WaveformEditor : MonoBehaviour {
   public Audio sounds;
   public Slider Attack;
-  public Text AttackTxt;
+  public TextMeshProUGUI AttackTxt;
   public Slider Decay;
-  public Text DecayTxt;
+  public TextMeshProUGUI DecayTxt;
   public Slider Sustain;
-  public Text SustainTxt;
+  public TextMeshProUGUI SustainTxt;
   public Slider Release;
-  public Text ReleaseTxt;
+  public TextMeshProUGUI ReleaseTxt;
   public LineRenderer lineRenderer;
   public Toggle ShowOscillometer;
   public LineRenderer oscilloscope;
   public Slider Phase;
-  public Text PhaseTxt;
+  public TextMeshProUGUI PhaseTxt;
   public GameObject WaveValues;
   public Sprite[] WaveSprites;
   public string[] WaveNames;
   public Image WaveSprite;
-  public Text WaveName;
+  public TextMeshProUGUI WaveName;
   public GameObject LoadPCMButton;
 
   int attack = 0;
@@ -362,7 +363,7 @@ public class WaveformEditor : MonoBehaviour {
   }
 
 
-  public InputField Values;
+  public TMP_InputField Values;
   public Button LoadSubButton;
 
   public void PreLoad() {
