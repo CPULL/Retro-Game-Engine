@@ -1729,17 +1729,3 @@ public class Arcade : MonoBehaviour {
 }
 
 
-/*  TODO
-
-  Tiles, with priority byte
-  Documentation on the Wiki of Github
-  
-  disable sprites and tilemaps on errors?
-  once parser is completed use as keys shorter strings, removing the first two characters
-
-
-
-FUTURE: step by step debugger
-FUTURE: map keys
-
- */
