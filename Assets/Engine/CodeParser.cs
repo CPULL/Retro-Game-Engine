@@ -10,66 +10,99 @@ public class CodeParser : MonoBehaviour {
   Variables vars = null;
   readonly Expected expected = new Expected();
   readonly List<string> reserverdKeywords = new List<string> {
-    "if",
-    "else",
-    "for",
-    "while",
-    "frame",
-    "screen",
-    "write",
-    "line",
+    "atan2",
     "box",
     "circle",
-    "dateTime",
     "clr",
-    "len",
-    "plen",
-    "trim",
-    "substring",
-    "keyl",
-    "keyr",
-    "keyu",
-    "keyd",
+    "cos",
+    "data",
+    "deltatime",
+    "destroy",
+    "else",
+    "for",
+    "frame",
+    "getp",
+    "if",
     "keya",
-    "keyb",
-    "keyc",
-    "keyf",
-    "keye",
-    "keylu",
-    "keyru",
-    "keyuu",
-    "keydu",
-    "keyau",
-    "keybu",
-    "keycu",
-    "keyfu",
-    "keyeu",
-    "keyld",
-    "keyrd",
-    "keyud",
-    "keydd",
     "keyad",
+    "keyau",
+    "keyb",
     "keybd",
+    "keybu",
+    "keyc",
     "keycd",
-    "keyfd",
+    "keycu",
+    "keyd",
+    "keydd",
+    "keydu",
+    "keye",
     "keyed",
-    "sprite",
-    "spo",
-    "sound",
-    "wave",
-    "mute",
-    "volume",
-    "pitch",
-    "pan",
-    "musicload",
-    "musicplay",
-    "musicstop",
+    "keyesc",
+    "keyescd",
+    "keyescu",
+    "keyeu",
+    "keyf",
+    "keyfd",
+    "keyfire",
+    "keyfired",
+    "keyfireu",
+    "keyfu",
+    "keyh",
+    "keyhd",
+    "keyhu",
+    "keyl",
+    "keyld",
+    "keylu",
+    "keyr",
+    "keyrd",
+    "keyru",
+    "keyu",
+    "keyud",
+    "keyuu",
+    "keyv",
+    "keyvd",
+    "keyvu",
+    "keyx",
+    "keyxd",
+    "keyxu",
+    "keyy",
+    "keyyd",
+    "keyyu",
+    "line",
+    "loadmusic",
     "musicpos",
     "musicvoices",
-    "",
-    "",
-    "",
-    "",
+    "mute",
+    "name",
+    "pan",
+    "pitch",
+    "playmusic",
+    "pow",
+    "ram",
+    "return",
+    "screen",
+    "screen",
+    "setp",
+    "sin",
+    "sound",
+    "spen",
+    "spos",
+    "sprite",
+    "sqrt",
+    "srot",
+    "sscale",
+    "start",
+    "stint",
+    "stopmusic",
+    "tan",
+    "tilemap",
+    "tilepos",
+    "update",
+    "volume",
+    "wait",
+    "wave",
+    "while",
+    "write",
   };
 
   #region Regex
@@ -172,6 +205,9 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgSPen = new Regex("[\\s]*spen[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSTint = new Regex("[\\s]*stint[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSScale = new Regex("[\\s]*sscale[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  
+  readonly Regex rgTilemap = new Regex("[\\s]*tilemap[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgTilepos = new Regex("[\\s]*tilepos[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSound = new Regex("[\\s]*sound[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWave = new Regex("[\\s]*wave[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -688,6 +724,30 @@ public class CodeParser : MonoBehaviour {
       int num = ParsePars(node, pars);
       if (num != 2)
         throw new Exception("Invalid SPen(), wrong number of parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [Tilemap] id, addressmap, w, h, address tiles, tw, th [, sourcewidth]
+    if (expected.IsGood(Expected.Val.Statement) && rgTilemap.IsMatch(line)) {
+      Match m = rgTilemap.Match(line);
+      CodeNode node = new CodeNode(BNF.TILEMAP, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 8 && num != 9)
+        throw new Exception("Invalid Tilemap(), wrong number of parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [TilePos] id, scrollx, scrolly, order [, enabled]
+    if (expected.IsGood(Expected.Val.Statement) && rgTilepos.IsMatch(line)) {
+      Match m = rgTilepos.Match(line);
+      CodeNode node = new CodeNode(BNF.TILEPOS, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 4 && num != 5)
+        throw new Exception("Invalid TilePos(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }

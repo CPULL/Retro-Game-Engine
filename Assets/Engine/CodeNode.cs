@@ -21,6 +21,8 @@ public class CodeNode {
   internal CodeNode CN4 { get { return children != null && children.Count > 3 ? children[3] : null; } }
   internal CodeNode CN5 { get { return children != null && children.Count > 4 ? children[4] : null; } }
   internal CodeNode CN6 { get { return children != null && children.Count > 5 ? children[5] : null; } }
+  internal CodeNode CN7 { get { return children != null && children.Count > 6 ? children[6] : null; } }
+  internal CodeNode CN8 { get { return children != null && children.Count > 7 ? children[7] : null; } }
 
   public CodeNode(BNF bnf, string line, int linenum) {
     type = bnf;
@@ -201,7 +203,7 @@ public class CodeNode {
             CN4.ToString(indent, true) + ", " +
             CN5.ToString(indent, true);
           if (children.Count > 5)
-            res += children[5].ToString(indent, true) + ")";
+            res += CN6.ToString(indent, true) + ")";
           else
             res += ")";
           break;
@@ -214,7 +216,7 @@ public class CodeNode {
             CN4.ToString(indent, true) + ", " +
             CN5.ToString(indent, true);
           if (children.Count > 5)
-            res += children[5].ToString(indent, true) + ")";
+            res += CN6.ToString(indent, true) + ")";
           else
             res += ")";
           break;
@@ -578,6 +580,8 @@ public enum BNF {
   MUSICSTOP,
   MUSICPOS,
   MUSICVOICES,
+  TILEMAP,
+  TILEPOS,
   NOP,
 }
 

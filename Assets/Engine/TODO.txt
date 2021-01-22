@@ -12,7 +12,14 @@ have the wave generation to be perfectly cyclic so we will avoid "thicks" when t
 disable sprites and tilemaps on errors?
 once parser is completed use as keys shorter strings, removing the first two characters
 
-text size too big for notes (change it by code)
-
 FUTURE: step by step debugger
 FUTURE: map keys
+
+
+
+add ToString for the missing BNF values
+
+
+
+tilemap id, addressmap, w, h, address tiles, tw, th
+tilemappos id, scrollx, scrolly, order

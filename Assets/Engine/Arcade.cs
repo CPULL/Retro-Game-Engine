@@ -802,6 +802,13 @@ public class Arcade : MonoBehaviour {
 
   #endregion Sprites
 
+  #region Tilemap ****************************************************************************************************************************************************************************************************
+  // tilemap id, addressmap, w, h, address tiles, tw, th [, sourcewidth]
+  // tilepos id, scrollx, scrolly, order [, enabled]
+
+
+  #endregion Tilemap
+
   bool Execute(CodeNode n) {
 //    Debug.Log(n);
     try {
