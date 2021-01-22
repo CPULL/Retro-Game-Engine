@@ -23,3 +23,6 @@ add ToString for the missing BNF values
 
 tilemap id, addressmap, w, h, address tiles, tw, th
 tilemappos id, scrollx, scrolly, order
+
+A tilemap is a set of srites (WxH), with a given position, sort order
+A tile is just a texture with a defined WxH

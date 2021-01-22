@@ -89,8 +89,8 @@ public class Arcade : MonoBehaviour {
     if (nowScreenW != lastScreenW || nowScreenH != lastScreenH) {
       lastScreenW = nowScreenW;
       lastScreenH = nowScreenH;
-      scaleW = lastScreenW / 256f;
-      scaleH = lastScreenW / 160f;
+      scaleW = lastScreenW / (float)sw;
+      scaleH = lastScreenH / (float)sh;
 
       // update the height according to the aspect ratio
       float heightAccordingToWidth = nowScreenW / 16.0f * 9.0f;
@@ -806,6 +806,27 @@ public class Arcade : MonoBehaviour {
   // tilemap id, addressmap, w, h, address tiles, tw, th [, sourcewidth]
   // tilepos id, scrollx, scrolly, order [, enabled]
 
+  Dictionary<byte, Tilemap> tilemaps = new Dictionary<byte, Tilemap>();
+  public Transform[] Layers;
+  public GameObject TilemapTemplate;
+
+  void Tilemap(byte id, byte order, int start) {
+    if (order < 0) order = 0;
+    if (order > 8) order = 8;
+
+    // check if we have the tilemap with this ID
+    Tilemap t = null;
+    if (tilemaps.ContainsKey(id)) {
+      t = tilemaps[id];
+      t.Destroy();
+    }
+    else {
+      t = Instantiate(TilemapTemplate, Layers[order]).GetComponent<Tilemap>();
+      t.gameObject.SetActive(true);
+      tilemaps.Add(id, t);
+    }
+    t.Set(mem, start, order, scaleW, scaleH);
+  }
 
   #endregion Tilemap
 
@@ -1040,13 +1061,13 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.BOX: {
-          Value x1 = Evaluate(n.children[0]);
-          Value y1 = Evaluate(n.children[1]);
-          Value x2 = Evaluate(n.children[2]);
-          Value y2 = Evaluate(n.children[3]);
-          Value col = Evaluate(n.children[4]);
+          Value x1 = Evaluate(n.CN1);
+          Value y1 = Evaluate(n.CN2);
+          Value x2 = Evaluate(n.CN3);
+          Value y2 = Evaluate(n.CN4);
+          Value col = Evaluate(n.CN5);
           if (n.children.Count > 5) {
-            Value back = Evaluate(n.children[5]);
+            Value back = Evaluate(n.CN6);
             Box(x1.ToInt(culture), y1.ToInt(culture), x2.ToInt(culture), y2.ToInt(culture), col.ToByte(culture), back.ToByte(culture));
           }
           else
@@ -1055,13 +1076,13 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.CIRCLE: {
-          Value cx = Evaluate(n.children[0]);
-          Value cy = Evaluate(n.children[1]);
-          Value rx = Evaluate(n.children[2]);
-          Value ry = Evaluate(n.children[3]);
-          Value col = Evaluate(n.children[4]);
+          Value cx = Evaluate(n.CN1);
+          Value cy = Evaluate(n.CN2);
+          Value rx = Evaluate(n.CN3);
+          Value ry = Evaluate(n.CN4);
+          Value col = Evaluate(n.CN5);
           if (n.children.Count > 5) {
-            Value back = Evaluate(n.children[5]);
+            Value back = Evaluate(n.CN6);
             Circle(cx.ToFlt(culture), cy.ToFlt(culture), rx.ToFlt(culture), ry.ToFlt(culture), col.ToByte(culture), back.ToByte(culture));
           }
           else
@@ -1243,11 +1264,11 @@ public class Arcade : MonoBehaviour {
           if (n.children.Count == 8) audioManager.MusicVoices(
             Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture),
             Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToByte(culture), Evaluate(n.CN6).ToByte(culture),
-            Evaluate(n.children[6]).ToByte(culture), Evaluate(n.children[7]).ToByte(culture));
+            Evaluate(n.CN7).ToByte(culture), Evaluate(n.CN8).ToByte(culture));
           if (n.children.Count == 7) audioManager.MusicVoices(
             Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture),
             Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToByte(culture), Evaluate(n.CN6).ToByte(culture),
-            Evaluate(n.children[6]).ToByte(culture));
+            Evaluate(n.CN7).ToByte(culture));
           if (n.children.Count == 6) audioManager.MusicVoices(
             Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture),
             Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToByte(culture), Evaluate(n.CN6).ToByte(culture));
@@ -1273,6 +1294,11 @@ public class Arcade : MonoBehaviour {
 
         case BNF.MUSICSTOP: {
           audioManager.StopMusic();
+          return false;
+        }
+
+        case BNF.TILEMAP: {
+          
           return false;
         }
 
