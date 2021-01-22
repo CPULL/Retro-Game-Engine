@@ -734,7 +734,7 @@ public class CodeParser : MonoBehaviour {
       CodeNode node = new CodeNode(BNF.TILEMAP, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 8 && num != 9)
+      if (num != 3)
         throw new Exception("Invalid Tilemap(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;

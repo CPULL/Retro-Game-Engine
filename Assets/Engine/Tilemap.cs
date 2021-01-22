@@ -48,7 +48,7 @@ public class Tilemap : MonoBehaviour {
         rowincrease *= format;
       }
       int dst = 0;
-      for (int y = th- 1; y >= 0; y--) {
+      for (int y = th - 1; y >= 0; y--) {
         for (int x = 0; x < tw; x++) {
           int p = pos + x + rowincrease * y;
           if (p >= limit) continue;
@@ -64,34 +64,44 @@ public class Tilemap : MonoBehaviour {
           raw[dst + 3] = a;
           dst += 4;
         }
+        if (format == 0)
+          pos += tw * th;
+        else
+          pos += tw;
       }
       texture.LoadRawTextureData(raw);
       texture.Apply();
 
       TileDef td = new TileDef(i, texture);
-      tileDefs.Add(i, td);
+      tileDefs[i] = td;
     }
 
     // 3) initialize the array of tiles, Instantiate(TileTemplate) and set the texture
     tiles = new Tile[w, h];
     gridLayout.cellSize = new Vector2(tw, th); // FIXME find the right value
     gridLayout.constraintCount = w;
+    string dbg = "";
     for (int i = 0; i < w; i++) {
       for (int j = 0; j < h; j++) {
         Tile tile = Instantiate(TileTemplate, transform).GetComponent<Tile>();
         tiles[i, j] = tile;
+        tile.gameObject.SetActive(true);
         byte def = data[mapstart++];
         byte rot = data[mapstart++];
 
         // Set it up with the right texture
         tile.id = def;
-        tile.sprite.texture = tileDefs[def].texture;
-
+        if (tileDefs.ContainsKey(def))
+          tile.sprite.texture = tileDefs[def].texture;
+        else
+          Debug.Log("Invalid tile key " + def + " position " + (mapstart - 2));
+        dbg += def + " ";
         // FIXME scale the object
 
         // FIXME rotate and flip the object (like a sprite)
       }
     }
+    Debug.Log(dbg);
   }
 
   private void Pos(int px, int py, byte order) {

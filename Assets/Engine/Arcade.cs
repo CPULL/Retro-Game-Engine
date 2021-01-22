@@ -815,7 +815,7 @@ public class Arcade : MonoBehaviour {
     if (order > 8) order = 8;
 
     // check if we have the tilemap with this ID
-    Tilemap t = null;
+    Tilemap t;
     if (tilemaps.ContainsKey(id)) {
       t = tilemaps[id];
       t.Destroy();
@@ -1298,7 +1298,7 @@ public class Arcade : MonoBehaviour {
         }
 
         case BNF.TILEMAP: {
-          
+          Tilemap(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToInt(culture));
           return false;
         }
 
