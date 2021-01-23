@@ -2,30 +2,23 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Tilemap : MonoBehaviour {
+public class TMap : MonoBehaviour {
   int w, h;
-  int x, y;
   int tw, th;
-  byte order;
-  Dictionary<byte, TileDef> tileDefs = new Dictionary<byte, TileDef>();
+  readonly Dictionary<byte, TileDef> tileDefs = new Dictionary<byte, TileDef>();
   Tile[,] tiles;
   public GameObject TileTemplate;
   public GridLayoutGroup gridLayout;
 
 
 
-  public void Set(byte[] data, int start, byte order, float screenw, float screenh) {
-    //   width, height, tilewidth, tileheight,
-    //numtiles format[0 = tile by tile, else is number of horizontal tiles in the big sprite]
+  public void Set(byte[] data, int start, float screenw, float screenh) {
+    //   width, height, tilewidth, tileheight, numtiles
 
     // 1) define the grid parameters and the scale
-
     int pos = start;
-    this.order = order;
     w = data[pos++];
     h = data[pos++];
-    x = 0;
-    y = 0;
     tw = data[pos++];
     th = data[pos++];
     int numtiles = data[pos++];
@@ -33,7 +26,6 @@ public class Tilemap : MonoBehaviour {
     if (tw > 32) tw = 32;
     if (th < 8) th = 8;
     if (th > 32) th = 32;
-    byte format = data[pos++];
 
     int mapstart = pos; // Save for later
     pos += w * h * 2;
@@ -43,14 +35,10 @@ public class Tilemap : MonoBehaviour {
     int limit = data.Length;
     for (byte i = 0; i < numtiles; i++) {
       Texture2D texture = new Texture2D(tw, th, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
-      int rowincrease = tw;
-      if (format != 0) { // Single sprite with multiple tiles
-        rowincrease *= format;
-      }
       int dst = 0;
       for (int y = th - 1; y >= 0; y--) {
         for (int x = 0; x < tw; x++) {
-          int p = pos + x + rowincrease * y;
+          int p = pos + x + tw * y;
           if (p >= limit) continue;
           byte col = data[p];
           byte a = (byte)(255 - ((col & 0b11000000) >> 6) * 85);
@@ -64,11 +52,8 @@ public class Tilemap : MonoBehaviour {
           raw[dst + 3] = a;
           dst += 4;
         }
-        if (format == 0)
-          pos += tw * th;
-        else
-          pos += tw;
       }
+      pos += tw * th;
       texture.LoadRawTextureData(raw);
       texture.Apply();
 
@@ -80,7 +65,6 @@ public class Tilemap : MonoBehaviour {
     tiles = new Tile[w, h];
     gridLayout.cellSize = new Vector2(tw, th); // FIXME find the right value
     gridLayout.constraintCount = w;
-    string dbg = "";
     for (int i = 0; i < w; i++) {
       for (int j = 0; j < h; j++) {
         Tile tile = Instantiate(TileTemplate, transform).GetComponent<Tile>();
@@ -95,19 +79,16 @@ public class Tilemap : MonoBehaviour {
           tile.sprite.texture = tileDefs[def].texture;
         else
           Debug.Log("Invalid tile key " + def + " position " + (mapstart - 2));
-        dbg += def + " ";
         // FIXME scale the object
 
         // FIXME rotate and flip the object (like a sprite)
       }
     }
-    Debug.Log(dbg);
   }
 
+  /*
   private void Pos(int px, int py, byte order) {
-    x = px;
-    y = py;
-    this.order = order;
+    // FIXME
   }
 
   void SetTile(int x, int y, byte tile, byte rot) {
@@ -123,6 +104,7 @@ public class Tilemap : MonoBehaviour {
 
   }
 
+  */
   public void Destroy() {
     // FIXME release all the images and all the textures
   }

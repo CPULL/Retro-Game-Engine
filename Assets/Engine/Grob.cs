@@ -2,8 +2,8 @@
 using UnityEngine.UI;
 
 public class Grob {
-  RawImage sprite;
-  RectTransform rt;
+  readonly RawImage sprite;
+  readonly RectTransform rt;
   Texture2D texture;
   byte[] raw;
   public bool notDefined = true;

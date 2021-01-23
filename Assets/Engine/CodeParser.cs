@@ -420,7 +420,7 @@ public class CodeParser : MonoBehaviour {
     line = rgString.Replace(line, m => {
       string str = m.Groups[2].Value;
       CodeNode n = new CodeNode(BNF.STR, GenId("ST"), line, linenumber) {
-        sVal = str.Replace("ˠ", "\"")
+        sVal = str.Replace("ˠ", "\"").Replace("\\n", "\n")
       };
       nodes[n.id] = n;
       return n.id;

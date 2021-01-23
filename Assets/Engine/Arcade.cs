@@ -806,7 +806,7 @@ public class Arcade : MonoBehaviour {
   // tilemap id, addressmap, w, h, address tiles, tw, th [, sourcewidth]
   // tilepos id, scrollx, scrolly, order [, enabled]
 
-  Dictionary<byte, Tilemap> tilemaps = new Dictionary<byte, Tilemap>();
+  readonly Dictionary<byte, TMap> tilemaps = new Dictionary<byte, TMap>();
   public Transform[] Layers;
   public GameObject TilemapTemplate;
 
@@ -815,17 +815,17 @@ public class Arcade : MonoBehaviour {
     if (order > 8) order = 8;
 
     // check if we have the tilemap with this ID
-    Tilemap t;
+    TMap t;
     if (tilemaps.ContainsKey(id)) {
       t = tilemaps[id];
       t.Destroy();
     }
     else {
-      t = Instantiate(TilemapTemplate, Layers[order]).GetComponent<Tilemap>();
+      t = Instantiate(TilemapTemplate, Layers[order]).GetComponent<TMap>();
       t.gameObject.SetActive(true);
       tilemaps.Add(id, t);
     }
-    t.Set(mem, start, order, scaleW, scaleH);
+    t.Set(mem, start, scaleW, scaleH);
   }
 
   #endregion Tilemap
