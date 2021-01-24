@@ -316,6 +316,29 @@ public class CodeNode {
         case BNF.RETURN: return (sameLine ? "" : id) + "return " + (CN1 == null ? "" : CN1.ToString(indent, true));
 
         case BNF.NOP: return "";
+        case BNF.SETP: return "SetPixel(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ", " + CN3?.ToString(indent, true) + ")";
+        case BNF.GETP: return "GetPixel(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ")";
+        case BNF.SIN: return "Sin(" + CN1?.ToString(indent, true) + ")";
+        case BNF.COS: return "Cos(" + CN1?.ToString(indent, true) + ")";
+        case BNF.TAN: return "Tan(" + CN1?.ToString(indent, true) + ")";
+        case BNF.ATAN2: return "Atan2(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ")";
+        case BNF.SQR: return "Sqrt(" + CN1?.ToString(indent, true) + ")";
+        case BNF.POW: return "Pow(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ")";
+        case BNF.SUBSTRING: return "SubString(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ")";
+        case BNF.TRIM: return "Trim()";
+        case BNF.SOUND: return "FIXME";
+        case BNF.WAVE: return "FIXME";
+        case BNF.MUTE: return "FIXME";
+        case BNF.VOLUME: return "FIXME";
+        case BNF.PITCH: return "FIXME";
+        case BNF.PAN: return "FIXME";
+        case BNF.MUSICLOAD: return "FIXME";
+        case BNF.MUSICPLAY: return "FIXME";
+        case BNF.MUSICSTOP: return "FIXME";
+        case BNF.MUSICPOS: return "FIXME";
+        case BNF.MUSICVOICES: return "FIXME";
+        case BNF.TILEMAP: return "FIXME";
+        case BNF.TILEPOS: return "FIXME";
 
         default:
           res += "[[Missing:" + type + "]]";

@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
@@ -6,7 +7,10 @@ using UnityEngine.UI;
 
 public class TilemapEditor : MonoBehaviour {
   public Transform map;
-  public GameObject TileTemplate;
+  public GameObject TileInMapTemplate;
+  public GameObject TileInPaletteTemplate;
+
+  Dictionary<byte, TileInPalette> Palette = new Dictionary<byte, TileInPalette>();
 
   private void Start() {
     AlterMapSize(false);
@@ -31,6 +35,7 @@ public class TilemapEditor : MonoBehaviour {
   public Slider TileSizeH;
   Coroutine updateTileSize;
   public GridLayoutGroup mapGrid;
+  public GridLayoutGroup tilesGrid;
   int w = 24, h = 16;
   int tw = 16, th = 16;
   public void AlterMapSize(bool fromInputField) {
@@ -73,14 +78,15 @@ public class TilemapEditor : MonoBehaviour {
       Destroy(map.GetChild(size + i).gameObject);
     }
     for (int i = map.childCount; i < size; i++) {
-      TileClickHandler t = Instantiate(TileTemplate, map).GetComponent<TileClickHandler>();
+      TileInMap t = Instantiate(TileInMapTemplate, map).GetComponent<TileInMap>();
       t.id = 0;
+      t.CallBack = SelectTileInMap;
       t.gameObject.SetActive(true);
     }
 
     for (int y = 0; y < MapSizeH.value; y++)
       for (int x = 0; x < MapSizeW.value; x++) {
-        TileClickHandler t = map.GetChild(x + w * y).GetComponent<TileClickHandler>();
+        TileInMap t = map.GetChild(x + w * y).GetComponent<TileInMap>();
         t.x = (byte)x;
         t.y = (byte)y;
       }
@@ -112,17 +118,58 @@ public class TilemapEditor : MonoBehaviour {
     else {
       TileSizeField.SetTextWithoutNotify(TileSizeW.value + "x" + TileSizeH.value);
     }
-    if (updateTileSize == null) {
-      updateTileSize = StartCoroutine(UpdateTileSize());
-    }
   }
 
-  IEnumerator UpdateTileSize() {
-    yield return new WaitForSeconds(1);
+  public void UpdateTileSize() {
+    if (tw == (int)TileSizeW.value && th == (int)TileSizeH.value) return;
     tw = (int)TileSizeW.value;
     th = (int)TileSizeH.value;
     mapGrid.cellSize = new Vector2(tw * 5, th * 5);
     updateTileSize = null;
+
+    // Warning, we have to alter all raw data of all tile palettes
+    foreach(Transform tr in tilesGrid.transform) {
+      TileInPalette tl = tr.GetComponent<TileInPalette>();
+      tl.UpdateSize(tw, th);
+    }
+    foreach(Transform tr in mapGrid.transform) {
+      TileInMap tl = tr.GetComponent<TileInMap>();
+      tl.img.texture = Palette[tl.id].img.texture;
+    }
+  }
+
+
+  public void CreateNewTile() {
+    byte min = 0;
+    foreach(Transform tr in tilesGrid.transform) {
+      TileInPalette tl = tr.GetComponent<TileInPalette>();
+      if (min < tl.id) min = tl.id;
+    }
+    TileInPalette t = Instantiate(TileInPaletteTemplate, tilesGrid.transform).GetComponent<TileInPalette>();
+    t.Setup((byte)(min + 1), SelectTileInPalette, tw, th);
+    t.gameObject.SetActive(true);
+    Palette[t.id] = t;
+  }
+
+  public void EditTile() {
+    if (currentPaletteTile == null) return;
+  }
+
+  public void DeleteTile() {
+    if (currentPaletteTile == null) return;
+    // FIXME show a warning
+  }
+
+  TileInPalette currentPaletteTile = null;
+  TileInMap currentPaletteMap = null;
+  public void SelectTileInPalette(TileInPalette tile) {
+    if (currentPaletteTile != null) currentPaletteTile.Deselect();
+    currentPaletteTile = tile;
+  }
+
+  public void SelectTileInMap(TileInMap tile) {
+    if (currentPaletteMap != null) currentPaletteMap.Deselect();
+    currentPaletteMap = tile;
   }
 
 

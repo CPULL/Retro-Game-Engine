@@ -19,7 +19,7 @@ FUTURE: map keys
 
 add ToString for the missing BNF values
 
-
+in spriteeditor do not remove the provious draw mode, and make it visible when selected
 
 Complete tilemaps:
 * size according to screen
