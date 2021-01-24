@@ -39,4 +39,8 @@ public class TileInMap : MonoBehaviour, IPointerClickHandler, IPointerEnterHandl
     selected = false;
     border.color = Normal;
   }
+
+  public void Select() {
+    border.color = Over;
+  }
 }

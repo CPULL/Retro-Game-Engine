@@ -9,6 +9,7 @@ public class TilemapEditor : MonoBehaviour {
   public Transform map;
   public GameObject TileInMapTemplate;
   public GameObject TileInPaletteTemplate;
+  public Texture2D emptyTexture;
 
   Dictionary<byte, TileInPalette> Palette = new Dictionary<byte, TileInPalette>();
 
@@ -33,7 +34,6 @@ public class TilemapEditor : MonoBehaviour {
   public TMP_InputField TileSizeField;
   public Slider TileSizeW;
   public Slider TileSizeH;
-  Coroutine updateTileSize;
   public GridLayoutGroup mapGrid;
   public GridLayoutGroup tilesGrid;
   int w = 24, h = 16;
@@ -81,6 +81,7 @@ public class TilemapEditor : MonoBehaviour {
       TileInMap t = Instantiate(TileInMapTemplate, map).GetComponent<TileInMap>();
       t.id = 0;
       t.CallBack = SelectTileInMap;
+      t.img.texture = emptyTexture;
       t.gameObject.SetActive(true);
     }
 
@@ -125,7 +126,6 @@ public class TilemapEditor : MonoBehaviour {
     tw = (int)TileSizeW.value;
     th = (int)TileSizeH.value;
     mapGrid.cellSize = new Vector2(tw * 5, th * 5);
-    updateTileSize = null;
 
     // Warning, we have to alter all raw data of all tile palettes
     foreach(Transform tr in tilesGrid.transform) {
@@ -165,11 +165,6 @@ public class TilemapEditor : MonoBehaviour {
   public void SelectTileInPalette(TileInPalette tile) {
     if (currentPaletteTile != null) currentPaletteTile.Deselect();
     currentPaletteTile = tile;
-  }
-
-  public void SelectTileInMap(TileInMap tile) {
-    if (currentPaletteMap != null) currentPaletteMap.Deselect();
-    currentPaletteMap = tile;
   }
 
 
@@ -234,6 +229,188 @@ public class TilemapEditor : MonoBehaviour {
     return data;
   }
 
+
+  public Image[] SelectionButtons;
+
+  DrawMode drawMode = DrawMode.None;
+  enum DrawMode { None, Draw, Line, Box, Fill, Clear };
+  bool lineStart = false;
+  int x1, x2, y1, y2;
+
+  public void Draw() {
+    drawMode = DrawMode.Draw;
+    for (int i = 0; i < SelectionButtons.Length; i++)
+      SelectionButtons[i].enabled = i == 0;
+    lineStart = false;
+  }
+
+  public void Line() {
+    drawMode = DrawMode.Line;
+    for (int i = 0; i < SelectionButtons.Length; i++)
+      SelectionButtons[i].enabled = i == 1;
+    lineStart = true;
+  }
+
+  public void Box() {
+    drawMode = DrawMode.Box;
+    for (int i = 0; i < SelectionButtons.Length; i++)
+      SelectionButtons[i].enabled = i == 2;
+    lineStart = false;
+  }
+
+  public void Fill() {
+    drawMode = DrawMode.Fill;
+    for (int i = 0; i < SelectionButtons.Length; i++)
+      SelectionButtons[i].enabled = i == 3;
+    lineStart = false;
+  }
+
+  public void Clear() {
+    drawMode = DrawMode.Clear;
+    for (int i = 0; i < SelectionButtons.Length; i++)
+      SelectionButtons[i].enabled = i == 4;
+    lineStart = false;
+  }
+
+
+  public void SelectTileInMap(TileInMap tile) {
+    if (currentPaletteMap != null) currentPaletteMap.Deselect();
+    currentPaletteMap = tile;
+
+
+    switch (drawMode) {
+      case DrawMode.Draw:
+        if (currentPaletteTile == null) return;
+        tile.img.texture = currentPaletteTile.img.texture;
+        tile.id = currentPaletteTile.id;
+        break;
+
+      case DrawMode.Clear:
+        tile.img.texture = emptyTexture;
+        tile.id = 0;
+        break;
+
+
+      case DrawMode.Line: {
+        if (lineStart) {
+          x1 = tile.x;
+          y2 = tile.y;
+          tile.border.color = Color.red;
+          lineStart = false;
+        }
+        else {
+          x2 = tile.x;
+          y2 = tile.y;
+          DrawLine(x1, y1, x2, y2, false); // Reset color here
+          lineStart = true;
+        }
+
+      }
+      break;
+
+    }
+
+  }
+
+  void DrawLine(int x1, int y1, int x2, int y2, bool border) {
+    if (!border) {
+      //SetUndo(false);
+    }
+    int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
+    dx = x2 - x1; dy = y2 - y1;
+    if (dx == 0) { // Vertical
+      if (y2 < y1) { int tmp = y1; y1 = y2; y2 = tmp; }
+      for (y = y1; y <= y2; y++) {
+        TileInMap t = map.GetChild(x1 * w * y).GetComponent<TileInMap>();
+        if (border) t.Select();
+        if (currentPaletteTile == null) return;
+        t.img.texture = currentPaletteTile.img.texture;
+        t.id = currentPaletteTile.id;
+      }
+      lineStart = true;
+      return;
+    }
+
+    if (dy == 0) { // Horizontal
+      if (x2 < x1) { int tmp = x1; x1 = x2; x2 = tmp; }
+      for (x = x1; x <= x2; x++) {
+        TileInMap t = map.GetChild(x * w * y1).GetComponent<TileInMap>();
+        if (border) t.Select();
+        if (currentPaletteTile == null) return;
+        t.img.texture = currentPaletteTile.img.texture;
+        t.id = currentPaletteTile.id;
+      }
+      lineStart = true;
+      return;
+    }
+
+    // Diagonal
+    dx1 = dx;
+    if (dx1 < 0) dx1 = -dx1;
+    dy1 = dy;
+    if (dy1 < 0) dy1 = -dy1;
+    px = 2 * dy1 - dx1; py = 2 * dx1 - dy1;
+    if (dy1 <= dx1) {
+      if (dx >= 0) {
+        x = x1; y = y1; xe = x2;
+      }
+      else {
+        x = x2; y = y2; xe = x1;
+      }
+
+      TileInMap t = map.GetChild(x * w * y).GetComponent<TileInMap>();
+      if (border) t.Select();
+      if (currentPaletteTile != null) {
+        t.img.texture = currentPaletteTile.img.texture;
+        t.id = currentPaletteTile.id;
+      }
+
+      for (i = 0; x < xe; i++) {
+        x += 1;
+        if (px < 0)
+          px += 2 * dy1;
+        else {
+          if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) y += 1; else y -= 1;
+          px += 2 * (dy1 - dx1);
+        }
+        t = map.GetChild(x * w * y).GetComponent<TileInMap>();
+        if (border) t.Select();
+        if (currentPaletteTile != null) {
+          t.img.texture = currentPaletteTile.img.texture;
+          t.id = currentPaletteTile.id;
+        }
+      }
+    }
+    else {
+      if (dy >= 0) {
+        x = x1; y = y1; ye = y2;
+      }
+      else {
+        x = x2; y = y2; ye = y1;
+      }
+      TileInMap t = map.GetChild(x * w * y).GetComponent<TileInMap>();
+      if (border) t.Select();
+      if (currentPaletteTile != null) {
+        t.img.texture = currentPaletteTile.img.texture;
+        t.id = currentPaletteTile.id;
+      }
+      for (i = 0; y < ye; i++) {
+        y += 1;
+        if (py <= 0)
+          py += 2 * dx1;
+        else {
+          if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) x += 1; else x -= 1;
+          py += 2 * (dx1 - dy1);
+        }
+        t = map.GetChild(x * w * y).GetComponent<TileInMap>();
+        if (border) t.Select();
+        if (currentPaletteTile != null) {
+          t.img.texture = currentPaletteTile.img.texture;
+          t.id = currentPaletteTile.id;
+        }
+      }
+    }
+  }
 
 
 }
