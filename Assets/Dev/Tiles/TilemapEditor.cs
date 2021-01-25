@@ -26,6 +26,9 @@ public class TilemapEditor : MonoBehaviour {
   public Slider TileSizeH;
   public GridLayoutGroup mapGrid;
   public GridLayoutGroup tilesGrid;
+
+  public SpriteEditor editor;
+
   int w = 24, h = 16;
   int tw = 16, th = 16;
   public void AlterMapSize(bool fromInputField) {
@@ -59,7 +62,7 @@ public class TilemapEditor : MonoBehaviour {
   }
 
   IEnumerator UpdateMapSize() {
-    yield return new WaitForSeconds(1);
+    yield return new WaitForSeconds(.3f);
     w = (int)MapSizeW.value;
     h = (int)MapSizeH.value;
     mapGrid.constraintCount = w;
@@ -146,6 +149,12 @@ public class TilemapEditor : MonoBehaviour {
 
   public void EditTile() {
     if (currentPaletteTile == null) return;
+
+    // Move to Spriteeditor
+    editor.gameObject.SetActive(true);
+    gameObject.SetActive(false);
+    // Setup sprite editor with the correct tile size
+    editor.ImportFrom(currentPaletteTile);
   }
 
   public void DeleteTile() {

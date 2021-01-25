@@ -8,18 +8,20 @@ using UnityEngine.UI;
 public class SpriteEditor : MonoBehaviour {
 
   private void Start() {
-    WidthSlider.SetValueWithoutNotify(8);
-    HeightSlider.SetValueWithoutNotify(8);
-    pixels = new Pixel[0];
-    ChangeSpriteSize();
-    SetUndo(false);
+    if (pixels == null) {
+      WidthSlider.SetValueWithoutNotify(8);
+      HeightSlider.SetValueWithoutNotify(8);
+      pixels = new Pixel[0];
+      ChangeSpriteSize();
+      SetUndo(false);
+    }
   }
 
   #region Sprite Editor ************************************************************************************************************************************************************************************
 
   public GameObject PixelPrefab;
   public GridLayoutGroup SpriteGrid;
-  Pixel[] pixels;
+  Pixel[] pixels = null;
   public Slider WidthSlider;
   public Slider HeightSlider;
   public TextMeshProUGUI WidthSliderText;
@@ -47,14 +49,12 @@ public class SpriteEditor : MonoBehaviour {
     int oldw = w;
     int oldh = h;
     Pixel[] oldps = pixels;
-
     w = (int)WidthSlider.value;
     h = (int)HeightSlider.value;
 
     int num = w * h;
     foreach(Transform t in SpriteGrid.transform)
       t.SetParent(null);
-
 
     pixels = new Pixel[num];
     Sprite box = w <= 8 && h <= 8 ? boxes[2] : boxes[1];
@@ -69,13 +69,14 @@ public class SpriteEditor : MonoBehaviour {
 
     for (int x = 0; x < w; x++) {
       for (int y = 0; y < h; y++) {
-        if (x < oldw && y < oldh)
+        if (x < oldw && y < oldh && oldps[x + oldw * y] != null)
           pixels[x + w * y].Set(oldps[x + oldw * y].Get());
       }
     }
 
     foreach (Pixel p in oldps)
-      Destroy(p.gameObject);
+      if (p != null)
+        Destroy(p.gameObject);
 
     undo.Clear();
   }
@@ -697,6 +698,36 @@ public class SpriteEditor : MonoBehaviour {
 
   #endregion Sprite Editor
 
+  public Button Done;
+  public void ImportFrom(TileInPalette tile) {
+    if (pixels == null) {
+      pixels = new Pixel[tile.tw * tile.th];
+      w = tile.tw;
+      h = tile.th;
+    }
+    WidthSlider.SetValueWithoutNotify(tile.tw);
+    HeightSlider.SetValueWithoutNotify(tile.th);
+    ChangeSpriteSize();
+
+    for (int x = 0; x < tile.tw; x++)
+      for (int y = 0; y < tile.th; y++) {
+
+        byte col = tile.rawData[x + w * y];
+        byte a = (byte)(255 - ((col & 0b11000000) >> 6) * 85);
+        byte r = (byte)(((col & 0b00110000) >> 4) * 85);
+        byte g = (byte)(((col & 0b00001100) >> 2) * 85);
+        byte b = (byte)(((col & 0b00000011) >> 0) * 85);
+        if (a == 0 && (r != 0 || g != 0 || b != 0)) a = 40;
+        pixels[x + w * y].Set(new Color32(r, g, b, a));
+      }
+
+    SetUndo(false);
+    Done.gameObject.SetActive(true);
+  }
+
+  public void CompleteTileEditing() {
+    // FIXME
+  }
 }
 
 public enum ActionVal { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, Fill, FreeDraw }

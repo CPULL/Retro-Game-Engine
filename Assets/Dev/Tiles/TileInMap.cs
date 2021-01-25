@@ -6,6 +6,7 @@ public class TileInMap : MonoBehaviour, IPointerClickHandler, IPointerEnterHandl
   public byte id;
   public byte x;
   public byte y;
+  public byte rot;
   public Image border;
   public RawImage img;
   Color32 Normal;

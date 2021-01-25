@@ -6,7 +6,7 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
   public byte id;
   public Image border;
   public RawImage img;
-  int tw, th;
+  public int tw, th;
   Color32 Normal;
   Color32 Over = new Color32(255, 180, 25, 255);
   Color32 FullWhite = new Color32(255, 255, 255, 255);
