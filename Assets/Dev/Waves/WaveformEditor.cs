@@ -517,4 +517,19 @@ public class WaveformEditor : MonoBehaviour {
     OnSliderChange();
     WaveChange((int)wave);
   }
+
+
+
+  public Button Done;
+
+  public void CompleteWaveEditing() {
+    musiceditor.CopyFromWaveEditor();
+    Done.gameObject.SetActive(false);
+    musiceditor.gameObject.SetActive(true);
+    gameObject.SetActive(false);
+  }
+
+  public MusicEditor musiceditor;
+
+
 }

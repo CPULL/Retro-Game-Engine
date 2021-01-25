@@ -1770,6 +1770,7 @@ public class MusicEditor : MonoBehaviour {
   public void EditInWaveEditor() {
     CopyToWaveEditor();
     editor.gameObject.SetActive(true);
+    editor.Done.gameObject.SetActive(true);
     gameObject.SetActive(false);
   }
 
