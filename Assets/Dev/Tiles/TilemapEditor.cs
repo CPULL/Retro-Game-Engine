@@ -150,11 +150,10 @@ public class TilemapEditor : MonoBehaviour {
   public void EditTile() {
     if (currentPaletteTile == null) return;
 
-    // Move to Spriteeditor
+    // Setup sprite editor with the correct tile size and move to sprite editor
     editor.gameObject.SetActive(true);
-    gameObject.SetActive(false);
-    // Setup sprite editor with the correct tile size
     editor.ImportFrom(currentPaletteTile);
+    gameObject.SetActive(false);
   }
 
   public void DeleteTile() {
@@ -176,7 +175,40 @@ public class TilemapEditor : MonoBehaviour {
   public void Save() {
     Values.gameObject.SetActive(true);
     LoadSubButton.enabled = false;
-    Values.text = "TODO";
+
+    // Normalize the IDs of the tiles
+    byte[] keys = new byte[Palette.Keys.Count];
+    Palette.Keys.CopyTo(keys, 0);
+    System.Array.Sort(keys);
+    for (int i = 0; i < keys.Length; i++) {
+      byte key = keys[i];
+      TileInPalette tile = Palette[key];
+      Palette.Remove(key);
+      key = (byte)(i + 1);
+      tile.id = key;
+      Palette[key] = tile;
+    }
+
+    string res = "Tilemap:\n";
+    res += w.ToString("X2") + " " + h.ToString("X2") + " " + tw.ToString("X2") + " " + th.ToString("X2") + " " +
+      Palette.Count.ToString("X2");
+
+    // w*h*2 bytes with the actual map
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        res += map[x, y].id.ToString("X2") + " " + map[x, y].rot.ToString("X2") + " ";
+      }
+      res += "\n";
+    }
+
+    // Tiles
+    for (int i = 0; i < Palette.Count; i++) {
+      TileInPalette tile = Palette[(byte)(i + 1)];
+      foreach(byte b in tile.rawData)
+        res+=b.ToString("X2") + " ";
+      res += "\n";
+    }
+    Values.text = res;
   }
 
   public void PreLoad() {

@@ -57,7 +57,7 @@ public class TMap : MonoBehaviour {
       texture.LoadRawTextureData(raw);
       texture.Apply();
 
-      TileDef td = new TileDef(i, texture);
+      TileDef td = new TileDef((byte)(i + 1), texture);
       tileDefs[i] = td;
     }
 

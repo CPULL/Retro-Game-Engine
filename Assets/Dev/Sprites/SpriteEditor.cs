@@ -723,13 +723,12 @@ public class SpriteEditor : MonoBehaviour {
 
     SetUndo(false);
     Done.gameObject.SetActive(true);
-
-    mapeditor.gameObject.SetActive(true);
-    gameObject.SetActive(false);
   }
 
   public void CompleteTileEditing() {
     mapeditor.UpdateTile(pixels);
+    mapeditor.gameObject.SetActive(true);
+    gameObject.SetActive(false);
   }
 
   public TilemapEditor mapeditor;

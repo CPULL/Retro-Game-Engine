@@ -14,6 +14,7 @@ once parser is completed use as keys shorter strings, removing the first two cha
 FUTURE: step by step debugger
 FUTURE: map keys
 
+import/export from tilemap editor
 
 add ToString for the missing BNF values
 
