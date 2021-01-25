@@ -1244,7 +1244,7 @@ public class Arcade : MonoBehaviour {
           float pitch = Evaluate(n.CN2).ToFlt(culture);
           if (pitch < 0) pitch = 0;
           if (pitch > 100) pitch = 100;
-          audioManager.Volume(Evaluate(n.CN1).ToInt(culture), pitch);
+          audioManager.Pitch(Evaluate(n.CN1).ToInt(culture), pitch);
           return false;
         }
 
@@ -1252,7 +1252,7 @@ public class Arcade : MonoBehaviour {
           float pan = Evaluate(n.CN2).ToFlt(culture);
           if (pan < -1) pan = -1;
           if (pan > 1) pan = 1;
-          audioManager.Volume(Evaluate(n.CN1).ToInt(culture), pan);
+          audioManager.Pan(Evaluate(n.CN1).ToInt(culture), pan);
           return false;
         }
 

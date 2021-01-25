@@ -326,12 +326,22 @@ public class CodeNode {
         case BNF.POW: return "Pow(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ")";
         case BNF.SUBSTRING: return "SubString(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ")";
         case BNF.TRIM: return "Trim()";
-        case BNF.SOUND: return "FIXME";
-        case BNF.WAVE: return "FIXME";
-        case BNF.MUTE: return "FIXME";
-        case BNF.VOLUME: return "FIXME";
-        case BNF.PITCH: return "FIXME";
-        case BNF.PAN: return "FIXME";
+        case BNF.SOUND:
+          if (CN3 == null) return "Sound("+ CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ")";
+          else return "Sound(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ", " + CN3?.ToString(indent, true) + ")";
+        case BNF.WAVE:
+          if (children.Count == 2) return "Wave(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ")";
+          else return "Wave(" + 
+              CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ", " + 
+              CN3?.ToString(indent, true) + ", " + CN4?.ToString(indent, true) + ", " + 
+              CN5?.ToString(indent, true) + ", " + CN6?.ToString(indent, true) + ")";
+        case BNF.MUTE: return "Mute(" + CN1?.ToString(indent, true) + ")";
+        case BNF.VOLUME:
+          if (CN2 == null) return "Volume(" + CN1?.ToString(indent, true) + ")";
+          else return "Volume(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ")";
+        case BNF.PITCH: return "Pitch(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ")";
+        case BNF.PAN: return "Pan(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ")";
+
         case BNF.MUSICLOAD: return "FIXME";
         case BNF.MUSICPLAY: return "FIXME";
         case BNF.MUSICSTOP: return "FIXME";
