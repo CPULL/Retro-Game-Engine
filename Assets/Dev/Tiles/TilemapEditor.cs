@@ -228,6 +228,8 @@ public class TilemapEditor : MonoBehaviour {
   DrawMode drawMode = DrawMode.None;
   enum DrawMode { None, Draw, Line, Box, Fill, Clear };
   Steps lineStep = Steps.None;
+  Steps boxStep = Steps.None;
+  bool fillStep = false;
   int x1, x2, y1, y2;
   enum Steps { None, Start, End };
 
@@ -236,6 +238,8 @@ public class TilemapEditor : MonoBehaviour {
     for (int i = 0; i < SelectionButtons.Length; i++)
       SelectionButtons[i].enabled = i == 0;
     lineStep = Steps.None;
+    boxStep = Steps.None;
+    fillStep = false;
   }
 
   public void Line() {
@@ -243,6 +247,8 @@ public class TilemapEditor : MonoBehaviour {
     for (int i = 0; i < SelectionButtons.Length; i++)
       SelectionButtons[i].enabled = i == 1;
     lineStep = Steps.Start;
+    boxStep = Steps.None;
+    fillStep = false;
   }
 
   public void Box() {
@@ -250,6 +256,8 @@ public class TilemapEditor : MonoBehaviour {
     for (int i = 0; i < SelectionButtons.Length; i++)
       SelectionButtons[i].enabled = i == 2;
     lineStep = Steps.None;
+    boxStep = Steps.Start;
+    fillStep = false;
   }
 
   public void Fill() {
@@ -257,6 +265,8 @@ public class TilemapEditor : MonoBehaviour {
     for (int i = 0; i < SelectionButtons.Length; i++)
       SelectionButtons[i].enabled = i == 3;
     lineStep = Steps.None;
+    boxStep = Steps.None;
+    fillStep = true;
   }
 
   public void Clear() {
@@ -264,6 +274,8 @@ public class TilemapEditor : MonoBehaviour {
     for (int i = 0; i < SelectionButtons.Length; i++)
       SelectionButtons[i].enabled = i == 4;
     lineStep = Steps.None;
+    boxStep = Steps.None;
+    fillStep = false;
   }
 
 
@@ -285,30 +297,47 @@ public class TilemapEditor : MonoBehaviour {
         break;
 
 
-      case DrawMode.Line: {
-        switch(lineStep) {
-          case Steps.Start:
-            x1 = tile.x;
-            y1 = tile.y;
-            tile.border.color = Color.red;
-            lineStep = Steps.End;
-            break;
-          case Steps.End:
-            x2 = tile.x;
-            y2 = tile.y;
-            DrawLine(x1, y1, x2, y2, false); // Reset color here
-            lineStep = Steps.Start;
-            break;
+      case DrawMode.Line:
+        if (lineStep == Steps.Start) {
+          x1 = tile.x;
+          y1 = tile.y;
+          tile.border.color = Color.red;
+          lineStep = Steps.End;
         }
-      }
+        else if (lineStep == Steps.End) {
+          x2 = tile.x;
+          y2 = tile.y;
+          DrawLine(x1, y1, x2, y2, false); // Reset color here
+          lineStep = Steps.Start;
+        }
       break;
 
+      case DrawMode.Box:
+        if (boxStep == Steps.Start) {
+          x1 = tile.x;
+          y1 = tile.y;
+          tile.border.color = Color.red;
+          boxStep = Steps.End;
+        }
+        else if (boxStep == Steps.End) {
+          x2 = tile.x;
+          y2 = tile.y;
+          DrawBox(x1, y1, x2, y2, false); // Reset color here
+          boxStep = Steps.Start;
+        }
+      break;
+
+      case DrawMode.Fill:
+        if (fillStep) Fill(tile.x, tile.y);
+        break;
     }
 
   }
 
   public void OverTileInMap(TileInMap tile, bool enter) {
-    if (enter && lineStep == Steps.End) DrawLine(x1, y1, tile.x, tile.y, true);
+    if (!enter) return;
+    if (lineStep == Steps.End) DrawLine(x1, y1, tile.x, tile.y, true);
+    else if (boxStep == Steps.End) DrawBox(x1, y1, tile.x, tile.y, true);
   }
 
   void DrawLine(int x1, int y1, int x2, int y2, bool border) {
@@ -416,6 +445,92 @@ public class TilemapEditor : MonoBehaviour {
           t.img.texture = currentPaletteTile.img.texture;
           t.id = currentPaletteTile.id;
         }
+      }
+    }
+  }
+
+  void DrawBox(int x1, int y1, int x2, int y2, bool border) {
+    for (int bx = 0; bx < w; bx++)
+      for (int by = 0; by < h; by++)
+        map[bx, by].Deselect();
+
+    if (x1 > x2) { int tmp = x1; x1 = x2; x2 = tmp; }
+    if (y1 > y2) { int tmp = y1; y1 = y2; y2 = tmp; }
+
+    for (int x = x1; x <= x2; x++) {
+      if (border || currentPaletteTile == null) {
+        map[x, y1].Select();
+        map[x, y2].Select();
+      }
+      else {
+        map[x, y1].img.texture = currentPaletteTile.img.texture;
+        map[x, y1].id = currentPaletteTile.id;
+        map[x, y2].img.texture = currentPaletteTile.img.texture;
+        map[x, y2].id = currentPaletteTile.id;
+      }
+    }
+    for (int y = y1 + 1; y < y2; y++) {
+      if (border || currentPaletteTile == null) {
+        map[x1, y].Select();
+        map[x2, y].Select();
+      }
+      else {
+        map[x1, y].img.texture = currentPaletteTile.img.texture;
+        map[x1, y].id = currentPaletteTile.id;
+        map[x2, y].img.texture = currentPaletteTile.img.texture;
+        map[x2, y].id = currentPaletteTile.id;
+      }
+    }
+  }
+
+  bool ValidCoord(int x, int y) {
+    return !(x < 0 || y < 0 || x >= w || y >= h);
+  }
+
+  public void Fill(int x, int y) {
+    if (currentPaletteTile == null) return;
+    // Visited pixels array
+    bool[,] vis = new bool[w, h];
+
+    // Initialing all as zero
+    for (int i = 0; i < w; i++)
+      for (int j = 0; j < h; j++)
+        vis[i, j] = false;
+
+    Queue<Vector2Int> obj = new Queue<Vector2Int>();
+    obj.Enqueue(new Vector2Int(x, y));
+
+    // Marking {x, y} as visited
+    vis[x, y] = true;
+
+    // Untill queue is empty
+    while (obj.Count != 0) {
+      // Extrating front pair
+      Vector2Int coord = obj.Dequeue();
+      int x1 = coord.x;
+      int y1 = coord.y;
+      byte preColor = map[x1, y1].id;
+      map[x1, y1].img.texture = currentPaletteTile.img.texture;
+      map[x1, y1].id = currentPaletteTile.id;
+
+      if (ValidCoord(x1 + 1, y1) && !vis[x1 + 1, y1] && map[x1 + 1, y1].id == preColor) {
+        obj.Enqueue(new Vector2Int(x1 + 1, y1));
+        vis[x1 + 1, y1] = true;
+      }
+
+      if (ValidCoord(x1 - 1, y1) && !vis[x1 - 1, y1] && map[x1 - 1, y1].id == preColor) {
+        obj.Enqueue(new Vector2Int(x1 - 1, y1));
+        vis[x1 - 1, y1] = true;
+      }
+
+      if (ValidCoord(x1, y1 + 1) && !vis[x1, y1 + 1] && map[x1, y1 + 1].id == preColor) {
+        obj.Enqueue(new Vector2Int(x1, y1 + 1));
+        vis[x1, y1 + 1] = true;
+      }
+
+      if (ValidCoord(x1, y1 - 1) && !vis[x1, y1 - 1] && map[x1, y1 - 1].id == preColor) {
+        obj.Enqueue(new Vector2Int(x1, y1 - 1));
+        vis[x1, y1 - 1] = true;
       }
     }
   }
