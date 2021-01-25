@@ -723,11 +723,16 @@ public class SpriteEditor : MonoBehaviour {
 
     SetUndo(false);
     Done.gameObject.SetActive(true);
+
+    mapeditor.gameObject.SetActive(true);
+    gameObject.SetActive(false);
   }
 
   public void CompleteTileEditing() {
-    // FIXME
+    mapeditor.UpdateTile(pixels);
   }
+
+  public TilemapEditor mapeditor;
 }
 
 public enum ActionVal { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, Fill, FreeDraw }

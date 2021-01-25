@@ -544,5 +544,7 @@ public class TilemapEditor : MonoBehaviour {
     }
   }
 
-
+  internal void UpdateTile(Pixel[] pixels) {
+    currentPaletteTile.UpdateTexture(pixels);
+  }
 }

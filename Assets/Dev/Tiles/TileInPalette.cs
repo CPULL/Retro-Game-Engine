@@ -80,4 +80,20 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     tw = w;
     th = h;
   }
+
+  internal void UpdateTexture(Pixel[] pixels) {
+    Texture2D texture = (Texture2D)img.texture;
+    for (int x = 0; x < tw; x++)
+      for (int y = 0; y < th; y++) {
+        Color32 c = pixels[x + tw * y].Get();
+        int r = c.r / 85;
+        int g = c.g / 85;
+        int b = c.b / 85;
+        int a = 255 - (c.a / 85);
+        rawData[x + tw * y] = (byte)((a << 6) + (r << 4) + (g << 2) + (b << 0));
+        texture.SetPixel(x, y, c);
+      }
+    texture.Apply();
+    img.texture = texture;
+  }
 }
