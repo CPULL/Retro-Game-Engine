@@ -11,7 +11,8 @@ public class TileInMap : MonoBehaviour, IPointerClickHandler, IPointerEnterHandl
   Color32 Normal;
   Color32 Over = new Color32(255, 180, 25, 255);
   public System.Action<TileInMap> CallBack;
-  Color32 Selected = new Color32(255, 255, 0, 255);
+  public System.Action<TileInMap, bool> OverCallBack;
+  Color32 Selected = new Color32(255, 0, 0, 255);
   bool selected = false;
 
   void Start() {
@@ -26,6 +27,7 @@ public class TileInMap : MonoBehaviour, IPointerClickHandler, IPointerEnterHandl
 
   public void OnPointerEnter(PointerEventData eventData) {
     border.color = Over;
+    OverCallBack?.Invoke(this, true);
   }
 
   public void OnPointerExit(PointerEventData eventData) {
@@ -33,6 +35,7 @@ public class TileInMap : MonoBehaviour, IPointerClickHandler, IPointerEnterHandl
       border.color = Selected;
     else
       border.color = Normal;
+    OverCallBack?.Invoke(this, false);
   }
 
   public void Deselect() {

@@ -12,7 +12,7 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
   Color32 FullWhite = new Color32(255, 255, 255, 255);
   public byte[] rawData;
   public System.Action<TileInPalette> CallBack;
-  Color32 Selected = new Color32(255, 255, 0, 255);
+  Color32 Selected = new Color32(255, 0, 0, 255);
   bool selected = false;
 
   void Start() {

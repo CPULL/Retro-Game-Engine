@@ -6,26 +6,16 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class TilemapEditor : MonoBehaviour {
-  public Transform map;
   public GameObject TileInMapTemplate;
   public GameObject TileInPaletteTemplate;
   public Texture2D emptyTexture;
-
-  Dictionary<byte, TileInPalette> Palette = new Dictionary<byte, TileInPalette>();
+  readonly Dictionary<byte, TileInPalette> Palette = new Dictionary<byte, TileInPalette>();
 
   private void Start() {
     AlterMapSize(false);
   }
 
-  /*
-   View map
-  Change tiles in the map from palette
-  flip and rotate tiles
-  fill tiles
-  Edit a tile (switch to sprite editor?)
-   
-   
-   */
+  TileInMap[,] map;
 
   public TMP_InputField MapSizeField;
   public Slider MapSizeW;
@@ -74,26 +64,29 @@ public class TilemapEditor : MonoBehaviour {
     h = (int)MapSizeH.value;
     mapGrid.constraintCount = w;
     int size = w * h;
-    for (int i = 0; i < map.childCount - size; i++) {
-      Destroy(map.GetChild(size + i).gameObject);
+    for (int i = 0; i < mapGrid.transform.childCount - size; i++) {
+      Destroy(mapGrid.transform.GetChild(size + i).gameObject);
     }
-    for (int i = map.childCount; i < size; i++) {
-      TileInMap t = Instantiate(TileInMapTemplate, map).GetComponent<TileInMap>();
+    for (int i = mapGrid.transform.childCount; i < size; i++) {
+      TileInMap t = Instantiate(TileInMapTemplate, mapGrid.transform).GetComponent<TileInMap>();
       t.id = 0;
       t.CallBack = SelectTileInMap;
+      t.OverCallBack = OverTileInMap;
       t.img.texture = emptyTexture;
       t.gameObject.SetActive(true);
     }
 
-    for (int y = 0; y < MapSizeH.value; y++)
-      for (int x = 0; x < MapSizeW.value; x++) {
-        TileInMap t = map.GetChild(x + w * y).GetComponent<TileInMap>();
+    map = new TileInMap[w, h];
+
+    for (int y = 0; y < h; y++)
+      for (int x = 0; x < w; x++) {
+        TileInMap t = mapGrid.transform.GetChild(x + w * y).GetComponent<TileInMap>();
         t.x = (byte)x;
         t.y = (byte)y;
+        map[x, y] = t;
       }
     updateMapSize = null;
   }
-
   public void AlterTileSize(bool fromInputField) {
     if (fromInputField) {
       string val = TileSizeField.text.Trim().ToLowerInvariant();
@@ -234,42 +227,43 @@ public class TilemapEditor : MonoBehaviour {
 
   DrawMode drawMode = DrawMode.None;
   enum DrawMode { None, Draw, Line, Box, Fill, Clear };
-  bool lineStart = false;
+  Steps lineStep = Steps.None;
   int x1, x2, y1, y2;
+  enum Steps { None, Start, End };
 
   public void Draw() {
     drawMode = DrawMode.Draw;
     for (int i = 0; i < SelectionButtons.Length; i++)
       SelectionButtons[i].enabled = i == 0;
-    lineStart = false;
+    lineStep = Steps.None;
   }
 
   public void Line() {
     drawMode = DrawMode.Line;
     for (int i = 0; i < SelectionButtons.Length; i++)
       SelectionButtons[i].enabled = i == 1;
-    lineStart = true;
+    lineStep = Steps.Start;
   }
 
   public void Box() {
     drawMode = DrawMode.Box;
     for (int i = 0; i < SelectionButtons.Length; i++)
       SelectionButtons[i].enabled = i == 2;
-    lineStart = false;
+    lineStep = Steps.None;
   }
 
   public void Fill() {
     drawMode = DrawMode.Fill;
     for (int i = 0; i < SelectionButtons.Length; i++)
       SelectionButtons[i].enabled = i == 3;
-    lineStart = false;
+    lineStep = Steps.None;
   }
 
   public void Clear() {
     drawMode = DrawMode.Clear;
     for (int i = 0; i < SelectionButtons.Length; i++)
       SelectionButtons[i].enabled = i == 4;
-    lineStart = false;
+    lineStep = Steps.None;
   }
 
 
@@ -292,19 +286,20 @@ public class TilemapEditor : MonoBehaviour {
 
 
       case DrawMode.Line: {
-        if (lineStart) {
-          x1 = tile.x;
-          y2 = tile.y;
-          tile.border.color = Color.red;
-          lineStart = false;
+        switch(lineStep) {
+          case Steps.Start:
+            x1 = tile.x;
+            y1 = tile.y;
+            tile.border.color = Color.red;
+            lineStep = Steps.End;
+            break;
+          case Steps.End:
+            x2 = tile.x;
+            y2 = tile.y;
+            DrawLine(x1, y1, x2, y2, false); // Reset color here
+            lineStep = Steps.Start;
+            break;
         }
-        else {
-          x2 = tile.x;
-          y2 = tile.y;
-          DrawLine(x1, y1, x2, y2, false); // Reset color here
-          lineStart = true;
-        }
-
       }
       break;
 
@@ -312,35 +307,44 @@ public class TilemapEditor : MonoBehaviour {
 
   }
 
+  public void OverTileInMap(TileInMap tile, bool enter) {
+    if (enter && lineStep == Steps.End) DrawLine(x1, y1, tile.x, tile.y, true);
+  }
+
   void DrawLine(int x1, int y1, int x2, int y2, bool border) {
-    if (!border) {
-      //SetUndo(false);
-    }
+    for (int bx = 0; bx < w; bx++)
+      for (int by = 0; by < h; by++)
+        map[bx, by].Deselect();
+
     int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
     dx = x2 - x1; dy = y2 - y1;
     if (dx == 0) { // Vertical
       if (y2 < y1) { int tmp = y1; y1 = y2; y2 = tmp; }
       for (y = y1; y <= y2; y++) {
-        TileInMap t = map.GetChild(x1 * w * y).GetComponent<TileInMap>();
-        if (border) t.Select();
-        if (currentPaletteTile == null) return;
-        t.img.texture = currentPaletteTile.img.texture;
-        t.id = currentPaletteTile.id;
+        TileInMap t = map[x1, y];
+        if (border)
+          t.Select();
+        else {
+          if (currentPaletteTile == null) return;
+          t.img.texture = currentPaletteTile.img.texture;
+          t.id = currentPaletteTile.id;
+        }
       }
-      lineStart = true;
       return;
     }
 
     if (dy == 0) { // Horizontal
       if (x2 < x1) { int tmp = x1; x1 = x2; x2 = tmp; }
       for (x = x1; x <= x2; x++) {
-        TileInMap t = map.GetChild(x * w * y1).GetComponent<TileInMap>();
-        if (border) t.Select();
-        if (currentPaletteTile == null) return;
-        t.img.texture = currentPaletteTile.img.texture;
-        t.id = currentPaletteTile.id;
+        TileInMap t = map[x, y1];
+        if (border)
+          t.Select();
+        else {
+          if (currentPaletteTile == null) return;
+          t.img.texture = currentPaletteTile.img.texture;
+          t.id = currentPaletteTile.id;
+        }
       }
-      lineStart = true;
       return;
     }
 
@@ -358,9 +362,10 @@ public class TilemapEditor : MonoBehaviour {
         x = x2; y = y2; xe = x1;
       }
 
-      TileInMap t = map.GetChild(x * w * y).GetComponent<TileInMap>();
-      if (border) t.Select();
-      if (currentPaletteTile != null) {
+      TileInMap t = map[x, y];
+      if (border)
+        t.Select();
+      else if (currentPaletteTile != null) {
         t.img.texture = currentPaletteTile.img.texture;
         t.id = currentPaletteTile.id;
       }
@@ -373,9 +378,10 @@ public class TilemapEditor : MonoBehaviour {
           if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) y += 1; else y -= 1;
           px += 2 * (dy1 - dx1);
         }
-        t = map.GetChild(x * w * y).GetComponent<TileInMap>();
-        if (border) t.Select();
-        if (currentPaletteTile != null) {
+        t = map[x, y];
+        if (border)
+          t.Select();
+        else if (currentPaletteTile != null) {
           t.img.texture = currentPaletteTile.img.texture;
           t.id = currentPaletteTile.id;
         }
@@ -388,9 +394,10 @@ public class TilemapEditor : MonoBehaviour {
       else {
         x = x2; y = y2; ye = y1;
       }
-      TileInMap t = map.GetChild(x * w * y).GetComponent<TileInMap>();
-      if (border) t.Select();
-      if (currentPaletteTile != null) {
+      TileInMap t = map[x, y];
+      if (border)
+        t.Select();
+      else if (currentPaletteTile != null) {
         t.img.texture = currentPaletteTile.img.texture;
         t.id = currentPaletteTile.id;
       }
@@ -402,9 +409,10 @@ public class TilemapEditor : MonoBehaviour {
           if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) x += 1; else x -= 1;
           py += 2 * (dx1 - dy1);
         }
-        t = map.GetChild(x * w * y).GetComponent<TileInMap>();
-        if (border) t.Select();
-        if (currentPaletteTile != null) {
+        t = map[x, y];
+        if (border)
+          t.Select();
+        else if (currentPaletteTile != null) {
           t.img.texture = currentPaletteTile.img.texture;
           t.id = currentPaletteTile.id;
         }
