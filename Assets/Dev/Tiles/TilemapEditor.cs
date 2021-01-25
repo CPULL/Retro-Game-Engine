@@ -233,6 +233,8 @@ public class TilemapEditor : MonoBehaviour {
 
 
   public Image[] SelectionButtons;
+  public Image[] RotationButtons;
+
 
   DrawMode drawMode = DrawMode.None;
   enum DrawMode { None, Draw, Line, Box, Fill, Clear };
@@ -292,6 +294,8 @@ public class TilemapEditor : MonoBehaviour {
     if (currentPaletteMap != null) currentPaletteMap.Deselect();
     currentPaletteMap = tile;
 
+    for (int i = 0; i < RotationButtons.Length; i++)
+      RotationButtons[i].enabled = tile.rot == i;
 
     switch (drawMode) {
       case DrawMode.Draw:
@@ -546,5 +550,48 @@ public class TilemapEditor : MonoBehaviour {
 
   internal void UpdateTile(Pixel[] pixels) {
     currentPaletteTile.UpdateTexture(pixels);
+  }
+
+  public void Rot(int rot) {
+    if (currentPaletteMap == null) return;
+
+    for (int i = 0; i < RotationButtons.Length; i++)
+      RotationButtons[i].enabled = rot == i;
+    currentPaletteMap.rot = (byte)rot;
+    switch (rot) {
+      case 0:
+        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 0);
+        currentPaletteMap.transform.localScale = new Vector3(1, 1, 1);
+        break;
+      case 1:
+        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 0);
+        currentPaletteMap.transform.localScale = new Vector3(-1, 1, 1);
+        break;
+      case 2:
+        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, -90);
+        currentPaletteMap.transform.localScale = new Vector3(1, 1, 1);
+        break;
+      case 3:
+        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, -90);
+        currentPaletteMap.transform.localScale = new Vector3(-1, 1, 1);
+        break;
+      case 4:
+        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 180);
+        currentPaletteMap.transform.localScale = new Vector3(1, 1, 1);
+        break;
+      case 5:
+        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 180);
+        currentPaletteMap.transform.localScale = new Vector3(-1, 1, 1);
+        break;
+      case 6:
+        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 90);
+        currentPaletteMap.transform.localScale = new Vector3(1, 1, 1);
+        break;
+      case 7:
+        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 90);
+        currentPaletteMap.transform.localScale = new Vector3(-1, 1, 1);
+        break;
+    }
+
   }
 }

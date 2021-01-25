@@ -91,7 +91,7 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         int b = c.b / 85;
         int a = 255 - (c.a / 85);
         rawData[x + tw * y] = (byte)((a << 6) + (r << 4) + (g << 2) + (b << 0));
-        texture.SetPixel(x, y, c);
+        texture.SetPixel(x, th - y - 1, c);
       }
     texture.Apply();
     img.texture = texture;
