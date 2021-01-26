@@ -9,10 +9,10 @@ public class TMap : MonoBehaviour {
   Tile[,] tiles;
   public GameObject TileTemplate;
   public GridLayoutGroup gridLayout;
+  public Texture2D emptyTexture;
+  public RectTransform rt;
 
-
-
-  public void Set(byte[] data, int start, float screenw, float screenh) {
+  public void Set(byte[] data, int start) {
     //   width, height, tilewidth, tileheight, numtiles
 
     // 1) define the grid parameters and the scale
@@ -58,33 +58,38 @@ public class TMap : MonoBehaviour {
       texture.Apply();
 
       TileDef td = new TileDef((byte)(i + 1), texture);
-      tileDefs[i] = td;
+      tileDefs[(byte)(i + 1)] = td;
     }
 
     // 3) initialize the array of tiles, Instantiate(TileTemplate) and set the texture
     tiles = new Tile[w, h];
     gridLayout.cellSize = new Vector2(tw, th); // FIXME find the right value
     gridLayout.constraintCount = w;
-    for (int i = 0; i < w; i++) {
-      for (int j = 0; j < h; j++) {
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
         Tile tile = Instantiate(TileTemplate, transform).GetComponent<Tile>();
-        tiles[i, j] = tile;
+        tiles[x, y] = tile;
         tile.gameObject.SetActive(true);
         byte def = data[mapstart++];
         byte rot = data[mapstart++];
 
         // Set it up with the right texture
         tile.id = def;
+        tile.rot = rot;
         if (tileDefs.ContainsKey(def))
           tile.sprite.texture = tileDefs[def].texture;
+        else if (def == 0)
+          tile.sprite.texture = emptyTexture;
         else
           Debug.Log("Invalid tile key " + def + " position " + (mapstart - 2));
         // FIXME scale the object
 
-        // FIXME rotate and flip the object (like a sprite)
+        tile.Rot();
       }
     }
   }
+
+
 
   /*
   private void Pos(int px, int py, byte order) {
@@ -106,7 +111,19 @@ public class TMap : MonoBehaviour {
 
   */
   public void Destroy() {
-    // FIXME release all the images and all the textures
+    // Release all the images and all the textures
+    foreach (TileDef t in tileDefs.Values)
+      DestroyImmediate(t.texture);
+    tileDefs.Clear();
+
+    foreach (Tile t in tiles)
+      Destroy(t.gameObject);
+
+    tiles = null;
+    w = 0;
+    h = 0;
+    tw = 0;
+    th = 0;
   }
 }
 

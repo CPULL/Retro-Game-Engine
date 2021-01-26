@@ -1046,7 +1046,7 @@ RectTransform:
   m_GameObject: {fileID: 438564140}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 6, y: 4.21875, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1114100338}
   m_RootOrder: 3
@@ -1102,6 +1102,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   TileTemplate: {fileID: 787292653}
   gridLayout: {fileID: 438564142}
+  emptyTexture: {fileID: 2800000, guid: 2c3c5c1bf1f3f4f4b96c5129c96dd98d, type: 3}
+  rt: {fileID: 438564141}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -1315,7 +1317,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: e9eccc457fe75d3448743602bd55f27b, type: 3}
+  m_Texture: {fileID: 2800000, guid: 2c3c5c1bf1f3f4f4b96c5129c96dd98d, type: 3}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -1343,6 +1345,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   id: 0
+  rot: 0
   sprite: {fileID: 787292655}
   rt: {fileID: 787292654}
 --- !u!1 &801606410

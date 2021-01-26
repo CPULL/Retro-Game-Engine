@@ -1,7 +1,6 @@
 **************** TODO ********************************************************************************
 
 Use Tiles, with priority byte in Arcade
-Scale tiles correctly
 
 Documentation on the Wiki of Github
 Arcade: Custom fonts

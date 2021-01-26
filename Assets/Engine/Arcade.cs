@@ -825,7 +825,8 @@ public class Arcade : MonoBehaviour {
       t.gameObject.SetActive(true);
       tilemaps.Add(id, t);
     }
-    t.Set(mem, start, scaleW, scaleH);
+    t.Set(mem, start);
+    t.rt.localScale = new Vector3(scaleW, scaleH, 1);
   }
 
   #endregion Tilemap
