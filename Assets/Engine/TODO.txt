@@ -3,16 +3,11 @@
 Use Tiles, with priority byte in Arcade
 Scale tiles correctly
 
-Code editor
 Documentation on the Wiki of Github
-Font editor
-Custom fonts
-have the wave generation to be perfectly cyclic so we will avoid "thicks" when the sample is regenerated
+Arcade: Custom fonts
+Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks" when the sample is regenerated
 
-add ToString for the missing BNF values
-
-in spriteeditor do not remove the previous draw mode, and make it visible when selected (like done for Tilemapeditor)
-spriteeditor: fill highlights the wrong icon
+Parser: add ToString for the missing BNF values
 
 Complete tilemaps in Engine:
 * size according to screen
@@ -20,8 +15,8 @@ Complete tilemaps in Engine:
 * scroll
 * change priority
 
-
-
+FUTURE: Code editor
+FUTURE: Font editor
 FUTURE: step by step debugger
 FUTURE: map keys
 

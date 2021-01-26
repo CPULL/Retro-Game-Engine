@@ -98,7 +98,6 @@ public class SpriteEditor : MonoBehaviour {
       int y1 = start.y;
       int y2 = y;
       DrawLine(x1, y1, x2, y2, false);
-      action = ActionVal.No;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
       return;
@@ -117,7 +116,6 @@ public class SpriteEditor : MonoBehaviour {
       int y1 = start.y;
       int y2 = y;
       DrawBox(x1, y1, x2, y2, false);
-      action = ActionVal.No;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
       return;
@@ -136,7 +134,6 @@ public class SpriteEditor : MonoBehaviour {
       int y1 = start.y;
       int y2 = y;
       DrawEllipse(x1, y1, x2, y2, false);
-      action = ActionVal.No;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
       return;
@@ -144,7 +141,6 @@ public class SpriteEditor : MonoBehaviour {
 
     if (action == ActionVal.Fill) {
       Fill(x, y, CurrentColor.color);
-      action = ActionVal.No;
       return;
     }
 
@@ -260,8 +256,7 @@ public class SpriteEditor : MonoBehaviour {
   void DrawLine(int x1, int y1, int x2, int y2, bool border) {
     if (!border) {
       SetUndo(false);
-      action = ActionVal.No;
-      SetButtons(-1);
+      action = ActionVal.LineStart;
     }
     int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
     dx = x2 - x1; dy = y2 - y1;
@@ -326,8 +321,7 @@ public class SpriteEditor : MonoBehaviour {
   void DrawBox(int x1, int y1, int x2, int y2, bool border) {
     if (!border) {
       SetUndo(false);
-      action = ActionVal.No;
-      SetButtons(-1);
+      action = ActionVal.BoxStart;
     }
     int sx = x1; if (sx > x2) sx = x2;
     int sy = y1; if (sy > y2) sy = y2;
@@ -347,8 +341,7 @@ public class SpriteEditor : MonoBehaviour {
   void DrawEllipse(int x1, int y1, int x2, int y2, bool border) {
     if (!border) {
       SetUndo(false);
-      action = ActionVal.No;
-      SetButtons(-1);
+      action = ActionVal.EllipseStart;
     }
 
     if (x1 > x2) { int tmp = x1; x1 = x2; x2 = tmp; }
@@ -511,7 +504,7 @@ public class SpriteEditor : MonoBehaviour {
     }
     else {
       action = ActionVal.Fill;
-      SetButtons(3);
+      SetButtons(4);
     }
   }
 
