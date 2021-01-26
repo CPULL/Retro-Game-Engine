@@ -850,6 +850,18 @@ public class Arcade : MonoBehaviour {
     t.SetTile(x, y, tile, rot);
   }
 
+  Value TileGet(byte id, byte x, byte y) {
+    if (!tilemaps.ContainsKey(id)) throw new Exception("Undefined Tilemap with ID = " + id);
+    TMap t = tilemaps[id];
+    return new Value(t.GetTile(x, y));
+  }
+
+  Value TileGetRot(byte id, byte x, byte y) {
+    if (!tilemaps.ContainsKey(id)) throw new Exception("Undefined Tilemap with ID = " + id);
+    TMap t = tilemaps[id];
+    return new Value(t.GetTileRotation(x, y));
+  }
+
   #endregion Tilemap
 
   bool Execute(CodeNode n) {
@@ -1490,6 +1502,9 @@ public class Arcade : MonoBehaviour {
         }
       }
 
+      case BNF.TILEGET: return TileGet(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture));
+      case BNF.TILEGETROT: return TileGetRot(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture));
+
       case BNF.TRIM: return new Value(Evaluate(n.CN1).ToStr().Trim());
 
       case BNF.FunctionCall: {
@@ -1531,7 +1546,6 @@ public class Arcade : MonoBehaviour {
     }
     throw new Exception("Invalid node to evaluate: " + n.type);
   }
-
 
   readonly Dictionary<char, byte[]> font6 = new Dictionary<char, byte[]>() {
 {' ', new byte[]{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00} },

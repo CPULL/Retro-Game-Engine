@@ -354,7 +354,11 @@ public class CodeNode {
               (CN5 == null ? "" : ", " + CN5.ToString(indent, true))
             )) + ")";
 
-        case BNF.TILESET: return "FIXME";
+        case BNF.TILESET: return "TileSet(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ", " + CN3?.ToString(indent, true) +
+            ", " + CN4.ToString(indent, true) + (CN5 == null ? "" : ", " + CN5.ToString(indent, true)) + ")";
+
+        case BNF.TILEGET: return "TileGet(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ", " + CN3?.ToString(indent, true) + ")";
+        case BNF.TILEGETROT: return "TileGetRot(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ", " + CN3?.ToString(indent, true) + ")";
 
         default:
           res += "[[Missing:" + type + "]]";
@@ -427,6 +431,8 @@ public class CodeNode {
       case BNF.SUBSTRING:
       case BNF.TRIM:
       case BNF.MUSICPOS:
+      case BNF.TILEGET:
+      case BNF.TILEGETROT:
         return true;
     }
     return false;
@@ -622,6 +628,8 @@ public enum BNF {
   TILEMAP,
   TILEPOS,
   TILESET,
+  TILEGET,
+  TILEGETROT,
   NOP,
 }
 

@@ -209,6 +209,8 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgTilemap = new Regex("[\\s]*tilemap[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgTilepos = new Regex("[\\s]*tilepos[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgTileset = new Regex("[\\s]*tileset[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgTileget = new Regex("[\\s]*tileget[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgTilerot = new Regex("[\\s]*tilegetrot[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSound = new Regex("[\\s]*sound[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWave = new Regex("[\\s]*wave[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1360,6 +1362,32 @@ public class CodeParser : MonoBehaviour {
         return n.id;
       });
       if (atLeastOneReplacement) continue;
+
+
+      // [TileGet] = TileGet([EXPR],[EXPR],[EXPR])
+      line = rgTileget.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.TILEGET, GenId("TG"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num != 3) throw new Exception("Invalid TileGet(), 3 parameters are required. Line: " + (linenumber + 1));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // [TileGetRot] = TileGetRot([EXPR],[EXPR],[EXPR])
+      line = rgTilerot.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.TILEGETROT, GenId("TR"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num != 2) throw new Exception("Invalid TileGetRot(), 3 parameters are required. Line: " + (linenumber + 1));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
 
       // [GetP] = GetP([EXPR], [EXPR])
       // GETP
