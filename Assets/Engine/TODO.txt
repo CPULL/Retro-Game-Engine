@@ -6,7 +6,8 @@ Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks"
 
 Parser: add ToString for the missing BNF values (music)
 
-Load image for sprite?
+Create helper for colors.
+When picking color in sprite editor fix palette
 
 
 FUTURE: Code editor

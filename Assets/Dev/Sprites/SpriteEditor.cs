@@ -87,6 +87,11 @@ public class SpriteEditor : MonoBehaviour {
     int x = pos % w;
     int y = (pos - x) / w;
 
+    if (action == ActionVal.Pick) {
+      CurrentColor.color = pixels[pos].img.color;
+      return;
+    }
+
     if (action == ActionVal.LineStart) {
       start.x = x;
       start.y = y;
@@ -491,6 +496,11 @@ public class SpriteEditor : MonoBehaviour {
     }
   }
 
+  public void PickColor() {
+    action = ActionVal.Pick;
+    SetButtons(-1);
+  }
+
   void DrawPixel(int x, int y, bool border) {
     if (x < 0 || x >= w || y < 0 || y >= h) return;
     if (border)
@@ -798,7 +808,7 @@ public class SpriteEditor : MonoBehaviour {
   public TilemapEditor mapeditor;
 }
 
-public enum ActionVal { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, Fill, FreeDraw }
+public enum ActionVal { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, Fill, FreeDraw, Pick }
 
 /*
  Add right click to keep the current draw item
