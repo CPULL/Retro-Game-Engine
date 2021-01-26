@@ -1,18 +1,13 @@
 **************** TODO ********************************************************************************
 
-Tiles, with priority byte
-Tilemap editor
+Use Tiles, with priority byte in Arcade
+Scale tiles correctly
+
 Code editor
 Documentation on the Wiki of Github
 Font editor
 Custom fonts
 have the wave generation to be perfectly cyclic so we will avoid "thicks" when the sample is regenerated
-
-disable sprites and tilemaps on errors?
-once parser is completed use as keys shorter strings, removing the first two characters
-
-FUTURE: step by step debugger
-FUTURE: map keys
 
 TEST: import/export from tilemap editor
 
@@ -26,4 +21,9 @@ Complete tilemaps in Engine:
 * add/remove/change tiles
 * scroll
 * change priority
+
+
+
+FUTURE: step by step debugger
+FUTURE: map keys
 

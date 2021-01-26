@@ -225,7 +225,7 @@ public class TilemapEditor : MonoBehaviour {
 
     string res = "Tilemap:\n";
     res += w.ToString("X2") + " " + h.ToString("X2") + " " + tw.ToString("X2") + " " + th.ToString("X2") + " " +
-      Palette.Count.ToString("X2");
+      Palette.Count.ToString("X2") + "\n";
 
     // w*h*2 bytes with the actual map
     for (int y = 0; y < h; y++) {
