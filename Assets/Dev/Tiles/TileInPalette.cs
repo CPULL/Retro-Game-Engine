@@ -96,4 +96,21 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     texture.Apply();
     img.texture = texture;
   }
+
+  internal void UpdateTexture(byte[] pixels) {
+    Texture2D texture = (Texture2D)img.texture;
+    rawData = pixels;
+    for (int x = 0; x < tw; x++)
+      for (int y = 0; y < th; y++) {
+        byte col = pixels[x + tw * y];
+        int r = (col & 0b110000) >> 4;
+        int g = (col & 0b001100) >> 2;
+        int b = (col & 0b000011) >> 0;
+        int a = 3 - ((col & 0b11000000) >> 6);
+        if (a == 0 && (r != 0 || g != 0 || b != 0)) a = 40;
+        texture.SetPixel(x, th - y - 1, new Color32((byte)(r * 85), (byte)(g * 85), (byte)(b * 85), (byte)(a * 85)));
+      }
+    texture.Apply();
+    img.texture = texture;
+  }
 }

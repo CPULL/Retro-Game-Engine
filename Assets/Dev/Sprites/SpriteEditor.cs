@@ -575,6 +575,7 @@ public class SpriteEditor : MonoBehaviour {
       int g = (col & 0b001100) >> 2;
       int b = (col & 0b000011) >> 0;
       int a = 3 - ((col & 0b11000000) >> 6);
+      if (a == 0 && (r != 0 || g != 0 || b != 0)) a = 40;
       pixels[i].Set(new Color32((byte)(r * 85), (byte)(g * 85), (byte)(b * 85), (byte)(a * 85)));
     }
 

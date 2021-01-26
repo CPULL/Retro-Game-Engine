@@ -186,7 +186,13 @@ public class TilemapEditor : MonoBehaviour {
 
   public void DeleteTile() {
     if (currentPaletteTile == null) return;
-    // FIXME show a warning
+
+    foreach(TileInMap t in map)
+      if (t.id == currentPaletteTile.id) {
+        t.Setup(SelectTileInMap, OverTileInMap, emptyTexture);
+        Destroy(Palette[currentPaletteTile.id].gameObject);
+        Palette.Remove(currentPaletteTile.id);
+      }
   }
 
   TileInPalette currentPaletteTile = null;
@@ -246,13 +252,82 @@ public class TilemapEditor : MonoBehaviour {
   readonly Regex rgComments = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, System.TimeSpan.FromSeconds(1));
   readonly Regex rgHex1 = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
   readonly Regex rgHex2 = new Regex("[\\s]*([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
+  readonly Regex rgLabel = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
 
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
     string data = Values.text.Trim();
-    data = rgComments.Replace(data, " ").Replace('\n', ' ').Trim();
+    data = rgComments.Replace(data, " ");
+    data = rgLabel.Replace(data, " ");
+    data = data.Replace('\n', ' ').Replace('\r', ' ').Trim();
     while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
+    data = ReadNextByte(data, out byte data1);
+    int pw = data1;
+    data = ReadNextByte(data, out data1);
+    int ph = data1;
+
+    MapSizeW.SetValueWithoutNotify(pw);
+    MapSizeH.SetValueWithoutNotify(ph);
+    updateMapSize = StartCoroutine(UpdateMapSize(w, h));
+
+    // We need to wait for the coroutine to end before proceeding
+    StartCoroutine(CompleteLoading(data));
+  }
+
+  IEnumerator CompleteLoading(string data) {
+    yield return null;
+    while (updateMapSize != null)
+      yield return new WaitForSeconds(.5f);
+
+    data = ReadNextByte(data, out byte data1);
+    tw = data1;
+    data = ReadNextByte(data, out data1);
+    th = data1;
+    data = ReadNextByte(data, out byte numtiles);
+
+    // w*h*2 bytes with the actual map
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        data = ReadNextByte(data, out data1);
+        map[x, y].id = data1;
+        data = ReadNextByte(data, out data1);
+        map[x, y].rot = data1;
+      }
+    }
+
+    // Tiles
+    Palette.Clear();
+    foreach (Transform t in tilesGrid.transform) {
+      t.SetParent(null);
+      Destroy(t.gameObject);
+    }
+    for (int i = 0; i < numtiles; i++) {
+      TileInPalette t = Instantiate(TileInPaletteTemplate, tilesGrid.transform).GetComponent<TileInPalette>();
+      t.Setup((byte)(i + 1), SelectTileInPalette, tw, th);
+      t.gameObject.SetActive(true);
+      Palette[t.id] = t;
+      byte[] rawData = new byte[tw * th];
+      for (int j = 0; j < tw * th; j++) {
+        data = ReadNextByte(data, out data1);
+        rawData[j] = data1;
+      }
+      t.UpdateTexture(rawData);
+    }
+
+    // Update the tiles in the map
+    for (int y = 0; y < h; y++)
+      for (int x = 0; x < w; x++) {
+        TileInMap t = map[x, y];
+        t.x = (byte)x;
+        t.y = (byte)y;
+        if (t.id == 0)
+          t.img.texture = emptyTexture;
+        else
+          t.img.texture = Palette[t.id].img.texture;
+        currentPaletteMap = t;
+        Rot(t.rot);
+      }
 
     Values.gameObject.SetActive(false);
     LoadSubButton.enabled = false;
