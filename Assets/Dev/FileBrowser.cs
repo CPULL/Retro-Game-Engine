@@ -16,17 +16,20 @@ public class FileBrowser : MonoBehaviour {
   public TextMeshProUGUI PathText;
   public TextMeshProUGUI FileInfoText;
   public Button LoadButton;
+  public enum FileType { Music, Pics, Cartridges };
+  FileType fileType;
 
   private void Awake() {
     inst = this;
     FileBrowserContents.SetActive(false);
   }
 
-  public static void Show(Action<string> action) {
+  public static void Show(Action<string> action, FileType ft) {
     inst.FileBrowserContents.SetActive(true);
     inst.postLoadAction = action;
     inst.LoadButton.interactable = false;
     FileInfo fi = new FileInfo(Application.dataPath);
+    inst.fileType = ft;
     inst.ShowFolder(fi.Directory.Parent.FullName);
   }
 
@@ -51,7 +54,17 @@ public class FileBrowser : MonoBehaviour {
       foreach(string dp in fils) {
         FileInfo fi = new FileInfo(dp);
         string ext = fi.Extension.ToLowerInvariant();
-        if (ext != ".mp3" && ext != ".ogg" && ext != ".wav") continue;
+        switch (fileType) {
+          case FileType.Music:
+            if (ext != ".mp3" && ext != ".ogg" && ext != ".wav") continue;
+            break;
+          case FileType.Pics:
+            if (ext != ".png" && ext != ".jpg" && ext != ".jpeg" && ext != ".gif") continue;
+            break;
+          case FileType.Cartridges:
+            if (ext != ".cartridge") continue;
+            break;
+        }
         GameObject go = Instantiate(FileTemplate, Items);
         go.SetActive(true);
         go.GetComponent<Button>().onClick.AddListener(() => { SelectFile(fi.FullName); });

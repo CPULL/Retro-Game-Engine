@@ -803,9 +803,6 @@ public class Arcade : MonoBehaviour {
   #endregion Sprites
 
   #region Tilemap ****************************************************************************************************************************************************************************************************
-  // tilemap id, addressmap, w, h, address tiles, tw, th [, sourcewidth]
-  // tilepos id, scrollx, scrolly, order [, enabled]
-
   readonly Dictionary<byte, TMap> tilemaps = new Dictionary<byte, TMap>();
   public Transform[] Layers;
   public GameObject TilemapTemplate;

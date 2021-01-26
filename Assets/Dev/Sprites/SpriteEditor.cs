@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 public class SpriteEditor : MonoBehaviour {
@@ -512,8 +514,8 @@ public class SpriteEditor : MonoBehaviour {
     action = ActionVal.No;
     SetButtons(-1);
     string res = "SpriteSize:\n";
-    byte sizex = ((byte)((byte)w & 31));
-    byte sizey = ((byte)((byte)h & 31));
+    byte sizex = (byte)w;
+    byte sizey = (byte)h;
     res += "0x" + sizex.ToString("X2") + " 0x" + sizey.ToString("X2") + "\n";
     res += "Sprite:";
     int num = w * h;
@@ -598,6 +600,74 @@ public class SpriteEditor : MonoBehaviour {
     res = 0;
     return data;
   }
+
+  public void LoadFile() {
+    FileBrowser.Show(PostLoadImage, FileBrowser.FileType.Pics);
+  }
+
+  void PostLoadImage(string path) {
+    Debug.Log(path);
+    StartCoroutine(LoadImageCoroutine(path));
+  }
+  IEnumerator LoadImageCoroutine(string path) {
+    string url = string.Format("file://{0}", path);
+
+    using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url)) {
+      yield return www.SendWebRequest();
+      Texture2D texture = DownloadHandlerTexture.GetContent(www);
+      // Get the top-left part of the image fitting in the sprite size
+      int maxx = w;
+      if (maxx > texture.width) maxx = texture.width;
+      int maxy = h;
+      if (maxy > texture.height) maxy = texture.height;
+
+      // Have a way to scale it a little, at least by 2, 3, and 4
+      int scalex = 1;
+      int scaley = 1;
+      for (int i = 32; i > 1; i--) {
+        if (w * i <= texture.width && scalex == 1)  scalex = i;
+        if (h * i <= texture.height && scaley == 1)  scaley = i;
+      }
+      int scale = scalex;
+      if (scale < scaley) scale = scaley;
+
+      for (int y = 0; y < maxy; y++) {
+        int texty = maxy - y - 1;
+        for (int x = 0; x < maxx; x++) {
+          // Get the average color in the block scaleXscale
+          int r = 0, g = 0, b = 0, a = 0;
+          for (int tx = 0; tx < scale; tx++) {
+            for (int ty = 0; ty < scale; ty++) {
+              Color32 colp = texture.GetPixel(x * scale + tx, texty * scale + ty);
+              r += ((colp.r & 0xf0) >> 4) * 0x11;
+              g += ((colp.g & 0xf0) >> 4) * 0x11;
+              b += ((colp.b & 0xf0) >> 4) * 0x11;
+              a += ((colp.a & 0xf0) >> 4) * 0x11;
+            }
+          }
+          r /= scale * scale;
+          g /= scale * scale;
+          b /= scale * scale;
+          a /= scale * scale;
+
+          // Normalize the color
+          byte ab = (byte)(((a & 0xf0) >> 4) * 0x11);
+          byte rb = (byte)(((r & 0xf0) >> 4) * 0x11);
+          byte gb = (byte)(((g & 0xf0) >> 4) * 0x11);
+          byte bb = (byte)(((b & 0xf0) >> 4) * 0x11);
+          if (a == 0 && (r != 0 || g != 0 || b != 0)) a = 40;
+          Color32 col = Color.white;
+          col.a = ab;
+          col.r = rb;
+          col.g = gb;
+          col.b = bb;
+          pixels[x + w * y].Set(col);
+        }
+      }
+    }
+  }
+
+
 
   public void CloseValues() {
     Values.gameObject.SetActive(false);
