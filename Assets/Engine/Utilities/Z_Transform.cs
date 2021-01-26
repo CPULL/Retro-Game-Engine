@@ -3,6 +3,8 @@ using UnityEditor;
 using UnityEngine.UI;
 using TMPro;
 
+#if UNITY_EDITOR
+
 public class Z_Transform : MonoBehaviour {
 }
 
@@ -68,3 +70,5 @@ public class Z_TransformEditor : Editor {
     }
   }
 }
+
+#endif
