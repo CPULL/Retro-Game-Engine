@@ -179,7 +179,7 @@ public class TilemapEditor : MonoBehaviour {
     if (currentPaletteTile == null) return;
 
     // Setup sprite editor with the correct tile size and move to sprite editor
-    editor.gameObject.SetActive(true);
+    Dev.inst.SpriteEditor();
     editor.ImportFrom(currentPaletteTile);
     gameObject.SetActive(false);
   }

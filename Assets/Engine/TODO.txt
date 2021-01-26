@@ -9,11 +9,9 @@ Font editor
 Custom fonts
 have the wave generation to be perfectly cyclic so we will avoid "thicks" when the sample is regenerated
 
-TEST: import/export from tilemap editor
-
 add ToString for the missing BNF values
 
-in spriteeditor do not remove the provious draw mode, and make it visible when selected (like done for Tilemapeditor)
+in spriteeditor do not remove the previous draw mode, and make it visible when selected (like done for Tilemapeditor)
 spriteeditor: fill highlights the wrong icon
 
 Complete tilemaps in Engine:

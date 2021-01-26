@@ -525,7 +525,7 @@ public class WaveformEditor : MonoBehaviour {
   public void CompleteWaveEditing() {
     musiceditor.CopyFromWaveEditor();
     Done.gameObject.SetActive(false);
-    musiceditor.gameObject.SetActive(true);
+    Dev.inst.MusicEditor();
     gameObject.SetActive(false);
   }
 

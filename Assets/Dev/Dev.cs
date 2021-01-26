@@ -1,25 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class Dev : MonoBehaviour {
-
+  public static Dev inst;
   public GameObject EmptyEditor;
   public SpriteEditor spriteEditor;
   public WaveformEditor waveformEditor;
-  public TileEditor tileEditor;
   public TilemapEditor tilemapEditor;
   public MusicEditor musicEditor;
   public FontsEditor fontsEditor;
   public CodeEditor codeEditor;
+  public Image[] Selection;
+
+  private void Awake() {
+    inst = this;
+  }
 
   public void SpriteEditor() {
     EmptyEditor.SetActive(false);
+    for (int i = 0; i < Selection.Length; i++)
+      Selection[i].enabled = i == 2;
     spriteEditor.gameObject.SetActive(true);
     waveformEditor.gameObject.SetActive(false);
-    tileEditor.gameObject.SetActive(false);
     tilemapEditor.gameObject.SetActive(false);
     musicEditor.gameObject.SetActive(false);
     fontsEditor.gameObject.SetActive(false);
@@ -28,9 +30,10 @@ public class Dev : MonoBehaviour {
 
   public void WaveformEditor() {
     EmptyEditor.SetActive(false);
+    for (int i = 0; i < Selection.Length; i++)
+      Selection[i].enabled = i == 4;
     spriteEditor.gameObject.SetActive(false);
     waveformEditor.gameObject.SetActive(true);
-    tileEditor.gameObject.SetActive(false);
     tilemapEditor.gameObject.SetActive(false);
     musicEditor.gameObject.SetActive(false);
     fontsEditor.gameObject.SetActive(false);
@@ -39,31 +42,22 @@ public class Dev : MonoBehaviour {
 
   public void MusicEditor() {
     EmptyEditor.SetActive(false);
+    for (int i = 0; i < Selection.Length; i++)
+      Selection[i].enabled = i == 5;
     spriteEditor.gameObject.SetActive(false);
     waveformEditor.gameObject.SetActive(false);
-    tileEditor.gameObject.SetActive(false);
     tilemapEditor.gameObject.SetActive(false);
     musicEditor.gameObject.SetActive(true);
     fontsEditor.gameObject.SetActive(false);
     codeEditor.gameObject.SetActive(false);
   }
 
-  public void TilesEditor() {
-    EmptyEditor.SetActive(false);
-    spriteEditor.gameObject.SetActive(false);
-    waveformEditor.gameObject.SetActive(false);
-    tileEditor.gameObject.SetActive(true);
-    tilemapEditor.gameObject.SetActive(false);
-    musicEditor.gameObject.SetActive(false);
-    fontsEditor.gameObject.SetActive(false);
-    codeEditor.gameObject.SetActive(false);
-  }
-
   public void TilemapEditor() {
+    for (int i = 0; i < Selection.Length; i++)
+      Selection[i].enabled = i == 3;
     EmptyEditor.SetActive(false);
     spriteEditor.gameObject.SetActive(false);
     waveformEditor.gameObject.SetActive(false);
-    tileEditor.gameObject.SetActive(false);
     tilemapEditor.gameObject.SetActive(true);
     musicEditor.gameObject.SetActive(false);
     fontsEditor.gameObject.SetActive(false);
@@ -72,9 +66,10 @@ public class Dev : MonoBehaviour {
 
   public void FontsEditor() {
     EmptyEditor.SetActive(false);
+    for (int i = 0; i < Selection.Length; i++)
+      Selection[i].enabled = i == 1;
     spriteEditor.gameObject.SetActive(false);
     waveformEditor.gameObject.SetActive(false);
-    tileEditor.gameObject.SetActive(false);
     tilemapEditor.gameObject.SetActive(false);
     musicEditor.gameObject.SetActive(false);
     fontsEditor.gameObject.SetActive(true);
@@ -83,9 +78,10 @@ public class Dev : MonoBehaviour {
 
   public void CodeEditor() {
     EmptyEditor.SetActive(false);
+    for (int i = 0; i < Selection.Length; i++)
+      Selection[i].enabled = i == 0;
     spriteEditor.gameObject.SetActive(false);
     waveformEditor.gameObject.SetActive(false);
-    tileEditor.gameObject.SetActive(false);
     tilemapEditor.gameObject.SetActive(false);
     musicEditor.gameObject.SetActive(false);
     fontsEditor.gameObject.SetActive(false);

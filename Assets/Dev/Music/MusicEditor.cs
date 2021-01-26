@@ -1769,7 +1769,7 @@ public class MusicEditor : MonoBehaviour {
 
   public void EditInWaveEditor() {
     CopyToWaveEditor();
-    editor.gameObject.SetActive(true);
+    Dev.inst.WaveformEditor();
     editor.Done.gameObject.SetActive(true);
     gameObject.SetActive(false);
   }
