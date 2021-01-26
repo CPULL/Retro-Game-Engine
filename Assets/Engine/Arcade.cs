@@ -825,8 +825,21 @@ public class Arcade : MonoBehaviour {
       t.gameObject.SetActive(true);
       tilemaps.Add(id, t);
     }
+    t.order = order;
     t.Set(mem, start);
     t.rt.localScale = new Vector3(scaleW, scaleH, 1);
+  }
+
+  void Tilepos(byte id, int scrollx, int scrolly, byte order = 255, bool enabled = true) {
+    if (!tilemaps.ContainsKey(id)) throw new Exception("Undefine dTilemap with ID = " + id);
+    TMap t = tilemaps[id];
+    t.transform.localPosition = new Vector3(scaleW * scrollx, scaleH * scrolly, 0);
+    if (order != 255) {
+      if (order < 0) order = 0;
+      if (order > 8) order = 8;
+      t.transform.SetParent(Layers[order]);
+    }
+    t.enabled = enabled;
   }
 
   #endregion Tilemap
@@ -1300,6 +1313,16 @@ public class Arcade : MonoBehaviour {
 
         case BNF.TILEMAP: {
           Tilemap(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToInt(culture));
+          return false;
+        }
+
+        case BNF.TILEPOS: {
+          if (n.CN4 == null)
+            Tilepos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture));
+          else if (n.CN5 == null)
+            Tilepos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN4).ToByte(culture));
+          else
+            Tilepos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToBool(culture));
           return false;
         }
 

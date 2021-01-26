@@ -208,6 +208,7 @@ public class CodeParser : MonoBehaviour {
   
   readonly Regex rgTilemap = new Regex("[\\s]*tilemap[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgTilepos = new Regex("[\\s]*tilepos[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgTileset = new Regex("[\\s]*tileset[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSound = new Regex("[\\s]*sound[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWave = new Regex("[\\s]*wave[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -740,14 +741,26 @@ public class CodeParser : MonoBehaviour {
       return;
     }
 
-    // [TilePos] id, scrollx, scrolly, order [, enabled]
+    // [TilePos] id, scrollx, scrolly[, order [, enabled]]
     if (expected.IsGood(Expected.Val.Statement) && rgTilepos.IsMatch(line)) {
       Match m = rgTilepos.Match(line);
       CodeNode node = new CodeNode(BNF.TILEPOS, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 4 && num != 5)
+      if (num < 3 && num > 5)
         throw new Exception("Invalid TilePos(), wrong number of parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [TileSet] x, y, id, rot
+    if (expected.IsGood(Expected.Val.Statement) && rgTileset.IsMatch(line)) {
+      Match m = rgTileset.Match(line);
+      CodeNode node = new CodeNode(BNF.TILESET, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 3 && num != 4)
+        throw new Exception("Invalid TileSet(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }

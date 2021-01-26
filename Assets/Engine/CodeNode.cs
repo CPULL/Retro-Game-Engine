@@ -347,8 +347,14 @@ public class CodeNode {
         case BNF.MUSICSTOP: return "FIXME";
         case BNF.MUSICPOS: return "FIXME";
         case BNF.MUSICVOICES: return "FIXME";
-        case BNF.TILEMAP: return "FIXME";
-        case BNF.TILEPOS: return "FIXME";
+
+        case BNF.TILEMAP: return "TileMap(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true)  + ", " + CN3?.ToString(indent, true) + ")";
+        case BNF.TILEPOS: return "TilePos(" + CN1?.ToString(indent, true) + ", " + CN2?.ToString(indent, true) + ", " + CN3?.ToString(indent, true) +
+            (CN4 == null ? "" : (", " + CN4.ToString(indent, true) +
+              (CN5 == null ? "" : ", " + CN5.ToString(indent, true))
+            )) + ")";
+
+        case BNF.TILESET: return "FIXME";
 
         default:
           res += "[[Missing:" + type + "]]";
@@ -615,6 +621,7 @@ public enum BNF {
   MUSICVOICES,
   TILEMAP,
   TILEPOS,
+  TILESET,
   NOP,
 }
 

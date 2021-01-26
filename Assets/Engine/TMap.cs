@@ -5,6 +5,7 @@ using UnityEngine.UI;
 public class TMap : MonoBehaviour {
   int w, h;
   int tw, th;
+  public byte order;
   readonly Dictionary<byte, TileDef> tileDefs = new Dictionary<byte, TileDef>();
   Tile[,] tiles;
   public GameObject TileTemplate;
