@@ -1350,7 +1350,7 @@ public class Arcade : MonoBehaviour {
           if (n.CN5 == null)
             TileSet(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture));
           else
-            TilePos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToByte(culture));
+            TilePos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToBool(culture));
           return false;
         }
 

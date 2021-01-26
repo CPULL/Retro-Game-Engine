@@ -1,18 +1,13 @@
 **************** TODO ********************************************************************************
 
-Use Tiles, with priority byte in Arcade
-
 Documentation on the Wiki of Github
 Arcade: Custom fonts
 Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks" when the sample is regenerated
 
-Parser: add ToString for the missing BNF values
+Parser: add ToString for the missing BNF values (music)
 
-Complete tilemaps in Engine:
-* size according to screen
-* add/remove/change tiles
-* scroll
-* change priority
+Load image for sprite?
+
 
 FUTURE: Code editor
 FUTURE: Font editor
