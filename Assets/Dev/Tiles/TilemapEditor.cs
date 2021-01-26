@@ -12,7 +12,7 @@ public class TilemapEditor : MonoBehaviour {
   readonly Dictionary<byte, TileInPalette> Palette = new Dictionary<byte, TileInPalette>();
 
   private void Start() {
-    AlterMapSize(false);
+    updateMapSize = StartCoroutine(UpdateMapSize(0, 0));
   }
 
   TileInMap[,] map;
@@ -32,6 +32,8 @@ public class TilemapEditor : MonoBehaviour {
   int w = 24, h = 16;
   int tw = 16, th = 16;
   public void AlterMapSize(bool fromInputField) {
+    int pw = w;
+    int ph = h;
     if (fromInputField) {
       string val = MapSizeField.text.Trim().ToLowerInvariant();
       int pos1 = val.IndexOf(' ');
@@ -57,39 +59,64 @@ public class TilemapEditor : MonoBehaviour {
       MapSizeField.SetTextWithoutNotify(MapSizeW.value + "x" + MapSizeH.value);
     }
     if (updateMapSize == null) {
-      updateMapSize = StartCoroutine(UpdateMapSize());
+      updateMapSize = StartCoroutine(UpdateMapSize(pw, ph));
     }
   }
-
-  IEnumerator UpdateMapSize() {
+  IEnumerator UpdateMapSize(int pw, int ph) {
     yield return new WaitForSeconds(.3f);
     w = (int)MapSizeW.value;
     h = (int)MapSizeH.value;
     mapGrid.constraintCount = w;
     int size = w * h;
-    for (int i = 0; i < mapGrid.transform.childCount - size; i++) {
-      Destroy(mapGrid.transform.GetChild(size + i).gameObject);
-    }
-    for (int i = mapGrid.transform.childCount; i < size; i++) {
-      TileInMap t = Instantiate(TileInMapTemplate, mapGrid.transform).GetComponent<TileInMap>();
-      t.id = 0;
-      t.CallBack = SelectTileInMap;
-      t.OverCallBack = OverTileInMap;
-      t.img.texture = emptyTexture;
-      t.gameObject.SetActive(true);
+    if (map == null) {
+      pw = 0;
+      ph = 0;
     }
 
-    map = new TileInMap[w, h];
+    // Detach all the previous items from the grid, keep the array
+    if (map != null)
+      foreach (TileInMap t in map)
+        t.transform.SetParent(null);
 
+    // Create the new array and fill what is possible with the old array
+    TileInMap[,] newmap = new TileInMap[w, h];
+    for (int x = 0; x < w; x++)
+      for (int y = 0; y < h; y++)
+        if (x < pw && y < ph) {
+          newmap[x, y] = map[x, y];
+          map[x, y] = null;
+        }
+
+    // Destroy all items that are not moved
+    if (map != null)
+      for (int x = 0; x < pw; x++)
+      for (int y = 0; y < ph; y++)
+        if (map[x, y] != null)
+          Destroy(map[x, y].gameObject);
+
+    // Create the missing items
+    for (int x = 0; x < w; x++)
+      for (int y = 0; y < h; y++)
+        if (newmap[x, y] == null) {
+          TileInMap t = Instantiate(TileInMapTemplate, null).GetComponent<TileInMap>();
+          t.Setup(SelectTileInMap, OverTileInMap, emptyTexture);
+          newmap[x, y] = t;
+        }
+
+    // Repopulate the grid with the ordered siblings
     for (int y = 0; y < h; y++)
       for (int x = 0; x < w; x++) {
-        TileInMap t = mapGrid.transform.GetChild(x + w * y).GetComponent<TileInMap>();
-        t.x = (byte)x;
-        t.y = (byte)y;
-        map[x, y] = t;
+        newmap[x, y].x = (byte)x;
+        newmap[x, y].y = (byte)y;
+        newmap[x, y].transform.SetParent(mapGrid.transform);
+        newmap[x, y].transform.SetSiblingIndex(x + w * y);
+        newmap[x, y].transform.localScale = new Vector3(1, 1, 1);
       }
+
+    map = newmap;
     updateMapSize = null;
   }
+  
   public void AlterTileSize(bool fromInputField) {
     if (fromInputField) {
       string val = TileSizeField.text.Trim().ToLowerInvariant();
@@ -101,22 +128,21 @@ public class TilemapEditor : MonoBehaviour {
       }
       int pos = pos1;
       if (pos2 != -1 && (pos2 < pos1 || pos1 == -1)) pos = pos2;
-      if (!int.TryParse(val.Substring(0, pos).Trim(), out w)) {
+      if (!int.TryParse(val.Substring(0, pos).Trim(), out tw)) {
         TileSizeField.SetTextWithoutNotify(TileSizeW.value + "x" + TileSizeH.value);
         return;
       }
-      if (!int.TryParse(val.Substring(pos + 1).Trim(), out h)) {
+      if (!int.TryParse(val.Substring(pos + 1).Trim(), out th)) {
         TileSizeField.SetTextWithoutNotify(TileSizeW.value + "x" + TileSizeH.value);
         return;
       }
-      TileSizeW.SetValueWithoutNotify(w);
-      TileSizeH.SetValueWithoutNotify(h);
+      TileSizeW.SetValueWithoutNotify(tw);
+      TileSizeH.SetValueWithoutNotify(th);
     }
     else {
       TileSizeField.SetTextWithoutNotify(TileSizeW.value + "x" + TileSizeH.value);
     }
   }
-
   public void UpdateTileSize() {
     if (tw == (int)TileSizeW.value && th == (int)TileSizeH.value) return;
     tw = (int)TileSizeW.value;
@@ -130,7 +156,9 @@ public class TilemapEditor : MonoBehaviour {
     }
     foreach(Transform tr in mapGrid.transform) {
       TileInMap tl = tr.GetComponent<TileInMap>();
-      tl.img.texture = Palette[tl.id].img.texture;
+      tl.Deselect();
+      if (tl.id != 0)
+        tl.img.texture = Palette[tl.id].img.texture;
     }
   }
 

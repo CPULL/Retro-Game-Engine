@@ -57,19 +57,19 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     img.texture = texture;
   }
 
-  internal void UpdateSize(int w, int h) {
-    byte[] newData = new byte[w * h];
-    Texture2D newTexture = new Texture2D(w, h, TextureFormat.RGBA32, false);
+  internal void UpdateSize(int nw, int nh) {
+    byte[] newData = new byte[nw * nh];
+    Texture2D newTexture = new Texture2D(nw, nh, TextureFormat.RGBA32, false);
     Texture2D oldt = (Texture2D)img.texture;
-    for (int x = 0; x < w; x++)
-      for (int y = 0; y < h; y++) {
-        if (x >= w || y >= h) continue;
+    for (int x = 0; x < nw; x++)
+      for (int y = 0; y < nh; y++) {
+        if (x >= nw || y >= nh) continue;
         if (x >= tw || y >= th) {
-          newData[x + w * y] = 63;
+          newData[x + nw * y] = 63;
           newTexture.SetPixel(x, y, FullWhite);
         }
         else {
-          newData[x + w * y] = rawData[w + tw * y];
+          newData[x + nw * y] = rawData[x + tw * y];
           newTexture.SetPixel(x, y, oldt.GetPixel(x, y));
         }
       }
@@ -77,8 +77,8 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     img.texture = newTexture;
     rawData = newData;
     Destroy(oldt);
-    tw = w;
-    th = h;
+    tw = nw;
+    th = nh;
   }
 
   internal void UpdateTexture(Pixel[] pixels) {

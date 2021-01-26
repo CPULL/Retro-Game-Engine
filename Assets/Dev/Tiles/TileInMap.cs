@@ -47,4 +47,13 @@ public class TileInMap : MonoBehaviour, IPointerClickHandler, IPointerEnterHandl
   public void Select() {
     border.color = Over;
   }
+
+  internal void Setup(System.Action<TileInMap> selectTileInMap, System.Action<TileInMap, bool> overTileInMap, Texture2D emptyTexture) {
+    id = 0;
+    CallBack = selectTileInMap;
+    OverCallBack = overTileInMap;
+    img.texture = emptyTexture;
+    gameObject.SetActive(true);
+    transform.localScale = new Vector3(1, 1, 1);
+  }
 }
