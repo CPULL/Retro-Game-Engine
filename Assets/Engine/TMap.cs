@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class TMap : MonoBehaviour {
-  int w, h;
+  [HideInInspector] public int w, h;
   int tw, th;
   public byte order;
   readonly Dictionary<byte, TileDef> tileDefs = new Dictionary<byte, TileDef>();
@@ -93,19 +93,6 @@ public class TMap : MonoBehaviour {
 
 
   /*
-  private void Pos(int px, int py, byte order) {
-    // FIXME
-  }
-
-  void SetTile(int x, int y, byte tile, byte rot) {
-
-  }
-
-  byte GetTile(int x, int y) {
-    if (x < 0 || x >= w || y < 0 || y >= h) return 0;
-    return tiles[x, y].id;
-  }
-
   void UpdateTileDef(byte id, byte[] data) {
 
   }
@@ -126,6 +113,28 @@ public class TMap : MonoBehaviour {
     tw = 0;
     th = 0;
   }
+
+  internal void SetTile(int x, int y, byte tile, byte rot) {
+    tiles[x, y].id = tile;
+    if (tileDefs.ContainsKey(tile))
+      tiles[x, y].sprite.texture = tileDefs[tile].texture;
+    else
+      tiles[x, y].sprite.texture = emptyTexture;
+    if (rot != 255) tiles[x, y].rot = rot;
+    tiles[x, y].Rot();
+  }
+
+  internal byte GetTile(int x, int y) {
+    if (x < 0 || x >= w || y < 0 || y >= h) return 0;
+    return tiles[x, y].id;
+  }
+
+  internal byte GetTileRotation(int x, int y) {
+    if (x < 0 || x >= w || y < 0 || y >= h) return 0;
+    return tiles[x, y].rot;
+  }
+
+
 }
 
 public class TileDef {

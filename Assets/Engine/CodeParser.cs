@@ -753,13 +753,13 @@ public class CodeParser : MonoBehaviour {
       return;
     }
 
-    // [TileSet] x, y, id, rot
+    // [TileSet] id, x, y, tile, rot
     if (expected.IsGood(Expected.Val.Statement) && rgTileset.IsMatch(line)) {
       Match m = rgTileset.Match(line);
       CodeNode node = new CodeNode(BNF.TILESET, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 3 && num != 4)
+      if (num != 4 && num != 5)
         throw new Exception("Invalid TileSet(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;

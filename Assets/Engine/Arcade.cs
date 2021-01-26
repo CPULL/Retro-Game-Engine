@@ -830,8 +830,8 @@ public class Arcade : MonoBehaviour {
     t.rt.localScale = new Vector3(scaleW, scaleH, 1);
   }
 
-  void Tilepos(byte id, int scrollx, int scrolly, byte order = 255, bool enabled = true) {
-    if (!tilemaps.ContainsKey(id)) throw new Exception("Undefine dTilemap with ID = " + id);
+  void TilePos(byte id, int scrollx, int scrolly, byte order = 255, bool enabled = true) {
+    if (!tilemaps.ContainsKey(id)) throw new Exception("Undefined Tilemap with ID = " + id);
     TMap t = tilemaps[id];
     t.transform.localPosition = new Vector3(scaleW * scrollx, scaleH * scrolly, 0);
     if (order != 255) {
@@ -840,6 +840,14 @@ public class Arcade : MonoBehaviour {
       t.transform.SetParent(Layers[order]);
     }
     t.enabled = enabled;
+  }
+
+  void TileSet(byte id, int x, int y, byte tile, byte rot = 255) {
+    if (!tilemaps.ContainsKey(id)) throw new Exception("Undefined Tilemap with ID = " + id);
+    TMap t = tilemaps[id];
+    if (x < 0 || y < 0 || x >= t.w || y >= t.h) throw new Exception("Invalid tile (" + x + ", " + y + ") for Tilemap ID = " + id);
+    if (rot > 8 && rot != 255) rot = 0;
+    t.SetTile(x, y, tile, rot);
   }
 
   #endregion Tilemap
@@ -1318,11 +1326,19 @@ public class Arcade : MonoBehaviour {
 
         case BNF.TILEPOS: {
           if (n.CN4 == null)
-            Tilepos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture));
+            TilePos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture));
           else if (n.CN5 == null)
-            Tilepos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN4).ToByte(culture));
+            TilePos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN4).ToByte(culture));
           else
-            Tilepos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToBool(culture));
+            TilePos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToBool(culture));
+          return false;
+        }
+
+        case BNF.TILESET: {
+          if (n.CN5 == null)
+            TileSet(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture));
+          else
+            TilePos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToByte(culture));
           return false;
         }
 
