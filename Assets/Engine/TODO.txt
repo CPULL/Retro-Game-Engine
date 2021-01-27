@@ -6,9 +6,6 @@ Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks"
 
 Parser: add ToString for the missing BNF values (music)
 
-Create helper for colors.
-When picking color in sprite editor fix palette
-
 
 FUTURE: Code editor
 FUTURE: Font editor
@@ -16,3 +13,6 @@ FUTURE: step by step debugger
 FUTURE: map keys
 
 Alter tiles and sprite to use the new Colors and sizes
+Uniform export HEX and add also way to get 4 bytes at time
+
+Generalize text parser? (Arcade, Sprite, TIlempa, Wave, Music)

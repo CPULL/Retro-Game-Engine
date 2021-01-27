@@ -531,16 +531,20 @@ public class SpriteEditor : MonoBehaviour {
   public void Save() {
     action = ActionVal.No;
     SetButtons(-1);
-    string res = "SpriteSize:\n";
+    string res = "SpriteSize:\nusehex\n";
     byte sizex = (byte)w;
     byte sizey = (byte)h;
-    res += "0x" + sizex.ToString("X2") + " 0x" + sizey.ToString("X2") + "\n";
-    res += "Sprite:";
+    res += sizex.ToString("X2") + " " + sizey.ToString("X2") + "\n";
+    res += "Sprite:\n";
     int num = w * h;
-    for (int i = 0; i < num; i++) {
-      if (i % sizex == 0) res += "\n";
-      res += "0x" + Col.GetColorByte(pixels[i].Get()).ToString("X2") + " ";
+    for (int i = 0; i < num; i+=4) {
+      res += Col.GetColorByte(pixels[i].Get()).ToString("X2");
+      if (i + 1 < num) res += Col.GetColorByte(pixels[i + 1].Get()).ToString("X2");
+      if (i + 2 < num) res += Col.GetColorByte(pixels[i + 2].Get()).ToString("X2");
+      if (i + 3 < num) res += Col.GetColorByte(pixels[i + 3].Get()).ToString("X2");
+      res += " ";
     }
+    res += "\n";
     Values.gameObject.SetActive(true);
     Values.text = res;
   }
@@ -552,61 +556,39 @@ public class SpriteEditor : MonoBehaviour {
     LoadSubButton.enabled = true;
   }
 
-  readonly Regex rgComments = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgComments = new Regex("/\\*(?>(?:(?>[^*]+)|\\*(?!/))*)\\*/", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgComment = new Regex("//(.*?)\r?\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgLabels = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgHex = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
     Message.text = "";
     string data = Values.text.Trim();
     data = rgComments.Replace(data, " ");
+    data = rgComment.Replace(data, " ");
     data = rgLabels.Replace(data, " ");
     data = data.Replace('\n', ' ').Trim();
     while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
-    data = ReadNextByte(data, out byte wb);
-    data = ReadNextByte(data, out byte hb);
-    if (wb < 8 || hb < 8 || wb > 32 || hb > 32) {
+    data = ByteReader.ReadByte(data, out byte wb);
+    data = ByteReader.ReadByte(data, out byte hb);
+    if (wb < 8 || hb < 8 || wb > 64 || hb > 64) {
       Message.text = "This does not look like a sprite.";
       return;
     }
 
     for (int i = 0; i < sizes.Length; i++) {
-      if (sizes[i] <= wb) WidthSlider.SetValueWithoutNotify(sizes[i]);
-      if (sizes[i] <= hb) HeightSlider.SetValueWithoutNotify(sizes[i]);
+      if (sizes[i] <= wb) WidthSlider.SetValueWithoutNotify(i);
+      if (sizes[i] <= hb) HeightSlider.SetValueWithoutNotify(i);
     }
     ChangeSpriteSize();
     for (int i = 0; i < w * h; i++) {
-      data = ReadNextByte(data, out byte col);
+      data = ByteReader.ReadByte(data, out byte col);
       pixels[i].Set(Col.GetColor(col));
     }
 
     Values.gameObject.SetActive(false);
     LoadSubButton.enabled = false;
-  }
-
-  string ReadNextByte(string data, out byte res) {
-    int pos1 = data.IndexOf(' ');
-    int pos2 = data.Length;
-    if (pos1 == -1) pos1 = int.MaxValue;
-    if (pos2 == -1) pos1 = int.MaxValue;
-    int pos = pos1;
-    if (pos > pos2) pos = pos2;
-    if (pos < 1) {
-      res = 0;
-      return "";
-    }
-
-    string part = data.Substring(0, pos);
-    Match m = rgHex.Match(part);
-    if (m.Success) {
-      res = (byte)Convert.ToInt32(m.Groups[1].Value, 16);
-      return data.Substring(pos).Trim();
-    }
-
-    res = 0;
-    return data;
   }
 
   public void LoadFile() {
