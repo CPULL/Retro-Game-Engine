@@ -15,3 +15,15 @@ FUTURE: Font editor
 FUTURE: step by step debugger
 FUTURE: map keys
 
+
+
+
+
+8 bits
+
+8 colors -> 3 bits with alpha 25%, 50% -> 4 bits
+1 value for full alpha
+
+0000 0000 -> full alpha
+rgba 0001 -> 1 bit per color and alpha 33% or 66%
+rrgg bb?? -> 2 bits per color + 4 light level?

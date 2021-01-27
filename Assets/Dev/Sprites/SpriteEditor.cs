@@ -65,8 +65,8 @@ public class SpriteEditor : MonoBehaviour {
       t.SetParent(null);
 
     pixels = new Pixel[num];
-    Sprite box = w <= 8 && h <= 8 ? boxes[2] : boxes[1];
-    if (w >= 24 || h >= 24) box = boxes[0];
+    Sprite box = w <= 16 && h <= 16 ? boxes[2] : boxes[1];
+    if (w >= 40 || h >= 40) box = boxes[0];
 
     for (int i = 0; i < num; i++) {
       Pixel pixel = Instantiate(PixelPrefab, SpriteGrid.transform).GetComponent<Pixel>();
@@ -579,7 +579,7 @@ public class SpriteEditor : MonoBehaviour {
     ChangeSpriteSize();
     for (int i = 0; i < w * h; i++) {
       data = ReadNextByte(data, out byte col);
-      pixels[i].Set(Col.GetColor32(col));
+      pixels[i].Set(Col.GetColor(col));
     }
 
     Values.gameObject.SetActive(false);
@@ -659,7 +659,7 @@ public class SpriteEditor : MonoBehaviour {
           a /= scale * scale;
 
           // Normalize the color
-          pixels[x + w * y].Set(Col.GetColor32(r, g, b, a));
+          pixels[x + w * y].Set(Col.NormalizeColor(r, g, b, a));
         }
       }
     }
@@ -776,7 +776,7 @@ public class SpriteEditor : MonoBehaviour {
     for (int x = 0; x < tile.tw; x++)
       for (int y = 0; y < tile.th; y++) {
         byte col = tile.rawData[x + w * y];
-        pixels[x + w * y].Set(Col.GetColor32(col));
+        pixels[x + w * y].Set(Col.GetColor(col));
       }
 
     SetUndo(false);

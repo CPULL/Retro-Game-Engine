@@ -16,6 +16,7 @@ public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, 
     pos = p;
     ClickCall = cb;
     OverCall = oc;
+    if (img == null) img = GetComponent<Image>();
     img.color = c;
   }
 
