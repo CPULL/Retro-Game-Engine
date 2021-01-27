@@ -152,4 +152,32 @@ public class Col {
     best += 216;
     return best;
   }
+
+  public static string GetColorString(int c) {
+    byte col = (byte)c;
+    byte r;
+    byte g;
+    byte b;
+    byte a;
+    if (c < 216) {
+      b = (byte)(col % 6);
+      col -= b;
+      col /= 6;
+      g = (byte)(col % 6);
+      col -= g;
+      col /= 6;
+      r = (byte)(col % 6);
+      return r.ToString() + g.ToString() + b.ToString();
+    }
+    col = (byte)(col - 216); // -> 0-39
+    r = alphas[col].r;
+    g = alphas[col].g;
+    b = alphas[col].b;
+    a = alphas[col].a;
+    r /= 51;
+    g /= 51;
+    b /= 51;
+    a /= 85;
+    return r.ToString() + g.ToString() + b.ToString() + (a + 1).ToString();
+  }
 }

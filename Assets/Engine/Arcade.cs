@@ -446,10 +446,14 @@ public class Arcade : MonoBehaviour {
 
   void SetPixel(int x, int y, byte col) {
     if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
-    Color32 pixel = pixels[x + sw * y];
-    pixel.r = (byte)(((col & 0b00110000) >> 4) * 85);
-    pixel.g = (byte)(((col & 0b00001100) >> 2) * 85);
-    pixel.b = (byte)(((col & 0b00000011) >> 0) * 85);
+    Color32 pixel = Col.GetColor(col);
+    pixels[x + sw * y] = pixel;
+    texture.SetPixel(x, hm1 - y, pixel);
+  }
+
+  void SetPixel(int x, int y, Color32 pixel) {
+    if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
+    pixels[x + sw * y] = pixel;
     texture.SetPixel(x, hm1 - y, pixel);
   }
 
@@ -459,6 +463,7 @@ public class Arcade : MonoBehaviour {
     pixel.r = r;
     pixel.g = g;
     pixel.b = b;
+    pixels[x + sw * y] = pixel;
     texture.SetPixel(x, hm1 - y, pixel);
   }
 
@@ -477,12 +482,8 @@ public class Arcade : MonoBehaviour {
 
   void Write8(string txt, int x, int y, byte col, byte back) {
     int pos = x;
-    byte r = (byte)(((col & 0b00110000) >> 4) * 85);
-    byte g = (byte)(((col & 0b00001100) >> 2) * 85);
-    byte b = (byte)(((col & 0b00000011) >> 0) * 85);
-    byte rbk = (byte)(((back & 0b00110000) >> 4) * 85);
-    byte gbk = (byte)(((back & 0b00001100) >> 2) * 85);
-    byte bbk = (byte)(((back & 0b00000011) >> 0) * 85);
+    Color32 frontc = Col.GetColor(col);
+    Color32 backc = Col.GetColor(back);
     foreach (char c in txt) {
       if (c == '\n' || c == '\r') {
         y += 8;
@@ -498,9 +499,9 @@ public class Arcade : MonoBehaviour {
       for (int h = 0; h < 8; h++) {
         for (int w = 0; w < 8; w++) {
           if ((gliph[h] & (1 << (7 - w))) != 0)
-            SetPixel(pos + w, y + h, r, g, b);
+            SetPixel(pos + w, y + h, frontc);
           else if (back != 255)
-            SetPixel(pos + w, y + h, rbk, gbk, bbk);
+            SetPixel(pos + w, y + h, backc);
         }
       }
       pos += 8;
@@ -510,12 +511,8 @@ public class Arcade : MonoBehaviour {
 
   void Write6(string txt, int x, int y, byte col, byte back) {
     int pos = x;
-    byte r = (byte)(((col & 0b00110000) >> 4) * 85);
-    byte g = (byte)(((col & 0b00001100) >> 2) * 85);
-    byte b = (byte)(((col & 0b00000011) >> 0) * 85);
-    byte rbk = (byte)(((back & 0b00110000) >> 4) * 85);
-    byte gbk = (byte)(((back & 0b00001100) >> 2) * 85);
-    byte bbk = (byte)(((back & 0b00000011) >> 0) * 85);
+    Color32 frontc = Col.GetColor(col);
+    Color32 backc = Col.GetColor(back);
     foreach (char c in txt) {
       if (c == '\n' || c == '\r') {
         y += 8;
@@ -531,9 +528,9 @@ public class Arcade : MonoBehaviour {
       for (int h = 0; h < 8; h++) {
         for (int w = 0; w < 6; w++) {
           if ((gliph[h] & (1 << (7 - w))) != 0)
-            SetPixel(pos + w, y + h, r, g, b);
+            SetPixel(pos + w, y + h, frontc);
           else if (back != 255)
-            SetPixel(pos + w, y + h, rbk, gbk, bbk);
+            SetPixel(pos + w, y + h, backc);
         }
       }
       pos += 6;
@@ -544,12 +541,8 @@ public class Arcade : MonoBehaviour {
   void WriteC(string txt, int x, int y, byte col, byte back) {
     if (back == 255) back = 0;
     int pos = x;
-    byte r = (byte)(((col & 0b00110000) >> 4) * 85);
-    byte g = (byte)(((col & 0b00001100) >> 2) * 85);
-    byte b = (byte)(((col & 0b00000011) >> 0) * 85);
-    byte rbk = (byte)(((back & 0b00110000) >> 4) * 85);
-    byte gbk = (byte)(((back & 0b00001100) >> 2) * 85);
-    byte bbk = (byte)(((back & 0b00000011) >> 0) * 85);
+    Color32 frontc = Col.GetColor(col);
+    Color32 backc = Col.GetColor(back);
     foreach (char c in txt) {
       if (c == '\n' || c == '\r') {
         y += 8;
@@ -564,12 +557,12 @@ public class Arcade : MonoBehaviour {
         gliph = font[c];
       for (int h = 0; h < 8; h++) {
         for (int w = 0; w < 8; w += 2) {
-          int mr = (gliph[h] & (1 << (7 - w))) != 0 ? r : rbk;
-          int mg = (gliph[h] & (1 << (7 - w))) != 0 ? g : gbk;
-          int mb = (gliph[h] & (1 << (7 - w))) != 0 ? b : bbk;
-          mr += (gliph[h] & (1 << (6 - w))) != 0 ? r : rbk;
-          mg += (gliph[h] & (1 << (6 - w))) != 0 ? g : gbk;
-          mb += (gliph[h] & (1 << (6 - w))) != 0 ? b : bbk;
+          int mr = (gliph[h] & (1 << (7 - w))) != 0 ? frontc.r : backc.r;
+          int mg = (gliph[h] & (1 << (7 - w))) != 0 ? frontc.g : backc.g;
+          int mb = (gliph[h] & (1 << (7 - w))) != 0 ? frontc.b : backc.b;
+          mr += (gliph[h] & (1 << (6 - w))) != 0 ? frontc.r : backc.r;
+          mg += (gliph[h] & (1 << (6 - w))) != 0 ? frontc.g : backc.g;
+          mb += (gliph[h] & (1 << (6 - w))) != 0 ? frontc.b : backc.b;
           SetPixel(pos + w / 2, y + h, (byte)(mr >> 1), (byte)(mg >> 1), (byte)(mb >> 1));
         }
       }
@@ -582,12 +575,8 @@ public class Arcade : MonoBehaviour {
   void WriteC6(string txt, int x, int y, byte col, byte back) {
     if (back == 255) back = 0;
     int pos = x;
-    byte r = (byte)(((col & 0b00110000) >> 4) * 85);
-    byte g = (byte)(((col & 0b00001100) >> 2) * 85);
-    byte b = (byte)(((col & 0b00000011) >> 0) * 85);
-    byte rbk = (byte)(((back & 0b00110000) >> 4) * 85);
-    byte gbk = (byte)(((back & 0b00001100) >> 2) * 85);
-    byte bbk = (byte)(((back & 0b00000011) >> 0) * 85);
+    Color32 frontc = Col.GetColor(col);
+    Color32 backc = Col.GetColor(back);
     foreach (char c in txt) {
       if (c == '\n' || c == '\r') {
         y += 8;
@@ -602,12 +591,12 @@ public class Arcade : MonoBehaviour {
         gliph = font6[c];
       for (int h = 0; h < 8; h++) {
         for (int w = 0; w < 6; w+=2) {
-          int mr = (gliph[h] & (1 << (7 - w))) != 0 ? r : rbk;
-          int mg = (gliph[h] & (1 << (7 - w))) != 0 ? g : gbk;
-          int mb = (gliph[h] & (1 << (7 - w))) != 0 ? b : bbk;
-          mr += (gliph[h] & (1 << (6 - w))) != 0 ? r : rbk;
-          mg += (gliph[h] & (1 << (6 - w))) != 0 ? g : gbk;
-          mb += (gliph[h] & (1 << (6 - w))) != 0 ? b : bbk;
+          int mr = (gliph[h] & (1 << (7 - w))) != 0 ? frontc.r : backc.r;
+          int mg = (gliph[h] & (1 << (7 - w))) != 0 ? frontc.g : backc.g;
+          int mb = (gliph[h] & (1 << (7 - w))) != 0 ? frontc.b : backc.b;
+          mr += (gliph[h] & (1 << (6 - w))) != 0 ? frontc.r : backc.r;
+          mg += (gliph[h] & (1 << (6 - w))) != 0 ? frontc.g : backc.g;
+          mb += (gliph[h] & (1 << (6 - w))) != 0 ? frontc.b : backc.b;
           SetPixel(pos + w/2, y + h, (byte)(mr >> 1), (byte)(mg >> 1), (byte)(mb >> 1));
         }
       }
@@ -617,15 +606,12 @@ public class Arcade : MonoBehaviour {
   }
 
   void Clear(byte col) {
-    byte r = (byte)(((col & 0b110000) >> 4) * (1 + 4 + 16 + 64));
-    byte g = (byte)(((col & 0b1100) >> 2) * (1 + 4 + 16 + 64));
-    byte b = (byte)((col & 0b11) * (1 + 4 + 16 + 64));
-
+    Color32 pixel = Col.GetColor(col);
     int size = sw * sh * 4;
     for (int i = 0; i < size; i+=4) {
-      raw[i + 0] = r;
-      raw[i + 1] = g;
-      raw[i + 2] = b;
+      raw[i + 0] = pixel.r;
+      raw[i + 1] = pixel.g;
+      raw[i + 2] = pixel.b;
       raw[i + 3] = 255;
     }
     texture.LoadRawTextureData(raw);

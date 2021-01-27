@@ -41,16 +41,11 @@ public class TMap : MonoBehaviour {
         for (int x = 0; x < tw; x++) {
           int p = pos + x + tw * y;
           if (p >= limit) continue;
-          byte col = data[p];
-          byte a = (byte)(255 - ((col & 0b11000000) >> 6) * 85);
-          byte r = (byte)(((col & 0b00110000) >> 4) * 85);
-          byte g = (byte)(((col & 0b00001100) >> 2) * 85);
-          byte b = (byte)(((col & 0b00000011) >> 0) * 85);
-          if (a == 0 && (r != 0 || g != 0 || b != 0)) a = 40;
-          raw[dst + 0] = r;
-          raw[dst + 1] = g;
-          raw[dst + 2] = b;
-          raw[dst + 3] = a;
+          Color32 col = Col.GetColor(data[p]);
+          raw[dst + 0] = col.r;
+          raw[dst + 1] = col.g;
+          raw[dst + 2] = col.b;
+          raw[dst + 3] = col.a;
           dst += 4;
         }
       }

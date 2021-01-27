@@ -50,7 +50,7 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     Texture2D texture = new Texture2D(w, h, TextureFormat.RGBA32, false);
     for (int x = 0; x < w; x++)
       for (int y = 0; y < h; y++) {
-        rawData[x + w * y] = 63;
+        rawData[x + w * y] = 215;
         texture.SetPixel(x, y, FullWhite);
       }
     texture.Apply();
@@ -65,7 +65,7 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
       for (int y = 0; y < nh; y++) {
         if (x >= nw || y >= nh) continue;
         if (x >= tw || y >= th) {
-          newData[x + nw * y] = 63;
+          newData[x + nw * y] = 215;
           newTexture.SetPixel(x, y, FullWhite);
         }
         else {
@@ -86,11 +86,7 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     for (int x = 0; x < tw; x++)
       for (int y = 0; y < th; y++) {
         Color32 c = pixels[x + tw * y].Get();
-        int r = c.r / 85;
-        int g = c.g / 85;
-        int b = c.b / 85;
-        int a = 255 - (c.a / 85);
-        rawData[x + tw * y] = (byte)((a << 6) + (r << 4) + (g << 2) + (b << 0));
+        rawData[x + tw * y] = Col.GetColorByte(c);
         texture.SetPixel(x, th - y - 1, c);
       }
     texture.Apply();
@@ -103,12 +99,7 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     for (int x = 0; x < tw; x++)
       for (int y = 0; y < th; y++) {
         byte col = pixels[x + tw * y];
-        int r = (col & 0b110000) >> 4;
-        int g = (col & 0b001100) >> 2;
-        int b = (col & 0b000011) >> 0;
-        int a = 3 - ((col & 0b11000000) >> 6);
-        if (a == 0 && (r != 0 || g != 0 || b != 0)) a = 40;
-        texture.SetPixel(x, th - y - 1, new Color32((byte)(r * 85), (byte)(g * 85), (byte)(b * 85), (byte)(a * 85)));
+        texture.SetPixel(x, th - y - 1, Col.GetColor(col));
       }
     texture.Apply();
     img.texture = texture;

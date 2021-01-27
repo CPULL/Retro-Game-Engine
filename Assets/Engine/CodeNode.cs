@@ -110,17 +110,7 @@ public class CodeNode {
         case BNF.REG: res += (sameLine ? "" : id) + " R" + Reg + (sameLine ? " " : "\n"); break;
         case BNF.INT: res += (sameLine ? "" : id) + " " + iVal + (sameLine ? " " : "\n"); break;
         case BNF.COLOR:
-          res += (sameLine ? "" : id) + " c" +
-                  (iVal > 64 ?
-                    ((iVal & 48) >> 4).ToString() +
-                    ((iVal & 12) >> 2).ToString() +
-                    ((iVal & 3) >> 0).ToString()
-                    :
-                    ((iVal & 192) >> 6).ToString() +
-                    ((iVal & 48) >> 4).ToString() +
-                    ((iVal & 12) >> 2).ToString() +
-                    ((iVal & 3) >> 0).ToString()
-                  ) + (sameLine ? " " : "\n"); break;
+          res += (sameLine ? "" : id) + " c" + Col.GetColorString(iVal) + (sameLine ? " " : "\n"); break;
         case BNF.HEX: res += (sameLine ? "" : id) + " x" + iVal.ToString("X") + (sameLine ? " " : "\n"); break;
         case BNF.FLT: res += (sameLine ? "" : id) + " " + fVal + (sameLine ? " " : "\n"); break;
         case BNF.STR: res += (sameLine ? "" : id) + " \"" + sVal + (sameLine ? "\" " : "\"\n"); break;
