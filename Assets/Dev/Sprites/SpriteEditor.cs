@@ -567,7 +567,7 @@ public class SpriteEditor : MonoBehaviour {
     data = rgComments.Replace(data, " ");
     data = rgComment.Replace(data, " ");
     data = rgLabels.Replace(data, " ");
-    data = data.Replace('\n', ' ').Trim();
+    data = data.Replace('\n', ' ').Replace('\r', ' ').Trim();
     while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
     data = ByteReader.ReadByte(data, out byte wb);
@@ -750,8 +750,8 @@ public class SpriteEditor : MonoBehaviour {
       h = tile.th;
     }
     for (int i = 0; i < sizes.Length; i++) {
-      if (sizes[i] <= tile.tw) WidthSlider.SetValueWithoutNotify(sizes[i]);
-      if (sizes[i] <= tile.th) HeightSlider.SetValueWithoutNotify(sizes[i]);
+      if (sizes[i] <= tile.tw) WidthSlider.SetValueWithoutNotify(i);
+      if (sizes[i] <= tile.th) HeightSlider.SetValueWithoutNotify(i);
     }
     ChangeSpriteSize();
 

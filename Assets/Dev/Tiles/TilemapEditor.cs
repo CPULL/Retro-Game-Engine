@@ -28,6 +28,7 @@ public class TilemapEditor : MonoBehaviour {
   public GridLayoutGroup tilesGrid;
 
   public SpriteEditor editor;
+  readonly int[] sizes = new int[] { 8, 16, 24, 32, 40, 48, 56, 64 };
 
   int w = 24, h = 16;
   int tw = 16, th = 16;
@@ -119,34 +120,29 @@ public class TilemapEditor : MonoBehaviour {
   
   public void AlterTileSize(bool fromInputField) {
     if (fromInputField) {
+      TileSizeField.SetTextWithoutNotify(sizes[(int)TileSizeW.value] + "x" + sizes[(int)TileSizeH.value]);
       string val = TileSizeField.text.Trim().ToLowerInvariant();
       int pos1 = val.IndexOf(' ');
       int pos2 = val.IndexOf('x');
-      if (pos1 == -1 && pos2 == -1) {
-        TileSizeField.SetTextWithoutNotify(TileSizeW.value + "x" + TileSizeH.value);
-        return;
-      }
+      if (pos1 == -1 && pos2 == -1) return;
       int pos = pos1;
       if (pos2 != -1 && (pos2 < pos1 || pos1 == -1)) pos = pos2;
-      if (!int.TryParse(val.Substring(0, pos).Trim(), out tw)) {
-        TileSizeField.SetTextWithoutNotify(TileSizeW.value + "x" + TileSizeH.value);
-        return;
+      if (!int.TryParse(val.Substring(0, pos).Trim(), out int ltw)) return;
+      if (!int.TryParse(val.Substring(pos + 1).Trim(), out int lth)) return;
+      for (int i = 0; i < sizes.Length; i++) {
+        if (sizes[i] <= ltw) { tw = sizes[i]; TileSizeW.SetValueWithoutNotify(i); }
+        if (sizes[i] <= lth) { th = sizes[i]; TileSizeH.SetValueWithoutNotify(i); }
       }
-      if (!int.TryParse(val.Substring(pos + 1).Trim(), out th)) {
-        TileSizeField.SetTextWithoutNotify(TileSizeW.value + "x" + TileSizeH.value);
-        return;
-      }
-      TileSizeW.SetValueWithoutNotify(tw);
-      TileSizeH.SetValueWithoutNotify(th);
     }
     else {
-      TileSizeField.SetTextWithoutNotify(TileSizeW.value + "x" + TileSizeH.value);
+      TileSizeField.SetTextWithoutNotify(sizes[(int)TileSizeW.value] + "x" + sizes[(int)TileSizeH.value]);
     }
   }
   public void UpdateTileSize() {
-    if (tw == (int)TileSizeW.value && th == (int)TileSizeH.value) return;
-    tw = (int)TileSizeW.value;
-    th = (int)TileSizeH.value;
+    if (tw == sizes[(int)TileSizeW.value] && th == sizes[(int)TileSizeH.value]) return;
+
+    tw = sizes[(int)TileSizeW.value];
+    th = sizes[(int)TileSizeH.value];
     mapGrid.cellSize = new Vector2(tw * 5, th * 5);
 
     // Warning, we have to alter all raw data of all tile palettes
@@ -223,14 +219,13 @@ public class TilemapEditor : MonoBehaviour {
       Palette[key] = tile;
     }
 
-    string res = "Tilemap:\n";
-    res += w.ToString("X2") + " " + h.ToString("X2") + " " + tw.ToString("X2") + " " + th.ToString("X2") + " " +
-      Palette.Count.ToString("X2") + "\n";
+    string res = "Tilemap:\nusehex\n";
+    res += w.ToString("X2") + " " + h.ToString("X2") + " " + tw.ToString("X2") + " " + th.ToString("X2") + " " + Palette.Count.ToString("X2") + "\n";
 
     // w*h*2 bytes with the actual map
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {
-        res += map[x, y].id.ToString("X2") + " " + map[x, y].rot.ToString("X2") + " ";
+        res += map[x, y].id.ToString("X2") + map[x, y].rot.ToString("X2") + " ";
       }
       res += "\n";
     }
@@ -238,8 +233,13 @@ public class TilemapEditor : MonoBehaviour {
     // Tiles
     for (int i = 0; i < Palette.Count; i++) {
       TileInPalette tile = Palette[(byte)(i + 1)];
-      foreach(byte b in tile.rawData)
-        res+=b.ToString("X2") + " ";
+      int len = tile.rawData.Length;
+      for (int j = 0; j < len; j+=4) {
+        res += tile.rawData[j].ToString("X2");
+        if (j + 1 < len) res += tile.rawData[j + 1].ToString("X2");
+        if (j + 2 < len) res += tile.rawData[j + 2].ToString("X2");
+        if (j + 3 < len) res += tile.rawData[j + 3].ToString("X2") + " ";
+      }
       res += "\n";
     }
     Values.text = res;
@@ -249,22 +249,23 @@ public class TilemapEditor : MonoBehaviour {
     Values.gameObject.SetActive(true);
     LoadSubButton.enabled = true;
   }
-  readonly Regex rgComments = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, System.TimeSpan.FromSeconds(1));
-  readonly Regex rgHex1 = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
-  readonly Regex rgHex2 = new Regex("[\\s]*([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
+
+  readonly Regex rgComments = new Regex("/\\*(?>(?:(?>[^*]+)|\\*(?!/))*)\\*/", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
+  readonly Regex rgComment = new Regex("//(.*?)\r?\n", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
   readonly Regex rgLabel = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
 
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
     string data = Values.text.Trim();
     data = rgComments.Replace(data, " ");
+    data = rgComment.Replace(data, " ");
     data = rgLabel.Replace(data, " ");
     data = data.Replace('\n', ' ').Replace('\r', ' ').Trim();
     while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
-    data = ReadNextByte(data, out byte data1);
+    data = ByteReader.ReadByte(data, out byte data1);
     int pw = data1;
-    data = ReadNextByte(data, out data1);
+    data = ByteReader.ReadByte(data, out data1);
     int ph = data1;
 
     MapSizeW.SetValueWithoutNotify(pw);
@@ -280,18 +281,18 @@ public class TilemapEditor : MonoBehaviour {
     while (updateMapSize != null)
       yield return new WaitForSeconds(.5f);
 
-    data = ReadNextByte(data, out byte data1);
+    data = ByteReader.ReadByte(data, out byte data1);
     tw = data1;
-    data = ReadNextByte(data, out data1);
+    data = ByteReader.ReadByte(data, out data1);
     th = data1;
-    data = ReadNextByte(data, out byte numtiles);
+    data = ByteReader.ReadByte(data, out byte numtiles);
 
     // w*h*2 bytes with the actual map
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {
-        data = ReadNextByte(data, out data1);
+        data = ByteReader.ReadByte(data, out data1);
         map[x, y].id = data1;
-        data = ReadNextByte(data, out data1);
+        data = ByteReader.ReadByte(data, out data1);
         map[x, y].rot = data1;
       }
     }
@@ -307,11 +308,7 @@ public class TilemapEditor : MonoBehaviour {
       t.Setup((byte)(i + 1), SelectTileInPalette, tw, th);
       t.gameObject.SetActive(true);
       Palette[t.id] = t;
-      byte[] rawData = new byte[tw * th];
-      for (int j = 0; j < tw * th; j++) {
-        data = ReadNextByte(data, out data1);
-        rawData[j] = data1;
-      }
+      data = ByteReader.ReadBytes(data, tw * th, out byte[] rawData);
       t.UpdateTexture(rawData);
     }
 
@@ -331,39 +328,6 @@ public class TilemapEditor : MonoBehaviour {
 
     Values.gameObject.SetActive(false);
     LoadSubButton.enabled = false;
-  }
-
-  string ReadNextByte(string data, out byte res) {
-    int pos1 = data.IndexOf(' ');
-    int pos2 = data.IndexOf('\n');
-    int pos3 = data.Length;
-    if (pos1 == -1) pos1 = int.MaxValue;
-    if (pos2 == -1) pos2 = int.MaxValue;
-    if (pos3 == -1) pos3 = int.MaxValue;
-    int pos = pos1;
-    if (pos > pos2) pos = pos2;
-    if (pos > pos3) pos = pos3;
-    if (pos < 1) {
-      res = 0;
-      return "";
-    }
-
-    string part = data.Substring(0, pos);
-    Match m = rgHex1.Match(part);
-    if (m.Success) {
-      res = (byte)System.Convert.ToInt32(m.Groups[1].Value, 16);
-      return data.Substring(pos).Trim();
-    }
-    else {
-      m = rgHex2.Match(part);
-      if (m.Success) {
-        res = (byte)System.Convert.ToInt32(m.Groups[1].Value, 16);
-        return data.Substring(pos).Trim();
-      }
-    }
-
-    res = 0;
-    return data;
   }
 
 

@@ -38,7 +38,8 @@ public class ByteReader {
         if (h0x.Success) {
           string hex = h0x.Value;
           while (hex.Length > 0) {
-            res[pos++] = (byte)Convert.ToInt32(hex, 16);
+            string val = (hex + "0").Substring(0, 2);
+            res[pos++] = (byte)Convert.ToInt32(val, 16);
             hex = hex.Substring(2);
             if (pos == len) {
               return hex + data;
@@ -48,7 +49,8 @@ public class ByteReader {
         else if (hx.Success) {
           string hex = hx.Value;
           while (hex.Length > 0) {
-            res[pos++] = (byte)Convert.ToInt32(hex, 16);
+            string val = (hex + "0").Substring(0, 2);
+            res[pos++] = (byte)Convert.ToInt32(val, 16);
             hex = hex.Substring(2);
             if (pos == len) {
               return hex + data;
@@ -58,7 +60,8 @@ public class ByteReader {
         else if (h.Success) {
           string hex = h.Value;
           while (hex.Length > 0) {
-            res[pos++] = (byte)Convert.ToInt32(hex, 16);
+            string val = (hex + "0").Substring(0, 2);
+            res[pos++] = (byte)Convert.ToInt32(val, 16);
             hex = hex.Substring(2);
             if (pos == len) {
               return hex + data;
