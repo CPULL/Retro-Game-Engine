@@ -11,8 +11,8 @@ public class SpriteEditor : MonoBehaviour {
 
   private void Start() {
     if (pixels == null) {
-      WidthSlider.SetValueWithoutNotify(8);
-      HeightSlider.SetValueWithoutNotify(8);
+      WidthSlider.SetValueWithoutNotify(1);
+      HeightSlider.SetValueWithoutNotify(1);
       pixels = new Pixel[0];
       ChangeSpriteSize();
       SetUndo(false);
@@ -41,19 +41,25 @@ public class SpriteEditor : MonoBehaviour {
   public TextMeshProUGUI Message;
   readonly List<Color32[]> undo = new List<Color32[]>();
   Color32 lastPixelColor;
+  readonly int[] sizes = new int[] { 8, 16, 24, 32, 40, 48, 56, 64 };
+
+  public void ChangeSpriteSizeText() {
+    WidthSliderText.text = "Width: " + sizes[(int)WidthSlider.value];
+    HeightSliderText.text = "Height: " + sizes[(int)HeightSlider.value];
+  }
 
   public void ChangeSpriteSize() {
-    WidthSliderText.text = "Width: " + WidthSlider.value;
-    HeightSliderText.text = "Height: " + HeightSlider.value;
-    Rect rt = SpriteGrid.transform.GetComponent<RectTransform>().rect;
-    SpriteGrid.cellSize = new Vector2(rt.width / WidthSlider.value, rt.height / HeightSlider.value);
-
     int oldw = w;
     int oldh = h;
-    Pixel[] oldps = pixels;
-    w = (int)WidthSlider.value;
-    h = (int)HeightSlider.value;
+    w = sizes[(int)WidthSlider.value];
+    h = sizes[(int)HeightSlider.value];
 
+    WidthSliderText.text = "Width: " + w;
+    HeightSliderText.text = "Height: " + h;
+    Rect rt = SpriteGrid.transform.GetComponent<RectTransform>().rect;
+    SpriteGrid.cellSize = new Vector2(rt.width / w, rt.height / h);
+
+    Pixel[] oldps = pixels;
     int num = w * h;
     foreach(Transform t in SpriteGrid.transform)
       t.SetParent(null);
@@ -484,8 +490,10 @@ public class SpriteEditor : MonoBehaviour {
     }
 
     // Re-create using actual size
-    WidthSlider.SetValueWithoutNotify(nw);
-    HeightSlider.SetValueWithoutNotify(nh);
+    for (int i = 0; i < sizes.Length; i++) {
+      if (sizes[i] <= nw) WidthSlider.SetValueWithoutNotify(sizes[i]);
+      if (sizes[i] <= nh) HeightSlider.SetValueWithoutNotify(sizes[i]);
+    }
     ChangeSpriteSize();
 
     for (int x = 0; x < max; x++) {
@@ -531,13 +539,7 @@ public class SpriteEditor : MonoBehaviour {
     int num = w * h;
     for (int i = 0; i < num; i++) {
       if (i % sizex == 0) res += "\n";
-      Color32 c = pixels[i].Get();
-      int r = c.r / 85;
-      int g = c.g / 85;
-      int b = c.b / 85;
-      int a = 255 - (c.a / 85); 
-      byte col = (byte)((a << 6) + (r << 4) + (g << 2) + (b << 0));
-      res += "0x" + col.ToString("X2") + " ";
+      res += "0x" + Col.GetColorByte(pixels[i].Get()).ToString("X2") + " ";
     }
     Values.gameObject.SetActive(true);
     Values.text = res;
@@ -570,18 +572,14 @@ public class SpriteEditor : MonoBehaviour {
       return;
     }
 
-    WidthSlider.SetValueWithoutNotify(wb);
-    HeightSlider.SetValueWithoutNotify(hb);
+    for (int i = 0; i < sizes.Length; i++) {
+      if (sizes[i] <= wb) WidthSlider.SetValueWithoutNotify(sizes[i]);
+      if (sizes[i] <= hb) HeightSlider.SetValueWithoutNotify(sizes[i]);
+    }
     ChangeSpriteSize();
     for (int i = 0; i < w * h; i++) {
       data = ReadNextByte(data, out byte col);
-
-      int r = (col & 0b110000) >> 4;
-      int g = (col & 0b001100) >> 2;
-      int b = (col & 0b000011) >> 0;
-      int a = 3 - ((col & 0b11000000) >> 6);
-      if (a == 0 && (r != 0 || g != 0 || b != 0)) a = 40;
-      pixels[i].Set(new Color32((byte)(r * 85), (byte)(g * 85), (byte)(b * 85), (byte)(a * 85)));
+      pixels[i].Set(Col.GetColor32(col));
     }
 
     Values.gameObject.SetActive(false);
@@ -649,10 +647,10 @@ public class SpriteEditor : MonoBehaviour {
           for (int tx = 0; tx < scale; tx++) {
             for (int ty = 0; ty < scale; ty++) {
               Color32 colp = texture.GetPixel(x * scale + tx, texty * scale + ty);
-              r += ((colp.r & 0xf0) >> 4) * 0x11;
-              g += ((colp.g & 0xf0) >> 4) * 0x11;
-              b += ((colp.b & 0xf0) >> 4) * 0x11;
-              a += ((colp.a & 0xf0) >> 4) * 0x11;
+              r += colp.r;
+              g += colp.g;
+              b += colp.b;
+              a += colp.a;
             }
           }
           r /= scale * scale;
@@ -661,17 +659,7 @@ public class SpriteEditor : MonoBehaviour {
           a /= scale * scale;
 
           // Normalize the color
-          byte ab = (byte)(((a & 0xf0) >> 4) * 0x11);
-          byte rb = (byte)(((r & 0xf0) >> 4) * 0x11);
-          byte gb = (byte)(((g & 0xf0) >> 4) * 0x11);
-          byte bb = (byte)(((b & 0xf0) >> 4) * 0x11);
-          if (a == 0 && (r != 0 || g != 0 || b != 0)) a = 40;
-          Color32 col = Color.white;
-          col.a = ab;
-          col.r = rb;
-          col.g = gb;
-          col.b = bb;
-          pixels[x + w * y].Set(col);
+          pixels[x + w * y].Set(Col.GetColor32(r, g, b, a));
         }
       }
     }
@@ -779,20 +767,16 @@ public class SpriteEditor : MonoBehaviour {
       w = tile.tw;
       h = tile.th;
     }
-    WidthSlider.SetValueWithoutNotify(tile.tw);
-    HeightSlider.SetValueWithoutNotify(tile.th);
+    for (int i = 0; i < sizes.Length; i++) {
+      if (sizes[i] <= tile.tw) WidthSlider.SetValueWithoutNotify(sizes[i]);
+      if (sizes[i] <= tile.th) HeightSlider.SetValueWithoutNotify(sizes[i]);
+    }
     ChangeSpriteSize();
 
     for (int x = 0; x < tile.tw; x++)
       for (int y = 0; y < tile.th; y++) {
-
         byte col = tile.rawData[x + w * y];
-        byte a = (byte)(255 - ((col & 0b11000000) >> 6) * 85);
-        byte r = (byte)(((col & 0b00110000) >> 4) * 85);
-        byte g = (byte)(((col & 0b00001100) >> 2) * 85);
-        byte b = (byte)(((col & 0b00000011) >> 0) * 85);
-        if (a == 0 && (r != 0 || g != 0 || b != 0)) a = 40;
-        pixels[x + w * y].Set(new Color32(r, g, b, a));
+        pixels[x + w * y].Set(Col.GetColor32(col));
       }
 
     SetUndo(false);
