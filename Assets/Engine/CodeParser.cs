@@ -117,7 +117,7 @@ public class CodeParser : MonoBehaviour {
 
   readonly Regex rgVar = new Regex("(?<=[^a-z0-9`@_]|^)([a-z][0-9a-z]{0,7})([^a-z0-9\\(¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgHex = new Regex("0x([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgCol = new Regex("c([0-3])([0-3])([0-3])", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgCol = new Regex("c([0-5])([0-5])([0-5])([0-4])?", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgQString = new Regex("\\\\\"", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgString = new Regex("(\")([^\"]*)(\")", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDeltat = new Regex("deltatime", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1227,14 +1227,14 @@ public class CodeParser : MonoBehaviour {
       int.TryParse(m.Groups[1].Value, out int r);
       int.TryParse(m.Groups[2].Value, out int g);
       int.TryParse(m.Groups[3].Value, out int b);
-      int a = 0;
+      int a = -1;
       if (m.Groups.Count > 4 && !string.IsNullOrEmpty(m.Groups[4].Value)) int.TryParse(m.Groups[4].Value, out a);
-      if (r > 3) r = 3;
-      if (g > 3) g = 3;
-      if (b > 3) b = 3;
-      if (a > 3) a = 3;
+      if (r > 5) r = 5;
+      if (g > 5) g = 5;
+      if (b > 5) b = 5;
+      if (a > 4) a = 4;
       CodeNode n = new CodeNode(BNF.COLOR, GenId("CL"), origForException, linenumber) {
-        iVal = a * 64 + r * 16 + g * 4 + b
+        iVal = Col.GetByteFrom6(r, g, b, a)
       };
       nodes[n.id] = n;
       return n.id;

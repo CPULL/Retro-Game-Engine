@@ -908,7 +908,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 485, y: -230}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 32, y: 32}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &387392793
@@ -1100,6 +1100,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a37940896416ae46bc14e5e59090862, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  w: 0
+  h: 0
+  order: 0
   TileTemplate: {fileID: 787292653}
   gridLayout: {fileID: 438564142}
   emptyTexture: {fileID: 2800000, guid: 2c3c5c1bf1f3f4f4b96c5129c96dd98d, type: 3}

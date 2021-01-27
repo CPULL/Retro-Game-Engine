@@ -67,9 +67,9 @@ public class Col {
       col -= g;
       col /= 6;
       byte r = (byte)(col % 6);
-      r = (byte)(r * 42.5f);
-      g = (byte)(g * 42.5f);
-      b = (byte)(b * 42.5f);
+      r = (byte)(r * 51f);
+      g = (byte)(g * 51f);
+      b = (byte)(b * 51f);
       return new Color32(r, g, b, 255);
     }
     col = (byte)(col - 216); // -> 0-39
@@ -77,9 +77,9 @@ public class Col {
   }
 
   public static Color32 GetColorFrom6(byte r, byte g, byte b) {
-    r = (byte)(r * 42.5f);
-    g = (byte)(g * 42.5f);
-    b = (byte)(b * 42.5f);
+    r = (byte)(r * 51f);
+    g = (byte)(g * 51f);
+    b = (byte)(b * 51f);
     return new Color32(r, g, b, 255);
   }
 
@@ -93,9 +93,9 @@ public class Col {
     if (a < 0) a = 0;
     if (a > 255) a = 255;
     if (a > 250) {
-      rs = (int)(((byte)(rs / 42.5f)) * 42.5f);
-      gs = (int)(((byte)(gs / 42.5f)) * 42.5f);
-      bs = (int)(((byte)(bs / 42.5f)) * 42.5f);
+      rs = (int)(((byte)(rs / 51f)) * 51f);
+      gs = (int)(((byte)(gs / 51f)) * 51f);
+      bs = (int)(((byte)(bs / 51f)) * 51f);
       return new Color32((byte)rs, (byte)gs, (byte)bs, 255);
     }
 
@@ -119,6 +119,18 @@ public class Col {
     return alphas[best];
   }
 
+  public static int GetByteFrom6(int r, int g, int b, int a) {
+    r *= 51;
+    g *= 51;
+    b *= 51;
+    if (a == -1)
+      return GetColorByte(NormalizeColor(r, g, b, 255));
+    else {
+      a *= 80;
+      a += 10;
+      return GetColorByte(NormalizeColor(r, g, b, a));
+    }
+  }
 
 
   public static byte GetColorByte(int rs, int gs, int bs, int a) {
@@ -127,9 +139,9 @@ public class Col {
 
   public static byte GetColorByte(Color32 col) {
     if (col.a > 250) {
-      byte r = (byte)(col.r / 42.5f);
-      byte g = (byte)(col.g / 42.5f);
-      byte b = (byte)(col.b / 42.5f);
+      byte r = (byte)(col.r / 51f);
+      byte g = (byte)(col.g / 51f);
+      byte b = (byte)(col.b / 51f);
       return (byte)(r * 36 + g * 6 + b);
     }
     float mindist = 
@@ -180,4 +192,5 @@ public class Col {
     a /= 85;
     return r.ToString() + g.ToString() + b.ToString() + (a + 1).ToString();
   }
+
 }
