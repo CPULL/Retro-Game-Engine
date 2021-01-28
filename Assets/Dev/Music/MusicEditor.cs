@@ -2157,45 +2157,45 @@ public class MusicEditor : MonoBehaviour {
       };
 
       data = data.Substring(pos + 1).Trim();
-      data = ReadNextByte(data, out data1);
-      data = ReadNextByte(data, out data2);
-      data = ReadNextByte(data, out data3);
+      data = ByteReader.ReadByte(data, out data1);
+      data = ByteReader.ReadByte(data, out data2);
+      data = ByteReader.ReadByte(data, out data3);
       b.id = data1;
       b.len = data2;
       b.bpm = data3;
 
       for (int r = 0; r < b.len; r++) {
         for (int c = 0; c < numv; c++) {
-          data = ReadNextByte(data, out data1);
+          data = ByteReader.ReadByte(data, out data1);
           NoteData note = new NoteData();
           // data1 has the types, according to the required ones read the due amount of bytes
           if ((data1 & 1) == 1) { // Note
-            data = ReadNextByte(data, out data2);
-            data = ReadNextByte(data, out data3);
-            data = ReadNextByte(data, out data4);
+            data = ByteReader.ReadByte(data, out data2);
+            data = ByteReader.ReadByte(data, out data3);
+            data = ByteReader.ReadByte(data, out data4);
             note.Set(NoteType.Note, (short)(data3 + (short)(data2 << 8)), data4);
           }
           if ((data1 & 2) == 2) { // Wave
-            data = ReadNextByte(data, out data2);
-            data = ReadNextByte(data, out data3);
+            data = ByteReader.ReadByte(data, out data2);
+            data = ByteReader.ReadByte(data, out data3);
             note.Set(NoteType.Wave, (short)(data3 + (short)(data2 << 8)), 0);
           }
           if ((data1 & 4) == 4) { // Vol
-            data = ReadNextByte(data, out data2);
-            data = ReadNextByte(data, out data3);
-            data = ReadNextByte(data, out data4);
+            data = ByteReader.ReadByte(data, out data2);
+            data = ByteReader.ReadByte(data, out data3);
+            data = ByteReader.ReadByte(data, out data4);
             note.Set(NoteType.Volume, (short)(data3 + (short)(data2 << 8)), data4);
           }
           if ((data1 & 8) == 8) { // Pitch
-            data = ReadNextByte(data, out data2);
-            data = ReadNextByte(data, out data3);
-            data = ReadNextByte(data, out data4);
+            data = ByteReader.ReadByte(data, out data2);
+            data = ByteReader.ReadByte(data, out data3);
+            data = ByteReader.ReadByte(data, out data4);
             note.Set(NoteType.Pitch, (short)(data3 + (short)(data2 << 8)), data4);
           }
           if ((data1 & 16) == 16) { // Pan
-            data = ReadNextByte(data, out data2);
-            data = ReadNextByte(data, out data3);
-            data = ReadNextByte(data, out data4);
+            data = ByteReader.ReadByte(data, out data2);
+            data = ByteReader.ReadByte(data, out data3);
+            data = ByteReader.ReadByte(data, out data4);
             note.Set(NoteType.Pan, (short)(data3 + (short)(data2 << 8)), data4);
           }
           b.chs[c].Add(note);
