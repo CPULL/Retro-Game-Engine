@@ -2096,6 +2096,7 @@ public class MusicEditor : MonoBehaviour {
     };
     if (labels.Count == 0) throw new Exception("Missing Music label");
     m.name = labels[0].name;
+    NameInput.SetTextWithoutNotify(m.name);
 
     byte numv = block[pos++];
     for (int i = 0; i < 8; i++)
@@ -2111,7 +2112,7 @@ public class MusicEditor : MonoBehaviour {
     for (int i = 0; i < numw; i++) {
       if (labels.Count < i + 2) throw new Exception("Missing Wave label for wave #" + (i + 1));
       Wave w = new Wave {
-        name = labels[i + i].name.Trim()
+        name = labels[i + 1].name.Trim()
       };
 
       w.id = block[pos++];

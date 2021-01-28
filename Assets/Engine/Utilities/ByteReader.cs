@@ -28,7 +28,7 @@ public class ByteReader {
       part = part.ToLowerInvariant();
       // What we have?
       if (part[part.Length - 1] == ':') { // Label
-        labels.Add(new CodeLabel { name = part, start = consolidator.GetPos() });
+        labels.Add(new CodeLabel { name = part.Substring(0, part.Length - 1).Trim(), start = consolidator.GetPos() });
         data = data.Substring(part.Length).Trim();
         continue;
       }
@@ -70,11 +70,8 @@ public class ByteReader {
           }
         }
       }
-      else if ((part.Length > 2 && part[0] == '0' && part[1] == 'b') || (part.Length > 1 && part[0] == 'b')) { // Do we start with 0b?
-        if (part[0] == 'b')
-          part = part.Substring(1);
-        else
-          part = part.Substring(2);
+      else if (part.Length > 2 && part[0] == '0' && part[1] == 'b') { // Do we start with 0b?
+        part = part.Substring(2);
         // Parse all value, then split in bytes
         int b;
         try {
