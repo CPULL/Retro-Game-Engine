@@ -193,4 +193,7 @@ public class Col {
     return r.ToString() + g.ToString() + b.ToString() + (a + 1).ToString();
   }
 
+  public static byte C(byte r, byte g, byte b) {
+    return GetColorByte(new Color32(r, g, b, 255));
+  }
 }

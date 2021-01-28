@@ -163,7 +163,7 @@ public class Arcade : MonoBehaviour {
       }
       numruns++;
       if (numruns > 1000) {
-        Write("Possible infinite loop at: " + n.parent.origLineNum + "\n" + n.parent.origLine, 4, 4, 48, 0);
+        Write("Possible infinite loop at: " + n.parent.origLineNum + "\n" + n.parent.origLine, 4, 4, Col.C(5, 4, 0), 0);
         CompleteFrame();
         return;
       }
@@ -191,9 +191,9 @@ public class Arcade : MonoBehaviour {
     pixels = texture.GetPixels32();
     raw = new byte[sw * sh * 4];
     Clear(0);
-    Write("--- MMM Arcade RGE ---", 35, 8, 60);
-    Write(" virtual machine", 55, 14 + 4, 0b011010);
-    Write(" Retro Game Engine", 45, 14 + 9, 0b011110);
+    Write("--- MMM Arcade RGE ---", 35, 8, Col.C(5, 5, 0));
+    Write(" virtual machine", 55, 14 + 4, Col.C(1, 4, 5));
+    Write(" Retro Game Engine", 45, 14 + 9, Col.C(1, 5, 4));
     sprites = new Grob[spriteImgs.Length];
     for (int i = 0; i < spriteImgs.Length; i++) {
       sprites[i] = new Grob(spriteImgs[i], sw, sh);
@@ -244,15 +244,15 @@ public class Arcade : MonoBehaviour {
             l = 0;
           }
         }
-        Write(msg, 4, 48, 48);
+        Write(msg, 4, 48, Col.C(5, 1, 0));
         Debug.Log("!!!!!!!! " + e.Message + "\n" + e.StackTrace);
       }
     }
     else {
       // Load Game.Cartridge
       string codefile;
-      try { codefile = File.ReadAllText(Path.GetDirectoryName(Application.dataPath) + "/Cartridges/Game.cartridge"); } catch (Exception) {
-        Write("No cardridge found!", 4, 40, 48);
+      try { codefile = File.ReadAllText(Path.GetDirectoryName(Application.dataPath) + "/Cartridges/Shadow of the Beast.cartridge"); } catch (Exception) {
+        Write("No cardridge found!", 4, 40, Col.C(5, 1, 0));
         Write("Path: " + Path.GetDirectoryName(Application.dataPath) + "/Cartridges/Game.cartridge", 4, 50, 48, 0, 2);
         texture.Apply();
         return;
@@ -272,8 +272,8 @@ public class Arcade : MonoBehaviour {
     FileSelection.SetActive(false);
     string codefile;
     try { codefile = File.ReadAllText(Application.dataPath + "/../Cartridges/" + tag); } catch (Exception) {
-      Write("No cardridge found!", 4, 40, 48);
-      Write("Path: " + Application.dataPath + "/../Cartridges/" + tag, 4, 50, 48, 0, 2);
+      Write("No cardridge found!", 4, 40, Col.C(5, 1, 0));
+      Write("Path: " + Application.dataPath + "/../Cartridges/" + tag, 4, 50, Col.C(5, 1, 0), 0, 2);
       texture.Apply();
       return;
     }
@@ -282,22 +282,22 @@ public class Arcade : MonoBehaviour {
 
   public void LoadCartridge(string codefile) {
     if (string.IsNullOrEmpty(codefile)) {
-      Write("No cardridge found!", 4, 40, 48);
+      Write("No cardridge found!", 4, 40, Col.C(5, 1, 0));
       texture.Apply();
       return;
     }
     try {
       CodeNode res = cp.Parse(codefile, variables);
-      Write("Cartridge:", 4, 39, 0b001011);
+      Write("Cartridge:", 4, 39, Col.C(1, 4, 5));
       if (res.sVal == null)
-        Write("<no name>", 88, 39, 0b1001000);
+        Write("<no name>", 88, 39, Col.C(5, 3, 1));
       else
-        Write(res.sVal, 88, 39, 0b1001000);
+        Write(res.sVal, 88, 39, Col.C(5, 3, 1));
 
       CodeNode data = null;
       if (res.HasNode(BNF.Data)) {
         data = res.Get(BNF.Data);
-        Write("Data:   Yes", 4, 48 + 18, 0b001011);
+        Write("Data:   Yes", 4, 48 + 18, Col.C(1, 4, 5));
 
         // Screen ************************************************************************************************************** Screen
         CodeNode scrconf = data.Get(BNF.ScrConfig);

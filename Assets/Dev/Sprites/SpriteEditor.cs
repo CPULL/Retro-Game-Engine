@@ -556,22 +556,18 @@ public class SpriteEditor : MonoBehaviour {
     LoadSubButton.enabled = true;
   }
 
-  readonly Regex rgComments = new Regex("/\\*(?>(?:(?>[^*]+)|\\*(?!/))*)\\*/", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgComment = new Regex("//(.*?)\r?\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgLabels = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
     Message.text = "";
     string data = Values.text.Trim();
-    data = rgComments.Replace(data, " ");
-    data = rgComment.Replace(data, " ");
-    data = rgLabels.Replace(data, " ");
-    data = data.Replace('\n', ' ').Replace('\r', ' ').Trim();
-    while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
-    data = ByteReader.ReadByte(data, out byte wb);
-    data = ByteReader.ReadByte(data, out byte hb);
+    // FIXME handle parsing errors
+    ByteReader.ReadBlock(data, out List<CodeLabel> labels, out byte[] block);
+
+
+
+    byte wb = block[0];
+    byte hb = block[1];
     if (wb < 8 || hb < 8 || wb > 64 || hb > 64) {
       Message.text = "This does not look like a sprite.";
       return;
@@ -583,8 +579,7 @@ public class SpriteEditor : MonoBehaviour {
     }
     ChangeSpriteSize();
     for (int i = 0; i < w * h; i++) {
-      data = ByteReader.ReadByte(data, out byte col);
-      pixels[i].Set(Col.GetColor(col));
+      pixels[i].Set(Col.GetColor(block[2 + i]));
     }
 
     Values.gameObject.SetActive(false);

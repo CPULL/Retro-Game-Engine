@@ -108,11 +108,12 @@ public class CodeParser : MonoBehaviour {
   #region Regex
 
   readonly Regex rgMLBacktick = new Regex("`", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgCommentSL = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgCommentML = new Regex("/\\*[\\s\\S]*?\\*/", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace | RegexOptions.Multiline, TimeSpan.FromSeconds(1));
+  readonly Regex rgCommentML = new Regex("/\\*[^(\\*/)]*\\*/", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCommentSL = new Regex("//(.*?)\r?\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
   readonly Regex rgOpenBracket = new Regex("[\\s]*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgBlockOpen = new Regex(".*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgBlockClose = new Regex("^[\\s]*\\}[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgBlockOpen = new Regex(".*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
+  readonly Regex rgBlockClose = new Regex("^[\\s]*\\}[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
   readonly Regex rgTag = new Regex("([\\s]*`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgVar = new Regex("(?<=[^a-z0-9`@_]|^)([a-z][0-9a-z]{0,7})([^a-z0-9\\(¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
@@ -125,8 +126,6 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgInt = new Regex("(^[0-9]+)|([^a-z\\(\\),\\.\\s\\[\\]:_@][0-9]+)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBin = new Regex("0b([0-1]{1,31})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgBinShort = new Regex("([0-1]{1,31})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgHexShort = new Regex("([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
   readonly Regex rgPars = new Regex("\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMem = new Regex("\\[[\\s]*`[a-z]{3,}¶[\\s]*]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1882,8 +1881,7 @@ public class CodeParser : MonoBehaviour {
   private void ParseDataBlock(string[] lines, int start, int end, CodeNode data) {
     CodeNode lastDataLabel = null;
     Dictionary<string, bool> labels = new Dictionary<string, bool>();
-    Regex binRE = rgBin;
-    Regex hexRE = rgHex;
+    ByteReader.ReadMode mode = ByteReader.ReadMode.Dec;
 
     // Find at what line this starts
     for (int linenum = start + 1; linenum < end; linenum++) {
@@ -1928,18 +1926,15 @@ public class CodeParser : MonoBehaviour {
           clean = clean.Substring(pos + 1).Trim(' ', '\n');
         }
         else if (line.IndexOf("usehex") != -1) {
-          hexRE = rgHexShort;
-          binRE = rgBin;
+          mode = ByteReader.ReadMode.Hex;
           clean = clean.Substring(line.IndexOf("usehex") + 6).Trim(' ', '\n', ',');
         }
         else if (line.IndexOf("usebin") != -1) {
-          hexRE = rgHex;
-          binRE = rgBinShort;
+          mode = ByteReader.ReadMode.Bin;
           clean = clean.Substring(line.IndexOf("usebin") + 6).Trim(' ', '\n', ',');
         }
         else if (line.IndexOf("usedec") != -1) {
-          hexRE = rgHex;
-          binRE = rgBin;
+          mode = ByteReader.ReadMode.Dec;
           clean = clean.Substring(line.IndexOf("usedec") + 6).Trim(' ', '\n', ',');
         }
         else if (line.IndexOf(':') != -1) { // Label ****************************************************************** Label
@@ -1947,10 +1942,26 @@ public class CodeParser : MonoBehaviour {
           line = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
           if (labels.ContainsKey(line)) throw new Exception("Label \"" + line + "\" already defined");
           labels.Add(line, true);
-          lastDataLabel = new CodeNode(BNF.Label, line, linenum) { bVal = new byte[1024], iVal = 0, sVal = line };
-          data.Add(lastDataLabel);
           clean = clean.Substring(pos + 1).Trim(' ', '\n');
+
+          // try to find how many items we should handle. Get the [0-9a-f] chars and skip spaces (remove comments), as soon we find something different we should now the size.
+          int size = 0;
+          Regex rgDataVal = new Regex("[0-9a-bx\\s]");
+          foreach (char c in clean) {
+            string cs = c.ToString();
+            if (rgDataVal.IsMatch(cs)) size++;
+            else break;
+          }
+          size /= 2;
+          if (size < 16) size = 16;
+          lastDataLabel = new CodeNode(BNF.Label, line, linenum) { bVal = null, iVal = size, sVal = line };
+          data.Add(lastDataLabel);
         }
+        
+          // Depending on the parsing mode, check if we have a match for numeric values, in case use the read bytes
+//          clean = ByteReader.ReadBytes(clean, lastDataLabel.iVal, out lastDataLabel.bVal, mode);
+
+        /*
         else if (binRE.IsMatch(line)) { // Bin ************************************************************************ Bin
           if (lastDataLabel == null) throw new Exception("Found data without a label defined: " + line);
           Match m = binRE.Match(line);
@@ -2018,6 +2029,8 @@ public class CodeParser : MonoBehaviour {
 
           clean = clean.Substring(hex.Length).Trim(' ', '\n', ',');
         }
+        
+        */
         else if (rgInt.IsMatch(line)) { // Int ************************************************************************ Int
           if (lastDataLabel == null) throw new Exception("Found data without a label defined: " + line);
           Match m = rgInt.Match(line);
