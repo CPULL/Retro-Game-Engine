@@ -1881,8 +1881,6 @@ public class CodeParser : MonoBehaviour {
   private void ParseDataBlock(string[] lines, int start, int end, CodeNode data) {
     CodeNode lastDataLabel = null;
     Dictionary<string, bool> labels = new Dictionary<string, bool>();
-    ByteReader.ReadMode mode = ByteReader.ReadMode.Dec;
-
     // Find at what line this starts
     for (int linenum = start + 1; linenum < end; linenum++) {
       string clean = lines[linenum].Trim();
@@ -1926,15 +1924,12 @@ public class CodeParser : MonoBehaviour {
           clean = clean.Substring(pos + 1).Trim(' ', '\n');
         }
         else if (line.IndexOf("usehex") != -1) {
-          mode = ByteReader.ReadMode.Hex;
           clean = clean.Substring(line.IndexOf("usehex") + 6).Trim(' ', '\n', ',');
         }
         else if (line.IndexOf("usebin") != -1) {
-          mode = ByteReader.ReadMode.Bin;
           clean = clean.Substring(line.IndexOf("usebin") + 6).Trim(' ', '\n', ',');
         }
         else if (line.IndexOf("usedec") != -1) {
-          mode = ByteReader.ReadMode.Dec;
           clean = clean.Substring(line.IndexOf("usedec") + 6).Trim(' ', '\n', ',');
         }
         else if (line.IndexOf(':') != -1) { // Label ****************************************************************** Label

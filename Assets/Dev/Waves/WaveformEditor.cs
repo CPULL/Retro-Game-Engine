@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
@@ -370,34 +371,30 @@ public class WaveformEditor : MonoBehaviour {
     Values.gameObject.SetActive(true);
     LoadSubButton.enabled = true;
   }
-  readonly Regex rgComments = new Regex("/\\*(?>(?:(?>[^*]+)|\\*(?!/))*)\\*/", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgComment = new Regex("//(.*?)\r?\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgLabels = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
 
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
     string data = Values.text.Trim();
-    data = rgComments.Replace(data, " ");
-    data = rgComment.Replace(data, " ");
-    data = rgLabels.Replace(data, " ");
-    data = data.Replace('\n', ' ').Replace('\r', ' ').Trim();
-    while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
-    data = ByteReader.ReadByte(data, out byte waveb);
-    wave = (Waveform)waveb;
-    data = ByteReader.ReadByte(data, out byte phaseb1);
-    data = ByteReader.ReadByte(data, out byte phaseb2);
+    byte[] block;
+    try {
+      ByteReader.ReadBlock(data, out List<CodeLabel> labels, out block);
+    } catch (System.Exception e) {
+      Values.text = "Parsing error: " + e.Message + "\n" + Values.text;
+      return;
+    }
+
+    int pos = 0;
+    wave = (Waveform)block[pos++];
+    byte phaseb1 = block[pos++];
+    byte phaseb2 = block[pos++];
     phase = (phaseb1 * 256 + phaseb2) / 1000f;
 
-    data = ByteReader.ReadByte(data, out byte attackb);
-    attack = attackb;
-    data = ByteReader.ReadByte(data, out byte decayb);
-    decay = decayb;
-    data = ByteReader.ReadByte(data, out byte sustainb);
-    sustain = sustainb;
-    data = ByteReader.ReadByte(data, out byte releaseb);
-    release = releaseb;
-
+    attack = block[pos++];
+    decay = block[pos++];
+    sustain = block[pos++];
+    release = block[pos++];
     Attack.SetValueWithoutNotify(attack);
     Decay.SetValueWithoutNotify(decay);
     Sustain.SetValueWithoutNotify(sustain);
@@ -423,12 +420,14 @@ public class WaveformEditor : MonoBehaviour {
 
     // PCM
     if (wave == Waveform.PCM) {
-      data = ByteReader.ReadByte(data, out byte len1);
-      data = ByteReader.ReadByte(data, out byte len2);
-      data = ByteReader.ReadByte(data, out byte len3);
-      data = ByteReader.ReadByte(data, out byte len4);
+      byte len1 = block[pos++];
+      byte len2 = block[pos++];
+      byte len3 = block[pos++];
+      byte len4 = block[pos++];
       int len = (len1 << 24) + (len2 << 16) + (len3 << 8) + len4;
-      ByteReader.ReadBytes(data, len, out rawPCM);
+      rawPCM = new byte[len];
+      for (int i = 0; i < len; i++)
+        rawPCM[i] = block[pos++];
     }
 
     Values.gameObject.SetActive(false);

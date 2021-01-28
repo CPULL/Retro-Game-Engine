@@ -2072,19 +2072,21 @@ public class MusicEditor : MonoBehaviour {
     Values.gameObject.SetActive(true);
     LoadSubButton.enabled = true;
   }
-  readonly Regex rgComments = new Regex("/\\*(?>(?:(?>[^*]+)|\\*(?!/))*)\\*/", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgComment = new Regex("//(.*?)\r?\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgLabels = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
-    string data = Values.text.Trim();
-    data = rgComments.Replace(data, " ");
-    data = rgComment.Replace(data, " ");
-    data = rgLabels.Replace(data, " ");
-    data = data.Replace('\n', ' ').Replace('\r', ' ').Trim();
-    while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
+    string dataz = Values.text.Trim();
 
+    byte[] block;
+    List<CodeLabel> labels;
+    try {
+      ByteReader.ReadBlock(dataz, out labels, out block);
+    } catch (System.Exception e) {
+      Values.text = "Parsing error: " + e.Message + "\n" + Values.text;
+      return;
+    }
+
+    int pos = 0;
     waves.Clear();
     blocks.Clear();
     MusicData m = new MusicData() {
@@ -2092,53 +2094,46 @@ public class MusicEditor : MonoBehaviour {
       voices = new byte[] { 0, 1, 2, 3, 255, 255, 255, 255 },
       blocks = new List<int>()
     };
-    int pos = data.IndexOf(':');
-    if (pos == -1) throw new Exception("Missing Music label");
-    m.name = data.Substring(0, pos).Trim();
-    data = data.Substring(pos + 1).Trim();
-    byte data3, data4;
-    data = ByteReader.ReadByte(data, out byte data1);
-    byte numv = data1;
+    if (labels.Count == 0) throw new Exception("Missing Music label");
+    m.name = labels[0].name;
+
+    byte numv = block[pos++];
     for (int i = 0; i < 8; i++)
       m.voices[i] = (byte)((i < numv) ? i : 255);
-    data = ByteReader.ReadByte(data, out byte numb);
-    data = ByteReader.ReadByte(data, out byte numw);
-    data = ByteReader.ReadByte(data, out byte data2);
-    for (int i = 0; i < data2; i++) {
-      data = ByteReader.ReadByte(data, out data1);
-      m.blocks.Add(data1 == 255 ? -1 : data1);
+    byte numb = block[pos++];
+    byte numw = block[pos++];
+    byte numm = block[pos++];
+    for (int i = 0; i < numm; i++) {
+      byte b = block[pos++];
+      m.blocks.Add(b == 255 ? -1 : b);
     }
 
     for (int i = 0; i < numw; i++) {
-      pos = data.IndexOf(':');
-      if (pos == -1) throw new Exception("Missing Wave label for wave #" + (i + 1));
+      if (labels.Count < i + 2) throw new Exception("Missing Wave label for wave #" + (i + 1));
       Wave w = new Wave {
-        name = data.Substring(0, pos).Trim()
+        name = labels[i + i].name.Trim()
       };
-      data = data.Substring(pos + 1).Trim();
 
-      data = ByteReader.ReadByte(data, out data1);
-      data = ByteReader.ReadByte(data, out data2);
-      data = ByteReader.ReadByte(data, out data3);
-      data = ByteReader.ReadByte(data, out data4);
-
-      w.id = data1;
-      w.wave = (Waveform)data2;
-
-      w.phase = ((data3 << 8) + data4) / 100f;
-      data = ByteReader.ReadByte(data, out w.a);
-      data = ByteReader.ReadByte(data, out w.d);
-      data = ByteReader.ReadByte(data, out w.s);
-      data = ByteReader.ReadByte(data, out w.r);
+      w.id = block[pos++];
+      w.wave = (Waveform)block[pos++];
+      byte ph = block[pos++];
+      byte pl = block[pos++];
+      w.phase = ((ph << 8) + pl) / 100f;
+      w.a = block[pos++];
+      w.d = block[pos++];
+      w.s = block[pos++];
+      w.r = block[pos++];
 
       if (w.wave == Waveform.PCM) {
-        data = ByteReader.ReadByte(data, out data1);
-        data = ByteReader.ReadByte(data, out data2);
-        data = ByteReader.ReadByte(data, out data3);
-        data = ByteReader.ReadByte(data, out data4);
+        byte len1 = block[pos++];
+        byte len2 = block[pos++];
+        byte len3 = block[pos++];
+        byte len4 = block[pos++];
 
-        int len = (data1 << 24) + (data2 << 16) + (data3 << 8) + (data4 << 0);
-        data = ByteReader.ReadBytes(data, len, out w.rawPCM);
+        int len = (len1 << 24) + (len2 << 16) + (len3 << 8) + (len4 << 0);
+        w.rawPCM = new byte[len];
+        for (int b = 0; b < len; b++)
+          w.rawPCM[b] = block[pos++];
       }
 
       waves.Add(w);
@@ -2146,57 +2141,52 @@ public class MusicEditor : MonoBehaviour {
 
 
     for (int i = 0; i < numb; i++) {
-      pos = data.IndexOf(':');
-      if (pos == -1) throw new Exception("Missing Block label for block #" + (i + 1));
+      if (labels.Count < i + numw + 2) throw new Exception("Missing Block label for block #" + (i + 1));
       BlockData b = new BlockData {
-        name = data.Substring(0, pos).Trim(),
+        name = labels[i + numw + 1].name,
         chs = new List<NoteData>[] {
           new List<NoteData>(), new List<NoteData>(), new List<NoteData>(), new List<NoteData>(), 
           new List<NoteData>(), new List<NoteData>(), new List<NoteData>(), new List<NoteData>() 
         }
       };
 
-      data = data.Substring(pos + 1).Trim();
-      data = ByteReader.ReadByte(data, out data1);
-      data = ByteReader.ReadByte(data, out data2);
-      data = ByteReader.ReadByte(data, out data3);
-      b.id = data1;
-      b.len = data2;
-      b.bpm = data3;
+      b.id = block[pos++];
+      b.len = block[pos++];
+      b.bpm = block[pos++];
 
       for (int r = 0; r < b.len; r++) {
         for (int c = 0; c < numv; c++) {
-          data = ByteReader.ReadByte(data, out data1);
+          byte data1 = block[pos++]; ;
           NoteData note = new NoteData();
           // data1 has the types, according to the required ones read the due amount of bytes
           if ((data1 & 1) == 1) { // Note
-            data = ByteReader.ReadByte(data, out data2);
-            data = ByteReader.ReadByte(data, out data3);
-            data = ByteReader.ReadByte(data, out data4);
-            note.Set(NoteType.Note, (short)(data3 + (short)(data2 << 8)), data4);
+            byte v0 = block[pos++];
+            byte v1 = block[pos++];
+            byte v2 = block[pos++];
+            note.Set(NoteType.Note, (short)(v1 + (short)(v0 << 8)), v2);
           }
           if ((data1 & 2) == 2) { // Wave
-            data = ByteReader.ReadByte(data, out data2);
-            data = ByteReader.ReadByte(data, out data3);
-            note.Set(NoteType.Wave, (short)(data3 + (short)(data2 << 8)), 0);
+            byte v0 = block[pos++];
+            byte v1 = block[pos++];
+            note.Set(NoteType.Wave, (short)(v1 + (short)(v0 << 8)), 0);
           }
           if ((data1 & 4) == 4) { // Vol
-            data = ByteReader.ReadByte(data, out data2);
-            data = ByteReader.ReadByte(data, out data3);
-            data = ByteReader.ReadByte(data, out data4);
-            note.Set(NoteType.Volume, (short)(data3 + (short)(data2 << 8)), data4);
+            byte v0 = block[pos++];
+            byte v1 = block[pos++];
+            byte v2 = block[pos++];
+            note.Set(NoteType.Volume, (short)(v1 + (short)(v0 << 8)), v2);
           }
           if ((data1 & 8) == 8) { // Pitch
-            data = ByteReader.ReadByte(data, out data2);
-            data = ByteReader.ReadByte(data, out data3);
-            data = ByteReader.ReadByte(data, out data4);
-            note.Set(NoteType.Pitch, (short)(data3 + (short)(data2 << 8)), data4);
+            byte v0 = block[pos++];
+            byte v1 = block[pos++];
+            byte v2 = block[pos++];
+            note.Set(NoteType.Pitch, (short)(v1 + (short)(v0 << 8)), v2);
           }
           if ((data1 & 16) == 16) { // Pan
-            data = ByteReader.ReadByte(data, out data2);
-            data = ByteReader.ReadByte(data, out data3);
-            data = ByteReader.ReadByte(data, out data4);
-            note.Set(NoteType.Pan, (short)(data3 + (short)(data2 << 8)), data4);
+            byte v0 = block[pos++];
+            byte v1 = block[pos++];
+            byte v2 = block[pos++];
+            note.Set(NoteType.Pan, (short)(v1 + (short)(v0 << 8)), v2);
           }
           b.chs[c].Add(note);
         }

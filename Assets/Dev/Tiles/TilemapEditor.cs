@@ -250,50 +250,43 @@ public class TilemapEditor : MonoBehaviour {
     LoadSubButton.enabled = true;
   }
 
-  readonly Regex rgComments = new Regex("/\\*(?>(?:(?>[^*]+)|\\*(?!/))*)\\*/", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
-  readonly Regex rgComment = new Regex("//(.*?)\r?\n", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
-  readonly Regex rgLabel = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
-
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
     string data = Values.text.Trim();
-    data = rgComments.Replace(data, " ");
-    data = rgComment.Replace(data, " ");
-    data = rgLabel.Replace(data, " ");
-    data = data.Replace('\n', ' ').Replace('\r', ' ').Trim();
-    while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
-    data = ByteReader.ReadByte(data, out byte data1);
-    int pw = data1;
-    data = ByteReader.ReadByte(data, out data1);
-    int ph = data1;
+    byte[] block;
+    try {
+      ByteReader.ReadBlock(data, out List<CodeLabel> labels, out block);
+    } catch (System.Exception e) {
+      Values.text = "Parsing error: " + e.Message + "\n" + Values.text;
+      return;
+    }
 
+    int pw = block[0];
+    int ph = block[1];
     MapSizeW.SetValueWithoutNotify(pw);
     MapSizeH.SetValueWithoutNotify(ph);
     updateMapSize = StartCoroutine(UpdateMapSize(w, h));
 
     // We need to wait for the coroutine to end before proceeding
-    StartCoroutine(CompleteLoading(data));
+    StartCoroutine(CompleteLoading(block));
   }
 
-  IEnumerator CompleteLoading(string data) {
+  IEnumerator CompleteLoading(byte[] block) {
     yield return null;
     while (updateMapSize != null)
       yield return new WaitForSeconds(.5f);
 
-    data = ByteReader.ReadByte(data, out byte data1);
-    tw = data1;
-    data = ByteReader.ReadByte(data, out data1);
-    th = data1;
-    data = ByteReader.ReadByte(data, out byte numtiles);
+    tw = block[2];
+    th = block[3];
+    byte numtiles = block[4];
+    int pos = 5;
 
     // w*h*2 bytes with the actual map
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {
-        data = ByteReader.ReadByte(data, out data1);
-        map[x, y].id = data1;
-        data = ByteReader.ReadByte(data, out data1);
-        map[x, y].rot = data1;
+        map[x, y].id = block[pos++];
+        map[x, y].rot = block[pos++];
       }
     }
 
@@ -308,7 +301,9 @@ public class TilemapEditor : MonoBehaviour {
       t.Setup((byte)(i + 1), SelectTileInPalette, tw, th);
       t.gameObject.SetActive(true);
       Palette[t.id] = t;
-      data = ByteReader.ReadBytes(data, tw * th, out byte[] rawData);
+      byte[] rawData = new byte[tw * th];
+      for (int b = 0; b < tw * th; b++)
+        rawData[b] = block[pos++];
       t.UpdateTexture(rawData);
     }
 

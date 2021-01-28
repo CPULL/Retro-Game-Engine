@@ -561,10 +561,14 @@ public class SpriteEditor : MonoBehaviour {
     Message.text = "";
     string data = Values.text.Trim();
 
-    // FIXME handle parsing errors
-    ByteReader.ReadBlock(data, out List<CodeLabel> labels, out byte[] block);
 
-
+    byte[] block;
+    try {
+      ByteReader.ReadBlock(data, out List<CodeLabel> labels, out block);
+    } catch (System.Exception e) {
+      Values.text = "Parsing error: " + e.Message + "\n" + Values.text;
+      return;
+    }
 
     byte wb = block[0];
     byte hb = block[1];
