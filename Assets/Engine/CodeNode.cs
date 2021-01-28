@@ -252,6 +252,7 @@ public class CodeNode {
                   ")";
           break;
         case BNF.Ram: res += (sameLine ? "" : id) + "ram(" + iVal + ")"; break;
+        case BNF.Rom: res += (sameLine ? "" : id) + "rom(" + iVal + ")"; break;
 
         case BNF.Label:
         case BNF.LAB: res += (sameLine ? "" : id) + "[" + sVal + iVal + "]"; break;
@@ -518,7 +519,8 @@ public enum BNF {
   Params,
   ScrConfig,
   Ram,
-  Label, // This is used to store the data
+  Rom, // This is used to store the data
+  Label,
   REG,
   INT, 
   FLT,

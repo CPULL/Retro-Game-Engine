@@ -345,24 +345,21 @@ public class Arcade : MonoBehaviour {
         }
 
         // ROM ****************************************************************************************************************** ROM
-        foreach (CodeNode n in data.children) {
-          if (n.type == BNF.Label) {
-            romsize += n.iVal;
-          }
-        }
-        mem = new byte[memsize + romsize];
-        int pos = memsize;
-        foreach (CodeNode n in data.children) {
-          if (n.type == BNF.Label) {
-            int link = pos;
-            for (int i = 0; i < n.iVal; i++)
-              mem[pos++] = n.bVal[i];
-            n.bVal = null;
-            n.iVal = link;
-            labels.Add(n.sVal, link);
-          }
+        CodeNode romdef = data.Get(BNF.Rom);
+        if (romdef != null) {
+          romsize = romdef.bVal.Length;
+          mem = new byte[memsize + romsize];
+          int pos = memsize;
+          for (int i = 0; i < romsize; i++)
+            mem[pos++] = romdef.bVal[i];
         }
 
+        // LABELS *************************************************************************************************************** LABELS
+        foreach (CodeNode n in data.children) {
+          if (n.type == BNF.Label) {
+            labels.Add(n.sVal, n.iVal);
+          }
+        }
       }
       else {
         Write("Data:   ", 4, 48 + 18, 0b001011);
