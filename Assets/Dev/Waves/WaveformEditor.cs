@@ -370,31 +370,32 @@ public class WaveformEditor : MonoBehaviour {
     Values.gameObject.SetActive(true);
     LoadSubButton.enabled = true;
   }
-  readonly Regex rgComments = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgComments = new Regex("/\\*(?>(?:(?>[^*]+)|\\*(?!/))*)\\*/", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgComment = new Regex("//(.*?)\r?\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgLabels = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgHex = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
     string data = Values.text.Trim();
     data = rgComments.Replace(data, " ");
+    data = rgComment.Replace(data, " ");
     data = rgLabels.Replace(data, " ");
-    data = data.Replace('\n', ' ').Trim();
+    data = data.Replace('\n', ' ').Replace('\r', ' ').Trim();
     while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
-    data = ReadNextByte(data, out byte waveb);
+    data = ByteReader.ReadByte(data, out byte waveb);
     wave = (Waveform)waveb;
-    data = ReadNextByte(data, out byte phaseb1);
-    data = ReadNextByte(data, out byte phaseb2);
+    data = ByteReader.ReadByte(data, out byte phaseb1);
+    data = ByteReader.ReadByte(data, out byte phaseb2);
     phase = (phaseb1 * 256 + phaseb2) / 1000f;
 
-    data = ReadNextByte(data, out byte attackb);
+    data = ByteReader.ReadByte(data, out byte attackb);
     attack = attackb;
-    data = ReadNextByte(data, out byte decayb);
+    data = ByteReader.ReadByte(data, out byte decayb);
     decay = decayb;
-    data = ReadNextByte(data, out byte sustainb);
+    data = ByteReader.ReadByte(data, out byte sustainb);
     sustain = sustainb;
-    ReadNextByte(data, out byte releaseb);
+    data = ByteReader.ReadByte(data, out byte releaseb);
     release = releaseb;
 
     Attack.SetValueWithoutNotify(attack);
@@ -420,46 +421,47 @@ public class WaveformEditor : MonoBehaviour {
     OnSliderChange();
     WaveChange((int)wave);
 
+    // PCM
+    if (wave == Waveform.PCM) {
+      data = ByteReader.ReadByte(data, out byte len1);
+      data = ByteReader.ReadByte(data, out byte len2);
+      data = ByteReader.ReadByte(data, out byte len3);
+      data = ByteReader.ReadByte(data, out byte len4);
+      int len = (len1 << 24) + (len2 << 16) + (len3 << 8) + len4;
+      ByteReader.ReadBytes(data, len, out rawPCM);
+    }
+
     Values.gameObject.SetActive(false);
     LoadSubButton.enabled = false;
   }
 
-  string ReadNextByte(string data, out byte res) {
-    int pos1 = data.IndexOf(' ');
-    int pos2 = data.IndexOf('\n');
-    int pos3 = data.Length;
-    if (pos1 == -1) pos1 = int.MaxValue;
-    if (pos2 == -1) pos2 = int.MaxValue;
-    if (pos3 == -1) pos3 = int.MaxValue;
-    int pos = pos1;
-    if (pos > pos2) pos = pos2;
-    if (pos > pos3) pos = pos3;
-    if (pos < 1) {
-      res = 0;
-      return "";
-    }
-
-    string part = data.Substring(0, pos);
-    Match m = rgHex.Match(part);
-    if (m.Success) {
-      res = (byte)Convert.ToInt32(m.Groups[1].Value, 16);
-      return data.Substring(pos).Trim();
-    }
-
-    res = 0;
-    return data;
-  }
-
 
   public void Save() {
-    string res = "Wave:\n0x" +
-      ((int)wave).ToString("X2") + " 0x";
+    string res = "Wave:\nusehex\n" +
+      ((int)wave).ToString("X2") + " ";
 
     int pbyte = (int)(phase * 1000);
-    res += ((byte)((pbyte & 0xff00) >> 8)).ToString("X2") + " 0x" +
-    ((byte)(pbyte & 0xff)).ToString("X2") + " 0x";
+    res += ((byte)((pbyte & 0xff00) >> 8)).ToString("X2") + ((byte)(pbyte & 0xff)).ToString("X2") + " ";
 
-    res += attack.ToString("X2") + " 0x" + decay.ToString("X2") + " 0x" + sustain.ToString("X2") + " 0x" + release.ToString("X2"); 
+    res += attack.ToString("X2") + decay.ToString("X2") + sustain.ToString("X2") + release.ToString("X2") + "\n";
+
+    if (wave == Waveform.PCM) {
+      if (rawPCM == null)
+        res += "000000";
+      else {
+        res += ((rawPCM.Length & 0xff000000) >> 24).ToString("X2") +
+              ((rawPCM.Length & 0xff0000) >> 16).ToString("X2") +
+              ((rawPCM.Length & 0xff00) >> 8).ToString("X2") +
+              ((rawPCM.Length & 0xff) >> 0).ToString("X2") + "\n";
+        for (int i = 0; i < rawPCM.Length; i+=4) {
+          res += rawPCM[i + 0].ToString("X2");
+          if (i + 1 < rawPCM.Length) res += rawPCM[i + 1].ToString("X2");
+          if (i + 2 < rawPCM.Length) res += rawPCM[i + 2].ToString("X2");
+          if (i + 3 < rawPCM.Length) res += rawPCM[i + 3].ToString("X2") + " ";
+        }
+        res += "\n";
+      }
+    }
 
     Values.gameObject.SetActive(true);
     LoadSubButton.enabled = false;
