@@ -164,15 +164,14 @@ public class Audio : MonoBehaviour {
   public void Wave(int channel, byte[] data, int start) {
     if (channel < 0 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
 
-    // first byte is ID, we can ignore it
-    channels[channel].wave = (Waveform)data[start + 1];
-    channels[channel].phase = (((short)data[start + 2] << 8) + data[start + 3]) / 100f;
-    ADSR(channel, data[start + 4], data[start + 5], data[start + 6], data[start + 7]);
+    channels[channel].wave = (Waveform)data[start];
+    channels[channel].phase = (((short)data[start + 1] << 8) + data[start + 2]) / 100f;
+    ADSR(channel, data[start + 3], data[start + 4], data[start + 5], data[start + 6]);
     if (channels[channel].wave == Waveform.PCM) {
-      int len = (data[start + 8] << 24) + (data[start + 9] << 16) + (data[start + 10] << 8) + (data[start + 11] << 0);
+      int len = (data[start + 7] << 24) + (data[start + 8] << 16) + (data[start + 9] << 8) + (data[start + 10] << 0);
       channels[channel].pcmdata = new byte[len];
       for (int b = 0; b < len; b++) {
-        channels[channel].pcmdata[b] = data[start + 12 + b];
+        channels[channel].pcmdata[b] = data[start + 11 + b];
       }
     }
   }

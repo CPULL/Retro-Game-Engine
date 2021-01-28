@@ -1950,9 +1950,9 @@ public class MusicEditor : MonoBehaviour {
     foreach (Wave w in waves) {
       byte ph = (byte)((((int)(w.phase * 100)) & 0xff00) >> 8);
       byte pl = (byte)(((int)(w.phase * 100)) & 0xff);
-
-      res += w.name.Replace(":", "") + ":\n" +
-            w.id.ToString("X2") + " " +
+      res += "/* Wave id */ " +
+            w.id.ToString("X2") + "\n" +
+            w.name.Replace(":", "") + ":\n" +
             ((int)w.wave).ToString("X2") + " " +
             ph.ToString("X2") + " " +
             pl.ToString("X2") + " " +
@@ -1971,8 +1971,9 @@ public class MusicEditor : MonoBehaviour {
               l1.ToString("X2") + " " +
               l0.ToString("X2") + "\n";
         for (int i = 0; i < w.rawPCM.Length; i++) {
-          res += w.rawPCM[i].ToString("X2") + " ";
+          res += w.rawPCM[i].ToString("X2");
         }
+        res += "\n";
       }
       res += "\n";
     }
@@ -2071,14 +2072,17 @@ public class MusicEditor : MonoBehaviour {
     Values.gameObject.SetActive(true);
     LoadSubButton.enabled = true;
   }
-  readonly Regex rgComments = new Regex("([^\\n]*)(//[^\\n]*)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgHex1 = new Regex("[\\s]*0x([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgHex2 = new Regex("[\\s]*([a-f0-9]+)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgComments = new Regex("/\\*(?>(?:(?>[^*]+)|\\*(?!/))*)\\*/", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgComment = new Regex("//(.*?)\r?\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgLabels = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
     string data = Values.text.Trim();
-    data = rgComments.Replace(data, " ").Replace('\n', ' ').Trim();
+    data = rgComments.Replace(data, " ");
+    data = rgComment.Replace(data, " ");
+    data = rgLabels.Replace(data, " ");
+    data = data.Replace('\n', ' ').Replace('\r', ' ').Trim();
     while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
     waves.Clear();
@@ -2093,15 +2097,15 @@ public class MusicEditor : MonoBehaviour {
     m.name = data.Substring(0, pos).Trim();
     data = data.Substring(pos + 1).Trim();
     byte data3, data4;
-    data = ReadNextByte(data, out byte data1);
+    data = ByteReader.ReadByte(data, out byte data1);
     byte numv = data1;
     for (int i = 0; i < 8; i++)
       m.voices[i] = (byte)((i < numv) ? i : 255);
-    data = ReadNextByte(data, out byte numb);
-    data = ReadNextByte(data, out byte numw);
-    data = ReadNextByte(data, out byte data2);
+    data = ByteReader.ReadByte(data, out byte numb);
+    data = ByteReader.ReadByte(data, out byte numw);
+    data = ByteReader.ReadByte(data, out byte data2);
     for (int i = 0; i < data2; i++) {
-      data = ReadNextByte(data, out data1);
+      data = ByteReader.ReadByte(data, out data1);
       m.blocks.Add(data1 == 255 ? -1 : data1);
     }
 
@@ -2113,32 +2117,28 @@ public class MusicEditor : MonoBehaviour {
       };
       data = data.Substring(pos + 1).Trim();
 
-      data = ReadNextByte(data, out data1);
-      data = ReadNextByte(data, out data2);
-      data = ReadNextByte(data, out data3);
-      data = ReadNextByte(data, out data4);
+      data = ByteReader.ReadByte(data, out data1);
+      data = ByteReader.ReadByte(data, out data2);
+      data = ByteReader.ReadByte(data, out data3);
+      data = ByteReader.ReadByte(data, out data4);
 
       w.id = data1;
       w.wave = (Waveform)data2;
 
       w.phase = ((data3 << 8) + data4) / 100f;
-      data = ReadNextByte(data, out w.a);
-      data = ReadNextByte(data, out w.d);
-      data = ReadNextByte(data, out w.s);
-      data = ReadNextByte(data, out w.r);
+      data = ByteReader.ReadByte(data, out w.a);
+      data = ByteReader.ReadByte(data, out w.d);
+      data = ByteReader.ReadByte(data, out w.s);
+      data = ByteReader.ReadByte(data, out w.r);
 
       if (w.wave == Waveform.PCM) {
-        data = ReadNextByte(data, out data1);
-        data = ReadNextByte(data, out data2);
-        data = ReadNextByte(data, out data3);
-        data = ReadNextByte(data, out data4);
+        data = ByteReader.ReadByte(data, out data1);
+        data = ByteReader.ReadByte(data, out data2);
+        data = ByteReader.ReadByte(data, out data3);
+        data = ByteReader.ReadByte(data, out data4);
 
         int len = (data1 << 24) + (data2 << 16) + (data3 << 8) + (data4 << 0);
-        w.rawPCM = new byte[len];
-        for (int b = 0; b < len; b++) {
-          data = ReadNextByte(data, out data1);
-          w.rawPCM[b] = data1;
-        }
+        data = ByteReader.ReadBytes(data, len, out w.rawPCM);
       }
 
       waves.Add(w);
@@ -2213,39 +2213,6 @@ public class MusicEditor : MonoBehaviour {
     MusicRegenerate();
     BlocksRegenerate();
     WavesRegenerate();
-  }
-
-  string ReadNextByte(string data, out byte res) {
-    int pos1 = data.IndexOf(' ');
-    int pos2 = data.IndexOf('\n');
-    int pos3 = data.Length;
-    if (pos1 == -1) pos1 = int.MaxValue;
-    if (pos2 == -1) pos2 = int.MaxValue;
-    if (pos3 == -1) pos3 = int.MaxValue;
-    int pos = pos1;
-    if (pos > pos2) pos = pos2;
-    if (pos > pos3) pos = pos3;
-    if (pos < 1) {
-      res = 0;
-      return "";
-    }
-
-    string part = data.Substring(0, pos);
-    Match m = rgHex1.Match(part);
-    if (m.Success) {
-      res = (byte)Convert.ToInt32(m.Groups[1].Value, 16);
-      return data.Substring(pos).Trim();
-    }
-    else {
-      m = rgHex2.Match(part);
-      if (m.Success) {
-        res = (byte)Convert.ToInt32(m.Groups[1].Value, 16);
-        return data.Substring(pos).Trim();
-      }
-    }
-
-    res = 0;
-    return data;
   }
 
 

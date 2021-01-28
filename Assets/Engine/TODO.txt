@@ -15,4 +15,5 @@ FUTURE: map keys
 Alter tiles and sprite to use the new Colors and sizes
 Uniform export HEX and add also way to get 4 bytes at time
 
-Generalize text parser? (Arcade, Sprite, TIlempa, Wave, Music)
+Generalize text parser? (Arcade, Music)
+
