@@ -47,12 +47,14 @@ public class Variables {
   }
 
   internal void Incr(int idx) {
-    if (vars[idx].type == VT.Int) vars[idx].iVal++;
-    if (vars[idx].type == VT.Float) vars[idx].fVal += 1;
+    if (vars[idx].type == VT.None) { vars[idx].iVal = 0; vars[idx].type = VT.Int; }
+    else if (vars[idx].type == VT.Int) vars[idx].iVal++;
+    else if (vars[idx].type == VT.Float) vars[idx].fVal += 1;
   }
   internal void Decr(int idx) {
-    if (vars[idx].type == VT.Int) vars[idx].iVal--;
-    if (vars[idx].type == VT.Float) vars[idx].fVal -= 1;
+    if (vars[idx].type == VT.None) { vars[idx].iVal = 0; vars[idx].type = VT.Int; }
+    else if (vars[idx].type == VT.Int) vars[idx].iVal--;
+    else if (vars[idx].type == VT.Float) vars[idx].fVal -= 1;
   }
 
   public override string ToString() {

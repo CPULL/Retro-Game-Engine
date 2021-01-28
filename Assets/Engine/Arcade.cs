@@ -357,7 +357,7 @@ public class Arcade : MonoBehaviour {
         // LABELS *************************************************************************************************************** LABELS
         foreach (CodeNode n in data.children) {
           if (n.type == BNF.Label) {
-            labels.Add(n.sVal, n.iVal);
+            labels.Add(n.sVal, memsize + n.iVal);
           }
         }
       }
@@ -418,7 +418,7 @@ public class Arcade : MonoBehaviour {
           l = 0;
         }
       }
-      Write(msg, 4, 48, 48);
+      Write(msg, 4, 48, Col.C(5, 1, 0));
       Debug.Log("Error in loading! " + e.Message + "\n" + e.StackTrace);
     }
   }
@@ -1346,7 +1346,7 @@ public class Arcade : MonoBehaviour {
         break;
       }
     } catch (Exception e) {
-      Clear(0b110000);
+      Clear(Col.C(5, 0, 0));
       Debug.Log(e.Message + "\n" + e.StackTrace);
       string msg = "";
       for (int i = 0, l = 0; i < e.Message.Length; i++) {

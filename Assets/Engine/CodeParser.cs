@@ -255,7 +255,6 @@ public class CodeParser : MonoBehaviour {
 
 
   public CodeNode Parse(string file, Variables variables) {
-    string times = "";
     try {
       // Start by replacing all the problematic stuff
       file = file.Trim().Replace("\r", "").Replace("\t", " ");
@@ -661,7 +660,7 @@ public class CodeParser : MonoBehaviour {
       CodeNode node = new CodeNode(BNF.SPRITE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 4 && num != 5)
+      if (num != 3 && num != 5)
         throw new Exception("Invalid Sprite(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
@@ -1238,8 +1237,10 @@ public class CodeParser : MonoBehaviour {
 
     // LAB
     line = rgLabel.Replace(line, m => {
+      string lab = m.Value.Trim().ToLowerInvariant();
+      lab = lab.Substring(0, lab.Length - 1);
       CodeNode n = new CodeNode(BNF.LAB, GenId("LB"), origForException, linenumber) {
-        sVal = m.Value.Trim().ToLowerInvariant()
+        sVal = lab
       };
       nodes[n.id] = n;
       return n.id;

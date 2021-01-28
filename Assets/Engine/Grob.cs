@@ -18,9 +18,9 @@ public class Grob {
   public Texture2D Set(int w, int h, byte[] data, int pos, float scaleW, float scaleH, bool filter) {
     notDefined = false;
     if (w < 8) w = 8;
-    if (w > 32) w = 32;
+    if (w > 64) w = 64;
     if (h < 8) h = 8;
-    if (h > 32) h = 32;
+    if (h > 64) h = 64;
     raw = new byte[w * h * 4];
     texture = new Texture2D(w, h, TextureFormat.RGBA32, false) {
       filterMode = filter ? FilterMode.Bilinear : FilterMode.Point
@@ -49,9 +49,9 @@ public class Grob {
 
   internal void Set(int w, int h, Texture2D texture2D, float scaleW, float scaleH, bool filter) {
     if (w < 8) w = 8;
-    if (w > 32) w = 32;
+    if (w > 64) w = 64;
     if (h < 8) h = 8;
-    if (h > 32) h = 32;
+    if (h > 64) h = 64;
     notDefined = false;
     texture = texture2D;
     texture.filterMode = filter ? FilterMode.Bilinear : FilterMode.Point;

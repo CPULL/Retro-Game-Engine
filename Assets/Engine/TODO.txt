@@ -6,6 +6,7 @@ Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks"
 
 Parser: add ToString for the missing BNF values (music)
 
+We need some way to define an array
 
 FUTURE: Code editor
 FUTURE: Font editor

@@ -194,6 +194,6 @@ public class Col {
   }
 
   public static byte C(byte r, byte g, byte b) {
-    return GetColorByte(new Color32(r, g, b, 255));
+    return GetColorByte(new Color32((byte)(r * 51), (byte)(g * 51), (byte)(b * 51), 255));
   }
 }
