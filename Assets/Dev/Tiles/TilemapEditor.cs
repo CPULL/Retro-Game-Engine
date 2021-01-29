@@ -186,12 +186,11 @@ public class TilemapEditor : MonoBehaviour {
   public void DeleteTile() {
     if (currentPaletteTile == null) return;
 
-    foreach(TileInMap t in map)
-      if (t.id == currentPaletteTile.id) {
+    foreach (TileInMap t in map)
+      if (t.id == currentPaletteTile.id)
         t.Setup(SelectTileInMap, OverTileInMap, emptyTexture);
-        Destroy(Palette[currentPaletteTile.id].gameObject);
-        Palette.Remove(currentPaletteTile.id);
-      }
+    Destroy(Palette[currentPaletteTile.id].gameObject);
+    Palette.Remove(currentPaletteTile.id);
   }
 
   TileInPalette currentPaletteTile = null;
