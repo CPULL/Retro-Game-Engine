@@ -774,27 +774,26 @@ public class TilemapEditor : MonoBehaviour {
         if (iw * i <= texture.width && scalex == 1) scalex = i;
         if (ih * i <= texture.height && scaley == 1) scaley = i;
       }
-      int scale = scalex;
-      if (scale < scaley) scale = scaley;
+      int area = scalex * scaley;
 
       for (int y = 0; y < maxy; y++) {
         int texty = maxy - y - 1;
         for (int x = 0; x < maxx; x++) {
           // Get the average color in the block scaleXscale
           int r = 0, g = 0, b = 0, a = 0;
-          for (int tx = 0; tx < scale; tx++) {
-            for (int ty = 0; ty < scale; ty++) {
-              Color32 colp = texture.GetPixel(x * scale + tx, texty * scale + ty);
+          for (int tx = 0; tx < scalex; tx++) {
+            for (int ty = 0; ty < scaley; ty++) {
+              Color32 colp = texture.GetPixel(x * scalex + tx, texty * scaley + ty);
               r += colp.r;
               g += colp.g;
               b += colp.b;
               a += colp.a;
             }
           }
-          r /= scale * scale;
-          g /= scale * scale;
-          b /= scale * scale;
-          a /= scale * scale;
+          r /= area;
+          g /= area;
+          b /= area;
+          a /= area;
 
           // Normalize the color
           pixels[x + iw * y] = Col.GetColorByte(Col.NormalizeColor(r, g, b, a));
@@ -804,22 +803,51 @@ public class TilemapEditor : MonoBehaviour {
       // Create the tiles
       maxy = importY2 - importY1;
       maxx = importX2 - importX1;
+      Dictionary<byte, byte[]> ts = new Dictionary<byte, byte[]>();
       for (int y = 0; y <= maxy; y++) {
         for (int x = 0; x <= maxx; x++) {
-          CreateNewTile();
           byte[] tileData = new byte[tw * th];
           for (int ty = 0; ty < th; ty++) {
             for (int tx = 0; tx < tw; tx++) {
               tileData[tx + tw * ty] = pixels[x * tw + tx + y * th * iw + (ty * iw)];
             }
           }
-          currentPaletteTile.UpdateTexture(tileData);
+          // Check if the tile is already there
+          byte def = 0;
+          foreach (byte id in ts.Keys) {
+            byte[] done = ts[id];
+            bool good = true;
+            for (int pos = 0; pos < th * tw; pos++) {
+              if (done[pos] != tileData[pos]) {
+                good = false;
+                break;
+              }
+            }
+            if (good) {
+              def = id;
+              break;
+            }
+          }
 
           TileInMap tile = map[importX1 + x, importY1 + y];
-          tile.img.texture = currentPaletteTile.img.texture;
-          tile.id = currentPaletteTile.id;
+          if (def == 0) {
+            CreateNewTile();
+            currentPaletteTile.UpdateTexture(tileData);
+            tile.img.texture = currentPaletteTile.img.texture;
+            tile.id = currentPaletteTile.id;
+            ts.Add(tile.id, tileData);
+            Debug.Log("different");
+          }
+          else {
+            TileInPalette palt = Palette[def];
+            tile.img.texture = palt.img.texture;
+            tile.id = palt.id;
+            Debug.Log("same");
+          }
+
         }
       }
+      ts.Clear();
     }
 
     for (int bx = 0; bx < w; bx++)

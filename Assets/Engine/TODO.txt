@@ -12,4 +12,5 @@ FUTURE: Font editor
 FUTURE: step by step debugger
 FUTURE: map keys
 
-Tilemap, implement importing image to create a set of tiles
+In importing sprites and tiles, handle better when the image is short vertically or horizontally
+Fill or stretch or do partial?
