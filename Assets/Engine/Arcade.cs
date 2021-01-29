@@ -845,7 +845,7 @@ public class Arcade : MonoBehaviour {
   #endregion Tilemap
 
   bool Execute(CodeNode n) {
-//    Debug.Log(n);
+    Debug.Log(n);
     try {
       switch (n.type) {
         case BNF.CLR: {

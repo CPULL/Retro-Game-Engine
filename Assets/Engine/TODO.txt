@@ -8,13 +8,17 @@ Parser: add ToString for the missing BNF values (music)
 
 We need some way to define an array
 
+
 FUTURE: Code editor
 FUTURE: Font editor
 FUTURE: step by step debugger
 FUTURE: map keys
 
-Alter tiles and sprite to use the new Colors and sizes
-Uniform export HEX and add also way to get 4 bytes at time
+[a-z][a-z0-9]+\\[ rec[] \\] should be handled as array
 
-Generalize text parser? (Arcade, Music)
+array[] = number should set the size. Max 1024 elements
+The values will be normal registers
+array[number] will point to the value
+
+have a way to "parse labels", something like Label(string) that can match to a label
 
