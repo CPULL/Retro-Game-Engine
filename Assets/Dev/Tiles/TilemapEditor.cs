@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 public class TilemapEditor : MonoBehaviour {
@@ -169,6 +170,8 @@ public class TilemapEditor : MonoBehaviour {
     t.Setup((byte)(min + 1), SelectTileInPalette, tw, th);
     t.gameObject.SetActive(true);
     Palette[t.id] = t;
+    if (currentPaletteTile != null) currentPaletteTile.Deselect();
+    currentPaletteTile = t;
   }
 
   public void EditTile() {
@@ -721,7 +724,7 @@ public class TilemapEditor : MonoBehaviour {
       SelectionButtons[i].enabled = i == 2;
   }
 
-  int importX1, importY1, importX2, importY2;
+  int importX1, importY1, importX2, importY2, iw, ih;
   void ImportTilesFromPicture(int x1, int y1, int x2, int y2) {
     if (x1 > x2) { int tmp = x1; x1 = x2; x2 = tmp; }
     if (y1 > y2) { int tmp = y1; y1 = y2; y2 = tmp; }
@@ -739,21 +742,89 @@ public class TilemapEditor : MonoBehaviour {
       map[x2, by].Select();
     }
 
+    iw = tw * (importX2 - importX1 + 1);
+    ih = th * (importY2 - importY1 + 1);
+
     // Show the file browser
     FileBrowser.Show(ImportTilesFromPicture, FileBrowser.FileType.Pics);
   }
 
   public void ImportTilesFromPicture(string path) {
     // Load the image and scale it
-    // Minimize the tiles (maybe)
-    // Fill the map with the tiles
+    StartCoroutine(LoadImageCoroutine(path));
+  }
 
-    Debug.Log(path);
+  IEnumerator LoadImageCoroutine(string path) {
+    string url = string.Format("file://{0}", path);
+
+    using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url)) {
+      yield return www.SendWebRequest();
+      Texture2D texture = DownloadHandlerTexture.GetContent(www);
+      // Get the top-left part of the image fitting in the sprite size
+      int maxx = iw;
+      if (maxx > texture.width) maxx = texture.width;
+      int maxy = ih;
+      if (maxy > texture.height) maxy = texture.height;
+      byte[] pixels = new byte[iw * ih];
+
+      // Have a way to scale it a little, at least by 2, 3, and 4
+      int scalex = 1;
+      int scaley = 1;
+      for (int i = 32; i > 1; i--) {
+        if (iw * i <= texture.width && scalex == 1) scalex = i;
+        if (ih * i <= texture.height && scaley == 1) scaley = i;
+      }
+      int scale = scalex;
+      if (scale < scaley) scale = scaley;
+
+      for (int y = 0; y < maxy; y++) {
+        int texty = maxy - y - 1;
+        for (int x = 0; x < maxx; x++) {
+          // Get the average color in the block scaleXscale
+          int r = 0, g = 0, b = 0, a = 0;
+          for (int tx = 0; tx < scale; tx++) {
+            for (int ty = 0; ty < scale; ty++) {
+              Color32 colp = texture.GetPixel(x * scale + tx, texty * scale + ty);
+              r += colp.r;
+              g += colp.g;
+              b += colp.b;
+              a += colp.a;
+            }
+          }
+          r /= scale * scale;
+          g /= scale * scale;
+          b /= scale * scale;
+          a /= scale * scale;
+
+          // Normalize the color
+          pixels[x + iw * y] = Col.GetColorByte(Col.NormalizeColor(r, g, b, a));
+        }
+      }
+
+      // Create the tiles
+      maxy = importY2 - importY1;
+      maxx = importX2 - importX1;
+      for (int y = 0; y <= maxy; y++) {
+        for (int x = 0; x <= maxx; x++) {
+          CreateNewTile();
+          byte[] tileData = new byte[tw * th];
+          for (int ty = 0; ty < th; ty++) {
+            for (int tx = 0; tx < tw; tx++) {
+              tileData[tx + tw * ty] = pixels[x * tw + tx + y * th * iw + (ty * iw)];
+            }
+          }
+          currentPaletteTile.UpdateTexture(tileData);
+
+          TileInMap tile = map[importX1 + x, importY1 + y];
+          tile.img.texture = currentPaletteTile.img.texture;
+          tile.id = currentPaletteTile.id;
+        }
+      }
+    }
 
     for (int bx = 0; bx < w; bx++)
       for (int by = 0; by < h; by++)
         map[bx, by].Deselect();
-
-
   }
+
 }
