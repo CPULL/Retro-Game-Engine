@@ -10,7 +10,6 @@ public class CodeNode {
   public string sVal;
   public byte[] bVal = null;
   public int Reg;
-  public VT valType;
   public string origLine;
   public int origLineNum;
   public CodeNode parent;
@@ -120,6 +119,9 @@ public class CodeNode {
         case BNF.MEMlongf: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@f]" + (sameLine ? " " : "\n"); break;
         case BNF.MEMlongs: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@s]" + (sameLine ? " " : "\n"); break;
         case BNF.MEMchar: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "@c]" + (sameLine ? " " : "\n"); break;
+
+
+        case BNF.ARRAY:  res += (sameLine ? "" : id) + " R" + Reg + "[" + CN1.ToString(indent + 1, true) + "]" + (sameLine ? " " : "\n"); break;
 
         case BNF.OPpar:
           res += "(" + CN1.ToString(indent + 1, true) + ")";
@@ -255,6 +257,7 @@ public class CodeNode {
 
         case BNF.Label:
         case BNF.LAB: res += (sameLine ? "" : id) + "[" + sVal + iVal + "]"; break;
+        case BNF.LABG: res += (sameLine ? "" : id) + "Label(" + CN1.ToString(indent, true) + ")"; break;
 
         case BNF.FRAME: res += (sameLine ? "" : id) + "frame"; break;
 
@@ -364,6 +367,7 @@ public class CodeNode {
   internal bool Evaluable() {
     switch (type) {
       case BNF.REG:
+      case BNF.ARRAY:
       case BNF.INT:
       case BNF.FLT:
       case BNF.COLOR:
@@ -521,6 +525,7 @@ public enum BNF {
   Rom, // This is used to store the data
   Label, // This is used to parse the Rom section (Data)
   REG,
+  ARRAY,
   INT, 
   FLT,
   COLOR,//rename to color
@@ -628,7 +633,8 @@ public enum VT {
   None,
   Int,
   Float,
-  String
+  String,
+  Array
 }
 
 public enum MD {

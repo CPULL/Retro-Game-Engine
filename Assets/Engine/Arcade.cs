@@ -192,7 +192,7 @@ public class Arcade : MonoBehaviour {
     raw = new byte[sw * sh * 4];
     Clear(0);
     Write("--- MMM Arcade RGE ---", 35, 8, Col.C(5, 5, 0));
-    Write(" virtual machine", 55, 14 + 4, Col.C(1, 4, 5));
+    Write(" virtual machine", 55, 14 + 4, Col.C(1, 3, 4));
     Write(" Retro Game Engine", 45, 14 + 9, Col.C(1, 5, 4));
     sprites = new Grob[spriteImgs.Length];
     for (int i = 0; i < spriteImgs.Length; i++) {
@@ -288,7 +288,7 @@ public class Arcade : MonoBehaviour {
     }
     try {
       CodeNode res = cp.Parse(codefile, variables);
-      Write("Cartridge:", 4, 39, Col.C(1, 4, 5));
+      Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
       if (res.sVal == null)
         Write("<no name>", 88, 39, Col.C(5, 3, 1));
       else
@@ -297,7 +297,7 @@ public class Arcade : MonoBehaviour {
       CodeNode data = null;
       if (res.HasNode(BNF.Data)) {
         data = res.Get(BNF.Data);
-        Write("Data:   Yes", 4, 48 + 18, Col.C(1, 4, 5));
+        Write("Data:   Yes", 4, 48 + 18, Col.C(1, 3, 4));
 
         // Screen ************************************************************************************************************** Screen
         CodeNode scrconf = data.Get(BNF.ScrConfig);
@@ -324,12 +324,12 @@ public class Arcade : MonoBehaviour {
           Write("--- MMM Arcade RGE ---", (sw - 23 * 8) / 2, 8, 60);
           Write("virtual machine", (sw - 16 * 8) / 2, 14 + 4, 0b011010);
           Write("Retro Game Engine", (sw - 18 * 8) / 2, 14 + 9, 0b011110);
-          Write("Cartridge:", 4, 39, 0b001011);
+          Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
           if (res.sVal == null)
-            Write("<no name>", 88, 39, 0b1001000);
+            Write("<no name>", 88, 39, Col.C(5, 3, 1));
           else
-            Write(res.sVal, 88, 39, 0b1001000);
-          Write("Data:   Yes", 4, 48 + 18, 0b001011);
+            Write(res.sVal, 88, 39, Col.C(5, 3, 1));
+          Write("Data:   Yes", 4, 48 + 18, Col.C(1, 3, 4));
         }
         sprites[0].Init(0, 6, sw, sh);
 
@@ -362,40 +362,41 @@ public class Arcade : MonoBehaviour {
         }
       }
       else {
-        Write("Data:   ", 4, 48 + 18, 0b001011);
-        Write("<missing>", 68, 48 + 18, 0b1001000);
+        Write("Data:   ", 4, 48 + 18, Col.C(1, 3, 4));
+        Write("<missing>", 68, 48 + 18, Col.C(5, 3, 1));
         mem = new byte[256 * 1024];
       }
 
       startCode = res.Get(BNF.Start);
+      Write("Start:  ", 4, 48, Col.C(1, 3, 4));
       if (startCode != null && startCode.children != null && startCode.children.Count > 0) {
-        Write("Start:  Yes", 4, 48, 0b001011);
+        Write("Yes", 68, 48, Col.C(1, 3, 4));
       }
       else {
-        Write("Start:  ", 4, 48, 0b001011);
-        Write("<missing>", 68, 48, 0b1001000);
+        Write("<missing>", 68, 48, Col.C(5, 3, 1));
         startCode = null;
       }
 
+      Write("Update: ", 4, 48 + 9, Col.C(1, 3, 4));
       updateCode = res.Get(BNF.Update);
       if (updateCode != null && updateCode.children != null && updateCode.children.Count > 0) {
-        Write("Update: Yes", 4, 48 + 9, 0b001011);
+        Write("Yes", 68, 48 + 9, Col.C(1, 3, 4));
       }
       else {
-        Write("Update:  ", 4, 48 + 9, 0b001011);
-        Write("<missing>", 68, 48 + 9, 0b1001000);
+        Write("<missing>", 68, 48 + 9, Col.C(5, 3, 1));
         updateCode = null;
       }
 
-      Write("Screen: " + sw + " x " + sh, 10, 100, 0b001110);
+      Write("Screen: " + sw + " x " + sh, 10, 100, Col.C(1, 3, 4));
 
-      Write("Memory: " + MemSize(memsize), 10, 110, 0b001110);
+      Write("Memory: " + MemSize(memsize), 10, 110, Col.C(1, 3, 4));
 
       if (data == null) {
-        Write("ROM:    <missing>", 10, 120, 0b001110);
+        Write("ROM:    ", 10, 120, Col.C(1, 3, 4));
+        Write("        <missing>", 10, 120, Col.C(5, 3, 1));
       }
       else {
-        Write("ROM:    " + MemSize(romsize), 10, 120, 0b001110);
+        Write("ROM:    " + MemSize(romsize), 10, 120, Col.C(1, 3, 4));
       }
       updateDelay = updateTime;
 
@@ -918,6 +919,9 @@ public class Arcade : MonoBehaviour {
           if (n.CN1.type == BNF.REG) {
             variables.Set(n.CN1.Reg, r);
           }
+          else if (n.CN1.type == BNF.ARRAY) {
+            variables.Set(l.idx, r);
+          }
           else if (n.CN1.type == BNF.MEM) {
             int pos = Evaluate(n.CN1.CN1).ToInt(culture);
             if (pos < 0 || pos > memsize) throw new Exception("Memory violation:" + pos + "\nfrom:" + n);
@@ -1372,7 +1376,14 @@ public class Arcade : MonoBehaviour {
     if (!n.Evaluable()) throw new Exception("Not evaluable node: " + n);
 
     switch (n.type) {
-      case BNF.REG: return variables.Get(n.Reg); // Change to the Variables and store the index instead of the Reg char
+      case BNF.REG: {
+        Value r = variables.Get(n.Reg);
+        if (r.type == VT.Array) {
+          int pos = Evaluate(n.CN1).ToInt(culture);
+          return r.GetArrayValue(variables, pos);
+        }
+        return r;
+      }
 
       case BNF.MEM:
       case BNF.MEMlongb: {
@@ -1407,6 +1418,16 @@ public class Arcade : MonoBehaviour {
       case BNF.FLT: return new Value(n.fVal);
       case BNF.COLOR: return new Value(n.iVal);
       case BNF.STR: return new Value(n.sVal);
+
+      case BNF.ARRAY: {
+        Value a = variables.Get(n.Reg);
+        if (a.type != VT.Array) {
+          // Not an array, make it as array with at least the number of values specified, and return the value
+          a.ConvertToArray(variables, n.Reg, n.sVal, Evaluate(n.CN1).ToInt(culture));
+        }
+        return a.GetArrayValue(variables, Evaluate(n.CN1).ToInt(culture));
+      }
+
 
       case BNF.MUSICPOS: return new Value(audioManager.GetMusicPos());
       case BNF.DTIME: return new Value(Time.deltaTime);

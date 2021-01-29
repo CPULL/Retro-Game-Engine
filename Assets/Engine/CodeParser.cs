@@ -117,15 +117,15 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgTag = new Regex("([\\s]*`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgVar = new Regex("(?<=[^a-z0-9`@_]|^)([a-z][0-9a-z]{0,7})([^a-z0-9\\(¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgArray = new Regex("(?<=[^a-z0-9`@_]|^)([a-z][0-9a-z]{0,7})\\[((?>\\[(?<c>)|[^\\[\\]]+|\\](?<-c>))*(?(c)(?!)))\\]", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgHex = new Regex("0x([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgCol = new Regex("c([0-5])([0-5])([0-5])([0-4])?", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgQString = new Regex("\\\\\"", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgString = new Regex("(\")([^\"]*)(\")", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDeltat = new Regex("deltatime", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFloat = new Regex("[0-9]*\\.[0-9]+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgInt = new Regex("(^[0-9]+)|([^a-z\\(\\),\\.\\s\\[\\]:_@\\<\\=\\>][0-9]+)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgInt = new Regex("([^0-9]?\\s*)(\\d+)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBin = new Regex("0b([0-1]{1,31})", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-
 
   readonly Regex rgPars = new Regex("\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMem = new Regex("\\[[\\s]*`[a-z]{3,}¶[\\s]*]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -160,7 +160,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgTrim = new Regex("([\\s]*`[a-z]{3,}¶)\\.trim[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSubstring = new Regex("([\\s]*`[a-z]{3,}¶)\\.substring\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgAssign = new Regex("[\\s]*=[^=]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgAssign = new Regex("[^=][\\s]*=[\\s]*[^=]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgAssSum = new Regex("[\\s]*\\+=[^(\\+=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgAssSub = new Regex("[\\s]*\\-=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgAssMul = new Regex("[\\s]*\\*=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -262,10 +262,7 @@ public class CodeParser : MonoBehaviour {
       // [QuotedStrings]
       file = rgQString.Replace(file, "ˠ");
       // Replace single line comments
-      file = rgCommentSL.Replace(file, m => {
-        if (m.Groups.Count > 1) return m.Groups[1].Value;
-        return m.Value;
-      });
+      file = rgCommentSL.Replace(file, "");
       // Remove multiline-comments, but keep the newlines
       file = rgCommentML.Replace(file, m => {
         string inside = m.Value;
@@ -947,6 +944,30 @@ public class CodeParser : MonoBehaviour {
       throw new Exception("Invalid block after WHILE statement: " + (linenumber + 1));
     }
 
+    // [ARRAY]
+    if (expected.IsGood(Expected.Val.MemReg) && rgArray.IsMatch(line)) {
+      Match m = rgArray.Match(line);
+      string var = m.Groups[1].Value.ToLowerInvariant();
+      if (!reserverdKeywords.Contains(var)) {
+        // Are we parsing a function?
+        if (currentFunction != null && currentFunctionParameters.children != null) {
+          // Is it a parameter variable?
+          string lp = currentFunction + "." + var;
+          foreach (CodeNode p in currentFunctionParameters.children) {
+            if (p.sVal == lp) { // Yes, it is local
+              var = lp;
+              break;
+            }
+          }
+        }
+        CodeNode node = new CodeNode(BNF.ARRAY, line, linenumber) { Reg = vars.Add(var+"[]") };
+        string par = m.Groups[2].Value.Trim();
+        if (!string.IsNullOrEmpty(par)) node.Add(ParseExpression(par));
+        parent.Add(node);
+        return;
+      }
+    }
+
     // [MEM]= \[<exp>\] | \[<exp>@<exp>\]
     if (expected.IsGood(Expected.Val.MemReg) && rgMemUnparsed.IsMatch(line)) {
       CodeNode node = ParseExpression(rgMemUnparsed.Match(line).Value);
@@ -1133,145 +1154,175 @@ public class CodeParser : MonoBehaviour {
   CodeNode ParseExpression(string line) {
     line = line.Trim(' ', '\t', '\r', ';');
 
-    // First get all REG, INT, FLT, MEM, DTIME, LEN and replace with specific chars
-    // Then parse the structure (recursive)
-    // Then build the final CodeNode
+    bool atLeastOneReplacement = true;
+    while (atLeastOneReplacement) {
+      atLeastOneReplacement = false;
 
-    // - (unary)
-    line = rgUOsub.Replace(line, m => {
-      string toReplace = m.Captures[0].Value.Trim();
-      toReplace.Trim();
-      if (toReplace[0] != '-') throw new Exception("Invalid negative value: " + toReplace);
-      toReplace = toReplace.Substring(1).Trim();
-      CodeNode n = new CodeNode(BNF.UOsub, GenId("US"), origForException, linenumber);
-      CodeNode exp = ParseExpression(toReplace);
-      if (exp.type == BNF.INT) {
-        n = exp;
-        n.iVal = -n.iVal;
-      }
-      else if (exp.type == BNF.FLT) {
-        n = exp;
-        n.fVal = -n.fVal;
-      }
-      else
+      // - (unary)
+      line = rgUOsub.Replace(line, m => {
+        atLeastOneReplacement = true;
+        string toReplace = m.Captures[0].Value.Trim();
+        toReplace.Trim();
+        if (toReplace[0] != '-') throw new Exception("Invalid negative value: " + toReplace);
+        toReplace = toReplace.Substring(1).Trim();
+        CodeNode n = new CodeNode(BNF.UOsub, GenId("US"), origForException, linenumber);
+        CodeNode exp = ParseExpression(toReplace);
+        if (exp.type == BNF.INT) {
+          n = exp;
+          n.iVal = -n.iVal;
+        }
+        else if (exp.type == BNF.FLT) {
+          n = exp;
+          n.fVal = -n.fVal;
+        }
+        else
+          n.Add(exp);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // !
+      line = rgUOneg.Replace(line, m => {
+        atLeastOneReplacement = true;
+        string toReplace = m.Captures[0].Value.Trim();
+        toReplace.Trim();
+        if (toReplace[0] != '!') throw new Exception("Invalid negation: " + toReplace);
+        toReplace = toReplace.Substring(1).Trim();
+        CodeNode n = new CodeNode(BNF.UOneg, GenId("US"), origForException, linenumber);
+        CodeNode exp = ParseExpression(toReplace);
         n.Add(exp);
-      nodes[n.id] = n;
-      return n.id;
-    });
-        
-    // !
-    line = rgUOneg.Replace(line, m => {
-      string toReplace = m.Captures[0].Value.Trim();
-      toReplace.Trim();
-      if (toReplace[0] != '!') throw new Exception("Invalid negation: " + toReplace);
-      toReplace = toReplace.Substring(1).Trim();
-      CodeNode n = new CodeNode(BNF.UOneg, GenId("US"), origForException, linenumber);
-      CodeNode exp = ParseExpression(toReplace);
-      n.Add(exp);
-      nodes[n.id] = n;
-      return n.id;
-    });
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
-    // ~
-    line = rgUOinv.Replace(line, m => {
-      string toReplace = m.Captures[0].Value.Trim();
-      toReplace.Trim();
-      if (toReplace[0] != '~') throw new Exception("Invalid unary complement: " + toReplace);
-      toReplace = toReplace.Substring(1).Trim();
-      CodeNode n = new CodeNode(BNF.UOinv, GenId("US"), origForException, linenumber);
-      CodeNode exp = ParseExpression(toReplace);
-      n.Add(exp);
-      nodes[n.id] = n;
-      return n.id;
-    });
+      // ~
+      line = rgUOinv.Replace(line, m => {
+        atLeastOneReplacement = true;
+        string toReplace = m.Captures[0].Value.Trim();
+        toReplace.Trim();
+        if (toReplace[0] != '~') throw new Exception("Invalid unary complement: " + toReplace);
+        toReplace = toReplace.Substring(1).Trim();
+        CodeNode n = new CodeNode(BNF.UOinv, GenId("US"), origForException, linenumber);
+        CodeNode exp = ParseExpression(toReplace);
+        n.Add(exp);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
-    // Replace DTIME => `DTx
-    line = rgDeltat.Replace(line, m => {
-      CodeNode n = new CodeNode(BNF.DTIME, GenId("DT"), origForException, linenumber);
-      nodes[n.id] = n;
-      return n.id;
-    });
+      // Replace DTIME => `DTx
+      line = rgDeltat.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.DTIME, GenId("DT"), origForException, linenumber);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
-    // Replace DTIME => `DTx
-    line = rgMusicPos.Replace(line, m => {
-      CodeNode n = new CodeNode(BNF.MUSICPOS, GenId("MP"), origForException, linenumber);
-      nodes[n.id] = n;
-      return n.id;
-    });
+      // Replace DTIME => `DTx
+      line = rgMusicPos.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.MUSICPOS, GenId("MP"), origForException, linenumber);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
-    // Replace FLT => `FTx
-    line = rgFloat.Replace(line, m => {
-      float.TryParse(m.Value, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float fVal);
-      CodeNode n = new CodeNode(BNF.FLT, GenId("FT"), origForException, linenumber) {
-        fVal = fVal
-      };
-      nodes[n.id] = n;
-      return n.id;
-    });
+      // Replace FLT => `FTx
+      line = rgFloat.Replace(line, m => {
+        atLeastOneReplacement = true;
+        float.TryParse(m.Value, System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint, new System.Globalization.CultureInfo("en-US"), out float fVal);
+        CodeNode n = new CodeNode(BNF.FLT, GenId("FT"), origForException, linenumber) {
+          fVal = fVal
+        };
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
-    // Replace HEX => `HXx
-    line = rgHex.Replace(line, m => {
-      CodeNode n = new CodeNode(BNF.INT, GenId("HX"), origForException, linenumber) {
-        iVal = Convert.ToInt32("0" + m.Value, 16)
-      };
-      nodes[n.id] = n;
-      return n.id;
-    });
+      // Replace HEX => `HXx
+      line = rgHex.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.INT, GenId("HX"), origForException, linenumber) {
+          iVal = Convert.ToInt32("0" + m.Value, 16)
+        };
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
-    // Replace BIN => `BIx
-    line = rgBin.Replace(line, m => {
-      CodeNode n = new CodeNode(BNF.INT, GenId("BI"), origForException, linenumber) {
-        iVal = Convert.ToInt32("0" + m.Value, 2)
-      };
-      nodes[n.id] = n;
-      return n.id;
-    });
+      // Replace BIN => `BIx
+      line = rgBin.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.INT, GenId("BI"), origForException, linenumber) {
+          iVal = Convert.ToInt32("0" + m.Value, 2)
+        };
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
-    // Replace COL => `CLx
-    line = rgCol.Replace(line, m => {
-      int.TryParse(m.Groups[1].Value, out int r);
-      int.TryParse(m.Groups[2].Value, out int g);
-      int.TryParse(m.Groups[3].Value, out int b);
-      int a = -1;
-      if (m.Groups.Count > 4 && !string.IsNullOrEmpty(m.Groups[4].Value)) int.TryParse(m.Groups[4].Value, out a);
-      if (r > 5) r = 5;
-      if (g > 5) g = 5;
-      if (b > 5) b = 5;
-      if (a > 4) a = 4;
-      CodeNode n = new CodeNode(BNF.COLOR, GenId("CL"), origForException, linenumber) {
-        iVal = Col.GetByteFrom6(r, g, b, a)
-      };
-      nodes[n.id] = n;
-      return n.id;
-    });
+      // Replace COL => `CLx
+      line = rgCol.Replace(line, m => {
+        atLeastOneReplacement = true;
+        int.TryParse(m.Groups[1].Value, out int r);
+        int.TryParse(m.Groups[2].Value, out int g);
+        int.TryParse(m.Groups[3].Value, out int b);
+        int a = -1;
+        if (m.Groups.Count > 4 && !string.IsNullOrEmpty(m.Groups[4].Value)) int.TryParse(m.Groups[4].Value, out a);
+        if (r > 5) r = 5;
+        if (g > 5) g = 5;
+        if (b > 5) b = 5;
+        if (a > 4) a = 4;
+        CodeNode n = new CodeNode(BNF.COLOR, GenId("CL"), origForException, linenumber) {
+          iVal = Col.GetByteFrom6(r, g, b, a)
+        };
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
-    // LAB
-    line = rgLabel.Replace(line, m => {
-      string lab = m.Value.Trim().ToLowerInvariant();
-      lab = lab.Substring(0, lab.Length - 1);
-      CodeNode n = new CodeNode(BNF.Label, GenId("LB"), origForException, linenumber) {
-        sVal = lab
-      };
-      nodes[n.id] = n;
-      return n.id;
-    });
+      // LAB
+      line = rgLabel.Replace(line, m => {
+        atLeastOneReplacement = true;
+        string lab = m.Value.Trim().ToLowerInvariant();
+        lab = lab.Substring(0, lab.Length - 1);
+        CodeNode n = new CodeNode(BNF.Label, GenId("LB"), origForException, linenumber) {
+          sVal = lab
+        };
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
-    // Replace INT => `INx
-    line = rgInt.Replace(line, m => {
-      string val = m.Groups[2].Value;
-      if (string.IsNullOrEmpty(val)) val = m.Groups[1].Value;
-      int.TryParse(val, out int iVal);
-      CodeNode n = new CodeNode(BNF.INT, GenId("IN"), origForException, linenumber) {
-        iVal = iVal
-      };
-      nodes[n.id] = n;
-      return n.id;
-    });
+      // Replace INT => `INx
+      line = rgInt.Replace(line, m => {
+        atLeastOneReplacement = true;
+        string pre = m.Groups[1].Value;
+        string val = m.Groups[2].Value;
+        if (!string.IsNullOrEmpty(pre)) {
+          // Check that we do not have letters, ], and )
+          char c = pre[0];
+          if (char.IsLetter(c)) return m.Value;
+          if (c == ']') throw new Exception("Syntax error in expression: " + line + "\n" + origForException);
+          if (c == ')') throw new Exception("Syntax error in expression: " + line + "\n" + origForException);
+        }
+        int.TryParse(val, out int iVal);
+        CodeNode n = new CodeNode(BNF.INT, GenId("IN"), origForException, linenumber) {
+          iVal = iVal
+        };
+        nodes[n.id] = n;
+        if (!string.IsNullOrEmpty(pre)) return pre + n.id;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
-    // Replace REG => `RGx
-    line = rgVar.Replace(line, m => {
-      string var = m.Groups[1].Value.ToLowerInvariant();
-      if (!reserverdKeywords.Contains(var)) {
+      // [ARRAY] Replace REG[[EXPR]] => `ARx
+      line = rgArray.Replace(line, m => {
+        atLeastOneReplacement = true;
+        string var = m.Groups[1].Value.ToLowerInvariant() + "[]";
         // Are we parsing a function?
         if (currentFunction != null && currentFunctionParameters.children != null) {
           // Is it a parameter variable?
@@ -1283,21 +1334,40 @@ public class CodeParser : MonoBehaviour {
             }
           }
         }
-        CodeNode n = new CodeNode(BNF.REG, GenId("RG"), origForException, linenumber) {
+        CodeNode n = new CodeNode(BNF.REG, GenId("AR"), origForException, linenumber) {
           Reg = vars.Add(var)
         };
+        n.Add(ParseExpression(m.Groups[2].Value));
         nodes[n.id] = n;
-        return n.id + m.Groups[2].Value;
-      }
-      return m.Value;
-    });
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
-
-    // Now the expression is somewhat simpler, because we have only specific terms. Now parse the operators
-
-    bool atLeastOneReplacement = true;
-    while (atLeastOneReplacement) {
-      atLeastOneReplacement = false;
+      // Replace REG => `RGx
+      line = rgVar.Replace(line, m => {
+        atLeastOneReplacement = true;
+        string var = m.Groups[1].Value.ToLowerInvariant();
+        if (!reserverdKeywords.Contains(var)) {
+          // Are we parsing a function?
+          if (currentFunction != null && currentFunctionParameters.children != null) {
+            // Is it a parameter variable?
+            string lp = currentFunction + "." + var;
+            foreach (CodeNode p in currentFunctionParameters.children) {
+              if (p.sVal == lp) { // Yes, it is local
+                var = lp;
+                break;
+              }
+            }
+          }
+          CodeNode n = new CodeNode(BNF.REG, GenId("RG"), origForException, linenumber) {
+            Reg = vars.Add(var)
+          };
+          nodes[n.id] = n;
+          return n.id + m.Groups[2].Value;
+        }
+        return m.Value;
+      });
+      if (atLeastOneReplacement) continue;
 
       // [Sin] = Sin([EXPR])
       line = rgSin.Replace(line, m => {

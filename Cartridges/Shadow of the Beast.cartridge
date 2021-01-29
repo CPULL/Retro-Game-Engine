@@ -1,89 +1,29 @@
 Name: Shadow of the Beast
 
 Start {
-	clr(c121)
-	for(i=0,i<12,i++)
-		write("Sprite"+i + " = " + Label("Sprite"+i), 0, 10*i, c502)
+	a[2] = 6
+	write(a[2], 0, 0, c555)
 }
 
-xStart {
+zStart {
 	clr(c131)
 	write("Shadow of the Beast", 8,1,c301)
-	sprite(0, Sprite0:, 0)
-	spos(0, 150, 120)
-	sprite(1, Sprite1:, 0)
-	spos(1, 150, 120)
-	sprite(2, Sprite2:, 0)
-	spos(2, 150, 120)
-	sprite(3, Sprite3:, 0)
-	spos(3, 150, 120)
-	sprite(4, Sprite4:, 0)
-	spos(4, 150, 120)
-	sprite(5, Sprite5:, 0)
-	spos(5, 150, 120)
-	sprite(6, Sprite6:, 0)
-	spos(6, 150, 120)
-	sprite(7, Sprite7:, 0)
-	spos(7, 150, 120)
-	sprite(8, Sprite8:, 0)
-	spos(8, 150, 120)
-	sprite(9, Sprite9:, 0)
-	spos(9, 150, 120)
-	sprite(10, Sprite10:, 0)
-	spos(10, 150, 120)
-	sprite(11, Sprite11:, 0)
-	spos(11, 150, 120)
-	spen(0,1)
-	spen(1,0)
-	spen(2,0)
-	spen(3,0)
-	spen(4,0)
-	spen(5,0)
-	spen(6,0)
-	spen(7,0)
-	spen(8,0)
-	spen(9,0)
-	spen(10,0)
-	spen(11,0)
+	for(i=0,i<12,i++) {
+		sprite(i, Label("Sprite"+i), 0)
+		spos(i, 25 + 20*i, 120)
+		spen(i,1)
+	}
+	i=0
 }
 
-Zupdate {
-	wait(0.1)
-	spen(0,0)
-	spen(1,1)
-	wait(0.1)
-	spen(1,0)
-	spen(2,1)
-	wait(0.1)
-	spen(2,0)
-	spen(3,1)
-	wait(0.1)
-	spen(3,0)
-	spen(4,1)
-	wait(0.1)
-	spen(4,0)
-	spen(5,1)
-	wait(0.1)
-	spen(5,0)
-	spen(6,1)
-	wait(0.1)
-	spen(6,0)
-	spen(7,1)
-	wait(0.1)
-	spen(7,0)
-	spen(8,1)
-	wait(0.1)
-	spen(8,0)
-	spen(9,1)
-	wait(0.1)
-	spen(9,0)
-	spen(10,1)
-	wait(0.1)
-	spen(10,0)
-	spen(11,1)
-	wait(0.1)
-	spen(11,0)
-	spen(0,1)
+zupdate {
+	i++
+	if(i>3)
+		i=0
+	for(s=0, s<12, s++)
+		spen(s,s%4==i)
+	frame
+	frame
 }
 
 Data {

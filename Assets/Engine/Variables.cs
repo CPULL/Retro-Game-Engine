@@ -46,6 +46,27 @@ public class Variables {
     vars[reg].sVal = v.sVal;
   }
 
+  internal void Set(int reg, int[] v) {
+    vars[reg].type = VT.Array;
+    vars[reg].aVal = v;
+  }
+
+
+  internal void SetArray(int reg, int idx, Value v) {
+    Value r = vars[reg];
+    if (r.aVal == null || idx < 0 || idx >= r.aVal.Length) {
+      foreach (string name in pointers.Keys)
+        if (pointers[name] == reg)
+          throw new System.Exception("Invalid array assignement: variable " + name);
+      throw new System.Exception("Invalid array assignement: <unknown variable>");
+    }
+    int pos = r.aVal[idx];
+    vars[pos].type = v.type;
+    vars[pos].iVal = v.iVal;
+    vars[pos].fVal = v.fVal;
+    vars[pos].sVal = v.sVal;
+  }
+
   internal void Incr(int idx) {
     if (vars[idx].type == VT.None) { vars[idx].iVal = 0; vars[idx].type = VT.Int; }
     else if (vars[idx].type == VT.Int) vars[idx].iVal++;
@@ -64,6 +85,7 @@ public class Variables {
     }
     return res;
   }
+
 }
 
 
@@ -78,6 +100,7 @@ public struct Value {
   public int iVal;
   public float fVal;
   public string sVal;
+  public int[] aVal;
 
   public Value(MD m) {
     mode = m;
@@ -86,6 +109,7 @@ public struct Value {
     iVal = 0;
     fVal = 0;
     sVal = null;
+    aVal = null;
   }
   public Value(int i) {
     mode = MD.Dir;
@@ -94,6 +118,7 @@ public struct Value {
     iVal = i;
     fVal = 0;
     sVal = null;
+    aVal = null;
   }
   public Value(float f) {
     mode = MD.Dir;
@@ -102,6 +127,7 @@ public struct Value {
     iVal = 0;
     fVal = f;
     sVal = null;
+    aVal = null;
   }
   public Value(string s) {
     mode = MD.Dir;
@@ -110,6 +136,7 @@ public struct Value {
     iVal = 0;
     fVal = 0;
     sVal = s;
+    aVal = null;
   }
 
   public byte ToByte(System.Globalization.CultureInfo culture) {
@@ -157,6 +184,7 @@ public struct Value {
     if (type == VT.Int) return res + iVal;
     if (type == VT.Float) return res + fVal.ToString("F3");
     if (type == VT.String) return res + (string.IsNullOrEmpty(sVal) ? "\"\"" : sVal);
+    if (type == VT.Array) return res + "[..." + aVal?.Length + "...]";
     return "<unknown>";
   }
 
@@ -509,4 +537,21 @@ public struct Value {
     return 0;
   }
 
+  internal void ConvertToArray(Variables variables, int reg, string name, int pos) {
+    if (pos < 0) pos = 1;
+    if (pos > 1023) pos = 1023;
+    aVal = new int[pos+1];
+    for (int i = 0; i < aVal.Length; i++) {
+      aVal[i] = variables.Add(name + "[" + i + "]");
+      variables.Set(aVal[i], this);
+    }
+    type = VT.Array;
+    // update the variables
+    variables.Set(reg, aVal);
+  }
+
+  internal Value GetArrayValue(Variables variables, int pos) {
+    if (aVal == null || pos < 0 || pos >= aVal.Length) return new Value();
+    return variables.Get(aVal[pos]);
+  }
 }
