@@ -111,7 +111,6 @@ public class CodeNode {
         case BNF.INT: res += (sameLine ? "" : id) + " " + iVal + (sameLine ? " " : "\n"); break;
         case BNF.COLOR:
           res += (sameLine ? "" : id) + " c" + Col.GetColorString(iVal) + (sameLine ? " " : "\n"); break;
-        case BNF.HEX: res += (sameLine ? "" : id) + " x" + iVal.ToString("X") + (sameLine ? " " : "\n"); break;
         case BNF.FLT: res += (sameLine ? "" : id) + " " + fVal + (sameLine ? " " : "\n"); break;
         case BNF.STR: res += (sameLine ? "" : id) + " \"" + sVal + (sameLine ? "\" " : "\"\n"); break;
         case BNF.MEM: res += (sameLine ? "" : id) + " [" + CN1.ToString(indent + 1, true) + "]" + (sameLine ? " " : "\n"); break;
@@ -367,7 +366,6 @@ public class CodeNode {
       case BNF.REG:
       case BNF.INT:
       case BNF.FLT:
-      case BNF.HEX:
       case BNF.COLOR:
       case BNF.STR:
       case BNF.MEM:
@@ -389,6 +387,7 @@ public class CodeNode {
       case BNF.OPlsh:
       case BNF.OPrsh:
       case BNF.LAB:
+      case BNF.LABG:
       case BNF.UOneg:
       case BNF.UOinv:
       case BNF.UOsub:
@@ -520,7 +519,7 @@ public enum BNF {
   ScrConfig,
   Ram,
   Rom, // This is used to store the data
-  Label,
+  Label, // This is used to parse the Rom section (Data)
   REG,
   INT, 
   FLT,
@@ -544,7 +543,8 @@ public enum BNF {
   OPxor,
   OPlsh,
   OPrsh,
-  LAB, // This is used to reference some data
+  LAB, // This is used to reference some data, just a literal for an address in memory
+  LABG, // This is a function to calculate a label from a string
   CASTb,
   CASTi,
   CASTf,

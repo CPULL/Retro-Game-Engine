@@ -221,7 +221,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgMusicPlay = new Regex("[\\s]*playmusic[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMusicStop = new Regex("[\\s]*stopmusic[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMusicPos = new Regex("[\\s]*musicpos[\\s]*[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgMusicvoices = new Regex("[\\s]*musicvoices[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgMusicVoices = new Regex("[\\s]*musicvoices[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgCMPlt = new Regex("(`[a-z]{3,}¶)([\\s]*\\<[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPle = new Regex("(`[a-z]{3,}¶)([\\s]*\\<\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -233,6 +233,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgKey = new Regex("[\\s]*key([udlrabcfexyhv]|fire|esc)([ud]?)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   //   keys -> U, D, L, R, A, B, C, D, X, Y, H, V, Fire, Esc
   readonly Regex rgLabel = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgLabelGet = new Regex("[\\s]*label[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgConfScreen = new Regex("screen[\\s]*\\([\\s]*([0-9]+)[\\s]*,[\\s]*([0-9]+)[\\s]*(,[\\s]*[fn])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgRam = new Regex("ram[\\s]*\\([\\s]*([0-9]+)[\\s]*([bkm])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -867,8 +868,8 @@ public class CodeParser : MonoBehaviour {
     }
 
     // [MusicVoices] num[, num]{1-7}
-    if (expected.IsGood(Expected.Val.Statement) && rgMusicvoices.IsMatch(line)) {
-      Match m = rgMusicvoices.Match(line);
+    if (expected.IsGood(Expected.Val.Statement) && rgMusicVoices.IsMatch(line)) {
+      Match m = rgMusicVoices.Match(line);
       CodeNode node = new CodeNode(BNF.MUSICVOICES, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
@@ -1248,7 +1249,7 @@ public class CodeParser : MonoBehaviour {
     line = rgLabel.Replace(line, m => {
       string lab = m.Value.Trim().ToLowerInvariant();
       lab = lab.Substring(0, lab.Length - 1);
-      CodeNode n = new CodeNode(BNF.LAB, GenId("LB"), origForException, linenumber) {
+      CodeNode n = new CodeNode(BNF.Label, GenId("LB"), origForException, linenumber) {
         sVal = lab
       };
       nodes[n.id] = n;
@@ -1366,6 +1367,19 @@ public class CodeParser : MonoBehaviour {
         string pars = m.Groups[1].Value.Trim();
         int num = ParsePars(n, pars);
         if (num != 2) throw new Exception("Invalid Pow(), 2 parameters are required. Line: " + (linenumber + 1));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+
+      // [LabelGet] = Label([EXPR])
+      line = rgLabelGet.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.LABG, GenId("LB"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num != 1) throw new Exception("Invalid Label(), 1 and only 1 parameter is required. Line: " + (linenumber + 1));
         nodes[n.id] = n;
         return n.id;
       });

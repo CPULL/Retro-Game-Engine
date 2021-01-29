@@ -1459,6 +1459,12 @@ public class Arcade : MonoBehaviour {
         return new Value(labels[n.sVal]);
       }
 
+      case BNF.LABG: {
+        string lab = Evaluate(n.CN1).ToStr().ToLowerInvariant();
+        if (!labels.ContainsKey(lab)) throw new Exception("Undefined Label: " + lab);
+        return new Value(labels[lab]);
+      }
+
       case BNF.SIN: return new Value(Mathf.Sin(Evaluate(n.CN1).ToFlt(culture)));
       case BNF.COS: return new Value(Mathf.Cos(Evaluate(n.CN1).ToFlt(culture)));
       case BNF.TAN: return new Value(Mathf.Tan(Evaluate(n.CN1).ToFlt(culture)));

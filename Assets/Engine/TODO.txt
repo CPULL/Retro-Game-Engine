@@ -20,5 +20,3 @@ array[] = number should set the size. Max 1024 elements
 The values will be normal registers
 array[number] will point to the value
 
-have a way to "parse labels", something like Label(string) that can match to a label
-
