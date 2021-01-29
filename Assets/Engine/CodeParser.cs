@@ -1210,8 +1210,17 @@ public class CodeParser : MonoBehaviour {
 
     // Replace HEX => `HXx
     line = rgHex.Replace(line, m => {
-      CodeNode n = new CodeNode(BNF.HEX, GenId("HX"), origForException, linenumber) {
+      CodeNode n = new CodeNode(BNF.INT, GenId("HX"), origForException, linenumber) {
         iVal = Convert.ToInt32("0" + m.Value, 16)
+      };
+      nodes[n.id] = n;
+      return n.id;
+    });
+
+    // Replace BIN => `BIx
+    line = rgBin.Replace(line, m => {
+      CodeNode n = new CodeNode(BNF.INT, GenId("BI"), origForException, linenumber) {
+        iVal = Convert.ToInt32("0" + m.Value, 2)
       };
       nodes[n.id] = n;
       return n.id;

@@ -524,7 +524,6 @@ public enum BNF {
   REG,
   INT, 
   FLT,
-  HEX,
   COLOR,//rename to color
   STR,
   MEM,
