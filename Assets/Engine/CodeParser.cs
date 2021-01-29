@@ -230,7 +230,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgCMPeq = new Regex("(`[a-z]{3,}¶)([\\s]*\\=\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPne = new Regex("(`[a-z]{3,}¶)([\\s]*\\!\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgKey = new Regex("[\\s]*key([udlrabcfexyhv]|fire|esc)([ud]?)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgKey = new Regex("[\\s]*key(fire|esc|[udlrabcfexyhv])([ud]?)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   //   keys -> U, D, L, R, A, B, C, D, X, Y, H, V, Fire, Esc
   readonly Regex rgLabel = new Regex("[\\s]*[a-z0-9]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgLabelGet = new Regex("[\\s]*label[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -379,17 +379,32 @@ public class CodeParser : MonoBehaviour {
   }
 
   int FindEndOfBlock(string[] lines, int start) {
+    int num = 0;
     for (int i = start; i < lines.Length; i++) {
       string line = lines[i];
       int pos1 = line.IndexOf('}');
-      if (pos1 == -1) continue;
-      int pos2 = line.IndexOf('"');
-      if (pos2 == -1) return i;
-      // We need to check with the regexp
-      line = rgString.Replace(line, "");
-      if (line.IndexOf('}') != -1) return i;
+      int pos2 = line.IndexOf('{');
+      if (pos1 == -1 && pos2 == -1) continue;
+      int pos3 = line.IndexOf('"');
+      if (pos3 == -1) {
+        if (pos1 != -1) {
+          num--;
+          if (num == 0) return i;
+        }
+        if (pos2 != -1) num++;
+      }
+      else {
+        line = rgString.Replace(line, "");
+        pos1 = line.IndexOf('}');
+        pos2 = line.IndexOf('{');
+        if (pos1 != -1) {
+          num--;
+          if (num == 0) return i;
+        }
+        if (pos2 != -1) num++;
+      }
     }
-    return -1;
+    return lines.Length - 1;
   }
 
   private void ParseBlock(string[] lines, int start, int end, CodeNode parent) {
@@ -1345,9 +1360,9 @@ public class CodeParser : MonoBehaviour {
 
       // Replace REG => `RGx
       line = rgVar.Replace(line, m => {
-        atLeastOneReplacement = true;
         string var = m.Groups[1].Value.ToLowerInvariant();
         if (!reserverdKeywords.Contains(var)) {
+          atLeastOneReplacement = true;
           // Are we parsing a function?
           if (currentFunction != null && currentFunctionParameters.children != null) {
             // Is it a parameter variable?

@@ -27,6 +27,12 @@ public class Variables {
     return vars[reg];
   }
 
+  internal string GetRegName(int reg) {
+    foreach (string name in pointers.Keys)
+      if (pointers[name] == reg) return name;
+    return "<unknown>";
+  }
+
   internal void Set(int reg, int v) {
     vars[reg].type = VT.Int;
     vars[reg].iVal = v;
@@ -46,21 +52,25 @@ public class Variables {
     vars[reg].sVal = v.sVal;
   }
 
+  internal void Set(int reg) {
+    vars[reg].type = VT.None;
+  }
+
   internal void Set(int reg, int[] v) {
     vars[reg].type = VT.Array;
-    vars[reg].aVal = v;
+    vars[reg].aVals = v;
   }
 
 
   internal void SetArray(int reg, int idx, Value v) {
     Value r = vars[reg];
-    if (r.aVal == null || idx < 0 || idx >= r.aVal.Length) {
+    if (r.aVals == null || idx < 0 || idx >= r.aVals.Length) {
       foreach (string name in pointers.Keys)
         if (pointers[name] == reg)
           throw new System.Exception("Invalid array assignement: variable " + name);
       throw new System.Exception("Invalid array assignement: <unknown variable>");
     }
-    int pos = r.aVal[idx];
+    int pos = r.aVals[idx];
     vars[pos].type = v.type;
     vars[pos].iVal = v.iVal;
     vars[pos].fVal = v.fVal;
@@ -100,7 +110,7 @@ public struct Value {
   public int iVal;
   public float fVal;
   public string sVal;
-  public int[] aVal;
+  public int[] aVals;
 
   public Value(MD m) {
     mode = m;
@@ -109,7 +119,7 @@ public struct Value {
     iVal = 0;
     fVal = 0;
     sVal = null;
-    aVal = null;
+    aVals = null;
   }
   public Value(int i) {
     mode = MD.Dir;
@@ -118,7 +128,7 @@ public struct Value {
     iVal = i;
     fVal = 0;
     sVal = null;
-    aVal = null;
+    aVals = null;
   }
   public Value(float f) {
     mode = MD.Dir;
@@ -127,7 +137,7 @@ public struct Value {
     iVal = 0;
     fVal = f;
     sVal = null;
-    aVal = null;
+    aVals = null;
   }
   public Value(string s) {
     mode = MD.Dir;
@@ -136,7 +146,7 @@ public struct Value {
     iVal = 0;
     fVal = 0;
     sVal = s;
-    aVal = null;
+    aVals = null;
   }
 
   public byte ToByte(System.Globalization.CultureInfo culture) {
@@ -184,7 +194,7 @@ public struct Value {
     if (type == VT.Int) return res + iVal;
     if (type == VT.Float) return res + fVal.ToString("F3");
     if (type == VT.String) return res + (string.IsNullOrEmpty(sVal) ? "\"\"" : sVal);
-    if (type == VT.Array) return res + "[..." + aVal?.Length + "...]";
+    if (type == VT.Array) return res + "[..." + aVals?.Length + "...]";
     return "<unknown>";
   }
 
@@ -537,21 +547,38 @@ public struct Value {
     return 0;
   }
 
-  internal void ConvertToArray(Variables variables, int reg, string name, int pos) {
+  internal void ConvertToArray(Variables variables, int reg, int pos) {
     if (pos < 0) pos = 1;
     if (pos > 1023) pos = 1023;
-    aVal = new int[pos+1];
-    for (int i = 0; i < aVal.Length; i++) {
-      aVal[i] = variables.Add(name + "[" + i + "]");
-      variables.Set(aVal[i], this);
+    aVals = new int[pos + 1];
+    string name = variables.GetRegName(idx);
+    if (name.Length > 2) name = name.Substring(0, name.Length - 2);
+    for (int i = 0; i < aVals.Length; i++) {
+      aVals[i] = variables.Add(name + "[" + i + "]");
+      variables.Set(aVals[i], this);
     }
     type = VT.Array;
     // update the variables
-    variables.Set(reg, aVal);
+    variables.Set(reg, aVals);
   }
 
   internal Value GetArrayValue(Variables variables, int pos) {
-    if (aVal == null || pos < 0 || pos >= aVal.Length) return new Value();
-    return variables.Get(aVal[pos]);
+    if (aVals == null || pos < 0) return new Value();
+    if (pos > 1023) pos = 1023;
+    if (pos >= aVals.Length) { // Need to extend
+      int len = aVals.Length;
+      int[] newVals = new int[pos + 1];
+      for (int i = 0; i < len; i++)
+        newVals[i] = aVals[i];
+      string name = variables.GetRegName(idx);
+      if (name.Length > 2) name = name.Substring(0, name.Length - 2);
+      for (int i = len; i < pos + 1; i++) {
+        newVals[i] = variables.Add(name + "[" + i + "]");
+        variables.Set(newVals[i]);
+      }
+      aVals = newVals;
+      variables.Set(idx, aVals);
+    }
+    return variables.Get(aVals[pos]);
   }
 }

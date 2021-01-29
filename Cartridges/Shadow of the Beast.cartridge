@@ -1,29 +1,27 @@
 Name: Shadow of the Beast
 
 Start {
-	a[2] = 6
-	write(a[2], 0, 0, c555)
-}
-
-zStart {
 	clr(c131)
 	write("Shadow of the Beast", 8,1,c301)
 	for(i=0,i<12,i++) {
-		sprite(i, Label("Sprite"+i), 0)
-		spos(i, 25 + 20*i, 120)
-		spen(i,1)
+		sp[i] = Label("Sprite"+i)
+		sprite(0, sp[i], 0)
 	}
-	i=0
+	spos(0, 150, 120)
+	spen(0,1)
+	x=-20
 }
 
-zupdate {
+update {
 	i++
-	if(i>3)
+	if(i>=12)
 		i=0
-	for(s=0, s<12, s++)
-		spen(s,s%4==i)
-	frame
-	frame
+	sprite(0, sp[i], 0)
+	spos(0,x,120)
+	x+=1400 * deltaTime
+	wait(0.05)
+	if (x>320)
+		x=-20
 }
 
 Data {

@@ -1423,7 +1423,7 @@ public class Arcade : MonoBehaviour {
         Value a = variables.Get(n.Reg);
         if (a.type != VT.Array) {
           // Not an array, make it as array with at least the number of values specified, and return the value
-          a.ConvertToArray(variables, n.Reg, n.sVal, Evaluate(n.CN1).ToInt(culture));
+          a.ConvertToArray(variables, n.Reg, Evaluate(n.CN1).ToInt(culture));
         }
         return a.GetArrayValue(variables, Evaluate(n.CN1).ToInt(culture));
       }
