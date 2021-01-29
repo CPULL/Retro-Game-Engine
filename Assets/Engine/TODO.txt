@@ -6,17 +6,10 @@ Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks"
 
 Parser: add ToString for the missing BNF values (music)
 
-We need some way to define an array
-
 
 FUTURE: Code editor
 FUTURE: Font editor
 FUTURE: step by step debugger
 FUTURE: map keys
 
-[a-z][a-z0-9]+\\[ rec[] \\] should be handled as array
-
-array[] = number should set the size. Max 1024 elements
-The values will be normal registers
-array[number] will point to the value
-
+Tilemap, implement importing image to create a set of tiles

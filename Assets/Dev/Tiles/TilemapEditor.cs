@@ -331,9 +331,10 @@ public class TilemapEditor : MonoBehaviour {
 
 
   DrawMode drawMode = DrawMode.None;
-  enum DrawMode { None, Draw, Line, Box, Fill, Clear };
+  enum DrawMode { None, Draw, Line, Box, Fill, Clear, ImportPic };
   Steps lineStep = Steps.None;
   Steps boxStep = Steps.None;
+  Steps importStep = Steps.None;
   bool fillStep = false;
   int x1, x2, y1, y2;
   enum Steps { None, Start, End };
@@ -344,6 +345,7 @@ public class TilemapEditor : MonoBehaviour {
       SelectionButtons[i].enabled = i == 0;
     lineStep = Steps.None;
     boxStep = Steps.None;
+    importStep = Steps.None;
     fillStep = false;
   }
 
@@ -353,6 +355,7 @@ public class TilemapEditor : MonoBehaviour {
       SelectionButtons[i].enabled = i == 1;
     lineStep = Steps.Start;
     boxStep = Steps.None;
+    importStep = Steps.None;
     fillStep = false;
   }
 
@@ -362,6 +365,7 @@ public class TilemapEditor : MonoBehaviour {
       SelectionButtons[i].enabled = i == 2;
     lineStep = Steps.None;
     boxStep = Steps.Start;
+    importStep = Steps.None;
     fillStep = false;
   }
 
@@ -371,6 +375,7 @@ public class TilemapEditor : MonoBehaviour {
       SelectionButtons[i].enabled = i == 3;
     lineStep = Steps.None;
     boxStep = Steps.None;
+    importStep = Steps.None;
     fillStep = true;
   }
 
@@ -380,6 +385,7 @@ public class TilemapEditor : MonoBehaviour {
       SelectionButtons[i].enabled = i == 4;
     lineStep = Steps.None;
     boxStep = Steps.None;
+    importStep = Steps.None;
     fillStep = false;
   }
 
@@ -434,6 +440,21 @@ public class TilemapEditor : MonoBehaviour {
         }
       break;
 
+      case DrawMode.ImportPic:
+        if (importStep == Steps.Start) {
+          x1 = tile.x;
+          y1 = tile.y;
+          tile.border.color = Color.red;
+          importStep = Steps.End;
+        }
+        else if (importStep == Steps.End) {
+          x2 = tile.x;
+          y2 = tile.y;
+          importStep = Steps.Start;
+          ImportTilesFromPicture(x1, y1, x2, y2);
+        }
+      break;
+
       case DrawMode.Fill:
         if (fillStep) Fill(tile.x, tile.y);
         break;
@@ -445,6 +466,7 @@ public class TilemapEditor : MonoBehaviour {
     if (!enter) return;
     if (lineStep == Steps.End) DrawLine(x1, y1, tile.x, tile.y, true);
     else if (boxStep == Steps.End) DrawBox(x1, y1, tile.x, tile.y, true);
+    else if (importStep == Steps.End) DrawBox(x1, y1, tile.x, tile.y, true);
   }
 
   void DrawLine(int x1, int y1, int x2, int y2, bool border) {
@@ -686,6 +708,52 @@ public class TilemapEditor : MonoBehaviour {
         currentPaletteMap.transform.localScale = new Vector3(-1, 1, 1);
         break;
     }
+
+  }
+
+  public void ImportTilesFromPicture() {
+    // Select a rectangle
+    drawMode = DrawMode.ImportPic;
+    lineStep = Steps.None;
+    boxStep = Steps.None;
+    importStep = Steps.Start;
+    for (int i = 0; i < SelectionButtons.Length; i++)
+      SelectionButtons[i].enabled = i == 2;
+  }
+
+  int importX1, importY1, importX2, importY2;
+  void ImportTilesFromPicture(int x1, int y1, int x2, int y2) {
+    if (x1 > x2) { int tmp = x1; x1 = x2; x2 = tmp; }
+    if (y1 > y2) { int tmp = y1; y1 = y2; y2 = tmp; }
+    importX1 = x1;
+    importY1 = y1;
+    importX2 = x2;
+    importY2 = y2;
+
+    for (int bx = x1; bx <= x2; bx++) {
+      map[bx, y1].Select();
+      map[bx, y2].Select();
+    }
+    for (int by = y1; by <= y2; by++) {
+      map[x1, by].Select();
+      map[x2, by].Select();
+    }
+
+    // Show the file browser
+    FileBrowser.Show(ImportTilesFromPicture, FileBrowser.FileType.Pics);
+  }
+
+  public void ImportTilesFromPicture(string path) {
+    // Load the image and scale it
+    // Minimize the tiles (maybe)
+    // Fill the map with the tiles
+
+    Debug.Log(path);
+
+    for (int bx = 0; bx < w; bx++)
+      for (int by = 0; by < h; by++)
+        map[bx, by].Deselect();
+
 
   }
 }

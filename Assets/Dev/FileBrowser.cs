@@ -18,6 +18,7 @@ public class FileBrowser : MonoBehaviour {
   public Button LoadButton;
   public enum FileType { Music, Pics, Cartridges };
   FileType fileType;
+  string lastFolder;
 
   private void Awake() {
     inst = this;
@@ -28,9 +29,14 @@ public class FileBrowser : MonoBehaviour {
     inst.FileBrowserContents.SetActive(true);
     inst.postLoadAction = action;
     inst.LoadButton.interactable = false;
-    FileInfo fi = new FileInfo(Application.dataPath);
+
+    // Does the directory exist?
+    if (inst.lastFolder == null && !Directory.Exists(inst.lastFolder))
+      inst.lastFolder = Application.dataPath;
+
+    DirectoryInfo di = new DirectoryInfo(inst.lastFolder);
     inst.fileType = ft;
-    inst.ShowFolder(fi.Directory.Parent.FullName);
+    inst.ShowFolder(di.FullName);
   }
 
   private void ShowFolder(string path) {
@@ -99,6 +105,8 @@ public class FileBrowser : MonoBehaviour {
   }
 
   public void LoadFile() {
+    FileInfo fi = new FileInfo(currentpath);
+    lastFolder = fi.Directory.FullName;
     FileBrowserContents.SetActive(false);
     postLoadAction?.Invoke(currentpath);
   }
