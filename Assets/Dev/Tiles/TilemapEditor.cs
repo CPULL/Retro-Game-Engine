@@ -208,12 +208,18 @@ public class TilemapEditor : MonoBehaviour {
   public void Save() {
     Values.gameObject.SetActive(true);
     LoadSubButton.enabled = false;
+    StartCoroutine(Saving());
+  }
+
+  IEnumerator Saving() {
+    yield return PBar.Show("Saving", 0, Palette.Count * 2 + h + 1);
 
     // Normalize the IDs of the tiles
     byte[] keys = new byte[Palette.Keys.Count];
     Palette.Keys.CopyTo(keys, 0);
     System.Array.Sort(keys);
     for (int i = 0; i < keys.Length; i++) {
+      yield return PBar.Progress(i + 1);
       byte key = keys[i];
       TileInPalette tile = Palette[key];
       Palette.Remove(key);
@@ -227,6 +233,7 @@ public class TilemapEditor : MonoBehaviour {
 
     // w*h*2 bytes with the actual map
     for (int y = 0; y < h; y++) {
+      PBar.Progress(Palette.Count + y + 1);
       for (int x = 0; x < w; x++) {
         res += map[x, y].id.ToString("X2") + map[x, y].rot.ToString("X2") + " ";
       }
@@ -235,6 +242,7 @@ public class TilemapEditor : MonoBehaviour {
 
     // Tiles
     for (int i = 0; i < Palette.Count; i++) {
+      yield return PBar.Progress(Palette.Count + h + i + 1);
       TileInPalette tile = Palette[(byte)(i + 1)];
       int len = tile.rawData.Length;
       for (int j = 0; j < len; j+=4) {
@@ -246,6 +254,7 @@ public class TilemapEditor : MonoBehaviour {
       res += "\n";
     }
     Values.text = res;
+    PBar.Hide();
   }
 
   public void PreLoad() {
@@ -766,12 +775,20 @@ public class TilemapEditor : MonoBehaviour {
   IEnumerator LoadImageCoroutine(string path) {
     string url = string.Format("file://{0}", path);
 
+    yield return PBar.Show("Loading file", 0, 100);
+
     using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url)) {
       yield return www.SendWebRequest();
       Texture2D texture = DownloadHandlerTexture.GetContent(www);
       // Get the top-left part of the image fitting in the sprite size
       TextureScale.Point(texture, iw, ih);
       byte[] pixels = new byte[iw * ih];
+
+      // Create the tiles
+      int maxy = importY2 - importY1;
+      int maxx = importX2 - importX1;
+
+      yield return PBar.Show("Loading file", 1, 1 + ih + maxy * maxy + 1);
 
       // Normalize the color
       Color32[] tps = texture.GetPixels32();
@@ -780,11 +797,9 @@ public class TilemapEditor : MonoBehaviour {
         for (int x = 0; x < iw; x++) {
           pixels[x + iw * y] = Col.GetColorByte(tps[x + iw * ty]);
         }
+        yield return PBar.Progress(1 + y);
       }
 
-      // Create the tiles
-      int maxy = importY2 - importY1;
-      int maxx = importX2 - importX1;
       Dictionary<byte, byte[]> ts = new Dictionary<byte, byte[]>();
       foreach(byte key in Palette.Keys) {
         TileInPalette tip = Palette[key];
@@ -792,6 +807,8 @@ public class TilemapEditor : MonoBehaviour {
       }
       for (int y = 0; y <= maxy; y++) {
         for (int x = 0; x <= maxx; x++) {
+          yield return PBar.Progress(1 + ih + x + maxx * y);
+
           byte[] tileData = new byte[tw * th];
           bool empty = true;
           for (int ty = 0; ty < th; ty++) {
@@ -843,9 +860,12 @@ public class TilemapEditor : MonoBehaviour {
       ts.Clear();
     }
 
+    yield return PBar.Complete();
     for (int bx = 0; bx < w; bx++)
       for (int by = 0; by < h; by++)
         map[bx, by].Deselect();
+
+    PBar.Hide();
   }
 
 }

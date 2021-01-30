@@ -13,15 +13,9 @@ FUTURE: step by step debugger
 FUTURE: map keys
 
 
-Saving a tilemap has an infinite loop
+Add progress while saving (tilemaps)
 
 Add a "image" command to draw on the screen a texture (like sprite or tile, no size limit here)
 Image(address, posx, posy)
 
 
-320x180
-
-10x6 tiles
-
-
-1280x128
