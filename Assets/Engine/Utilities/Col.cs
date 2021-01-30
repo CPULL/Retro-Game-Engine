@@ -139,9 +139,9 @@ public class Col {
 
   public static byte GetColorByte(Color32 col) {
     if (col.a > 250) {
-      byte r = (byte)(col.r / 51f);
-      byte g = (byte)(col.g / 51f);
-      byte b = (byte)(col.b / 51f);
+      byte r = (byte)Mathf.RoundToInt(col.r / 51f);
+      byte g = (byte)Mathf.RoundToInt(col.g / 51f);
+      byte b = (byte)Mathf.RoundToInt(col.b / 51f);
       return (byte)(r * 36 + g * 6 + b);
     }
     float mindist = 
