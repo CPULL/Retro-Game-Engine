@@ -121,8 +121,8 @@ public class TilemapEditor : MonoBehaviour {
   
   public void AlterTileSize(bool fromInputField) {
     if (fromInputField) {
-      TileSizeField.SetTextWithoutNotify(sizes[(int)TileSizeW.value] + "x" + sizes[(int)TileSizeH.value]);
       string val = TileSizeField.text.Trim().ToLowerInvariant();
+      TileSizeField.SetTextWithoutNotify(tw + "x" + th);
       int pos1 = val.IndexOf(' ');
       int pos2 = val.IndexOf('x');
       if (pos1 == -1 && pos2 == -1) return;
@@ -134,6 +134,7 @@ public class TilemapEditor : MonoBehaviour {
         if (sizes[i] <= ltw) { tw = sizes[i]; TileSizeW.SetValueWithoutNotify(i); }
         if (sizes[i] <= lth) { th = sizes[i]; TileSizeH.SetValueWithoutNotify(i); }
       }
+      TileSizeField.SetTextWithoutNotify(tw + "x" + th);
     }
     else {
       TileSizeField.SetTextWithoutNotify(sizes[(int)TileSizeW.value] + "x" + sizes[(int)TileSizeH.value]);
