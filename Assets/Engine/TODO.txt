@@ -16,5 +16,4 @@ In importing sprites and tiles, handle better when the image is short vertically
 Fill or stretch or do partial?
 
 
-Importing the image does not really stretches the image to fill all tiles
 Saving a tilemap has an infinite loop
