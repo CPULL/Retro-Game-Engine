@@ -536,6 +536,10 @@ public class SpriteEditor : MonoBehaviour {
 
   public void Save() {
     action = ActionVal.No;
+    StartCoroutine(Saving());
+  }
+  IEnumerator Saving() {
+    yield return PBar.Show("Saving", 0, 1 + w * h);
     SetButtons(-1);
     string res = "SpriteSize:\nusehex\n";
     byte sizex = (byte)w;
@@ -543,7 +547,9 @@ public class SpriteEditor : MonoBehaviour {
     res += sizex.ToString("X2") + " " + sizey.ToString("X2") + "\n";
     res += "Sprite:\n";
     int num = w * h;
-    for (int i = 0; i < num; i+=4) {
+    yield return PBar.Progress(1);
+    for (int i = 0; i < num; i += 4) {
+      yield return PBar.Progress(1 + i);
       res += Col.GetColorByte(pixels[i].Get()).ToString("X2");
       if (i + 1 < num) res += Col.GetColorByte(pixels[i + 1].Get()).ToString("X2");
       if (i + 2 < num) res += Col.GetColorByte(pixels[i + 2].Get()).ToString("X2");
@@ -553,6 +559,7 @@ public class SpriteEditor : MonoBehaviour {
     res += "\n";
     Values.gameObject.SetActive(true);
     Values.text = res;
+    PBar.Hide();
   }
 
   public void PreLoad() {
@@ -564,6 +571,11 @@ public class SpriteEditor : MonoBehaviour {
 
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
+    StartCoroutine(Loading());
+  }
+
+  IEnumerator Loading() {
+    yield return PBar.Show("Loading", 0, 256);
     Message.text = "";
     string data = Values.text.Trim();
 
@@ -573,14 +585,17 @@ public class SpriteEditor : MonoBehaviour {
       ByteReader.ReadBlock(data, out List<CodeLabel> labels, out block);
     } catch (System.Exception e) {
       Values.text = "Parsing error: " + e.Message + "\n" + Values.text;
-      return;
+      PBar.Hide();
+      yield break;
     }
 
+    PBar.Progress(128);
     byte wb = block[0];
     byte hb = block[1];
     if (wb < 8 || hb < 8 || wb > 64 || hb > 64) {
       Message.text = "This does not look like a sprite.";
-      return;
+      PBar.Hide();
+      yield break;
     }
 
     for (int i = 0; i < sizes.Length; i++) {
@@ -588,12 +603,15 @@ public class SpriteEditor : MonoBehaviour {
       if (sizes[i] <= hb) HeightSlider.SetValueWithoutNotify(i);
     }
     ChangeSpriteSize();
+    yield return PBar.Show("Loading", 128, 128 + w * h);
     for (int i = 0; i < w * h; i++) {
+      yield return PBar.Progress(128 + i);
       pixels[i].Set(Col.GetColor(block[2 + i]));
     }
 
     Values.gameObject.SetActive(false);
     LoadSubButton.enabled = false;
+    PBar.Hide();
   }
 
   public void LoadFile() {
@@ -609,49 +627,28 @@ public class SpriteEditor : MonoBehaviour {
 
     using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url)) {
       yield return www.SendWebRequest();
+      yield return PBar.Show("Loading file", 5, 12 + h);
       Texture2D texture = DownloadHandlerTexture.GetContent(www);
       // Get the top-left part of the image fitting in the sprite size
-      int maxx = w;
-      if (maxx > texture.width) maxx = texture.width;
-      int maxy = h;
-      if (maxy > texture.height) maxy = texture.height;
+      yield return PBar.Progress(5);
+      TextureScale.Point(texture, w, h);
+      yield return PBar.Progress(10);
 
-      // Have a way to scale it a little, at least by 2, 3, and 4
-      int scalex = 1;
-      int scaley = 1;
-      for (int i = 32; i > 1; i--) {
-        if (w * i <= texture.width && scalex == 1)  scalex = i;
-        if (h * i <= texture.height && scaley == 1)  scaley = i;
-      }
-      int scale = scalex;
-      if (scale < scaley) scale = scaley;
+      Color32[] tps = texture.GetPixels32();
+      yield return PBar.Progress(12);
 
-      for (int y = 0; y < maxy; y++) {
-        int texty = maxy - y - 1;
-        for (int x = 0; x < maxx; x++) {
-          // Get the average color in the block scaleXscale
-          int r = 0, g = 0, b = 0, a = 0;
-          for (int tx = 0; tx < scale; tx++) {
-            for (int ty = 0; ty < scale; ty++) {
-              Color32 colp = texture.GetPixel(x * scale + tx, texty * scale + ty);
-              r += colp.r;
-              g += colp.g;
-              b += colp.b;
-              a += colp.a;
-            }
-          }
-          r /= scale * scale;
-          g /= scale * scale;
-          b /= scale * scale;
-          a /= scale * scale;
-
+      for (int y = 0; y < h; y++) {
+        int ty = h - y - 1;
+        yield return PBar.Progress(12 + y);
+        for (int x = 0; x < h; x++) {
           // Normalize the color
-          pixels[x + w * y].Set(Col.NormalizeColor(r, g, b, a));
+          int pos = x + w * ty;
+          pixels[x + w * y].Set(Col.NormalizeColor(tps[pos].r, tps[pos].g, tps[pos].b, tps[pos].a));
         }
       }
     }
+    PBar.Hide();
   }
-
 
 
   public void CloseValues() {

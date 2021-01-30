@@ -264,16 +264,22 @@ public class TilemapEditor : MonoBehaviour {
 
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
-    string data = Values.text.Trim();
+    StartCoroutine(Loading());
+  }
 
+  IEnumerator Loading() {
+    string data = Values.text.Trim();
+    PBar.Show("Loading", 0, 200);
     byte[] block;
     try {
       ByteReader.ReadBlock(data, out List<CodeLabel> labels, out block);
     } catch (System.Exception e) {
       Values.text = "Parsing error: " + e.Message + "\n" + Values.text;
-      return;
+      PBar.Hide();
+      yield break;
     }
 
+    yield return PBar.Progress(50);
     int pw = block[0];
     int ph = block[1];
     MapSizeW.SetValueWithoutNotify(pw);
@@ -288,6 +294,7 @@ public class TilemapEditor : MonoBehaviour {
     yield return null;
     while (updateMapSize != null)
       yield return new WaitForSeconds(.5f);
+    yield return PBar.Progress(100);
 
     tw = block[2];
     th = block[3];
@@ -301,6 +308,7 @@ public class TilemapEditor : MonoBehaviour {
         map[x, y].rot = block[pos++];
       }
     }
+    yield return PBar.Progress(120);
 
     // Tiles
     Palette.Clear();
@@ -318,9 +326,11 @@ public class TilemapEditor : MonoBehaviour {
         rawData[b] = block[pos++];
       t.UpdateTexture(rawData);
     }
+    yield return PBar.Progress(150);
 
     // Update the tiles in the map
-    for (int y = 0; y < h; y++)
+    for (int y = 0; y < h; y++) {
+      yield return PBar.Progress(150 + 50 * y / h);
       for (int x = 0; x < w; x++) {
         TileInMap t = map[x, y];
         t.x = (byte)x;
@@ -332,7 +342,9 @@ public class TilemapEditor : MonoBehaviour {
         currentPaletteMap = t;
         Rot(t.rot);
       }
+    }
 
+    PBar.Hide();
     Values.gameObject.SetActive(false);
     LoadSubButton.enabled = false;
   }
@@ -779,16 +791,19 @@ public class TilemapEditor : MonoBehaviour {
 
     using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url)) {
       yield return www.SendWebRequest();
+      yield return PBar.Show("Loading file", 5, 100);
       Texture2D texture = DownloadHandlerTexture.GetContent(www);
       // Get the top-left part of the image fitting in the sprite size
+      yield return PBar.Show("Loading file", 10, 100);
       TextureScale.Point(texture, iw, ih);
       byte[] pixels = new byte[iw * ih];
+      yield return PBar.Show("Loading file", 15, 100);
 
       // Create the tiles
       int maxy = importY2 - importY1;
       int maxx = importX2 - importX1;
 
-      yield return PBar.Show("Loading file", 1, 1 + ih + maxy * maxy + 1);
+      yield return PBar.Show("Generating textures", 1, 1 + ih + maxy * maxy + 1);
 
       // Normalize the color
       Color32[] tps = texture.GetPixels32();
