@@ -390,6 +390,7 @@ public class CodeNode {
       case BNF.OPxor:
       case BNF.OPlsh:
       case BNF.OPrsh:
+      case BNF.Label:
       case BNF.LAB:
       case BNF.LABG:
       case BNF.UOneg:

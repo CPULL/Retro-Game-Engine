@@ -269,25 +269,20 @@ public class TilemapEditor : MonoBehaviour {
 
   IEnumerator Loading() {
     string data = Values.text.Trim();
-    PBar.Show("Loading", 0, 200);
-    byte[] block;
-    try {
-      ByteReader.ReadBlock(data, out List<CodeLabel> labels, out block);
-    } catch (System.Exception e) {
-      Values.text = "Parsing error: " + e.Message + "\n" + Values.text;
-      PBar.Hide();
-      yield break;
-    }
+    yield return PBar.Show("Loading", 0, 200);
+    ByteReaderData res = new ByteReaderData();
+    StartCoroutine(ByteReader.ReadBlock(data, 0, res));
+    while (!res.completed)
+      yield return new WaitForSeconds(.25f);
 
-    yield return PBar.Progress(50);
-    int pw = block[0];
-    int ph = block[1];
+    int pw = res.block[0];
+    int ph = res.block[1];
     MapSizeW.SetValueWithoutNotify(pw);
     MapSizeH.SetValueWithoutNotify(ph);
     updateMapSize = StartCoroutine(UpdateMapSize(w, h));
 
     // We need to wait for the coroutine to end before proceeding
-    StartCoroutine(CompleteLoading(block));
+    StartCoroutine(CompleteLoading(res.block));
   }
 
   IEnumerator CompleteLoading(byte[] block) {

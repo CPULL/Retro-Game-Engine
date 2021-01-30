@@ -251,7 +251,7 @@ public class Arcade : MonoBehaviour {
     else {
       // Load Game.Cartridge
       string codefile;
-      try { codefile = File.ReadAllText(Path.GetDirectoryName(Application.dataPath) + "/Cartridges/Shadow of the Beast.cartridge"); } catch (Exception) {
+      try { codefile = File.ReadAllText(Path.GetDirectoryName(Application.dataPath) + "/Cartridges/Game.cartridge"); } catch (Exception) {
         Write("No cardridge found!", 4, 40, Col.C(5, 1, 0));
         Write("Path: " + Path.GetDirectoryName(Application.dataPath) + "/Cartridges/Game.cartridge", 4, 50, 48, 0, 2);
         texture.Apply();
@@ -1475,6 +1475,7 @@ public class Arcade : MonoBehaviour {
       case BNF.KEYx: return new Value(Input.GetAxis("Horixontal"));
       case BNF.KEYy: return new Value(Input.GetAxis("Vertical"));
 
+      case BNF.Label:
       case BNF.LAB: {
         if (!labels.ContainsKey(n.sVal)) throw new Exception("Undefined Label: " + n.sVal);
         return new Value(labels[n.sVal]);

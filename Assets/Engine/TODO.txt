@@ -13,8 +13,6 @@ FUTURE: step by step debugger
 FUTURE: map keys
 
 
-Add progress while saving (tilemaps)
-
 Add a "image" command to draw on the screen a texture (like sprite or tile, no size limit here)
 Image(address, posx, posy)
 
