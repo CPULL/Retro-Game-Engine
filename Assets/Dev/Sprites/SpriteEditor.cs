@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -30,6 +28,7 @@ public class SpriteEditor : MonoBehaviour {
   public TextMeshProUGUI HeightSliderText;
   public TMP_InputField Values;
   public Button LoadSubButton;
+  public Palette palette;
 
   public Image CurrentColor;
   Color32 Transparent = new Color32(0, 0, 0, 0);
@@ -95,6 +94,13 @@ public class SpriteEditor : MonoBehaviour {
 
     if (action == ActionVal.Pick) {
       CurrentColor.color = pixels[pos].img.color;
+      // Update the palette
+      palette.blockSliders[0].SetValueWithoutNotify((int)(CurrentColor.color.r * 5));
+      palette.blockSliders[1].SetValueWithoutNotify((int)(CurrentColor.color.g * 5));
+      palette.blockSliders[2].SetValueWithoutNotify((int)(CurrentColor.color.b * 5));
+      palette.AlterColor();
+      action = ActionVal.No;
+      SetButtons(-1);
       return;
     }
 
@@ -442,7 +448,7 @@ public class SpriteEditor : MonoBehaviour {
   public void Flip(bool horiz) {
     action = ActionVal.No;
     SetButtons(-1);
-    SetUndo(false);
+    SetUndo(true);
     if (horiz) {
       for (int y = 0; y < h; y++) {
         for (int x = 0; x < w / 2; x++) {

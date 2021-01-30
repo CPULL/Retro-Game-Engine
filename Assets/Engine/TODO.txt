@@ -12,8 +12,16 @@ FUTURE: Font editor
 FUTURE: step by step debugger
 FUTURE: map keys
 
-In importing sprites and tiles, handle better when the image is short vertically or horizontally
-Fill or stretch or do partial?
-
 
 Saving a tilemap has an infinite loop
+
+Add a "image" command to draw on the screen a texture (like sprite or tile, no size limit here)
+Image(address, posx, posy)
+
+
+320x180
+
+10x6 tiles
+
+
+1280x128

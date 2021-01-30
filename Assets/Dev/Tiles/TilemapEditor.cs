@@ -774,10 +774,11 @@ public class TilemapEditor : MonoBehaviour {
       byte[] pixels = new byte[iw * ih];
 
       // Normalize the color
+      Color32[] tps = texture.GetPixels32();
       for (int y = 0; y < ih; y++) {
-        int texty = ih - y - 1;
+        int ty = ih - y - 1;
         for (int x = 0; x < iw; x++) {
-          pixels[x + iw * y] = Col.GetColorByte(texture.GetPixel(x, texty));
+          pixels[x + iw * y] = Col.GetColorByte(tps[x + iw * ty]);
         }
       }
 
