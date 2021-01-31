@@ -92,12 +92,12 @@ public class RomEditor : MonoBehaviour {
     for (int i = 0; i < res.labels.Count; i++) {
       step++;
       if (step % 4 == 0) yield return PBar.Progress(250 + 100 * step / num);
-      int size = lines[i].size;
+      int size = lines[start + i].size;
       byte[] data = new byte[size];
       for (int j = 0; j < size; j++) {
         data[j] = res.block[res.labels[i].start + j];
       }
-      lines[i].Data = data;
+      lines[start + i].Data = data;
     }
     PBar.Hide();
   }

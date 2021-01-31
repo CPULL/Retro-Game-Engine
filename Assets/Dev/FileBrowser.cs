@@ -177,18 +177,20 @@ public class FileBrowser : MonoBehaviour {
     if (extcheck.Substring(extcheck.Length - ext.Length) != ext) name += ext;
 
     lastFolder = currentpath;
-    FileBrowserContents.SetActive(false);
 
     if (File.Exists(Path.Combine(currentpath, name))) {
       savedname = name;
       Confirm.Set("File " + name + " already exists.\nDo you want to overwrite?", ConfirmOverwrite);
     }
-    else
+    else {
       postSaveAction?.Invoke(currentpath, name);
+      FileBrowserContents.SetActive(false);
+    }
   }
 
   string savedname = null;
   public void ConfirmOverwrite() {
+    FileBrowserContents.SetActive(false);
     postSaveAction?.Invoke(currentpath, savedname);
     savedname = null;
   }
