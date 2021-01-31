@@ -15,7 +15,8 @@ public class FileBrowser : MonoBehaviour {
   public GameObject FolderTemplate;
   public Transform Items;
   public TextMeshProUGUI PathText;
-  public TextMeshProUGUI FileInfoText;
+  public TextMeshProUGUI FileInfoText1;
+  public TextMeshProUGUI FileInfoText2;
   public Button LoadButton;
   public Button SaveButton;
   public TMP_InputField FileName;
@@ -70,7 +71,8 @@ public class FileBrowser : MonoBehaviour {
   private void ShowFolder(string path) {
     currentpath = path;
     PathText.text = path;
-    FileInfoText.gameObject.SetActive(false);
+    FileInfoText1.gameObject.SetActive(false);
+    FileInfoText2.gameObject.SetActive(false);
     foreach (Transform t in Items)
       Destroy(t.gameObject);
 
@@ -120,15 +122,19 @@ public class FileBrowser : MonoBehaviour {
     currentpath = path;
     LoadButton.interactable = true;
     FileInfo fi = new FileInfo(path);
-    FileInfoText.gameObject.SetActive(true);
-    FileInfoText.text = "File: " + fi.Name + "                Path: " + fi.Directory.FullName + "\nSize: " + fi.Length + "                Extension: " + fi.Extension;
+    FileInfoText1.gameObject.SetActive(true);
+    FileInfoText2.gameObject.SetActive(true);
+    FileInfoText1.text = "File: " + fi.Name + "\nPath: " + fi.Directory.FullName;
+    FileInfoText2.text = "Size: " + fi.Length + "\nExtension: " + fi.Extension;
   }
 
   public void SelectFileSave(string path) {
     SaveButton.interactable = true;
     FileInfo fi = new FileInfo(path);
-    FileInfoText.gameObject.SetActive(true);
-    FileInfoText.text = "File: " + fi.Name + "                Path: " + fi.Directory.FullName + "\nSize: " + fi.Length + "                Extension: " + fi.Extension;
+    FileInfoText1.gameObject.SetActive(true);
+    FileInfoText2.gameObject.SetActive(true);
+    FileInfoText1.text = "File: " + fi.Name + "\nPath: " + fi.Directory.FullName;
+    FileInfoText2.text = "Size: " + fi.Length + "\nExtension: " + fi.Extension;
     FileName.SetTextWithoutNotify(fi.Name);
   }
 

@@ -7,22 +7,21 @@ public class RomEditor : MonoBehaviour {
   public GameObject LineTemplate;
   public Transform Container;
   List<RomLine> lines = new List<RomLine>();
+  public Confirm Confirm;
 
   public void Load() {
     FileBrowser.Load(PostLoad, FileBrowser.FileType.Rom);
   }
 
   public void PostLoad(string path) {
+    foreach (Transform t in Container)
+      Destroy(t.gameObject);
+    lines.Clear();
     StartCoroutine(PostLoading(path));
   }
 
   IEnumerator PostLoading(string path) {
-    yield return PBar.Show("Loading", 0, 350);
-    foreach (Transform t in Container)
-      Destroy(t.gameObject);
-    lines.Clear();
-
-    yield return PBar.Progress(25);
+    yield return PBar.Show("Loading", 25, 350);
     ByteChunk res = new ByteChunk();
     ByteReader.ReadBinBlock(path, res);
     yield return PBar.Progress(50);
@@ -31,8 +30,10 @@ public class RomEditor : MonoBehaviour {
     int step = 0;
 
     foreach (CodeLabel l in res.labels) {
-      yield return PBar.Progress(50 + 100 * step++ / num);
+      step++;
+      if (step % 3 == 0) yield return PBar.Progress(50 + 100 * step / num);
       RomLine line = Instantiate(LineTemplate, Container).GetComponent<RomLine>();
+      line.gameObject.name = l.name;
       line.gameObject.SetActive(true);
       line.Label.SetTextWithoutNotify(l.name);
       lines.Add(line);
@@ -43,7 +44,8 @@ public class RomEditor : MonoBehaviour {
     int pos = 0;
     step = 0;
     for (int i = 0; i < res.labels.Count - 1; i++) {
-      yield return PBar.Progress(150 + 100 * step++ / num);
+      step++;
+      if (step % 3 == 0) yield return PBar.Progress(150 + 100 * step / num);
       int size = res.labels[i + 1].start - res.labels[i].start;
       pos += size;
       lines[i].size = size;
@@ -54,7 +56,8 @@ public class RomEditor : MonoBehaviour {
 
     step = 0;
     for (int i = 0; i < res.labels.Count; i++) {
-      yield return PBar.Progress(250 + 100 * step++ / num);
+      step++;
+      if (step % 3 == 0) yield return PBar.Progress(250 + 100 * step / num);
       int size = lines[i].size;
       byte[] data = new byte[size];
       for (int j = 0; j < size; j++) {
@@ -66,20 +69,60 @@ public class RomEditor : MonoBehaviour {
   }
 
   public void Add() {
+    FileBrowser.Load(PostAdd, FileBrowser.FileType.Rom);
   }
+
+  public void PostAdd(string path) {
+    StartCoroutine(PostLoading(path));
+  }
+
 
   public void Save() {
   }
 
+  RomLine toDelete = null;
   public void Delete(RomLine line) {
+    toDelete = line;
+    Confirm.Set("Confirm delete label\n" + line.Label.text, DeleteConfirmed);
+  }
 
+  public void DeleteConfirmed() {
+    Destroy(toDelete.gameObject);
+    lines.Remove(toDelete);
+    toDelete = null;
   }
 
   public void MoveUp(RomLine line) {
-
+    int pos = -1;
+    for (int i = 0; i < lines.Count; i++) {
+      if (lines[i] == line) {
+        pos = i;
+        break;
+      }
+    }
+    if (pos < 1) return;
+    RomLine tmp = lines[pos - 1];
+    lines[pos - 1] = lines[pos];
+    lines[pos] = tmp;
+    for (int i = 0; i < lines.Count; i++) {
+      lines[i].transform.SetSiblingIndex(i);
+    }
   }
   public void MoveDown(RomLine line) {
-
+    int pos = -1;
+    for (int i = 0; i < lines.Count; i++) {
+      if (lines[i] == line) {
+        pos = i;
+        break;
+      }
+    }
+    if (pos > lines.Count - 2) return;
+    RomLine tmp = lines[pos + 1];
+    lines[pos + 1] = lines[pos];
+    lines[pos] = tmp;
+    for (int i = 0; i < lines.Count; i++) {
+      lines[i].transform.SetSiblingIndex(i);
+    }
   }
 }
 
