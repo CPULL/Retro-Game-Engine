@@ -250,15 +250,7 @@ public class Arcade : MonoBehaviour {
     }
     else {
       // Load Game.Cartridge
-      string codefile;
-      try { codefile = File.ReadAllText(Path.GetDirectoryName(Application.dataPath) + "/Cartridges/Game.cartridge"); } catch (Exception) {
-        Write("No cardridge found!", 4, 40, Col.C(5, 1, 0));
-        Write("Path: " + Path.GetDirectoryName(Application.dataPath) + "/Cartridges/Game.cartridge", 4, 50, 48, 0, 2);
-        texture.Apply();
-        return;
-      }
-      LoadCartridge(codefile);
-
+      SelectCartridge("Game.cartridge");
     }
     texture.Apply();
 
@@ -277,10 +269,18 @@ public class Arcade : MonoBehaviour {
       texture.Apply();
       return;
     }
-    LoadCartridge(codefile);
+
+    // Check if we have a rom file
+    byte[] rom = null;
+    string name = tag.Substring(0, (tag + ".").IndexOf('.'));
+    if (File.Exists(Application.dataPath + "/../Cartridges/" + name)) { // Yes, read the file as binary
+      rom = File.ReadAllBytes(Application.dataPath + "/../Cartridges/" + name);
+    }
+
+    LoadCartridge(codefile, rom);
   }
 
-  public void LoadCartridge(string codefile) {
+  public void LoadCartridge(string codefile, byte[] rom) {
     if (string.IsNullOrEmpty(codefile)) {
       Write("No cardridge found!", 4, 40, Col.C(5, 1, 0));
       texture.Apply();
