@@ -113,7 +113,7 @@ public class WaveformEditor : MonoBehaviour {
 
 
   public void LoadPCM() {
-    FileBrowser.Show(PostLoadPCM, FileBrowser.FileType.Music);
+    FileBrowser.Load(PostLoadPCM, FileBrowser.FileType.Music);
   }
 
   public void PostLoadPCM(string path) {

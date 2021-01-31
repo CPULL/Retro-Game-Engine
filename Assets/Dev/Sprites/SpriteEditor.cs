@@ -615,7 +615,7 @@ public class SpriteEditor : MonoBehaviour {
   }
 
   public void LoadFile() {
-    FileBrowser.Show(PostLoadImage, FileBrowser.FileType.Pics);
+    FileBrowser.Load(PostLoadImage, FileBrowser.FileType.Pics);
   }
 
   void PostLoadImage(string path) {

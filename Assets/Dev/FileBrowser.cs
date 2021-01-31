@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public class FileBrowser : MonoBehaviour {
   private static FileBrowser inst;
   Action<string> postLoadAction;
+  Action<string, string> postSaveAction;
   string currentpath;
 
   public GameObject FileBrowserContents;
@@ -16,19 +17,46 @@ public class FileBrowser : MonoBehaviour {
   public TextMeshProUGUI PathText;
   public TextMeshProUGUI FileInfoText;
   public Button LoadButton;
-  public enum FileType { Music, Pics, Cartridges };
+  public Button SaveButton;
+  public TMP_InputField FileName;
+  public enum FileType { Music, Pics, Cartridges, Rom };
   FileType fileType;
   string lastFolder;
+  bool load = true;
 
   private void Awake() {
     inst = this;
     FileBrowserContents.SetActive(false);
   }
 
-  public static void Show(Action<string> action, FileType ft) {
+  public static void Load(Action<string> action, FileType ft) {
     inst.FileBrowserContents.SetActive(true);
     inst.postLoadAction = action;
     inst.LoadButton.interactable = false;
+    inst.SaveButton.interactable = false;
+    inst.LoadButton.gameObject.SetActive(true);
+    inst.SaveButton.gameObject.SetActive(false);
+    inst.FileName.gameObject.SetActive(false);
+    inst.load = true;
+
+    // Does the directory exist?
+    if (inst.lastFolder == null && !Directory.Exists(inst.lastFolder))
+      inst.lastFolder = Application.dataPath;
+
+    DirectoryInfo di = new DirectoryInfo(inst.lastFolder);
+    inst.fileType = ft;
+    inst.ShowFolder(di.FullName);
+  }
+
+  public static void Save(Action<string, string> action, FileType ft) {
+    inst.FileBrowserContents.SetActive(true);
+    inst.postSaveAction = action;
+    inst.LoadButton.interactable = false;
+    inst.SaveButton.interactable = false;
+    inst.LoadButton.gameObject.SetActive(false);
+    inst.SaveButton.gameObject.SetActive(true);
+    inst.FileName.gameObject.SetActive(true);
+    inst.load = false;
 
     // Does the directory exist?
     if (inst.lastFolder == null && !Directory.Exists(inst.lastFolder))
@@ -70,10 +98,16 @@ public class FileBrowser : MonoBehaviour {
           case FileType.Cartridges:
             if (ext != ".cartridge") continue;
             break;
+          case FileType.Rom:
+            if (ext != ".rom") continue;
+            break;
         }
         GameObject go = Instantiate(FileTemplate, Items);
         go.SetActive(true);
-        go.GetComponent<Button>().onClick.AddListener(() => { SelectFile(fi.FullName); });
+        if (load)
+          go.GetComponent<Button>().onClick.AddListener(() => { SelectFileLoad(fi.FullName); });
+        else
+          go.GetComponent<Button>().onClick.AddListener(() => { SelectFileSave(fi.FullName); });
         go.GetComponentInChildren<TextMeshProUGUI>().text = fi.Name;
       }
     }
@@ -82,14 +116,20 @@ public class FileBrowser : MonoBehaviour {
     }
   }
 
-  public void SelectFile(string path) {
+  public void SelectFileLoad(string path) {
     currentpath = path;
-    foreach (Transform t in Items)
-      Destroy(t.gameObject);
     LoadButton.interactable = true;
     FileInfo fi = new FileInfo(path);
     FileInfoText.gameObject.SetActive(true);
-    FileInfoText.text = "File: " + fi.Name + "\nPath: " + fi.Directory.FullName + "\nSize: " + fi.Length + "\nExtension: " + fi.Extension;
+    FileInfoText.text = "File: " + fi.Name + "                Path: " + fi.Directory.FullName + "\nSize: " + fi.Length + "                Extension: " + fi.Extension;
+  }
+
+  public void SelectFileSave(string path) {
+    SaveButton.interactable = true;
+    FileInfo fi = new FileInfo(path);
+    FileInfoText.gameObject.SetActive(true);
+    FileInfoText.text = "File: " + fi.Name + "                Path: " + fi.Directory.FullName + "\nSize: " + fi.Length + "                Extension: " + fi.Extension;
+    FileName.SetTextWithoutNotify(fi.Name);
   }
 
   public void SelectFolder(string path) {
@@ -109,6 +149,28 @@ public class FileBrowser : MonoBehaviour {
     lastFolder = fi.Directory.FullName;
     FileBrowserContents.SetActive(false);
     postLoadAction?.Invoke(currentpath);
+  }
+
+  public void SaveNameUpdate() {
+    SaveButton.interactable = !string.IsNullOrEmpty(FileName.text.Trim());
+  }
+
+  public void SaveFile() {
+    string name = FileName.text.Trim();
+    if (string.IsNullOrEmpty(name)) return;
+    string extcheck = ("    " + name).ToLowerInvariant();
+    string ext = "";
+    switch (fileType) {
+      case FileType.Music: ext = ".wav"; break;
+      case FileType.Pics: ext = ".png"; break;
+      case FileType.Cartridges: ext = ".cartridge"; break;
+      case FileType.Rom: ext = ".rom"; break;
+    }
+    if (extcheck.Substring(extcheck.Length - ext.Length) != ext) name += ext;
+
+    lastFolder = currentpath;
+    FileBrowserContents.SetActive(false);
+    postSaveAction?.Invoke(currentpath, name);
   }
 
   public void Exit() {

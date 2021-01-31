@@ -271,7 +271,7 @@ public class TilemapEditor : MonoBehaviour {
   IEnumerator Loading() {
     string data = Values.text.Trim();
     yield return PBar.Show("Loading", 0, 200);
-    ByteReaderData res = new ByteReaderData();
+    ByteChunk res = new ByteChunk();
     StartCoroutine(ByteReader.ReadBlock(data, 0, res));
     while (!res.completed)
       yield return new WaitForSeconds(.25f);
@@ -345,6 +345,63 @@ public class TilemapEditor : MonoBehaviour {
     LoadSubButton.enabled = false;
   }
 
+  public void SaveBin() {
+    // Show FileBrowser in select file mode
+    FileBrowser.Save(SaveBinPost, FileBrowser.FileType.Rom);
+
+    // Wait for file
+
+    // Do the same serialization, but use a binary stuff, extend the ByteReader data class to allow to merge chuncks of data and add labels
+  }
+  public void SaveBinPost(string path, string name) {
+    StartCoroutine(SavingBinPost(path, name));
+  }
+  public IEnumerator SavingBinPost(string path, string name) {
+    yield return PBar.Show("Saving", 0, 2 + Palette.Count + 2);
+    ByteChunk chunk = new ByteChunk();
+
+    // Normalize the IDs of the tiles
+    byte[] keys = new byte[Palette.Keys.Count];
+    Palette.Keys.CopyTo(keys, 0);
+    System.Array.Sort(keys);
+    for (int i = 0; i < keys.Length; i++) {
+      byte key = keys[i];
+      TileInPalette tile = Palette[key];
+      Palette.Remove(key);
+      key = (byte)(i + 1);
+      tile.id = key;
+      Palette[key] = tile;
+    }
+
+    byte[] block = new byte[5 + 2 * w * h];
+    block[0] = (byte)w;
+    block[1] = (byte)h;
+    block[2] = (byte)tw;
+    block[3] = (byte)th;
+    block[4] = (byte)Palette.Count;
+    yield return PBar.Progress(1);
+
+    // w*h*2 bytes with the actual map + 5 bytes for the definition
+    int pos = 5;
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        block[pos++] = map[x, y].id;
+        block[pos++] = map[x, y].rot;
+      }
+    }
+    chunk.AddBlock("Tilemap", block);
+    yield return PBar.Progress(2);
+
+    // Tiles
+    for (int i = 0; i < Palette.Count; i++) {
+      TileInPalette tile = Palette[(byte)(i + 1)];
+      chunk.AddBlock("Tile" + i, tile.rawData);
+      yield return PBar.Progress(3 + i);
+    }
+
+    ByteReader.SaveBinBlock(path, name, chunk);
+    PBar.Hide();
+  }
 
   public Image[] SelectionButtons;
   public Image[] RotationButtons;
@@ -776,7 +833,7 @@ public class TilemapEditor : MonoBehaviour {
     ih = th * (importY2 - importY1 + 1);
 
     // Show the file browser
-    FileBrowser.Show(ImportTilesFromPicture, FileBrowser.FileType.Pics);
+    FileBrowser.Load(ImportTilesFromPicture, FileBrowser.FileType.Pics);
   }
 
   public void ImportTilesFromPicture(string path) {

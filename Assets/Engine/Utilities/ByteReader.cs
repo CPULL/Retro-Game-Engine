@@ -6,10 +6,31 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 
 [Serializable]
-public class ByteReaderData {
+public class ByteChunk {
   public List<CodeLabel> labels;
   public byte[] block;
   internal bool completed = false;
+
+  internal void AddLabel(string name, int pos) {
+    if (labels == null) labels = new List<CodeLabel>();
+    labels.Add(new CodeLabel { name = name, start = pos });
+  }
+
+  internal void AddBlock(string label, byte[] data) {
+    if (labels == null) labels = new List<CodeLabel>();
+    int pos = 0;
+    if (block != null) pos = block.Length;
+    labels.Add(new CodeLabel { name = label, start = pos });
+    if (block == null) block = data;
+    else {
+      byte[] newb = new byte[pos + data.Length];
+      for (int i = 0; i < pos; i++)
+        newb[i] = block[i];
+      for (int i = 0; i < data.Length; i++)
+        newb[i + pos] = data[i];
+      block = newb;
+    }
+  }
 }
 
 public class ByteReader {
@@ -18,7 +39,7 @@ public class ByteReader {
   readonly static Regex rgComments = new Regex("/\\*(?>(?:(?>[^*]+)|\\*(?!/))*)\\*/", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly static Regex rgComment = new Regex("//(.*?)\r?\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  internal static IEnumerator ReadBlock(string data, int pbar, ByteReaderData res) {
+  internal static IEnumerator ReadBlock(string data, int pbar, ByteChunk res) {
     ReadMode mode = ReadMode.Dec;
     data = rgComments.Replace(data, "");
     data = rgComment.Replace(data, "");
@@ -343,12 +364,12 @@ public class ByteReader {
   }
 
 
-  internal static void ReadBinBlock(string path, ByteReaderData res) {
+  internal static void ReadBinBlock(string path, ByteChunk res) {
     FileStream fs = new FileStream(path, FileMode.Open);
     try {
       BinaryFormatter formatter = new BinaryFormatter();
 
-      ByteReaderData deser = (ByteReaderData)formatter.Deserialize(fs);
+      ByteChunk deser = (ByteChunk)formatter.Deserialize(fs);
       res.labels = deser.labels;
       res.block = deser.block;
       res.completed = true;
@@ -359,6 +380,20 @@ public class ByteReader {
     }
   }
 
+  internal static void SaveBinBlock(string path, string name, ByteChunk chunk) {
+    FileStream fs = null;
+    try {
+      BinaryFormatter binf = new BinaryFormatter();
+      string fp = Path.Combine(path, name);
+      if (File.Exists(fp)) File.Delete(fp);
+      fs = new FileStream(fp, FileMode.CreateNew);
+      binf.Serialize(fs, chunk);
+    } catch (Exception e) {
+      throw new Exception("Failed to serialize data.\n" + e.Message);
+    } finally {
+      if (fs != null) fs.Close();
+    }
+  }
 }
 
 
