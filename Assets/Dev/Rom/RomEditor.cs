@@ -1,13 +1,44 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 
 public class RomEditor : MonoBehaviour {
   public GameObject LineTemplate;
   public Transform Container;
-  List<RomLine> lines = new List<RomLine>();
+  readonly List<RomLine> lines = new List<RomLine>();
+  readonly Dictionary<string, RomLine> names = new Dictionary<string, RomLine>();
   public Confirm Confirm;
+
+  readonly Regex rgNumPart = new Regex("([^0-9]*([0-9]*))+", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
+
+
+  string HandleDuplicateNames(string name, RomLine line) {
+    if (!names.ContainsKey(name.ToLowerInvariant())) {
+      names.Add(name.ToLowerInvariant(), line);
+      return name;
+    }
+
+    // Find any numeric part at the end
+    Match m = rgNumPart.Match(name);
+    if (!m.Success) return HandleDuplicateNames(name + "_0", line);
+
+
+    Group group = m.Groups[m.Groups.Count - 1];
+    int num = 0;
+    string val = "";
+    for (int i = group.Captures.Count - 1; i >= 0; i--) {
+      val = group.Captures[i].Value;
+      if (string.IsNullOrEmpty(val)) continue;
+      int.TryParse(val, out num);
+    }
+    if (string.IsNullOrEmpty(val))
+      name += "_0";
+    else
+      name = name.Replace(val, (num + 1).ToString());
+    return HandleDuplicateNames(name, line);
+  }
 
   public void Load() {
     FileBrowser.Load(PostLoad, FileBrowser.FileType.Rom);
@@ -17,6 +48,7 @@ public class RomEditor : MonoBehaviour {
     foreach (Transform t in Container)
       Destroy(t.gameObject);
     lines.Clear();
+    names.Clear();
     StartCoroutine(PostLoading(path));
   }
 
@@ -31,8 +63,10 @@ public class RomEditor : MonoBehaviour {
 
     foreach (CodeLabel l in res.labels) {
       step++;
-      if (step % 3 == 0) yield return PBar.Progress(50 + 100 * step / num);
+      if (step % 4 == 0) yield return PBar.Progress(50 + 100 * step / num);
       RomLine line = Instantiate(LineTemplate, Container).GetComponent<RomLine>();
+
+      l.name = HandleDuplicateNames(l.name, line);
       line.gameObject.name = l.name;
       line.gameObject.SetActive(true);
       line.Label.SetTextWithoutNotify(l.name);
@@ -40,12 +74,13 @@ public class RomEditor : MonoBehaviour {
       line.Delete.onClick.AddListener(() => { Delete(line); });
       line.MoveUp.onClick.AddListener(() => { MoveUp(line); });
       line.MoveDown.onClick.AddListener(() => { MoveDown(line); });
+      line.Label.onEndEdit.AddListener((name) => { UpdateName(line, name); });
     }
     int pos = 0;
     step = 0;
     for (int i = 0; i < res.labels.Count - 1; i++) {
       step++;
-      if (step % 3 == 0) yield return PBar.Progress(150 + 100 * step / num);
+      if (step % 4 == 0) yield return PBar.Progress(150 + 100 * step / num);
       int size = res.labels[i + 1].start - res.labels[i].start;
       pos += size;
       lines[i].size = size;
@@ -57,7 +92,7 @@ public class RomEditor : MonoBehaviour {
     step = 0;
     for (int i = 0; i < res.labels.Count; i++) {
       step++;
-      if (step % 3 == 0) yield return PBar.Progress(250 + 100 * step / num);
+      if (step % 4 == 0) yield return PBar.Progress(250 + 100 * step / num);
       int size = lines[i].size;
       byte[] data = new byte[size];
       for (int j = 0; j < size; j++) {
@@ -89,6 +124,8 @@ public class RomEditor : MonoBehaviour {
   public void DeleteConfirmed() {
     Destroy(toDelete.gameObject);
     lines.Remove(toDelete);
+    string name = toDelete.Label.text.Trim();
+    if (names.ContainsKey(name)) names.Remove(name);
     toDelete = null;
   }
 
@@ -123,6 +160,16 @@ public class RomEditor : MonoBehaviour {
     for (int i = 0; i < lines.Count; i++) {
       lines[i].transform.SetSiblingIndex(i);
     }
+  }
+
+  public void UpdateName(RomLine line, string name) {
+    foreach(string key in names.Keys)
+      if (names[key] == line) {
+        names.Remove(key);
+        break;
+      }
+    name = HandleDuplicateNames(name, line);
+    line.Label.SetTextWithoutNotify(name);
   }
 }
 

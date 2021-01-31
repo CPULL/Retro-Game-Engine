@@ -13,6 +13,17 @@ public class ByteChunk {
 
   internal void AddLabel(string name, int pos) {
     if (labels == null) labels = new List<CodeLabel>();
+
+    bool ok = false;
+    while (!ok) {
+      ok = true;
+      foreach (CodeLabel l in labels) {
+        if (l.name == name) {
+          ok = false;
+          name += "_";
+        }
+      }
+    }
     labels.Add(new CodeLabel { name = name, start = pos });
   }
 
@@ -46,7 +57,6 @@ public class ByteReader {
     data = data.Trim().Replace('\r', ' ').Replace('\n', ' ');
     while (data.IndexOf("  ") != -1) data = data.Replace("  ", " ");
 
-    res.labels = new List<CodeLabel>();
     Consolidator consolidator = new Consolidator();
     int tot = data.Length;
     while (data.Length > 0) {
@@ -60,7 +70,7 @@ public class ByteReader {
       part = part.ToLowerInvariant();
       // What we have?
       if (part[part.Length - 1] == ':') { // Label
-        res.labels.Add(new CodeLabel { name = part.Substring(0, part.Length - 1).Trim(), start = consolidator.GetPos() });
+        res.AddLabel(part.Substring(0, part.Length - 1).Trim(), consolidator.GetPos());
         data = data.Substring(part.Length).Trim();
         continue;
       }
