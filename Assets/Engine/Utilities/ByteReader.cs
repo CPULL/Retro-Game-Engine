@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 
+[Serializable]
 public class ByteReaderData {
   public List<CodeLabel> labels;
   public byte[] block;
-  public bool completed = false;
+  internal bool completed = false;
 }
 
 public class ByteReader {
@@ -338,7 +341,26 @@ public class ByteReader {
     // Consolidate all parts we found
     block = consolidator.Consolidate();
   }
+
+
+  internal static void ReadBinBlock(string path, ByteReaderData res) {
+    FileStream fs = new FileStream(path, FileMode.Open);
+    try {
+      BinaryFormatter formatter = new BinaryFormatter();
+
+      ByteReaderData deser = (ByteReaderData)formatter.Deserialize(fs);
+      res.labels = deser.labels;
+      res.block = deser.block;
+      res.completed = true;
+    } catch (Exception e) {
+      throw new Exception("Reading error: " + path + " \n" + e.Message);
+    } finally {
+      fs.Close();
+    }
+  }
+
 }
+
 
 public class Consolidator {
   readonly List<byte[]> parts = new List<byte[]>();

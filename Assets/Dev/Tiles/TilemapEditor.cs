@@ -204,6 +204,7 @@ public class TilemapEditor : MonoBehaviour {
 
   public TMP_InputField Values;
   public Button LoadSubButton;
+  public Confirm Confirm;
 
   public void Save() {
     Values.gameObject.SetActive(true);
@@ -409,6 +410,10 @@ public class TilemapEditor : MonoBehaviour {
   }
 
   public void DestroyTilemap() {
+    Confirm.Set("Reinit tilemap?", DestroyTilemapConfirmed);
+  }
+
+  public void DestroyTilemapConfirmed() {
     foreach (byte b in Palette.Keys)
       Destroy(Palette[b].gameObject);
     Palette.Clear();
