@@ -20,12 +20,6 @@ split the cartridge in 2 files.
 One with the code and some parameters (.cartridge)
 One (.rom) with the data
 
-Data can still be kept in the cartridge for slow parsing.
 
-Data should have a set of label names. Each with the offset in the byte[] data
-And then a byte[] with the actual rom
-
-
-* write bytereader to read this data
 * update LoadCartridge in arcade to load also .rom files
-* update all dev tools to save/load also in binary format
+* update all dev tools to save/load also in binary format (wave, music, sprite)
