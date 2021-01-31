@@ -60,6 +60,7 @@ public class RomEditor : MonoBehaviour {
 
     int num = res.labels.Count;
     int step = 0;
+    int start = lines.Count;
 
     foreach (CodeLabel l in res.labels) {
       step++;
@@ -76,18 +77,16 @@ public class RomEditor : MonoBehaviour {
       line.MoveDown.onClick.AddListener(() => { MoveDown(line); });
       line.Label.onEndEdit.AddListener((name) => { UpdateName(line, name); });
     }
-    int pos = 0;
     step = 0;
     for (int i = 0; i < res.labels.Count - 1; i++) {
       step++;
       if (step % 4 == 0) yield return PBar.Progress(150 + 100 * step / num);
       int size = res.labels[i + 1].start - res.labels[i].start;
-      pos += size;
-      lines[i].size = size;
-      lines[i].Size.text = size.ToString();
+      lines[start + i].size = size;
+      lines[start + i].Size.text = size.ToString();
     }
-    lines[res.labels.Count - 1].size = pos - res.labels[res.labels.Count - 1].start;
-    lines[res.labels.Count - 1].Size.text = lines[res.labels.Count - 1].size.ToString();
+    lines[start + res.labels.Count - 1].size = res.block.Length - res.labels[res.labels.Count - 1].start;
+    lines[start + res.labels.Count - 1].Size.text = lines[start + res.labels.Count - 1].size.ToString();
 
     step = 0;
     for (int i = 0; i < res.labels.Count; i++) {
@@ -113,6 +112,24 @@ public class RomEditor : MonoBehaviour {
 
 
   public void Save() {
+    FileBrowser.Save(PostSave, FileBrowser.FileType.Rom);
+  }
+
+  public void PostSave(string path, string name) {
+    StartCoroutine(PostSaving(path, name));
+  }
+  IEnumerator PostSaving(string path, string name) {
+    yield return PBar.Show("Saving", 0, 2 + Container.childCount);
+    int pos = 1;
+    ByteChunk chunk = new ByteChunk();
+    foreach (Transform t in Container) {
+      yield return PBar.Progress(pos++);
+      RomLine line = t.GetComponent<RomLine>();
+      chunk.AddBlock(line.Label.text.Trim(), line.Data);
+    }
+    yield return PBar.Progress(pos++);
+    ByteReader.SaveBinBlock(path, name, chunk);
+    PBar.Hide();
   }
 
   RomLine toDelete = null;
