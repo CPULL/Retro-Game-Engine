@@ -24,6 +24,7 @@ public class FileBrowser : MonoBehaviour {
   FileType fileType;
   string lastFolder;
   bool load = true;
+  public Confirm Confirm;
 
   private void Awake() {
     inst = this;
@@ -163,6 +164,7 @@ public class FileBrowser : MonoBehaviour {
 
   public void SaveFile() {
     string name = FileName.text.Trim();
+    savedname = null;
     if (string.IsNullOrEmpty(name)) return;
     string extcheck = ("    " + name).ToLowerInvariant();
     string ext = "";
@@ -176,7 +178,19 @@ public class FileBrowser : MonoBehaviour {
 
     lastFolder = currentpath;
     FileBrowserContents.SetActive(false);
-    postSaveAction?.Invoke(currentpath, name);
+
+    if (File.Exists(Path.Combine(currentpath, name))) {
+      savedname = name;
+      Confirm.Set("File " + name + " already exists.\nDo you want to overwrite?", ConfirmOverwrite);
+    }
+    else
+      postSaveAction?.Invoke(currentpath, name);
+  }
+
+  string savedname = null;
+  public void ConfirmOverwrite() {
+    postSaveAction?.Invoke(currentpath, savedname);
+    savedname = null;
   }
 
   public void Exit() {
