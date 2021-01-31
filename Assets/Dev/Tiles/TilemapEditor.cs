@@ -403,6 +403,28 @@ public class TilemapEditor : MonoBehaviour {
     PBar.Hide();
   }
 
+  public void LoadBin() {
+    FileBrowser.Load(PostLoadBin, FileBrowser.FileType.Rom);
+  }
+
+  public void PostLoadBin(string path) {
+    StartCoroutine(PostLoadingBin(path));
+  }
+  public IEnumerator PostLoadingBin(string path) {
+    yield return PBar.Show("Loading", 0, 200);
+    ByteChunk res = new ByteChunk();
+    ByteReader.ReadBinBlock(path, res);
+
+    int pw = res.block[0];
+    int ph = res.block[1];
+    MapSizeW.SetValueWithoutNotify(pw);
+    MapSizeH.SetValueWithoutNotify(ph);
+    updateMapSize = StartCoroutine(UpdateMapSize(w, h));
+
+    // We need to wait for the coroutine to end before proceeding
+    StartCoroutine(CompleteLoading(res.block));
+  }
+
   public Image[] SelectionButtons;
   public Image[] RotationButtons;
 

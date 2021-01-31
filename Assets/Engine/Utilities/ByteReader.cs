@@ -368,7 +368,6 @@ public class ByteReader {
     FileStream fs = new FileStream(path, FileMode.Open);
     try {
       BinaryFormatter formatter = new BinaryFormatter();
-
       ByteChunk deser = (ByteChunk)formatter.Deserialize(fs);
       res.labels = deser.labels;
       res.block = deser.block;
