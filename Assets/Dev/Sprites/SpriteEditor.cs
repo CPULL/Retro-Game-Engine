@@ -672,7 +672,7 @@ public class SpriteEditor : MonoBehaviour {
     int num = w * h;
     yield return PBar.Progress(1);
     for (int i = 0; i < num; i++) {
-      if (i % 4 == 0) yield return PBar.Progress(2 + i);
+      if (i % w == 0) yield return PBar.Progress(2 + i);
       block[2+i] = Col.GetColorByte(pixels[i].Get());
     }
     chunk.AddBlock("Sprite", block);

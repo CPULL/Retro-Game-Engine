@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class RomEditor : MonoBehaviour {
   public GameObject LineTemplate;
@@ -9,6 +11,8 @@ public class RomEditor : MonoBehaviour {
   readonly List<RomLine> lines = new List<RomLine>();
   readonly Dictionary<string, RomLine> names = new Dictionary<string, RomLine>();
   public Confirm Confirm;
+  public TMP_InputField Values;
+  public Button LoadSubButton;
 
   readonly Regex rgNumPart = new Regex("([^0-9]*([0-9]*))+", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
 
@@ -38,6 +42,74 @@ public class RomEditor : MonoBehaviour {
     else
       name = name.Replace(val, (num + 1).ToString());
     return HandleDuplicateNames(name, line);
+  }
+
+  public void LoadTextPre() {
+    Values.gameObject.SetActive(true);
+    LoadSubButton.enabled = true;
+  }
+
+  public void LoadTextPost() {
+    if (!gameObject.activeSelf) return;
+    StartCoroutine(LoadingTextPost());
+  }
+  IEnumerator LoadingTextPost() {
+    yield return PBar.Show("Loading", 0, 256);
+    List<CodeLabel> labels;
+    byte[] block;
+    try {
+      ByteReader.ReadBlock(Values.text.Trim(), out labels, out block);
+    } catch (System.Exception e) {
+      Values.text = "Parsing error: " + e.Message + "\n" + Values.text;
+      PBar.Hide();
+      yield break;
+    }
+
+    int num = labels.Count;
+    int step = 0;
+    int start = lines.Count;
+
+    foreach (CodeLabel l in labels) {
+      step++;
+      if (step % 4 == 0) yield return PBar.Progress(50 + 100 * step / num);
+      RomLine line = Instantiate(LineTemplate, Container).GetComponent<RomLine>();
+
+      l.name = HandleDuplicateNames(l.name, line);
+      line.gameObject.name = l.name;
+      line.gameObject.SetActive(true);
+      line.Label.SetTextWithoutNotify(l.name);
+      lines.Add(line);
+      line.Delete.onClick.AddListener(() => { Delete(line); });
+      line.MoveUp.onClick.AddListener(() => { MoveUp(line); });
+      line.MoveDown.onClick.AddListener(() => { MoveDown(line); });
+      line.Label.onEndEdit.AddListener((name) => { UpdateName(line, name); });
+    }
+    step = 0;
+    for (int i = 0; i < labels.Count - 1; i++) {
+      step++;
+      if (step % 4 == 0) yield return PBar.Progress(150 + 100 * step / num);
+      int size = labels[i + 1].start - labels[i].start;
+      lines[start + i].size = size;
+      lines[start + i].Size.text = size.ToString();
+    }
+    lines[start + labels.Count - 1].size = block.Length - labels[labels.Count - 1].start;
+    lines[start + labels.Count - 1].Size.text = lines[start + labels.Count - 1].size.ToString();
+
+    step = 0;
+    for (int i = 0; i < labels.Count; i++) {
+      step++;
+      if (step % 4 == 0) yield return PBar.Progress(250 + 100 * step / num);
+      int size = lines[start + i].size;
+      byte[] data = new byte[size];
+      for (int j = 0; j < size; j++) {
+        data[j] = block[labels[i].start + j];
+      }
+      lines[start + i].Data = data;
+    }
+    PBar.Hide();
+
+    Values.gameObject.SetActive(false);
+    LoadSubButton.enabled = false;
   }
 
   public void Load() {
@@ -141,7 +213,7 @@ public class RomEditor : MonoBehaviour {
   public void DeleteConfirmed() {
     Destroy(toDelete.gameObject);
     lines.Remove(toDelete);
-    string name = toDelete.Label.text.Trim();
+    string name = NormLabel.Normalize(toDelete.Label.text);
     if (names.ContainsKey(name)) names.Remove(name);
     toDelete = null;
   }

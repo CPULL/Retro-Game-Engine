@@ -753,9 +753,12 @@ public class Arcade : MonoBehaviour {
         else {
           pos = pointer + x + linestart + linesize * y;
         }
-        Color32 pixel = Col.GetColor(mem[pos]);
-        pixels[xx + sw * yy] = pixel;
-        texture.SetPixel(xx, hm1 - yy, pixel);
+        byte col = mem[pos];
+        if (col != 255) {
+          Color32 pixel = Col.GetColor(col);
+          pixels[xx + sw * yy] = pixel;
+          texture.SetPixel(xx, hm1 - yy, pixel);
+        }
       }
   }
 

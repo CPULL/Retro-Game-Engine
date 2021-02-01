@@ -1,17 +1,37 @@
 Name: Pong
 
 Start {
-wait(.5)
-clr(0)
-image(cpu:+2, 50, 50, 16, 32, 8, 32)
+wait(.1)
+	clr(c133)
+	for(i=0,i<12,i++) {
+		sp[i] = Label("Sprite"+i)
+		sprite(0, sp[i], 0)
+	}
+	for(i=0,i<320,i+=8) {
+		image(background:+2, i, 64, 8, 64)
+	}
+	image(moon:+2, 220, 20, 48, 48)
+	box(0,128,320,180,c152, c152)
+	write("Shadow of the Beast", 8,1,c301)
+	spos(0, 150, 120)
+	spen(0,1)
+	x=-20
 }
+
 update {
 	i++
-	if (i>24)
+	if(i>=12)
 		i=0
-	image(cpu:+2, 50, 50, 16, 32, i, 32)
+	sprite(0, sp[i], 0)
+	spos(0,x,120)
+	x+=1400 * deltaTime
 	frame
+	if (x>320)
+		x=-20
 }
+
+
+
 
 Config {
 	screen(320,180)

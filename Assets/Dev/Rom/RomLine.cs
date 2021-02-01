@@ -10,5 +10,4 @@ public class RomLine : MonoBehaviour {
   public Button MoveDown;
   public byte[] Data;
   public int size;
-
 }

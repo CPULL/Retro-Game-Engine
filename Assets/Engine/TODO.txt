@@ -15,4 +15,5 @@ FUTURE: precompile Nodes
 
 
 Add progress bar when loading and parsing data
+wait() should not block the frame
 
