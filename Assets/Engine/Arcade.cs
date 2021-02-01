@@ -271,36 +271,34 @@ public class Arcade : MonoBehaviour {
     }
 
     // Check if we have a rom file
-    byte[] rom = null;
-    string name = tag.Substring(0, (tag + ".").IndexOf('.'));
+    string rom = null;
+    string name = tag.Substring(0, (tag + ".").LastIndexOf('.')) + ".rom";
     if (File.Exists(Application.dataPath + "/../Cartridges/" + name)) { // Yes, read the file as binary
-      rom = File.ReadAllBytes(Application.dataPath + "/../Cartridges/" + name);
+      rom = Application.dataPath + "/../Cartridges/" + name;
     }
 
     LoadCartridge(codefile, rom);
   }
 
-  public void LoadCartridge(string codefile, byte[] rom) {
+  public void LoadCartridge(string codefile, string rompath) {
     if (string.IsNullOrEmpty(codefile)) {
       Write("No cardridge found!", 4, 40, Col.C(5, 1, 0));
       texture.Apply();
       return;
     }
     try {
-      CodeNode res = cp.Parse(codefile, variables);
+      CodeNode res = cp.Parse(codefile, variables, rompath == null);
       Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
       if (res.sVal == null)
         Write("<no name>", 88, 39, Col.C(5, 3, 1));
       else
         Write(res.sVal, 88, 39, Col.C(5, 3, 1));
 
-      CodeNode data = null;
-      if (res.HasNode(BNF.Data)) {
-        data = res.Get(BNF.Data);
-        Write("Data:   Yes", 4, 48 + 18, Col.C(1, 3, 4));
-
+      // Config ************************************************************************************************************** Config
+      CodeNode config = res.Get(BNF.Config);
+      if (config != null) {
         // Screen ************************************************************************************************************** Screen
-        CodeNode scrconf = data.Get(BNF.ScrConfig);
+        CodeNode scrconf = config.Get(BNF.ScrConfig);
         if (scrconf != null) {
           sw = (int)scrconf.fVal;
           sh = scrconf.iVal;
@@ -319,22 +317,11 @@ public class Arcade : MonoBehaviour {
           Screen.texture = texture;
           pixels = texture.GetPixels32();
           raw = new byte[sw * sh * 4];
-          // Redraw
-          Clear(0);
-          Write("--- MMM Arcade RGE ---", (sw - 23 * 8) / 2, 8, 60);
-          Write("virtual machine", (sw - 16 * 8) / 2, 14 + 4, 0b011010);
-          Write("Retro Game Engine", (sw - 18 * 8) / 2, 14 + 9, 0b011110);
-          Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
-          if (res.sVal == null)
-            Write("<no name>", 88, 39, Col.C(5, 3, 1));
-          else
-            Write(res.sVal, 88, 39, Col.C(5, 3, 1));
-          Write("Data:   Yes", 4, 48 + 18, Col.C(1, 3, 4));
         }
         sprites[0].Init(0, 6, sw, sh);
 
         // Memory ************************************************************************************************************** Memory
-        CodeNode memdef = data.Get(BNF.Ram);
+        CodeNode memdef = config.Get(BNF.Ram);
         if (memdef != null) {
           if (memdef.iVal < 1024) memdef.iVal = 1024;
           if (memdef.iVal > 4096 * 1024) memdef.iVal = 4096 * 1024;
@@ -343,6 +330,35 @@ public class Arcade : MonoBehaviour {
         else {
           memsize = 256 * 1024;
         }
+      }
+
+      // Redraw
+      Clear(0);
+      Write("--- MMM Arcade RGE ---", (sw - 23 * 8) / 2, 8, 60);
+      Write("virtual machine", (sw - 16 * 8) / 2, 14 + 4, 0b011010);
+      Write("Retro Game Engine", (sw - 18 * 8) / 2, 14 + 9, 0b011110);
+      Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
+      if (res.sVal == null)
+        Write("<no name>", 88, 39, Col.C(5, 3, 1));
+      else
+        Write(res.sVal, 88, 39, Col.C(5, 3, 1));
+
+      if (rompath != null) {
+        ByteChunk data = new ByteChunk();
+        ByteReader.ReadBinBlock(rompath, data);
+        romsize = data.block.Length;
+        Write("Data:   ROM (" + MemSize(romsize) + ")", 4, 48 + 18, Col.C(1, 3, 4));
+        mem = new byte[memsize + romsize];
+        int pos = memsize;
+        for (int i = 0; i < romsize; i++)
+          mem[pos++] = data.block[i];
+        foreach(CodeLabel l in data.labels) {
+          labels.Add(l.name, memsize + l.start);
+        }
+      }
+      else if (res.HasNode(BNF.Data)) {
+        CodeNode data = res.Get(BNF.Data);
+        Write("Data:   Yes, source", 4, 48 + 18, Col.C(1, 3, 4));
 
         // ROM ****************************************************************************************************************** ROM
         CodeNode romdef = data.Get(BNF.Rom);
@@ -388,16 +404,8 @@ public class Arcade : MonoBehaviour {
       }
 
       Write("Screen: " + sw + " x " + sh, 10, 100, Col.C(1, 3, 4));
-
       Write("Memory: " + MemSize(memsize), 10, 110, Col.C(1, 3, 4));
 
-      if (data == null) {
-        Write("ROM:    ", 10, 120, Col.C(1, 3, 4));
-        Write("        <missing>", 10, 120, Col.C(5, 3, 1));
-      }
-      else {
-        Write("ROM:    " + MemSize(romsize), 10, 120, Col.C(1, 3, 4));
-      }
       updateDelay = updateTime;
 
       CodeNode funcs = res.Get(BNF.Functions);

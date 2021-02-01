@@ -98,7 +98,7 @@ public class CodeNode {
               res += n.ToString(indent + 1, false) + "\n";
         }
         break;
-        case BNF.Data: {
+        case BNF.Config: {
           res = "Data:\n";
           int num = children == null ? 0 : children.Count;
           for (int i = 0; i < num; i++) {
@@ -515,6 +515,7 @@ public enum BNF {
   Program,
   Start,
   Update,
+  Config,
   Data,
   Functions,
   FunctionDef,

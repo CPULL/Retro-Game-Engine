@@ -241,6 +241,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgName = new Regex("^name:[\\s]*([a-z0-9_\\s]+)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgStart = new Regex("^start[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgUpdate = new Regex("^update[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgConfig = new Regex("^config[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgData = new Regex("^data[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFunction = new Regex("^#([a-z][a-z0-9]{0,11})[\\s]*\\((.*)\\)[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFunctionCall = new Regex("([a-z][a-z0-9]{0,11})[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -255,7 +256,7 @@ public class CodeParser : MonoBehaviour {
   CodeNode currentFunctionParameters = null; // Used to keep track of the current parsed functions to have the local variables
 
 
-  public CodeNode Parse(string file, Variables variables) {
+  public CodeNode Parse(string file, Variables variables, bool parseDataSection) {
     try {
       // Start by replacing all the problematic stuff
       file = file.Trim().Replace("\r", "").Replace("\t", " ");
@@ -341,16 +342,30 @@ public class CodeParser : MonoBehaviour {
           continue;
         }
 
-        m = rgData.Match(line);
+        m = rgConfig.Match(line);
         if (m.Success) {
           // find the end of the block, and parse the result
           int end = FindEndOfBlock(lines, linenumber);
-          if (end == -1) throw new Exception("\"DATA\" section does not end");
+          if (end == -1) throw new Exception("\"CONFIG\" section does not end");
 
-          CodeNode data = new CodeNode(BNF.Data, line, linenumber);
-          res.Add(data);
-          ParseDataBlock(lines, linenumber, end, data);
+          CodeNode config = new CodeNode(BNF.Config, line, linenumber);
+          res.Add(config);
+          ParseConfigBlock(lines, linenumber, end, config);
           continue;
+        }
+
+        if (parseDataSection) {
+          m = rgData.Match(line);
+          if (m.Success) {
+            // find the end of the block, and parse the result
+            int end = FindEndOfBlock(lines, linenumber);
+            if (end == -1) throw new Exception("\"DATA\" section does not end");
+
+            CodeNode data = new CodeNode(BNF.Data, line, linenumber);
+            res.Add(data);
+            ParseDataBlock(lines, linenumber, end, data);
+            continue;
+          }
         }
 
         m = rgFunction.Match(line);
@@ -1986,7 +2001,7 @@ public class CodeParser : MonoBehaviour {
     return "`" + tag + res + "¶";
   }
 
-  private void ParseDataBlock(string[] lines, int start, int end, CodeNode data) {
+  private void ParseConfigBlock(string[] lines, int start, int end, CodeNode config) {
     // Find at what line this starts
     string remaining = "";
     for (int linenum = start + 1; linenum < end; linenum++) {
@@ -2002,7 +2017,7 @@ public class CodeParser : MonoBehaviour {
         int.TryParse(m.Groups[2].Value.Trim(), out int h);
         bool filter = (!string.IsNullOrEmpty(m.Groups[3].Value) && m.Groups[3].Value.IndexOf('f') != -1);
         CodeNode n = new CodeNode(BNF.ScrConfig, null, linenum) { fVal = w, iVal = h, sVal = (filter ? "*" : "") };
-        data.Add(n);
+        config.Add(n);
       }
       else if (clean.IndexOf("ram") != -1) { // RAM ****************************************************************** RAM
         int pos = clean.IndexOf(")");
@@ -2013,12 +2028,21 @@ public class CodeParser : MonoBehaviour {
         if (unit == 'k') size *= 1024;
         if (unit == 'm') size *= 1024 * 1024;
         CodeNode n = new CodeNode(BNF.Ram, null, linenum) { iVal = size };
-        data.Add(n);
+        config.Add(n);
       }
       else
         remaining += clean + "\n";
     }
-    ByteReader.ReadBlock(remaining, out List<CodeLabel> labels, out byte[] rom);
+  }
+
+  private void ParseDataBlock(string[] lines, int start, int end, CodeNode data) {
+    // Find at what line this starts
+    string clean = "";
+    for (int linenum = start + 1; linenum < end; linenum++) {
+      // Remove the comments and some unwanted chars
+      clean += rgMLBacktick.Replace(lines[linenum].Trim(), "'") + "\n";
+    }
+    ByteReader.ReadBlock(clean, out List<CodeLabel> labels, out byte[] rom);
     // Labels ****************************************************************** Label
     foreach (CodeLabel l in labels) {
       data.Add(new CodeNode(BNF.Label, "", 0) { bVal = null, iVal = l.start, sVal = l.name });

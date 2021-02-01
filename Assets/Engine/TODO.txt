@@ -11,6 +11,7 @@ FUTURE: Code editor
 FUTURE: Font editor
 FUTURE: step by step debugger
 FUTURE: map keys
+FUTURE: precompile Nodes
 
 
 Add a "image" command to draw on the screen a texture (like sprite or tile, no size limit here)
@@ -21,6 +22,8 @@ split the cartridge in 2 files.
 One with the code and some parameters (.cartridge)
 One (.rom) with the data
 
+Add progress bar to loading data
 
-* update LoadCartridge in arcade to load also .rom files
-* update all dev tools to save/load also in binary format (wave, music, sprite)
+rom file? Yes, read it and parse it. We should get some sort of labels from it
+no rom file? check data
+no rom and no data? No worries, just keep running the program

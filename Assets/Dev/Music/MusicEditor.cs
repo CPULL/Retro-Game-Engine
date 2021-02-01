@@ -142,6 +142,7 @@ public class MusicEditor : MonoBehaviour {
   private void Update() {
     bool update = false;
     autoRepeat -= Time.deltaTime;
+    bool textedit = Values.gameObject.activeSelf || FileBrowser.IsVisible();
 
     if (countInForRecording > 0) { // Handle count-in for recording
       countInForRecording -= Time.deltaTime;
@@ -174,7 +175,7 @@ public class MusicEditor : MonoBehaviour {
     else {
       if (recording) PlayBlock();
 
-      if (!recording) {
+      if (!recording && !textedit) {
         if (status == MusicEditorStatus.BlockEdit) {
           if (Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
           if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < currentBlock.len - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
@@ -192,12 +193,12 @@ public class MusicEditor : MonoBehaviour {
           if (Input.GetKey(KeyCode.DownArrow) && bllines != null && row < bllines.Count - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
         }
       }
-      if (status == MusicEditorStatus.BlockEdit) {
+      if (status == MusicEditorStatus.BlockEdit && !textedit) {
         if (Input.GetKeyDown(KeyCode.LeftArrow) && col > 0) { col--; update = true; autoRepeat = .25f; }
         if (Input.GetKeyDown(KeyCode.RightArrow) && col < 7) { col++; update = true; autoRepeat = .25f; }
       }
 
-      if (!recording) {
+      if (!recording && !textedit) {
         if (status == MusicEditorStatus.Music && row > -1 && row < mlines.Count) {
           if (Input.GetKeyDown(KeyCode.Return)) {
             PickBlock();
@@ -215,7 +216,7 @@ public class MusicEditor : MonoBehaviour {
         }
       }
 
-      if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count) {
+      if (status == MusicEditorStatus.BlockEdit && row > -1 && row < blines.Count && !textedit) {
         BlockLine l = blines[row];
         if (!recording) {
           // Remove cell values
@@ -237,25 +238,26 @@ public class MusicEditor : MonoBehaviour {
             }
           }
         }
-        // Piano keys
-        for (int i = 0; i < keyNotes.Length; i++) {
-          if (Input.GetKeyDown(keyNotes[i])) {
-            // Set the current cell as note with the given note/frequency, update the text to be the note notation
-            NoteData nd = currentBlock.chs[col][row];
-            nd.Set(NoteType.Note, (short)freqs[i + 24], (byte)noteLen);
-            l.note[col].SetValues(nd, NoteTypeSprites, freqs, noteNames, waves);
-            // Move to the next row
-            if (!recording && row + stepLen < currentBlock.len) { row += stepLen; update = true; }
-            // Play the actual sound (find the wave that should be used, if none is defined use a basic triangle wave)
-            sounds.Play(col, freqs[i + 24], .25f);
+        
+        if (!textedit) // Piano keys
+          for (int i = 0; i < keyNotes.Length; i++) {
+            if (Input.GetKeyDown(keyNotes[i])) {
+              // Set the current cell as note with the given note/frequency, update the text to be the note notation
+              NoteData nd = currentBlock.chs[col][row];
+              nd.Set(NoteType.Note, (short)freqs[i + 24], (byte)noteLen);
+              l.note[col].SetValues(nd, NoteTypeSprites, freqs, noteNames, waves);
+              // Move to the next row
+              if (!recording && row + stepLen < currentBlock.len) { row += stepLen; update = true; }
+              // Play the actual sound (find the wave that should be used, if none is defined use a basic triangle wave)
+              sounds.Play(col, freqs[i + 24], .25f);
+            }
           }
-        }
       }
     }
 
-    // FIXME we shoul avoid the keys if we are with wrong lines selected or saving/loading
+    // We shoul avoid the keys if we are with wrong lines selected or saving/loading
     // Ctrl+C, Ctrl+V, Ctrl+X, ShiftUp, ShiftDown
-    if (!Values.gameObject.activeSelf) {
+    if (!textedit) {
       if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
 
         if (Input.GetKeyDown(KeyCode.DownArrow)) {
