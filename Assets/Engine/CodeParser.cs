@@ -634,7 +634,6 @@ public class CodeParser : MonoBehaviour {
     // [LINE] = line([EXPR], [EXPR], [EXPR], [EXPR], [EXPR])
     if (expected.IsGood(Expected.Val.Statement) && rgLine.IsMatch(line)) {
       Match m = rgLine.Match(line);
-      if (m.Groups.Count < 2) throw new Exception("Invalid Line() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.LINE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
@@ -647,7 +646,6 @@ public class CodeParser : MonoBehaviour {
     // [BOX] = box([EXP], [EXP], [EXP], [EXP], [EXP], [[EXP]])
     if (expected.IsGood(Expected.Val.Statement) && rgBox.IsMatch(line)) {
       Match m = rgBox.Match(line);
-      if (m.Groups.Count < 2) throw new Exception("Invalid Box() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.BOX, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
@@ -660,7 +658,6 @@ public class CodeParser : MonoBehaviour {
     // [CIRCLE] = circle([EXP], [EXP], [EXP], [EXP], [EXP], [[EXP]])
     if (expected.IsGood(Expected.Val.Statement) && rgCircle.IsMatch(line)) {
       Match m = rgCircle.Match(line);
-      if (m.Groups.Count < 8) throw new Exception("Invalid Circle() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.CIRCLE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
@@ -674,7 +671,6 @@ public class CodeParser : MonoBehaviour {
     // int pointer, int px, int py, int w, int h, int linestart = 0, int linesize = 0
     if (expected.IsGood(Expected.Val.Statement) && rgImage.IsMatch(line)) {
       Match m = rgImage.Match(line);
-      if (m.Groups.Count < 8) throw new Exception("Invalid Image() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.IMAGE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
