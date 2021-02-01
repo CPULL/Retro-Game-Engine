@@ -53,6 +53,7 @@ public class WaveformEditor : MonoBehaviour {
 
   private void Update() {
     if (Values.gameObject.activeSelf) return;
+    if (FileBrowser.IsVisible()) return;
 
     if (Input.GetKeyDown(KeyCode.Tab)) StartNote("C4", true);
     if (Input.GetKeyDown(KeyCode.Alpha1)) StartNote("C4#", true);
@@ -188,8 +189,9 @@ public class WaveformEditor : MonoBehaviour {
       block[8] = (byte)((rawPCM.Length & 0xff0000) >> 16);
       block[9] = (byte)((rawPCM.Length & 0xff00) >> 8);
       block[10] = (byte)((rawPCM.Length & 0xff) >> 0);
+      int step = 1 + rawPCM.Length / 25;
       for (int i = 0; i < rawPCM.Length; i++) {
-        if (i % 4 == 0) yield return PBar.Progress(25 + 25 * i / rawPCM.Length);
+        if (i % step == 0) yield return PBar.Progress(25 + 25 * i / rawPCM.Length);
         block[11 + i] = rawPCM[i];
       }
     }
@@ -255,8 +257,9 @@ public class WaveformEditor : MonoBehaviour {
       byte len4 = res.block[pos++];
       int len = (len1 << 24) + (len2 << 16) + (len3 << 8) + len4;
       rawPCM = new byte[len];
+      int step = 1 + len / 25;
       for (int i = 0; i < len; i++) {
-        if (i % 4 == 0) yield return PBar.Progress(27 + 25 * i / rawPCM.Length);
+        if (i % step == 0) yield return PBar.Progress(27 + 25 * i / len);
         rawPCM[i] = res.block[pos++];
       }
     }

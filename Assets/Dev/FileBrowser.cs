@@ -50,6 +50,11 @@ public class FileBrowser : MonoBehaviour {
     inst.ShowFolder(di.FullName);
   }
 
+  internal static bool IsVisible() {
+    if (inst == null) return false;
+    return inst.gameObject.activeSelf;
+  }
+
   public static void Save(Action<string, string> action, FileType ft) {
     inst.FileBrowserContents.SetActive(true);
     inst.postSaveAction = action;
