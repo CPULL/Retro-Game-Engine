@@ -261,7 +261,7 @@ public class Arcade : MonoBehaviour {
   }
 
   public void SelectCartridge(string tag) {
-    FileSelection.SetActive(false);
+    if (FileSelection != null) FileSelection.SetActive(false);
     string codefile;
     try { codefile = File.ReadAllText(Application.dataPath + "/../Cartridges/" + tag); } catch (Exception) {
       Write("No cardridge found!", 4, 40, Col.C(5, 1, 0));
@@ -272,7 +272,12 @@ public class Arcade : MonoBehaviour {
 
     // Check if we have a rom file
     string rom = null;
-    string name = tag.Substring(0, (tag + ".").LastIndexOf('.')) + ".rom";
+    string name = tag;
+    int dot = name.LastIndexOf('.');
+    if (dot != -1) 
+      name = name.Substring(0, dot) + ".rom";
+    else
+      name += ".rom";
     if (File.Exists(Application.dataPath + "/../Cartridges/" + name)) { // Yes, read the file as binary
       rom = Application.dataPath + "/../Cartridges/" + name;
     }
@@ -347,13 +352,13 @@ public class Arcade : MonoBehaviour {
         ByteChunk data = new ByteChunk();
         ByteReader.ReadBinBlock(rompath, data);
         romsize = data.block.Length;
-        Write("Data:   ROM (" + MemSize(romsize) + ")", 4, 48 + 18, Col.C(1, 3, 4));
+        Write("Data:   ROM " + MemSize(romsize), 4, 48 + 18, Col.C(1, 3, 4));
         mem = new byte[memsize + romsize];
         int pos = memsize;
         for (int i = 0; i < romsize; i++)
           mem[pos++] = data.block[i];
         foreach(CodeLabel l in data.labels) {
-          labels.Add(l.name, memsize + l.start);
+          labels.Add(l.name.Trim().ToLowerInvariant(), memsize + l.start);
         }
       }
       else if (res.HasNode(BNF.Data)) {
