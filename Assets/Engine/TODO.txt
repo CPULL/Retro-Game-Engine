@@ -16,6 +16,7 @@ FUTURE: map keys
 Add a "image" command to draw on the screen a texture (like sprite or tile, no size limit here)
 Image(address, posx, posy)
 
+Rename Data block (for screen and ram) to Config
 split the cartridge in 2 files.
 One with the code and some parameters (.cartridge)
 One (.rom) with the data

@@ -220,13 +220,18 @@ public class SpriteEditor : MonoBehaviour {
       Buttons[num].image.sprite = UISpriteSel;
   }
 
-
   public void Clear() {
+    Confirm.Set("Reinit sprite?", DestroySpriteConfirmed);
+  }
+
+  public void DestroySpriteConfirmed() {
     SetUndo(false);
     int num = w * h;
     for (int i = 0; i < num; i++)
       pixels[i].Set(Transparent);
   }
+
+
 
   public void FreeDraw() {
     if (action == ActionVal.FreeDraw) {
@@ -579,7 +584,6 @@ public class SpriteEditor : MonoBehaviour {
     Message.text = "";
     string data = Values.text.Trim();
 
-
     byte[] block;
     try {
       ByteReader.ReadBlock(data, out List<CodeLabel> labels, out block);
@@ -649,6 +653,71 @@ public class SpriteEditor : MonoBehaviour {
     }
     PBar.Hide();
   }
+
+
+  public void SaveBin() {
+    // Show FileBrowser in select file mode
+    FileBrowser.Save(SaveBinPost, FileBrowser.FileType.Rom);
+  }
+  public void SaveBinPost(string path, string name) {
+    StartCoroutine(SavingBinPost(path, name));
+  }
+  public IEnumerator SavingBinPost(string path, string name) {
+    yield return PBar.Show("Saving", 0, 1 + w * h);
+    ByteChunk chunk = new ByteChunk();
+
+    SetButtons(-1);
+    byte[] block = new byte[2 + w * h];
+    block[0] = (byte)w;
+    block[1] = (byte)h;
+    int num = w * h;
+    yield return PBar.Progress(1);
+    for (int i = 0; i < num; i++) {
+      if (i % 4 == 0) yield return PBar.Progress(2 + i);
+      block[2+i] = Col.GetColorByte(pixels[i].Get());
+    }
+    PBar.Hide();
+
+    ByteReader.SaveBinBlock(path, name, chunk);
+    PBar.Hide();
+  }
+
+  public void LoadBin() {
+    FileBrowser.Load(PostLoadBin, FileBrowser.FileType.Rom);
+  }
+
+  public void PostLoadBin(string path) {
+    StartCoroutine(PostLoadingBin(path));
+  }
+  public IEnumerator PostLoadingBin(string path) {
+    yield return PBar.Show("Loading", 0, 256);
+    ByteChunk res = new ByteChunk();
+    ByteReader.ReadBinBlock(path, res);
+
+    PBar.Progress(128);
+    byte wb = res.block[0];
+    byte hb = res.block[1];
+    if (wb < 8 || hb < 8 || wb > 64 || hb > 64) {
+      Message.text = "This does not look like a sprite.";
+      PBar.Hide();
+      yield break;
+    }
+
+    for (int i = 0; i < sizes.Length; i++) {
+      if (sizes[i] <= wb) WidthSlider.SetValueWithoutNotify(i);
+      if (sizes[i] <= hb) HeightSlider.SetValueWithoutNotify(i);
+    }
+    ChangeSpriteSize();
+    yield return PBar.Show("Loading", 128, 128 + w * h);
+    for (int i = 0; i < w * h; i++) {
+      if (i % 4 == 0) yield return PBar.Progress(128 + i);
+      pixels[i].Set(Col.GetColor(res.block[2 + i]));
+    }
+    PBar.Hide();
+  }
+
+
+
 
 
   public void CloseValues() {
@@ -774,6 +843,7 @@ public class SpriteEditor : MonoBehaviour {
   }
 
   public TilemapEditor mapeditor;
+  public Confirm Confirm;
 }
 
 public enum ActionVal { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, Fill, FreeDraw, Pick }
