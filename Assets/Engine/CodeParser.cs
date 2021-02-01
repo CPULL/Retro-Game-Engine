@@ -190,6 +190,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgScreen = new Regex("[\\s]*screen[\\s]*\\(([^,]*),([^,]*)(,([^,]*)){0,1}(,([^,]*)){0,1}\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWait = new Regex("[\\s]*wait[\\s]*\\(([^,]+)(,[\\s]*([fn]))?\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDestroy = new Regex("[\\s]*destroy[\\s]*\\(([^,]+)\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgImage = new Regex("[\\s]*image[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSin = new Regex("[\\s]*sin[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCos = new Regex("[\\s]*cos[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -665,6 +666,19 @@ public class CodeParser : MonoBehaviour {
       int num = ParsePars(node, pars);
       if (num < 5) throw new Exception("Invalid Circle(), not enough parameters. Line: " + (linenumber + 1));
       if (num > 6) throw new Exception("Invalid Circle(), too many parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [Image] = circle([EXP], [EXP], [EXP], [EXP], [EXP], [[EXP],[EXP]])
+    // int pointer, int px, int py, int w, int h, int linestart = 0, int linesize = 0
+    if (expected.IsGood(Expected.Val.Statement) && rgImage.IsMatch(line)) {
+      Match m = rgImage.Match(line);
+      if (m.Groups.Count < 8) throw new Exception("Invalid Image() command. Line: " + (linenumber + 1));
+      CodeNode node = new CodeNode(BNF.IMAGE, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 5 && num != 7) throw new Exception("Invalid Image(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }

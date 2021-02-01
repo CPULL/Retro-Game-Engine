@@ -739,6 +739,27 @@ public class Arcade : MonoBehaviour {
     }
   }
 
+  void Image(int pointer, int px, int py, int w, int h, int linestart = 0, int linesize = 0) {
+    int pos;
+    for (int y = 0; y < h; y++)
+      for (int x = 0; x < w; x++) {
+        int xx = x + px;
+        int yy = y + py;
+        if (xx < 0 || xx >= sw || yy < 0 || yy > sh) continue;
+
+        if (linestart == 0 && linesize == 0) {
+          pos = pointer + x + w * y;
+        }
+        else {
+          pos = pointer + x + linestart + linesize * y;
+        }
+        Color32 pixel = Col.GetColor(mem[pos]);
+        pixels[x + sw * y] = pixel;
+        texture.SetPixel(x, hm1 - y, pixel);
+      }
+  }
+
+
   #endregion Drawing functions
 
   #region Sprites ****************************************************************************************************************************************************************************************************
@@ -1118,6 +1139,22 @@ public class Arcade : MonoBehaviour {
           }
           else
             Circle(cx.ToFlt(culture), cy.ToFlt(culture), rx.ToFlt(culture), ry.ToFlt(culture), col.ToByte(culture));
+        }
+        break;
+
+        case BNF.IMAGE: {
+          Value addr = Evaluate(n.CN1);
+          Value px = Evaluate(n.CN2);
+          Value py = Evaluate(n.CN3);
+          Value w = Evaluate(n.CN4);
+          Value h = Evaluate(n.CN5);
+          if (n.children.Count > 5) {
+            Value linestart = Evaluate(n.CN6);
+            Value linesize = Evaluate(n.CN7);
+            Image(addr.ToInt(culture), px.ToInt(culture), py.ToInt(culture), w.ToInt(culture), h.ToInt(culture), linestart.ToInt(culture), linesize.ToInt(culture));
+          }
+          else
+            Image(addr.ToInt(culture), px.ToInt(culture), py.ToInt(culture), w.ToInt(culture), h.ToInt(culture));
         }
         break;
 

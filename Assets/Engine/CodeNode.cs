@@ -597,6 +597,7 @@ public enum BNF {
   LINE,
   BOX,
   CIRCLE,
+  IMAGE,
   FRAME,
   DTIME,
   LEN,
