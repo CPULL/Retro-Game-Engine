@@ -7,13 +7,14 @@ using System.Text.RegularExpressions;
 
 [Serializable]
 public class ByteChunk {
+
   public List<CodeLabel> labels;
   public byte[] block;
   internal bool completed = false;
 
   internal void AddLabel(string name, int pos) {
     if (labels == null) labels = new List<CodeLabel>();
-    name = name.Replace(" ", "");
+    name = name.Trim().Replace(" ", "_");
 
     bool ok = false;
     while (!ok) {
