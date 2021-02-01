@@ -13,6 +13,7 @@ public class ByteChunk {
 
   internal void AddLabel(string name, int pos) {
     if (labels == null) labels = new List<CodeLabel>();
+    name = name.Replace(" ", "");
 
     bool ok = false;
     while (!ok) {

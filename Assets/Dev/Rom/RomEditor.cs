@@ -15,6 +15,7 @@ public class RomEditor : MonoBehaviour {
 
 
   string HandleDuplicateNames(string name, RomLine line) {
+    name = name.Replace(" ", "");
     if (!names.ContainsKey(name.ToLowerInvariant())) {
       names.Add(name.ToLowerInvariant(), line);
       return name;
