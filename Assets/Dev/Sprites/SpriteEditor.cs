@@ -623,7 +623,6 @@ public class SpriteEditor : MonoBehaviour {
   }
 
   void PostLoadImage(string path) {
-    Debug.Log(path);
     StartCoroutine(LoadImageCoroutine(path));
   }
   IEnumerator LoadImageCoroutine(string path) {
@@ -644,7 +643,7 @@ public class SpriteEditor : MonoBehaviour {
       for (int y = 0; y < h; y++) {
         int ty = h - y - 1;
         yield return PBar.Progress(12 + y);
-        for (int x = 0; x < h; x++) {
+        for (int x = 0; x < w; x++) {
           // Normalize the color
           int pos = x + w * ty;
           pixels[x + w * y].Set(Col.NormalizeColor(tps[pos].r, tps[pos].g, tps[pos].b, tps[pos].a));
@@ -676,7 +675,7 @@ public class SpriteEditor : MonoBehaviour {
       if (i % 4 == 0) yield return PBar.Progress(2 + i);
       block[2+i] = Col.GetColorByte(pixels[i].Get());
     }
-    PBar.Hide();
+    chunk.AddBlock("Sprite", block);
 
     ByteReader.SaveBinBlock(path, name, chunk);
     PBar.Hide();
