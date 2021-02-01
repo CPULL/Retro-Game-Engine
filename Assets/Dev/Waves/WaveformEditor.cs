@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -157,6 +155,117 @@ public class WaveformEditor : MonoBehaviour {
       UpdateWaveforms();
     }
   }
+
+
+  public void SaveBin() {
+    // Show FileBrowser in select file mode
+    FileBrowser.Save(SaveBinPost, FileBrowser.FileType.Rom);
+  }
+  public void SaveBinPost(string path, string name) {
+    StartCoroutine(SavingBinPost(path, name));
+  }
+  public IEnumerator SavingBinPost(string path, string name) {
+    yield return PBar.Show("Saving", 0, 52);
+    ByteChunk chunk = new ByteChunk();
+
+    int len = 7;
+    if (wave==Waveform.PCM && rawPCM != null) len += 4 + rawPCM.Length;
+    byte[] block = new byte[len];
+
+    block[0] = (byte)wave;
+    int pbyte = (int)(phase * 1000);
+    block[1] = (byte)((pbyte & 0xff00) >> 8);
+    block[2] = (byte)(pbyte & 0xff);
+
+    block[3] = (byte)attack;
+    block[4] = (byte)decay;
+    block[5] = (byte)sustain;
+    block[6] = (byte)release;
+    yield return PBar.Progress(25);
+
+    if (wave == Waveform.PCM) {
+      block[7] = (byte)((rawPCM.Length & 0xff000000) >> 24);
+      block[8] = (byte)((rawPCM.Length & 0xff0000) >> 16);
+      block[9] = (byte)((rawPCM.Length & 0xff00) >> 8);
+      block[10] = (byte)((rawPCM.Length & 0xff) >> 0);
+      for (int i = 0; i < rawPCM.Length; i++) {
+        if (i % 4 == 0) yield return PBar.Progress(25 + 25 * i / rawPCM.Length);
+        block[11 + i] = rawPCM[i];
+      }
+    }
+    chunk.AddBlock("Wave", block);
+    yield return PBar.Progress(51);
+
+    ByteReader.SaveBinBlock(path, name, chunk);
+    PBar.Hide();
+  }
+
+  public void LoadBin() {
+    FileBrowser.Load(PostLoadBin, FileBrowser.FileType.Rom);
+  }
+
+  public void PostLoadBin(string path) {
+    StartCoroutine(PostLoadingBin(path));
+  }
+  public IEnumerator PostLoadingBin(string path) {
+    yield return PBar.Show("Loading", 0, 52);
+    ByteChunk res = new ByteChunk();
+    ByteReader.ReadBinBlock(path, res);
+
+    PBar.Progress(25);
+    int pos = 0;
+    wave = (Waveform)res.block[pos++];
+    byte phaseb1 = res.block[pos++];
+    byte phaseb2 = res.block[pos++];
+    phase = (phaseb1 * 256 + phaseb2) / 1000f;
+
+    attack = res.block[pos++];
+    decay = res.block[pos++];
+    sustain = res.block[pos++];
+    release = res.block[pos++];
+    Attack.SetValueWithoutNotify(attack);
+    Decay.SetValueWithoutNotify(decay);
+    Sustain.SetValueWithoutNotify(sustain);
+    Release.SetValueWithoutNotify(release);
+
+    float val;
+    if (wave == Waveform.Square) {
+      if (phase < 0.01f) phase = .01f;
+      if (phase > 0.99f) phase = .99f;
+      val = 20f * phase - 10;
+    }
+    else {
+      if (phase < 0.01f) phase = .01f;
+      if (phase > 10f) phase = 10f;
+      val = 10 * phase - 10;
+      if (val > 0) val = 1.1f * phase - 1;
+      if (val == 0) phase = 1;
+    }
+    Phase.SetValueWithoutNotify(val);
+
+    OnSliderChange();
+    WaveChange((int)wave);
+
+    PBar.Progress(27);
+    // PCM
+    if (wave == Waveform.PCM) {
+      byte len1 = res.block[pos++];
+      byte len2 = res.block[pos++];
+      byte len3 = res.block[pos++];
+      byte len4 = res.block[pos++];
+      int len = (len1 << 24) + (len2 << 16) + (len3 << 8) + len4;
+      rawPCM = new byte[len];
+      for (int i = 0; i < len; i++) {
+        if (i % 4 == 0) yield return PBar.Progress(27 + 25 * i / rawPCM.Length);
+        rawPCM[i] = res.block[pos++];
+      }
+    }
+
+    PBar.Hide();
+  }
+
+
+
 
   void RenderOscilloscope() {
     float[] data = sounds.Oscillator;
