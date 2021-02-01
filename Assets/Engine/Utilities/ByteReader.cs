@@ -6,8 +6,21 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 
 public class NormLabel {
+  readonly static Regex rgLabel = new Regex("^[a-z][a-z0-9_]{0,11}$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
   public static string Normalize(string name) {
-
+    name = name.Trim().Replace(" ", "_");
+    if (!rgLabel.IsMatch(name)) {
+      string cleaned = "";
+      foreach (char c in name) {
+        if (c == '_' || (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'A'))
+          cleaned += c;
+        else
+          cleaned += "_";
+        if (cleaned.Length > 12) break;
+      }
+      if (!rgLabel.IsMatch(cleaned)) cleaned = "L" + cleaned;
+      name = cleaned;
+    }
     return name;
   }
 }
