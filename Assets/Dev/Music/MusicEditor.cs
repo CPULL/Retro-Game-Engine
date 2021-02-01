@@ -1934,9 +1934,31 @@ public class MusicEditor : MonoBehaviour {
   public TMP_InputField Values;
   public Button LoadSubButton;
 
+  void NormalizeWaveIDs() {
+    Dictionary<byte, byte> ids = new Dictionary<byte, byte>();
+    byte pos = 1;
+    foreach(Wave w in waves)
+      ids[(byte)w.id] = pos++;
+
+    int nv = music.NumVoices;
+    foreach (BlockData b in blocks) {
+      for (int i = 0; i < b.len; i++) {
+        for (int c = 0; c < nv; c++) {
+          NoteData note = b.chs[c][i];
+          if (note.IsType(NoteType.Wave)) {
+            byte id = (byte)note.GetVal(NoteType.Wave);
+            note.SetVal(NoteType.Wave, ids[id]);
+          }
+        }
+      }
+    }
+  }
+
   public void Save() {
+    NormalizeWaveIDs();
+
     int numv = music.NumVoices;
-    string res = music.name.Replace(":", "") + ":\n" +
+    string res = NormLabel.Normalize(music.name) + ":\n" +
                 numv.ToString("X2") + " " +
                 blocks.Count.ToString("X2") + " " +
                 waves.Count.ToString("X2") + " " +
@@ -1950,9 +1972,8 @@ public class MusicEditor : MonoBehaviour {
     foreach (Wave w in waves) {
       byte ph = (byte)((((int)(w.phase * 100)) & 0xff00) >> 8);
       byte pl = (byte)(((int)(w.phase * 100)) & 0xff);
-      res += "/* Wave id */ " +
-            w.id.ToString("X2") + "\n" +
-            w.name.Replace(":", "") + ":\n" +
+      res +=
+            NormLabel.Normalize(w.name) + ":\n" +
             ((int)w.wave).ToString("X2") + " " +
             ph.ToString("X2") + " " +
             pl.ToString("X2") + " " +
@@ -2015,7 +2036,7 @@ public class MusicEditor : MonoBehaviour {
 
 
     foreach (BlockData b in blocks) {
-      res += b.name.Replace(":", "") + ":\n" +
+      res += NormLabel.Normalize(b.name) + ":\n" +
             b.id.ToString("X2") + " " +
             b.len.ToString("X2") + " " +
             b.bpm.ToString("X2") + "\n";
@@ -2073,7 +2094,7 @@ public class MusicEditor : MonoBehaviour {
     LoadSubButton.enabled = true;
   }
 
-  public void PostLoad() {
+  public void PostLoadText() {
     if (!gameObject.activeSelf) return;
     string dataz = Values.text.Trim();
 
@@ -2086,6 +2107,11 @@ public class MusicEditor : MonoBehaviour {
       return;
     }
 
+    StartCoroutine(PostLoading(labels, block));
+  }
+  IEnumerator PostLoading(List<CodeLabel> labels, byte[] block) {
+    yield return PBar.Show("Loading", 0, 100);
+
     int pos = 0;
     waves.Clear();
     blocks.Clear();
@@ -2094,7 +2120,7 @@ public class MusicEditor : MonoBehaviour {
       voices = new byte[] { 0, 1, 2, 3, 255, 255, 255, 255 },
       blocks = new List<int>()
     };
-    if (labels.Count == 0) throw new Exception("Missing Music label");
+    if (labels.Count == 0) { PBar.Hide(); throw new Exception("Missing Music label"); }
     m.name = labels[0].name;
     NameInput.SetTextWithoutNotify(m.name);
 
@@ -2109,13 +2135,15 @@ public class MusicEditor : MonoBehaviour {
       m.blocks.Add(b == 255 ? -1 : b);
     }
 
+    yield return PBar.Show("Loading", 3, numw + numb + 3);
+
     for (int i = 0; i < numw; i++) {
-      if (labels.Count < i + 2) throw new Exception("Missing Wave label for wave #" + (i + 1));
+      if (labels.Count < i + 2) { PBar.Hide(); throw new Exception("Missing Wave label for wave #" + (i + 1)); }
       Wave w = new Wave {
         name = labels[i + 1].name.Trim()
       };
 
-      w.id = block[pos++];
+      w.id = (byte)(i + 1);
       w.wave = (Waveform)block[pos++];
       byte ph = block[pos++];
       byte pl = block[pos++];
@@ -2138,11 +2166,12 @@ public class MusicEditor : MonoBehaviour {
       }
 
       waves.Add(w);
+      yield return PBar.Progress(4 + i);
     }
 
 
     for (int i = 0; i < numb; i++) {
-      if (labels.Count < i + numw + 2) throw new Exception("Missing Block label for block #" + (i + 1));
+      if (labels.Count < i + numw + 2) { PBar.Hide(); throw new Exception("Missing Block label for block #" + (i + 1)); }
       BlockData b = new BlockData {
         name = labels[i + numw + 1].name,
         chs = new List<NoteData>[] {
@@ -2194,6 +2223,7 @@ public class MusicEditor : MonoBehaviour {
       }
 
       blocks.Add(b);
+      yield return PBar.Progress(4 + numw + i);
     }
 
     music = m;
@@ -2204,8 +2234,142 @@ public class MusicEditor : MonoBehaviour {
     MusicRegenerate();
     BlocksRegenerate();
     WavesRegenerate();
+    PBar.Hide();
   }
 
+  public void SaveBin() {
+    // Show FileBrowser in select file mode
+    FileBrowser.Save(SaveBinPost, FileBrowser.FileType.Rom);
+  }
+  public void SaveBinPost(string path, string name) {
+    StartCoroutine(SavingBinPost(path, name));
+  }
+  public IEnumerator SavingBinPost(string path, string name) {
+    yield return PBar.Show("Saving", 0, 5 + waves.Count + blocks.Count);
+    ByteChunk chunk = new ByteChunk();
+
+    // Normalize the IDs of waves
+    NormalizeWaveIDs();
+    yield return PBar.Progress(1);
+
+    byte[] block = new byte[4 + music.blocks.Count];
+    block[0] = (byte)music.NumVoices;
+    block[1] = (byte)blocks.Count;
+    block[2] = (byte)waves.Count;
+    block[3] = (byte)music.blocks.Count;
+    for (int i = 0; i < music.blocks.Count; i++)
+      block[4+i] = (byte)(music.blocks[i] < 1 ? 255 : music.blocks[i]);
+    chunk.AddBlock(music.name, block);
+    yield return PBar.Progress(2);
+
+    int step = 3;
+    foreach (Wave w in waves) {
+      int len = 7;
+      if (w.wave == Waveform.PCM && w.rawPCM != null) len += 4 + w.rawPCM.Length;
+      block = new byte[len];
+
+      block[0] = (byte)w.wave;
+      int pbyte = (int)(w.phase * 1000);
+      block[1] = (byte)((pbyte & 0xff00) >> 8);
+      block[2] = (byte)(pbyte & 0xff);
+
+      block[3] = w.a;
+      block[4] = w.d;
+      block[5] = w.s;
+      block[6] = w.r;
+      yield return PBar.Progress(-1);
+
+      if (w.wave == Waveform.PCM) {
+        block[7] = (byte)((w.rawPCM.Length & 0xff000000) >> 24);
+        block[8] = (byte)((w.rawPCM.Length & 0xff0000) >> 16);
+        block[9] = (byte)((w.rawPCM.Length & 0xff00) >> 8);
+        block[10] = (byte)((w.rawPCM.Length & 0xff) >> 0);
+        for (int i = 0; i < w.rawPCM.Length; i++) {
+          block[11 + i] = w.rawPCM[i];
+        }
+      }
+      chunk.AddBlock(w.name, block);
+      yield return PBar.Progress(step++);
+    }
+
+    // Calculate the size of the whole set of blocks
+    int numv = music.NumVoices;
+    foreach (BlockData b in blocks) {
+      int len = 3;
+      for (int r = 0; r < b.len; r++) {
+        for (int c = 0; c < numv; c++) {
+          NoteData note = b.chs[c][r];
+          len++;
+          if (note.IsEmpty())continue;
+          if (note.IsType(NoteType.Note)) len += 3;
+          if (note.IsType(NoteType.Wave)) len += 2;
+          if (note.IsType(NoteType.Volume)) len += 3;
+          if (note.IsType(NoteType.Pitch)) len += 3;
+          if (note.IsType(NoteType.Pan)) len += 3;
+        }
+      }
+      block = new byte[len];
+
+      block[0] = (byte)b.id;
+      block[1] = (byte)b.len;
+      block[2] = (byte)b.bpm;
+      int pos = 3;
+      for (int r = 0; r < b.len; r++) {
+        for (int c = 0; c < numv; c++) {
+          NoteData note = b.chs[c][r];
+          if (note.IsEmpty()) {
+            block[pos++] = 0;
+            continue;
+          }
+          block[pos++] = (byte)note.NoteType;
+          if (note.IsType(NoteType.Note)) {
+            short val = note.GetVal(NoteType.Note);
+            block[pos++] = (byte)((val & 0xff00) >> 8);
+            block[pos++] = (byte)(val & 0xff);
+            block[pos++] = note.GetLen(NoteType.Note);
+          }
+          if (note.IsType(NoteType.Wave)) {
+            short val = note.GetVal(NoteType.Wave);
+            block[pos++] = (byte)((val & 0xff00) >> 8);
+            block[pos++] = (byte)(val & 0xff);
+          }
+          if (note.IsType(NoteType.Volume)) {
+            short val = note.GetVal(NoteType.Volume);
+            block[pos++] = (byte)((val & 0xff00) >> 8);
+            block[pos++] = (byte)(val & 0xff);
+            block[pos++] = note.GetLen(NoteType.Volume);
+          }
+          if (note.IsType(NoteType.Pitch)) {
+            short val = note.GetVal(NoteType.Pitch);
+            block[pos++] = (byte)((val & 0xff00) >> 8);
+            block[pos++] = (byte)(val & 0xff);
+            block[pos++] = note.GetLen(NoteType.Pitch);
+          }
+          if (note.IsType(NoteType.Pan)) {
+            short val = note.GetVal(NoteType.Pan);
+            block[pos++] = (byte)((val & 0xff00) >> 8);
+            block[pos++] = (byte)(val & 0xff);
+            block[pos++] = note.GetLen(NoteType.Pan);
+          }
+        }
+      }
+      chunk.AddBlock(b.name, block);
+      yield return PBar.Progress(step++);
+    }
+
+    ByteReader.SaveBinBlock(path, name, chunk);
+    PBar.Hide();
+  }
+
+  public void LoadBin() {
+    FileBrowser.Load(PostLoadBin, FileBrowser.FileType.Rom);
+  }
+
+  public void PostLoadBin(string path) {
+    ByteChunk res = new ByteChunk();
+    ByteReader.ReadBinBlock(path, res);
+    StartCoroutine(PostLoading(res.labels, res.block));
+  }
 
 
   #endregion

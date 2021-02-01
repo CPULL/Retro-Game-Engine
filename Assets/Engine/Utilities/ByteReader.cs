@@ -5,6 +5,13 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 
+public class NormLabel {
+  public static string Normalize(string name) {
+
+    return name;
+  }
+}
+
 [Serializable]
 public class ByteChunk {
 
