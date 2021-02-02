@@ -31,10 +31,6 @@ public class Arcade : MonoBehaviour {
   public RawImage[] spriteImgs;
   Grob[] sprites;
 
-  public GameObject FileSelection;
-  public Transform FileSelectionGrid;
-  public GameObject FileButtonTemplate;
-
   float updateDelay = -1;
   float toWait = 0;
   CodeNode startCode;
@@ -209,48 +205,11 @@ public class Arcade : MonoBehaviour {
     audioManager.Init();
 
     if (SceneManager.GetActiveScene().name == "ArcadePlus") {
-      // Show cartridge selection menu
-      try {
-        string[] cards = Directory.GetFiles(Application.dataPath + "\\..\\Cartridges\\", "*.cartridge");
-        if (cards.Length == 0) throw new Exception("No cartridges in folder:\n" + Application.dataPath + "\\..\\Cartridges\\");
-        foreach(string file in cards) {
-          GameObject b = Instantiate(FileButtonTemplate, FileSelectionGrid);
-          b.SetActive(true);
-          FileInfo fi = new FileInfo(file);
-          string name = fi.Name.Substring(0, fi.Name.LastIndexOf('.'));
-          b.GetComponentInChildren<TextMeshProUGUI>().text = name;
-          if (name.Length > 35) b.GetComponentInChildren<TextMeshProUGUI>().fontSize = 12;
-          else if (name.Length > 32) b.GetComponentInChildren<TextMeshProUGUI>().fontSize = 14;
-          else if (name.Length > 29) b.GetComponentInChildren<TextMeshProUGUI>().fontSize = 16;
-          else if (name.Length > 25) b.GetComponentInChildren<TextMeshProUGUI>().fontSize = 18;
-          else if (name.Length > 16) b.GetComponentInChildren<TextMeshProUGUI>().fontSize = 20;
-
-          b.GetComponent<Button>().onClick.AddListener(
-            () => { 
-              SelectCartridge(fi.Name); 
-            }
-          );
-        }
-        FileSelection.SetActive(true);
-      } catch(Exception e) {
-        string msg = "";
-        for (int i = 0, l = 0; i < e.Message.Length; i++) {
-          char c = e.Message[i];
-          if (c == '\n') l = 0;
-          msg += c;
-          l++;
-          if (l == sw / 8 - 1) {
-            msg += "\n";
-            l = 0;
-          }
-        }
-        Write(msg, 4, 48, Col.C(5, 1, 0));
-        Debug.Log("!!!!!!!! " + e.Message + "\n" + e.StackTrace);
-      }
+      FileBrowser.Load(SelectCartridge, FileBrowser.FileType.Cartridges);
     }
     else {
       // Load Game.Cartridge
-      SelectCartridge("Game.cartridge");
+      SelectCartridge(Application.dataPath + "\\..\\Cartridges\\Game.cartridge");
     }
     texture.Apply();
 
@@ -260,26 +219,25 @@ public class Arcade : MonoBehaviour {
       stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
   }
 
-  public void SelectCartridge(string tag) {
-    if (FileSelection != null) FileSelection.SetActive(false);
+  public void SelectCartridge(string path) {
     string codefile;
-    try { codefile = File.ReadAllText(Application.dataPath + "/../Cartridges/" + tag); } catch (Exception) {
+    try { codefile = File.ReadAllText(path); } catch (Exception) {
       Write("No cardridge found!", 4, 40, Col.C(5, 1, 0));
-      Write("Path: " + Application.dataPath + "/../Cartridges/" + tag, 4, 50, Col.C(5, 1, 0), 0, 2);
+      Write("Path: " + path, 4, 50, Col.C(5, 1, 0), 0, 2);
       texture.Apply();
       return;
     }
 
     // Check if we have a rom file
     string rom = null;
-    string name = tag;
+    string name = path;
     int dot = name.LastIndexOf('.');
     if (dot != -1) 
       name = name.Substring(0, dot) + ".rom";
     else
       name += ".rom";
-    if (File.Exists(Application.dataPath + "/../Cartridges/" + name)) { // Yes, read the file as binary
-      rom = Application.dataPath + "/../Cartridges/" + name;
+    if (File.Exists(name)) { // Yes, read the file as binary
+      rom = name;
     }
 
     LoadCartridge(codefile, rom);

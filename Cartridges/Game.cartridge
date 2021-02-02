@@ -1,10 +1,10 @@
-Name: Pong
+Name: Shadow of the Beast
 
 Start {
-wait(.1)
+	wait(2)
 	clr(c133)
 	for(i=0,i<12,i++) {
-		sp[i] = Label("Sprite"+i)
+		sp[i] = Label("PlayerSprite"+i)
 		sprite(0, sp[i], 0)
 	}
 	for(i=0,i<320,i+=8) {
@@ -15,23 +15,30 @@ wait(.1)
 	write("Shadow of the Beast", 8,1,c301)
 	spos(0, 150, 120)
 	spen(0,1)
-	x=-20
+	t=0
+	xg=0
+	xm=0
 	Tilemap(1, 1, Mountains:)
-	TilePos(1, 0, 0)
+	TilePos(1, 0, 1)
 	Tilemap(2, 1, Grass:)
 	TilePos(2, 0, 128)
+	
 }
 
 update {
-	i++
-	if(i>=12)
-		i=0
-	sprite(0, sp[i], 0)
-	spos(0,x,120)
-	x+=1400 * deltaTime
-	frame
-	if (x>320)
-		x=-20
+	t+=2 * deltatime
+	i = 12 * t
+	if (t>1) t-=1
+	sprite(0, sp[i % 12], 0)
+
+	TilePos(2, xg, 128)
+	xg-=200 * deltaTime
+	if (xg < -448) xg+=448
+
+	TilePos(1, xm, 1)
+	xm-=120 * deltaTime
+	if (xm < -448) xm+=448
+	
 }
 
 

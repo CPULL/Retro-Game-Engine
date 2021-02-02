@@ -22,4 +22,4 @@ In tilemap add screen reference frame
 
 Use normal filebrowser in ArcadePlus
 
-Add "Edit" buttons in RomEdit
+Add "Edit" buttons in RomEdit (music, tilemap)
