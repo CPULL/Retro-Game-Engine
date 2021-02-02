@@ -294,5 +294,34 @@ public class RomEditor : MonoBehaviour {
     }
   }
 
+  public void MoveAllUp() {
+    if (lines == null || lines.Count < 2 || lines[0].Check.isOn) return;
+    for (int i = 0; i < lines.Count; i++) {
+      if (lines[i].Check.isOn) {
+        RomLine tmp = lines[i - 1];
+        lines[i - 1] = lines[i];
+        lines[i] = tmp;
+      }
+    }
+    for (int i = 0; i < lines.Count; i++) {
+      lines[i].transform.SetSiblingIndex(i);
+    }
+  }
+
+  public void MoveAllDown() {
+    if (lines == null || lines.Count < 2 || lines[lines.Count - 1].Check.isOn) return;
+    for (int i = lines.Count - 1; i >= 0; i--) {
+      if (lines[i].Check.isOn) {
+        RomLine tmp = lines[i + 1];
+        lines[i + 1] = lines[i];
+        lines[i] = tmp;
+      }
+    }
+    for (int i = 0; i < lines.Count; i++) {
+      lines[i].transform.SetSiblingIndex(i);
+    }
+  }
+
+
 }
 
