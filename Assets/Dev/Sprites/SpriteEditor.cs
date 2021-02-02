@@ -675,7 +675,7 @@ public class SpriteEditor : MonoBehaviour {
       if (i % w == 0) yield return PBar.Progress(2 + i);
       block[2+i] = Col.GetColorByte(pixels[i].Get());
     }
-    chunk.AddBlock("Sprite", block);
+    chunk.AddBlock("Sprite", LabelType.Sprite, block);
 
     ByteReader.SaveBinBlock(path, name, chunk);
     PBar.Hide();

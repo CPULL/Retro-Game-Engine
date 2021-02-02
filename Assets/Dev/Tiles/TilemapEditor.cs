@@ -389,13 +389,13 @@ public class TilemapEditor : MonoBehaviour {
         block[pos++] = map[x, y].rot;
       }
     }
-    chunk.AddBlock("Tilemap", block);
+    chunk.AddBlock("Tilemap", LabelType.Tilemap, block);
     yield return PBar.Progress(2);
 
     // Tiles
     for (int i = 0; i < Palette.Count; i++) {
       TileInPalette tile = Palette[(byte)(i + 1)];
-      chunk.AddBlock("Tile" + i, tile.rawData);
+      chunk.AddBlock("Tile" + i, LabelType.Tile, tile.rawData);
       yield return PBar.Progress(3 + i);
     }
 

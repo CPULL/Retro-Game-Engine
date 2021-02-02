@@ -15,6 +15,7 @@ public class RomEditor : MonoBehaviour {
   public Button LoadSubButton;
   public TMP_InputField GlobalName;
   public Toggle GlobalCheckmark;
+  public TMP_Dropdown ItemType;
 
   readonly Regex rgNumPart = new Regex("([^0-9]*([0-9]*))+", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
 
@@ -80,6 +81,8 @@ public class RomEditor : MonoBehaviour {
       line.gameObject.name = l.name;
       line.gameObject.SetActive(true);
       line.Label.SetTextWithoutNotify(l.name);
+      line.Type.text = (int)l.type + " " + l.type.ToString();
+      line.ltype = l.type;
       lines.Add(line);
       line.Delete.onClick.AddListener(() => { Delete(line); });
       line.MoveUp.onClick.AddListener(() => { MoveUp(line); });
@@ -146,6 +149,8 @@ public class RomEditor : MonoBehaviour {
       line.gameObject.name = l.name;
       line.gameObject.SetActive(true);
       line.Label.SetTextWithoutNotify(l.name);
+      line.Type.text = (int)l.type + " " + l.type.ToString();
+      line.ltype = l.type;
       lines.Add(line);
       line.Delete.onClick.AddListener(() => { Delete(line); });
       line.MoveUp.onClick.AddListener(() => { MoveUp(line); });
@@ -201,7 +206,7 @@ public class RomEditor : MonoBehaviour {
     foreach (Transform t in Container) {
       yield return PBar.Progress(pos++);
       RomLine line = t.GetComponent<RomLine>();
-      chunk.AddBlock(line.Label.text.Trim(), line.Data);
+      chunk.AddBlock(line.Label.text.Trim(), line.ltype, line.Data);
     }
     yield return PBar.Progress(pos++);
     ByteReader.SaveBinBlock(path, name, chunk);
@@ -349,6 +354,13 @@ public class RomEditor : MonoBehaviour {
     }
   }
 
-
+  public void ChangeType() {
+    foreach(RomLine l in lines) {
+      if (l.Check.isOn) {
+        l.Type.text = ItemType.value + " " + ((LabelType)ItemType.value).ToString();
+        l.ltype = (LabelType)ItemType.value;
+      }
+    }
+  }
 }
 

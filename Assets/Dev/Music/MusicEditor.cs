@@ -2261,7 +2261,7 @@ public class MusicEditor : MonoBehaviour {
     block[3] = (byte)music.blocks.Count;
     for (int i = 0; i < music.blocks.Count; i++)
       block[4+i] = (byte)(music.blocks[i] < 1 ? 255 : music.blocks[i]);
-    chunk.AddBlock(music.name, block);
+    chunk.AddBlock(music.name, LabelType.Music, block);
     yield return PBar.Progress(2);
 
     int step = 3;
@@ -2290,7 +2290,7 @@ public class MusicEditor : MonoBehaviour {
           block[11 + i] = w.rawPCM[i];
         }
       }
-      chunk.AddBlock(w.name, block);
+      chunk.AddBlock(w.name, LabelType.Wave, block);
       yield return PBar.Progress(step++);
     }
 
@@ -2355,7 +2355,7 @@ public class MusicEditor : MonoBehaviour {
           }
         }
       }
-      chunk.AddBlock(b.name, block);
+      chunk.AddBlock(b.name, LabelType.MusicBlock, block);
       yield return PBar.Progress(step++);
     }
 

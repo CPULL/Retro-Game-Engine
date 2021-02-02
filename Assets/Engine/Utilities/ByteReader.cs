@@ -50,11 +50,11 @@ public class ByteChunk {
     labels.Add(new CodeLabel { name = name, start = pos });
   }
 
-  internal void AddBlock(string label, byte[] data) {
+  internal void AddBlock(string label, LabelType ltype, byte[] data) {
     if (labels == null) labels = new List<CodeLabel>();
     int pos = 0;
     if (block != null) pos = block.Length;
-    labels.Add(new CodeLabel { name = label, start = pos });
+    labels.Add(new CodeLabel { name = label, type = ltype, start = pos });
     if (block == null) block = data;
     else {
       byte[] newb = new byte[pos + data.Length];

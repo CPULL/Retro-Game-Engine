@@ -195,7 +195,7 @@ public class WaveformEditor : MonoBehaviour {
         block[11 + i] = rawPCM[i];
       }
     }
-    chunk.AddBlock("Wave", block);
+    chunk.AddBlock("Wave", LabelType.Wave, block);
     yield return PBar.Progress(51);
 
     ByteReader.SaveBinBlock(path, name, chunk);
