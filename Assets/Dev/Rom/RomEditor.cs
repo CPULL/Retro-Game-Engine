@@ -85,6 +85,7 @@ public class RomEditor : MonoBehaviour {
       line.MoveUp.onClick.AddListener(() => { MoveUp(line); });
       line.MoveDown.onClick.AddListener(() => { MoveDown(line); });
       line.Label.onEndEdit.AddListener((name) => { UpdateName(line, name); });
+      line.Check.onValueChanged.AddListener((check) => { SelectLine(line, check); });
     }
     step = 0;
     for (int i = 0; i < labels.Count - 1; i++) {
@@ -150,6 +151,7 @@ public class RomEditor : MonoBehaviour {
       line.MoveUp.onClick.AddListener(() => { MoveUp(line); });
       line.MoveDown.onClick.AddListener(() => { MoveDown(line); });
       line.Label.onEndEdit.AddListener((name) => { UpdateName(line, name); });
+      line.Check.onValueChanged.AddListener((check) => { SelectLine(line, check); });
     }
     step = 0;
     for (int i = 0; i < res.labels.Count - 1; i++) {
@@ -261,6 +263,31 @@ public class RomEditor : MonoBehaviour {
       }
     name = HandleDuplicateNames(name, line);
     line.Label.SetTextWithoutNotify(name);
+  }
+
+  public void SelectLine(RomLine line, bool check) {
+    if (!check || !Input.GetKey(KeyCode.LeftShift)) return;
+
+    int start = -1;
+    int end = -1;
+    for (int i = 0; i < lines.Count; i++) {
+      if (lines[i] == line) {
+        end = i;
+        if (start != -1) break;
+      }
+      else if (lines[i].Check.isOn) {
+        start = i;
+        if (end != -1) break;
+      }
+    }
+
+    if (start == -1 || end == -1) return;
+    if (start > end) {
+      int tmp = start; start = end; end = tmp;
+    }
+    for (int i = start; i <= end; i++) {
+      lines[i].Check.SetIsOnWithoutNotify(true);
+    }
   }
 
   public void GlobalCheckChange() {
