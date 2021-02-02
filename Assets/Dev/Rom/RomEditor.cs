@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
@@ -369,7 +370,40 @@ public class RomEditor : MonoBehaviour {
   }
 
   public void EditLine() {
+    foreach(RomLine line in lines) {
+      if (line.Check.isOn) {
+        switch (line.ltype) {
+          case LabelType.Sprite:
+            Dev.inst.SpriteEditor();
+            spriteEditor.ImportFrom(line.Data);
+            gameObject.SetActive(false);
+            break;
 
+          case LabelType.Wave:
+            Dev.inst.WaveformEditor();
+            waveformpEditor.Import(line.Data);
+            break;
+
+          case LabelType.Tilemap:
+            break;
+          case LabelType.Music:
+            break;
+        }
+        break;
+      }
+    }
+  }
+
+  internal void UpdateLine(byte[] data, LabelType lt) {
+    Dev.inst.RomEditor();
+    foreach (RomLine line in lines) {
+      if (line.Check.isOn && line.ltype == lt) {
+        line.Data = data;
+        line.size = data.Length;
+        line.Size.text = data.Length.ToString();
+      }
+      break;
+    }
   }
 }
 

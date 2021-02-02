@@ -110,3 +110,12 @@ public class Dev : MonoBehaviour {
 
 }
 
+public enum EditComponent {
+  SpriteDitor,
+  WaveEditor,
+  MusicEditor,
+  TilesEditor,
+  RomEditor,
+  CodeEditor,
+  FontEditor,
+}

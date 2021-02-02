@@ -833,15 +833,53 @@ public class SpriteEditor : MonoBehaviour {
 
     SetUndo(false);
     Done.gameObject.SetActive(true);
+    editFrom = EditComponent.TilesEditor;
   }
 
+  public void ImportFrom(byte[] data) {
+    if (pixels == null) {
+      pixels = new Pixel[data[0]/*tw*/ * data[1]/*th*/];
+      w = data[0];
+      h = data[1];
+    }
+    for (int i = 0; i < sizes.Length; i++) {
+      if (sizes[i] <= w) WidthSlider.SetValueWithoutNotify(i);
+      if (sizes[i] <= h) HeightSlider.SetValueWithoutNotify(i);
+    }
+    ChangeSpriteSize();
+
+    for (int x = 0; x < w; x++)
+      for (int y = 0; y < h; y++) {
+        byte col = data[2 + x + w * y];
+        pixels[x + w * y].Set(Col.GetColor(col));
+      }
+    SetUndo(false);
+    Done.gameObject.SetActive(true);
+    editFrom = EditComponent.RomEditor;
+  }
+
+  EditComponent editFrom;
+
   public void CompleteTileEditing() {
-    mapeditor.UpdateTile(pixels);
-    Dev.inst.TilemapEditor();
+    if (editFrom == EditComponent.TilesEditor) {
+      mapeditor.UpdateTile(pixels);
+      Dev.inst.TilemapEditor();
+    }
+    else if (editFrom == EditComponent.RomEditor) {
+      byte[] data = new byte[2 + pixels.Length];
+      data[0] = (byte)w;
+      data[1] = (byte)h;
+      for (int i = 0; i < pixels.Length; i++) {
+        Color32 c = pixels[i].Get();
+        data[2 + i] = Col.GetColorByte(c);
+      }
+      romeditor.UpdateLine(data, LabelType.Sprite);
+    }
     gameObject.SetActive(false);
   }
 
   public TilemapEditor mapeditor;
+  public RomEditor romeditor;
   public Confirm Confirm;
 }
 

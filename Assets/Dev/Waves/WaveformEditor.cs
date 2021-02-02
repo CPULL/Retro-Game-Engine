@@ -629,20 +629,103 @@ public class WaveformEditor : MonoBehaviour {
 
     OnSliderChange();
     WaveChange((int)wave);
+    editFrom = EditComponent.MusicEditor;
   }
 
+  public void Import(byte[] data) {
+    int pos = 0;
+    wave = (Waveform)data[pos++];
+    byte phaseb1 = data[pos++];
+    byte phaseb2 = data[pos++];
+    phase = (phaseb1 * 256 + phaseb2) / 1000f;
+
+    attack = data[pos++];
+    decay = data[pos++];
+    sustain = data[pos++];
+    release = data[pos++];
+    Attack.SetValueWithoutNotify(attack);
+    Decay.SetValueWithoutNotify(decay);
+    Sustain.SetValueWithoutNotify(sustain);
+    Release.SetValueWithoutNotify(release);
+
+    float val;
+    if (wave == Waveform.Square) {
+      if (phase < 0.01f) phase = .01f;
+      if (phase > 0.99f) phase = .99f;
+      val = 20f * phase - 10;
+    }
+    else {
+      if (phase < 0.01f) phase = .01f;
+      if (phase > 10f) phase = 10f;
+      val = 10 * phase - 10;
+      if (val > 0) val = 1.1f * phase - 1;
+      if (val == 0) phase = 1;
+    }
+    Phase.SetValueWithoutNotify(val);
+
+    PBar.Progress(27);
+    // PCM
+    if (wave == Waveform.PCM) {
+      byte len1 = data[pos++];
+      byte len2 = data[pos++];
+      byte len3 = data[pos++];
+      byte len4 = data[pos++];
+      int len = (len1 << 24) + (len2 << 16) + (len3 << 8) + len4;
+      rawPCM = new byte[len];
+      int step = 1 + len / 25;
+      for (int i = 0; i < len; i++) {
+        rawPCM[i] = data[pos++];
+      }
+    }
+
+    OnSliderChange();
+    WaveChange((int)wave);
+
+    Done.gameObject.SetActive(true);
+    editFrom = EditComponent.RomEditor;
+  }
+
+  EditComponent editFrom;
 
 
   public Button Done;
 
   public void CompleteWaveEditing() {
-    musiceditor.CopyFromWaveEditor();
-    Done.gameObject.SetActive(false);
-    Dev.inst.MusicEditor();
+    if (editFrom == EditComponent.MusicEditor) {
+      musiceditor.CopyFromWaveEditor();
+      Done.gameObject.SetActive(false);
+      Dev.inst.MusicEditor();
+    }
+    else if(editFrom == EditComponent.RomEditor) {
+      int len = 7;
+      if (wave == Waveform.PCM && rawPCM != null) len += 4 + rawPCM.Length;
+      byte[] data = new byte[len];
+
+      data[0] = (byte)wave;
+      int pbyte = (int)(phase * 1000);
+      data[1] = (byte)((pbyte & 0xff00) >> 8);
+      data[2] = (byte)(pbyte & 0xff);
+      data[3] = (byte)attack;
+      data[4] = (byte)decay;
+      data[5] = (byte)sustain;
+      data[6] = (byte)release;
+      if (wave == Waveform.PCM) {
+        data[7] = (byte)((rawPCM.Length & 0xff000000) >> 24);
+        data[8] = (byte)((rawPCM.Length & 0xff0000) >> 16);
+        data[9] = (byte)((rawPCM.Length & 0xff00) >> 8);
+        data[10] = (byte)((rawPCM.Length & 0xff) >> 0);
+        for (int i = 0; i < rawPCM.Length; i++) {
+          data[11 + i] = rawPCM[i];
+        }
+      }
+      romeditor.UpdateLine(data, LabelType.Wave);
+    }
+
     gameObject.SetActive(false);
   }
 
   public MusicEditor musiceditor;
+  public RomEditor romeditor;
 
 
 }
