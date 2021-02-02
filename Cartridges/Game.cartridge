@@ -16,6 +16,10 @@ wait(.1)
 	spos(0, 150, 120)
 	spen(0,1)
 	x=-20
+	Tilemap(1, 1, Mountains:)
+	TilePos(1, 0, 0)
+	Tilemap(2, 1, Grass:)
+	TilePos(2, 0, 128)
 }
 
 update {

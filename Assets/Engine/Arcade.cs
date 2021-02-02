@@ -851,7 +851,7 @@ public class Arcade : MonoBehaviour {
   void TilePos(byte id, int scrollx, int scrolly, byte order = 255, bool enabled = true) {
     if (!tilemaps.ContainsKey(id)) throw new Exception("Undefined Tilemap with ID = " + id);
     TMap t = tilemaps[id];
-    t.transform.localPosition = new Vector3(scaleW * scrollx, scaleH * scrolly, 0);
+    t.transform.localPosition = new Vector3(scaleW * scrollx, -scaleH * scrolly, 0);
     if (order != 255) {
       if (order < 0) order = 0;
       if (order > 8) order = 8;
