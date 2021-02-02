@@ -276,5 +276,23 @@ public class RomEditor : MonoBehaviour {
     }
   }
 
+  public void DeleteAllRows() {
+    int num = 0;
+    foreach (Transform t in Container)
+      if (t.GetComponent<RomLine>().Check.isOn)
+        num++;
+    if (num > 0)
+      Confirm.Set("Confirm to delete " + num + " items?", DeleteAllRowsConfirmed);
+  }
+
+  public void DeleteAllRowsConfirmed() {
+    foreach (Transform t in Container) {
+      RomLine line = t.GetComponent<RomLine>();
+      if (!line.Check.isOn) continue;
+      toDelete = line;
+      DeleteConfirmed();
+    }
+  }
+
 }
 
