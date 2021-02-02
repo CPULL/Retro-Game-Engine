@@ -16,6 +16,11 @@ public class RomEditor : MonoBehaviour {
   public TMP_InputField GlobalName;
   public Toggle GlobalCheckmark;
   public TMP_Dropdown ItemType;
+  public SpriteEditor spriteEditor;
+  public TilemapEditor tilemapEditor;
+  public MusicEditor musicEditor;
+  public WaveformEditor waveformpEditor;
+  public Button EditButton;
 
   readonly Regex rgNumPart = new Regex("([^0-9]*([0-9]*))+", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
 
@@ -361,6 +366,10 @@ public class RomEditor : MonoBehaviour {
         l.ltype = (LabelType)ItemType.value;
       }
     }
+  }
+
+  public void EditLine() {
+
   }
 }
 
