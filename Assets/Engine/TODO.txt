@@ -22,3 +22,5 @@ error in tilemap for tile size sliders (the start too big)
 In tilemap add screen reference frame
 In romeditor add ability to select multiple items (checkmark) and then apply the same action to all of them (rename, up, down, delete)
 Add "type" to items in rom and implement preview and jump to edit
+
+Use normal filebrowser in ArcadePlus

@@ -6,9 +6,10 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 
 public class NormLabel {
-  readonly static Regex rgLabel = new Regex("^[a-z][a-z0-9_]{0,11}$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
+  readonly static Regex rgLabel = new Regex("^[a-z][a-z0-9_]{0,31}$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
   public static string Normalize(string name) {
     name = name.Trim().Replace(" ", "_");
+    if (name.Length > 32) name = name.Substring(0, 32);
     if (!rgLabel.IsMatch(name)) {
       string cleaned = "";
       foreach (char c in name) {

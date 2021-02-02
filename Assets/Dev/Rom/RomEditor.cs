@@ -13,6 +13,8 @@ public class RomEditor : MonoBehaviour {
   public Confirm Confirm;
   public TMP_InputField Values;
   public Button LoadSubButton;
+  public TMP_InputField GlobalName;
+  public Toggle GlobalCheckmark;
 
   readonly Regex rgNumPart = new Regex("([^0-9]*([0-9]*))+", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
 
@@ -260,5 +262,19 @@ public class RomEditor : MonoBehaviour {
     name = HandleDuplicateNames(name, line);
     line.Label.SetTextWithoutNotify(name);
   }
+
+  public void GlobalCheckChange() {
+    foreach (Transform t in Container)
+      t.GetComponent<RomLine>().Check.SetIsOnWithoutNotify(GlobalCheckmark.isOn);
+  }
+
+  public void RenameAllRows() {
+    foreach (Transform t in Container) {
+      RomLine line = t.GetComponent<RomLine>();
+      if (!line.Check.isOn) continue;
+      UpdateName(line, GlobalName.text);
+    }
+  }
+
 }
 
