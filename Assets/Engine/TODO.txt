@@ -21,4 +21,8 @@ In tilemap add screen reference frame
 Add "Edit" buttons in RomEdit (music, tilemap)
 
 Add global TryCatch in Dev tools
-Handle loading errors (data size is shorter than expected): sprites, music, waves, arcade
+Handle loading errors (data size is shorter than expected): music, arcade
+
+Screen sizes
+256, 264, 272, 280, 288, 296, 304, 312, 320
+180, 188, 192, 200, 208, 216, 224, 232, 240, 248, 256

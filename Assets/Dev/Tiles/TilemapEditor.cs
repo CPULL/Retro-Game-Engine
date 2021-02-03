@@ -981,4 +981,33 @@ public class TilemapEditor : MonoBehaviour {
     PBar.Hide();
   }
 
+  public TextMeshProUGUI SreenSizeText;
+  public TextMeshProUGUI SreenSizeSubText;
+  public GameObject SreenSizeVals;
+  public Slider ScreenH;
+  public Slider ScreenV;
+  public void ChangeScreenSize() {
+    SreenSizeVals.SetActive(true);
+  }
+
+  public void ChangeScreenSizeCompleted() {
+    SreenSizeVals.SetActive(false);
+    // FIXME set the screen visible or not and rescale tiles and screen
+  }
+
+  public void DisableScreen() {
+    SreenSizeText.text = "Screen\nno";
+    SreenSizeSubText.text = "Disabled";
+  }
+  public void ChangeScreenSlider() {
+    int sh = (int)ScreenH.value * 8 + 160;
+    if (sh < 160) sh = 160;
+    if (sh > 320) sh = 320;
+    int sv = (int)ScreenV.value * 8 + 100;
+    if (sv < 100) sv = 100;
+    if (sv > 256) sv = 256;
+
+    SreenSizeText.text = "Screen\n" + sh + "x" + sv;
+    SreenSizeSubText.text = sh + "x" + sv;
+  }
 }
