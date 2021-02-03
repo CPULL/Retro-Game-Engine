@@ -8,7 +8,7 @@ Start {
 		sprite(0, sp[i], 0)
 	}
 	for(i=0,i<320,i+=8) {
-		image(background:+2, i, 64, 8, 64)
+		image(background:+2, i, 128-48-47-64, 8, 64)
 	}
 	image(moon:+2, 220, 20, 48, 48)
 	box(0,128,320,180,c152, c152)
@@ -19,10 +19,12 @@ Start {
 	xg=0
 	xm=0
 	Tilemap(1, 1, Mountains:)
-	TilePos(1, 0, 1)
-	Tilemap(2, 1, Grass:)
-	TilePos(2, 0, 128)
+	TilePos(1, 0, 180-48-47)
+	Tilemap(2, 2, Grass:)
+	TilePos(2, 0, 180-48)
 	
+	gsize = 40*64-320
+	msize = 24*64-320
 }
 
 update {
@@ -31,15 +33,17 @@ update {
 	if (t>1) t-=1
 	sprite(0, sp[i % 12], 0)
 
-	TilePos(2, xg, 128)
+	TilePos(2, xg, 180-48)
 	xg-=200 * deltaTime
-	if (xg < -448) xg+=448
+	if (xg < -((40*64)-320)) xg+=(40*(64-320))
 
-	TilePos(1, xm, 1)
+	TilePos(1, xm, 180-48-47)
 	xm-=120 * deltaTime
-	if (xm < -448) xm+=448
+	if (xm < -msize) xm+=msize
 }
 
+// Mountais 24x2 54x24
+// Grass 40x2 64x24
 
 Config {
 	screen(320,180)

@@ -24,9 +24,9 @@ public class TMap : MonoBehaviour {
     th = data[pos++];
     int numtiles = data[pos++];
     if (tw < 8) tw = 8;
-    if (tw > 32) tw = 32;
+    if (tw > 64) tw = 64;
     if (th < 8) th = 8;
-    if (th > 32) th = 32;
+    if (th > 64) th = 64;
 
     int mapstart = pos; // Save for later
     pos += w * h * 2;
