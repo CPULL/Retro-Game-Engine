@@ -1,7 +1,7 @@
 Name: Shadow of the Beast
 
 Start {
-	wait(2)
+//	wait(2)
 	clr(c133)
 	for(i=0,i<12,i++) {
 		sp[i] = Label("PlayerSprite"+i)
@@ -38,10 +38,7 @@ update {
 	TilePos(1, xm, 1)
 	xm-=120 * deltaTime
 	if (xm < -448) xm+=448
-	
 }
-
-
 
 
 Config {

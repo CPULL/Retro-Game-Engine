@@ -212,11 +212,6 @@ public class Arcade : MonoBehaviour {
       SelectCartridge(Application.dataPath + "\\..\\Cartridges\\Game.cartridge");
     }
     texture.Apply();
-
-    if (startCode != null)
-      stacks.AddStack(startCode, null, startCode.origLine, startCode.origLineNum);
-    else if (updateCode != null)
-      stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
   }
 
   public void SelectCartridge(string path) {
@@ -378,6 +373,12 @@ public class Arcade : MonoBehaviour {
         }
       }
 
+      texture.Apply();
+
+      if (startCode != null)
+        stacks.AddStack(startCode, null, startCode.origLine, startCode.origLineNum);
+      else if (updateCode != null)
+        stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
     } catch (Exception e) {
       string msg = "";
       for (int i = 0, l = 0; i < e.Message.Length; i++) {
@@ -390,7 +391,8 @@ public class Arcade : MonoBehaviour {
           l = 0;
         }
       }
-      Write(msg, 4, 48, Col.C(5, 1, 0));
+      Write("Error in loading!\n" + msg, 4, 48, Col.C(5, 1, 0));
+      texture.Apply();
       Debug.Log("Error in loading! " + e.Message + "\n" + e.StackTrace);
     }
   }

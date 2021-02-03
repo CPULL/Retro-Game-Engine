@@ -256,7 +256,7 @@ public class CodeParser : MonoBehaviour {
   string currentFunction = null; // Used to keep track of the current parsed functions to have the local variables
   CodeNode currentFunctionParameters = null; // Used to keep track of the current parsed functions to have the local variables
 
-
+  string pasersedSectionForException = "";
   public CodeNode Parse(string file, Variables variables, bool parseDataSection) {
     try {
       // Start by replacing all the problematic stuff
@@ -321,6 +321,7 @@ public class CodeParser : MonoBehaviour {
 
         m = rgStart.Match(line);
         if (m.Success) {
+          pasersedSectionForException = "Start";
           // find the end of the block, and parse the result
           int end = FindEndOfBlock(lines, linenumber);
           if (end == -1) throw new Exception("\"START\" section does not end");
@@ -333,6 +334,7 @@ public class CodeParser : MonoBehaviour {
 
         m = rgUpdate.Match(line);
         if (m.Success) {
+          pasersedSectionForException = "Update";
           // find the end of the block, and parse the result
           int end = FindEndOfBlock(lines, linenumber);
           if (end == -1) throw new Exception("\"UPDATE\" section does not end");
@@ -345,6 +347,7 @@ public class CodeParser : MonoBehaviour {
 
         m = rgConfig.Match(line);
         if (m.Success) {
+          pasersedSectionForException = "Config";
           // find the end of the block, and parse the result
           int end = FindEndOfBlock(lines, linenumber);
           if (end == -1) throw new Exception("\"CONFIG\" section does not end");
@@ -358,6 +361,7 @@ public class CodeParser : MonoBehaviour {
         if (parseDataSection) {
           m = rgData.Match(line);
           if (m.Success) {
+            pasersedSectionForException = "Data";
             // find the end of the block, and parse the result
             int end = FindEndOfBlock(lines, linenumber);
             if (end == -1) throw new Exception("\"DATA\" section does not end");
@@ -371,7 +375,9 @@ public class CodeParser : MonoBehaviour {
 
         m = rgFunction.Match(line);
         if (m.Success) {
+          pasersedSectionForException = "Function";
           string fname = m.Groups[1].Value.Trim().ToLowerInvariant();
+          pasersedSectionForException = "Function: " + fname;
           CodeNode f = functions[fname];
           CodeNode b = new CodeNode(BNF.BLOCK, null, 0);
           f.Add(b);
@@ -389,8 +395,9 @@ public class CodeParser : MonoBehaviour {
       }
       return res;
     } catch (Exception e) {
-      Debug.Log(e.Message + "\nCurrent line = " + (linenumber + 1) + "\n" + e.StackTrace);
-      throw e;
+      string error = "Parse error in " + pasersedSectionForException + ". Line = " + (linenumber + 1) + "\n" + e.Message;
+      Debug.Log(error + "\n" + e.StackTrace);
+      throw new Exception(error);
     }
   }
 
