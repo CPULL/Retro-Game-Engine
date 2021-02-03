@@ -212,7 +212,14 @@ public class WaveformEditor : MonoBehaviour {
   public IEnumerator PostLoadingBin(string path) {
     yield return PBar.Show("Loading", 0, 52);
     ByteChunk res = new ByteChunk();
-    ByteReader.ReadBinBlock(path, res);
+    try {
+      ByteReader.ReadBinBlock(path, res);
+    } catch (System.Exception e) {
+      Dev.inst.HandleError("Parsing error: " + e.Message);
+      yield break;
+    }
+
+    if (res.block.Length <= 7) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a wave"); yield break; }
 
     PBar.Progress(25);
     int pos = 0;
@@ -251,6 +258,7 @@ public class WaveformEditor : MonoBehaviour {
     PBar.Progress(27);
     // PCM
     if (wave == Waveform.PCM) {
+      if (res.block.Length <= 12) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a PCM wave"); yield break; }
       byte len1 = res.block[pos++];
       byte len2 = res.block[pos++];
       byte len3 = res.block[pos++];
@@ -258,6 +266,7 @@ public class WaveformEditor : MonoBehaviour {
       int len = (len1 << 24) + (len2 << 16) + (len3 << 8) + len4;
       rawPCM = new byte[len];
       int step = 1 + len / 25;
+      if (res.block.Length <= 7 + len) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a wave"); yield break; }
       for (int i = 0; i < len; i++) {
         if (i % step == 0) yield return PBar.Progress(27 + 25 * i / len);
         rawPCM[i] = res.block[pos++];
