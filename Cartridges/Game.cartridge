@@ -16,15 +16,24 @@ Start {
 	xgu=0
 	xgd=0
 	xm=0
-	Tilemap(1, 1, Mountains:)
+	Tilemap(1, 3, Mountains:)
 	TilePos(1, 0, 84)
-	Tilemap(2, 2, GrassUp:)
+	Tilemap(2, 4, GrassUp:)
 	TilePos(2, 0, 132)
-	Tilemap(3, 3, GrassDown:)
+	Tilemap(3, 4, GrassDown:)
 	TilePos(3, 0, 156)
+	
+	y=28
+	Tilemap(4, 1, TreesU:)
+	TilePos(4, 0, 12)
+	
+	Tilemap(5, 0, TreesD:)
+	TilePos(5, 0, 42)
+	
 	
 	gsize = 40*64-320
 	msize = 45*64-320
+	tsize = 32*64-320
 	ym=84
 	yg=132
 	
@@ -35,6 +44,13 @@ Start {
 }
 
 update {
+	if (keyud) y--
+	if (keydd) y++
+//	TilePos(5, 0, 42)
+	write(" " + y + " / " + dir + "  ", 0, 0, c550, c005)
+	
+
+
 	movement = 0
 	dir = 0
 	if (keyl) {
@@ -50,23 +66,33 @@ update {
 		spos(0, 150-16, 120)
 	}
 	
-	write(" " + movement + " / " + dir + "  ", 0, 0, c550, c005)
-	
 	if (!movement) sprite(0, sp[6], 0)
 	else {
 		t+=2 * deltatime
 		i = 12 * t
 		if (t>1) t-=1
 		sprite(0, sp[i % 12], 0)
-		xgu-=dir * 170 * deltaTime
-		xgd-=dir * 200 * deltaTime
 		xm-=dir * 120 * deltaTime
+		xgu-=dir * 170 * deltaTime
+		xtu-=dir * 175 * deltaTime
+		xtd-=dir * 185 * deltaTime
+		xgd-=dir * 200 * deltaTime
 	}
 	
 	// GrassUp
 	TilePos(2, xgu, 132)
 	if (xgu < -gsize) xgu+=gsize
 	if (xgu > 0) xgu-=gsize
+
+	// TreesUp
+	TilePos(4, xtu, 12)
+	if (xtu < -tsize) xtu+=tsize
+	if (xtu > 0) xtu-=tsize
+
+	// TreesDown
+	TilePos(5, xtd, 42)
+	if (xtd < -tsize) xtd+=tsize
+	if (xtd > 0) xtd-=tsize
 
 	// GrassDown
 	TilePos(3, xgd, 156)

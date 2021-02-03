@@ -36,6 +36,11 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
       border.color = Normal;
   }
 
+  public void Select() {
+    selected = true;
+    border.color = Selected;
+  }
+
   public void Deselect() {
     selected = false;
     border.color = Normal;

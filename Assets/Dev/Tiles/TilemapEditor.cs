@@ -460,13 +460,23 @@ public class TilemapEditor : MonoBehaviour {
 
 
   DrawMode drawMode = DrawMode.None;
-  enum DrawMode { None, Draw, Line, Box, Fill, Clear, ImportPic };
+  enum DrawMode { None, Draw, Line, Box, Fill, Clear, ImportPic, Select };
   Steps lineStep = Steps.None;
   Steps boxStep = Steps.None;
   Steps importStep = Steps.None;
   bool fillStep = false;
   int x1, x2, y1, y2;
   enum Steps { None, Start, End };
+
+  public void Select() {
+    drawMode = DrawMode.Select;
+    for (int i = 0; i < SelectionButtons.Length; i++)
+      SelectionButtons[i].enabled = i == 8;
+    lineStep = Steps.None;
+    boxStep = Steps.None;
+    importStep = Steps.None;
+    fillStep = false;
+  }
 
   public void Draw() {
     drawMode = DrawMode.Draw;
@@ -540,6 +550,16 @@ public class TilemapEditor : MonoBehaviour {
       RotationButtons[i].enabled = tile.rot == i;
 
     switch (drawMode) {
+      case DrawMode.Select:
+        tile.Select();
+        foreach (byte id in Palette.Keys)
+          if (id == tile.id) {
+            if (currentPaletteTile != null) currentPaletteTile.Deselect();
+            currentPaletteTile = Palette[id];
+            currentPaletteTile.Select();
+          }
+        break;
+
       case DrawMode.Draw:
         if (currentPaletteTile == null) return;
         tile.img.texture = currentPaletteTile.img.texture;
