@@ -3,8 +3,6 @@
 Documentation on the Wiki of Github
 Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks" when the sample is regenerated
 
-Parser: add ToString for the missing BNF values (music)
-
 
 FUTURE: Code editor
 FUTURE: Font editor
@@ -19,7 +17,5 @@ Add progress bar when loading and parsing data
 wait() should not block the frame
 
 In tilemap add screen reference frame
-
-Use normal filebrowser in ArcadePlus
 
 Add "Edit" buttons in RomEdit (music, tilemap)
