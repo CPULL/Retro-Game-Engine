@@ -193,8 +193,10 @@ public class TilemapEditor : MonoBehaviour {
     foreach (TileInMap t in map)
       if (t.id == currentPaletteTile.id)
         t.Setup(SelectTileInMap, OverTileInMap, emptyTexture);
-    Destroy(Palette[currentPaletteTile.id].gameObject);
-    Palette.Remove(currentPaletteTile.id);
+    if (Palette.ContainsKey(currentPaletteTile.id)) {
+      Destroy(Palette[currentPaletteTile.id].gameObject);
+      Palette.Remove(currentPaletteTile.id);
+    }
   }
 
   TileInPalette currentPaletteTile = null;
@@ -318,6 +320,12 @@ public class TilemapEditor : MonoBehaviour {
     if (tw > 64 || th > 64) { Dev.inst.HandleError("Invalid data block.\nTiles size too big for a tilemap"); yield break; }
     if (block.Length < 5 + w * h) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a tilemap"); yield break; }
 
+    // Set the slider values for map size and tile size
+    MapSizeField.SetTextWithoutNotify(w + "x" + h);
+    TileSizeField.SetTextWithoutNotify(tw + "x" + th);
+    AlterMapSize(true);
+    AlterTileSize(true);
+
     // w*h*2 bytes with the actual map
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {
@@ -353,7 +361,7 @@ public class TilemapEditor : MonoBehaviour {
         TileInMap t = map[x, y];
         t.x = (byte)x;
         t.y = (byte)y;
-        if (t.id == 0)
+        if (t.id == 0 || !Palette.ContainsKey(t.id))
           t.img.texture = emptyTexture;
         else
           t.img.texture = Palette[t.id].img.texture;

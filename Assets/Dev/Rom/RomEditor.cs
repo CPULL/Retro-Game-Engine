@@ -226,10 +226,12 @@ public class RomEditor : MonoBehaviour {
   }
 
   public void DeleteConfirmed() {
+    string name = toDelete.Label.text.ToLowerInvariant();
+    if (names.ContainsKey(name)) names.Remove(name);
+    name = NormLabel.Normalize(name);
+    if (names.ContainsKey(name)) names.Remove(name);
     Destroy(toDelete.gameObject);
     lines.Remove(toDelete);
-    string name = NormLabel.Normalize(toDelete.Label.text);
-    if (names.ContainsKey(name)) names.Remove(name);
     toDelete = null;
   }
 

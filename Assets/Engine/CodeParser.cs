@@ -1104,7 +1104,7 @@ public class CodeParser : MonoBehaviour {
       int end = FindEndOfBlock(lines, linenumber);
       if (end < 0) throw new Exception("\"IF\" section does not end");
       ParseBlock(lines, linenumber + 1, end, b);
-      linenumber = end;
+      linenumber = end + 1;
     }
     else if (string.IsNullOrEmpty(after)) { // [IF] \n* ({ | [^{ ])
       for (int i = linenumber + 1; i < lines.Length; i++) {

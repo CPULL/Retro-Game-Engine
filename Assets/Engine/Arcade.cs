@@ -1122,8 +1122,7 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.IF: {
-          Value cond = Evaluate(n.CN1);
-          if (cond.ToInt(culture) != 0) {
+          if (Evaluate(n.CN1).ToBool(culture)) {
             if (n.CN2.type != BNF.BLOCK || (n.CN2.children != null && n.CN2.children.Count > 0))
               stacks.AddStack(n.CN2, null, n.origLine, n.origLineNum);
             return false;

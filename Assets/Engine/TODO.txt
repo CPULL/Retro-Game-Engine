@@ -23,3 +23,4 @@ Add "Edit" buttons in RomEdit (music, tilemap)
 Add global TryCatch in Dev tools
 Handle loading errors (data size is shorter than expected): music, arcade
 
+and if just after another if is executed immediately (if looks like skipped by the parser, check the extra line I added for ParseElseBlock)

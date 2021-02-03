@@ -607,11 +607,11 @@ public class SpriteEditor : MonoBehaviour {
       if (sizes[i] <= hb) HeightSlider.SetValueWithoutNotify(i);
     }
     ChangeSpriteSize();
-    yield return PBar.Show("Loading", 128, 128 + w * h);
+    yield return PBar.Show("Loading", 128, 128 + h);
 
     if (block.Length < 2 + w * h) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a sprite"); yield break; }
     for (int i = 0; i < w * h; i++) {
-      yield return PBar.Progress(128 + i);
+      if (i % w == 0) yield return PBar.Progress(128 + i / w);
       pixels[i].Set(Col.GetColor(block[2 + i]));
     }
 
