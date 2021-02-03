@@ -108,7 +108,7 @@ public class CodeParser : MonoBehaviour {
   #region Regex
 
   readonly Regex rgMLBacktick = new Regex("`", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgCommentML = new Regex("/\\*[^(\\*/)]*\\*/", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCommentML = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, TimeSpan.FromSeconds(5));
   readonly Regex rgCommentSL = new Regex("//(.*?)\r?\n", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgOpenBracket = new Regex("[\\s]*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -472,20 +472,39 @@ public class CodeParser : MonoBehaviour {
       parent.Add(node);
 
       // check if we have a block just after (same line or next non-empty line)
+      int increment = 0;
       string after = m.Groups[2].Value.Trim();
       if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { //[IF] ([EXP]) [BLOCK]
         ParseIfBlock(node, after, lines);
-        return;
+        increment = 1;
       }
       else if (!string.IsNullOrEmpty(after)) { // [IF] ([EXP]) [STATEMENT]
         CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
         node.Add(b);
         ParseLine(b, after, lines);
-        ParseElseBlock(node, lines, true);
-        return;
+        increment = 1;
       }
 
-      throw new Exception("Invalid block after IF statement: " + (linenumber + 1));
+
+      // Check if we have an else
+      bool notYetClosed = true;
+      for (int i = linenumber + increment; i < lines.Length; i++) {
+        string elseline = rgString.Replace(lines[i].Trim(), "");
+        if (elseline.Trim().Length == 0) continue;
+        if (rgBlockClose.IsMatch(elseline) && notYetClosed) {
+          notYetClosed = false;
+          continue;
+        }
+        else if (rgElse.IsMatch(elseline)) {
+          linenumber = i;
+          ParseElseBlock(node, lines);
+          return;
+        }
+        else if (i == linenumber - 1) continue; // Skip the first line
+        else if (elseline.Trim().Length > 0)
+          break; // No else
+      }
+      return;
     }
 
     // [FOR] {[BLOCK]}
@@ -1104,7 +1123,7 @@ public class CodeParser : MonoBehaviour {
       int end = FindEndOfBlock(lines, linenumber);
       if (end < 0) throw new Exception("\"IF\" section does not end");
       ParseBlock(lines, linenumber + 1, end, b);
-      linenumber = end + 1;
+      linenumber = end;
     }
     else if (string.IsNullOrEmpty(after)) { // [IF] \n* ({ | [^{ ])
       for (int i = linenumber + 1; i < lines.Length; i++) {
@@ -1124,13 +1143,12 @@ public class CodeParser : MonoBehaviour {
         }
       }
     }
-    ParseElseBlock(ifNode, lines, false);
   }
 
 
-  void ParseElseBlock(CodeNode ifNode, string[] lines, bool nextLine) {
+  void ParseElseBlock(CodeNode ifNode, string[] lines) {
     // Is the next non-empty line an "else"?
-    for (int pos = linenumber + (nextLine ? 1 : 0); pos < lines.Length; pos++) {
+    for (int pos = linenumber; pos < lines.Length; pos++) {
       string l = lines[pos].Trim();
       if (string.IsNullOrEmpty(l)) continue;
       Match m = rgElse.Match(l);
@@ -1170,7 +1188,6 @@ public class CodeParser : MonoBehaviour {
         else { // [ELSE] \n* [^{ ]
           ifNode.Add(nElse);
           ParseLine(nElse, after, null);
-          linenumber++;
           return;
         }
       }

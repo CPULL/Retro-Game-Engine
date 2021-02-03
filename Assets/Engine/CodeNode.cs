@@ -230,7 +230,11 @@ public class CodeNode {
         case BNF.COMPgt: res += "(" + CN1.ToString(indent + 1) + ">" + CN2.ToString(indent + 1) + ")"; break;
         case BNF.COMPge: res += "(" + CN1.ToString(indent + 1) + ">=" + CN2.ToString(indent + 1) + ")"; break;
 
-        case BNF.IF: res += id + "if (" + CN1.ToString(indent) + ") { ..." + (children.Count - 1) + "... }"; break;
+        case BNF.IF: {
+          res += id + "if (" + CN1.ToString(indent) + ") { ..." + CN2?.ToString(indent) + "... }";
+          if (CN3 != null) res += id + " else { ..." + CN3.ToString(indent) + "... }"; 
+          break;
+        }
         case BNF.Else: res += id + "else { ..." + (children.Count - 1) + "... }"; break;
         case BNF.WHILE: res += id + "while (" + CN1.ToString(indent) + ") { ..." + (children.Count - 1) + "... }"; break;
 
