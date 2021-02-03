@@ -1,7 +1,7 @@
 Name: Shadow of the Beast
 
 Start {
-	wait(.5)
+	wait(.1)
 	clr(c133)
 	for(i=0,i<12,i++) {
 		sp[i] = Label("PlayerSprite"+i)
@@ -33,7 +33,7 @@ Start {
 	
 	gsize = 40*64-320
 	msize = 45*64-320
-	tsize = 32*64-320
+	tsize = 40*64-320
 	ym=84
 	yg=132
 	
@@ -44,10 +44,10 @@ Start {
 }
 
 update {
-	if (keyud) y--
-	if (keydd) y++
+	if (keyud) tsize-=64
+	if (keydd) tsize+=64
 //	TilePos(5, 0, 42)
-	write(" " + y + " / " + dir + "  ", 0, 0, c550, c005)
+//	write(" " + tsize + " / " + dir + "  ", 0, 0, c550, c005)
 	
 
 

@@ -471,7 +471,7 @@ public class TilemapEditor : MonoBehaviour {
   public void Select() {
     drawMode = DrawMode.Select;
     for (int i = 0; i < SelectionButtons.Length; i++)
-      SelectionButtons[i].enabled = i == 8;
+      SelectionButtons[i].enabled = i == 0;
     lineStep = Steps.None;
     boxStep = Steps.None;
     importStep = Steps.None;
@@ -481,7 +481,7 @@ public class TilemapEditor : MonoBehaviour {
   public void Draw() {
     drawMode = DrawMode.Draw;
     for (int i = 0; i < SelectionButtons.Length; i++)
-      SelectionButtons[i].enabled = i == 0;
+      SelectionButtons[i].enabled = i == 1;
     lineStep = Steps.None;
     boxStep = Steps.None;
     importStep = Steps.None;
@@ -491,7 +491,7 @@ public class TilemapEditor : MonoBehaviour {
   public void Line() {
     drawMode = DrawMode.Line;
     for (int i = 0; i < SelectionButtons.Length; i++)
-      SelectionButtons[i].enabled = i == 1;
+      SelectionButtons[i].enabled = i == 2;
     lineStep = Steps.Start;
     boxStep = Steps.None;
     importStep = Steps.None;
@@ -501,7 +501,7 @@ public class TilemapEditor : MonoBehaviour {
   public void Box() {
     drawMode = DrawMode.Box;
     for (int i = 0; i < SelectionButtons.Length; i++)
-      SelectionButtons[i].enabled = i == 2;
+      SelectionButtons[i].enabled = i == 3;
     lineStep = Steps.None;
     boxStep = Steps.Start;
     importStep = Steps.None;
@@ -511,7 +511,7 @@ public class TilemapEditor : MonoBehaviour {
   public void Fill() {
     drawMode = DrawMode.Fill;
     for (int i = 0; i < SelectionButtons.Length; i++)
-      SelectionButtons[i].enabled = i == 3;
+      SelectionButtons[i].enabled = i == 4;
     lineStep = Steps.None;
     boxStep = Steps.None;
     importStep = Steps.None;
@@ -521,7 +521,7 @@ public class TilemapEditor : MonoBehaviour {
   public void Clear() {
     drawMode = DrawMode.Clear;
     for (int i = 0; i < SelectionButtons.Length; i++)
-      SelectionButtons[i].enabled = i == 4;
+      SelectionButtons[i].enabled = i == 5;
     lineStep = Steps.None;
     boxStep = Steps.None;
     importStep = Steps.None;
@@ -539,6 +539,7 @@ public class TilemapEditor : MonoBehaviour {
     foreach(TileInMap b in map) {
       b.img.texture = emptyTexture;
       b.id = 0;
+      b.rot = 0;
     }
   }
 
@@ -569,8 +570,9 @@ public class TilemapEditor : MonoBehaviour {
       case DrawMode.Clear:
         tile.img.texture = emptyTexture;
         tile.id = 0;
+        tile.rot = 0;
+        Rot(0);
         break;
-
 
       case DrawMode.Line:
         if (lineStep == Steps.Start) {
@@ -839,35 +841,27 @@ public class TilemapEditor : MonoBehaviour {
     switch (rot) {
       case 0:
         currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 0);
-        currentPaletteMap.transform.localScale = new Vector3(1, 1, 1);
         break;
       case 1:
-        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 0);
-        currentPaletteMap.transform.localScale = new Vector3(-1, 1, 1);
+        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 180, 0);
         break;
       case 2:
         currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, -90);
-        currentPaletteMap.transform.localScale = new Vector3(1, 1, 1);
         break;
       case 3:
-        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, -90);
-        currentPaletteMap.transform.localScale = new Vector3(-1, 1, 1);
+        currentPaletteMap.transform.rotation = Quaternion.Euler(180, 0, -90);
         break;
       case 4:
         currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 180);
-        currentPaletteMap.transform.localScale = new Vector3(1, 1, 1);
         break;
       case 5:
-        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 180);
-        currentPaletteMap.transform.localScale = new Vector3(-1, 1, 1);
+        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 180, 180);
         break;
       case 6:
         currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 90);
-        currentPaletteMap.transform.localScale = new Vector3(1, 1, 1);
         break;
       case 7:
-        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 90);
-        currentPaletteMap.transform.localScale = new Vector3(-1, 1, 1);
+        currentPaletteMap.transform.rotation = Quaternion.Euler(180, 0, 90);
         break;
     }
 

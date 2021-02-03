@@ -22,3 +22,6 @@ Add "Edit" buttons in RomEdit (music, tilemap)
 
 Add global TryCatch in Dev tools
 Handle loading errors (data size is shorter than expected): music, arcade
+
+Rotation of tiles is not stored
+Clean does not remove rotation
