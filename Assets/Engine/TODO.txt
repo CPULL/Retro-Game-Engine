@@ -19,3 +19,6 @@ wait() should not block the frame
 In tilemap add screen reference frame
 
 Add "Edit" buttons in RomEdit (music, tilemap)
+
+Add global TryCatch in Dev tools
+Handle loading errors (data size is shorter than expected): sprites, music, waves, arcade

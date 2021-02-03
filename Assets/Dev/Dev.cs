@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using TMPro;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class Dev : MonoBehaviour {
@@ -107,7 +109,19 @@ public class Dev : MonoBehaviour {
     codeEditor.gameObject.SetActive(false);
   }
 
+  internal void HandleError(string err) {
+    PBar.Hide();
+    FileBrowser.Hide();
+    Error.SetActive(true);
+    ErrorMsg.text = err;
+    Debug.Log(err);
+  }
 
+  public GameObject Error;
+  public TextMeshProUGUI ErrorMsg;
+  public void CloseError() {
+    Error.SetActive(false);
+  }
 }
 
 public enum EditComponent {

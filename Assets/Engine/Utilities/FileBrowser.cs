@@ -125,6 +125,10 @@ public class FileBrowser : MonoBehaviour {
     }
   }
 
+  internal static void Hide() {
+    if (inst != null) inst.FileBrowserContents.SetActive(false);
+  }
+
   public void SelectFileLoad(string path) {
     currentpath = path;
     LoadButton.interactable = true;

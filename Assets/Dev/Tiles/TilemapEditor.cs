@@ -265,7 +265,11 @@ public class TilemapEditor : MonoBehaviour {
 
   public void PostLoad() {
     if (!gameObject.activeSelf) return;
-    StartCoroutine(Loading());
+    try {
+      StartCoroutine(Loading());
+    } catch (System.Exception e) {
+      Debug.LogWarning("Woho! " + e.Message);
+    }
   }
 
   IEnumerator Loading() {
@@ -283,7 +287,11 @@ public class TilemapEditor : MonoBehaviour {
     updateMapSize = StartCoroutine(UpdateMapSize(w, h));
 
     // We need to wait for the coroutine to end before proceeding
-    StartCoroutine(CompleteLoading(res.block));
+    try {
+      StartCoroutine(CompleteLoading(res.block));
+    } catch (System.Exception e) {
+      Debug.LogWarning("Woho! " + e.Message);
+    }
   }
 
   IEnumerator CompleteLoading(byte[] block) {
@@ -296,6 +304,9 @@ public class TilemapEditor : MonoBehaviour {
     th = block[3];
     byte numtiles = block[4];
     int pos = 5;
+
+    if (tw > 64 || th > 64) { Dev.inst.HandleError("Invalid data block.\nTiles size too big for a tilemap"); yield break; }
+    if (block.Length < 5 + w * h) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a tilemap"); yield break; }
 
     // w*h*2 bytes with the actual map
     for (int y = 0; y < h; y++) {
@@ -317,6 +328,7 @@ public class TilemapEditor : MonoBehaviour {
       t.Setup((byte)(i + 1), SelectTileInPalette, tw, th);
       t.gameObject.SetActive(true);
       Palette[t.id] = t;
+      if (block.Length < pos + tw * th) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a tilemap (tile # " + i + ")"); yield break; }
       byte[] rawData = new byte[tw * th];
       for (int b = 0; b < tw * th; b++)
         rawData[b] = block[pos++];
