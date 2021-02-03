@@ -588,8 +588,7 @@ public class SpriteEditor : MonoBehaviour {
     try {
       ByteReader.ReadBlock(data, out List<CodeLabel> labels, out block);
     } catch (System.Exception e) {
-      Values.text = "Parsing error: " + e.Message + "\n" + Values.text;
-      PBar.Hide();
+      Dev.inst.HandleError("Parsing error: " + e.Message + "\n" + Values.text);
       yield break;
     }
 
@@ -601,6 +600,7 @@ public class SpriteEditor : MonoBehaviour {
       PBar.Hide();
       yield break;
     }
+    if (wb > 64 || hb > 64) { Dev.inst.HandleError("Invalid data block.\nSprite size too big"); yield break; }
 
     for (int i = 0; i < sizes.Length; i++) {
       if (sizes[i] <= wb) WidthSlider.SetValueWithoutNotify(i);
@@ -608,6 +608,8 @@ public class SpriteEditor : MonoBehaviour {
     }
     ChangeSpriteSize();
     yield return PBar.Show("Loading", 128, 128 + w * h);
+
+    if (block.Length < 2 + w * h) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a sprite"); yield break; }
     for (int i = 0; i < w * h; i++) {
       yield return PBar.Progress(128 + i);
       pixels[i].Set(Col.GetColor(block[2 + i]));
@@ -691,14 +693,20 @@ public class SpriteEditor : MonoBehaviour {
   public IEnumerator PostLoadingBin(string path) {
     yield return PBar.Show("Loading", 0, 256);
     ByteChunk res = new ByteChunk();
-    ByteReader.ReadBinBlock(path, res);
+    try {
+      ByteReader.ReadBinBlock(path, res);
+    } catch (System.Exception e) {
+      Dev.inst.HandleError("Parsing error: " + e.Message);
+      yield break;
+    }
+
+    if (res.block.Length <= 2) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a sprite"); yield break; }
 
     PBar.Progress(128);
     byte wb = res.block[0];
     byte hb = res.block[1];
     if (wb < 8 || hb < 8 || wb > 64 || hb > 64) {
-      Message.text = "This does not look like a sprite.";
-      PBar.Hide();
+      Dev.inst.HandleError("This does not look like a sprite.");
       yield break;
     }
 
@@ -708,6 +716,7 @@ public class SpriteEditor : MonoBehaviour {
     }
     ChangeSpriteSize();
     yield return PBar.Show("Loading", 128, 128 + w * h);
+    if (res.block.Length < 2 + w * h) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a sprite"); yield break; }
     for (int i = 0; i < w * h; i++) {
       if (i % 4 == 0) yield return PBar.Progress(128 + i);
       pixels[i].Set(Col.GetColor(res.block[2 + i]));

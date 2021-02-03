@@ -276,7 +276,14 @@ public class TilemapEditor : MonoBehaviour {
     string data = Values.text.Trim();
     yield return PBar.Show("Loading", 0, 200);
     ByteChunk res = new ByteChunk();
-    StartCoroutine(ByteReader.ReadBlock(data, 0, res));
+    try {
+      StartCoroutine(ByteReader.ReadBlock(data, 0, res));
+    } catch (System.Exception e) {
+      Dev.inst.HandleError("Parsing error: " + e.Message + "\n" + Values.text);
+      yield break;
+    }
+
+
     while (!res.completed)
       yield return new WaitForSeconds(.25f);
 
