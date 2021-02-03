@@ -14,6 +14,7 @@ public class TilemapEditor : MonoBehaviour {
 
   private void Start() {
     updateMapSize = StartCoroutine(UpdateMapSize(0, 0));
+    ChangeScreenSizeCompleted();
   }
 
   TileInMap[,] map;
@@ -63,6 +64,7 @@ public class TilemapEditor : MonoBehaviour {
     if (updateMapSize == null) {
       updateMapSize = StartCoroutine(UpdateMapSize(pw, ph));
     }
+    ChangeScreenSizeCompleted();
   }
   IEnumerator UpdateMapSize(int pw, int ph) {
     yield return new WaitForSeconds(.3f);
@@ -139,16 +141,17 @@ public class TilemapEditor : MonoBehaviour {
     else {
       TileSizeField.SetTextWithoutNotify(sizes[(int)TileSizeW.value] + "x" + sizes[(int)TileSizeH.value]);
     }
+    ChangeScreenSizeCompleted();
   }
   public void UpdateTileSize() {
     if (tw == sizes[(int)TileSizeW.value] && th == sizes[(int)TileSizeH.value]) return;
 
     tw = sizes[(int)TileSizeW.value];
     th = sizes[(int)TileSizeH.value];
-    mapGrid.cellSize = new Vector2(tw * 5, th * 5);
+    ChangeScreenSizeCompleted();
 
     // Warning, we have to alter all raw data of all tile palettes
-    foreach(Transform tr in tilesGrid.transform) {
+    foreach (Transform tr in tilesGrid.transform) {
       TileInPalette tl = tr.GetComponent<TileInPalette>();
       tl.UpdateSize(tw, th);
     }
@@ -986,28 +989,72 @@ public class TilemapEditor : MonoBehaviour {
   public GameObject SreenSizeVals;
   public Slider ScreenH;
   public Slider ScreenV;
+  public RectTransform RefScreen;
+  bool noScreen = false;
   public void ChangeScreenSize() {
     SreenSizeVals.SetActive(true);
   }
 
   public void ChangeScreenSizeCompleted() {
     SreenSizeVals.SetActive(false);
-    // FIXME set the screen visible or not and rescale tiles and screen
+    // Set the screen visible or not and rescale tiles and screen. Def res 1402x792
+    RefScreen.gameObject.SetActive(!noScreen);
+    float psw = (int)ScreenH.value * 8 + 160;
+    if (psw < 160) psw = 160;
+    if (psw > 320) psw = 320;
+    float psh = (int)ScreenV.value * 4 + 100;
+    if (psh < 100) psh = 100;
+    if (psh > 256) psh = 256;
+
+    float scaledw = 788f * psw / psh;
+    float scaledh = 1402f * psh / psw;
+    if (scaledw > 1402) {
+      scaledw = 1402;
+    }
+    else {
+      scaledh = 788;
+    }
+    RefScreen.sizeDelta = new Vector2(scaledw, scaledh);
+
+    // Scale tiles
+    float numtilesw = psw / tw;
+    float numtilesh = psh / th;
+
+    mapGrid.cellSize = new Vector2(scaledw / numtilesw, scaledh/ numtilesh);
+    // 49.5 for 16 and 256
+    // 99  for 32 and 256
+    // 14.2 for 32 and 320
+
+
+    /*
+     * y = a*t/w
+     * 
+     * scalew/nt = rw
+     * 
+     * 
+     * 
+     * 
+     * 
+     *
+     *
+     */
   }
 
   public void DisableScreen() {
     SreenSizeText.text = "Screen\nno";
     SreenSizeSubText.text = "Disabled";
+    noScreen = true;
   }
   public void ChangeScreenSlider() {
     int sh = (int)ScreenH.value * 8 + 160;
     if (sh < 160) sh = 160;
     if (sh > 320) sh = 320;
-    int sv = (int)ScreenV.value * 8 + 100;
+    int sv = (int)ScreenV.value * 4 + 100;
     if (sv < 100) sv = 100;
     if (sv > 256) sv = 256;
 
     SreenSizeText.text = "Screen\n" + sh + "x" + sv;
     SreenSizeSubText.text = sh + "x" + sv;
+    noScreen = false;
   }
 }
