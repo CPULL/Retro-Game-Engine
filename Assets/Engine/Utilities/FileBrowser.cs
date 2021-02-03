@@ -166,6 +166,7 @@ public class FileBrowser : MonoBehaviour {
     lastFolder = fi.Directory.FullName;
     PlayerPrefs.SetString("LastFolder", lastFolder);
     FileBrowserContents.SetActive(false);
+    FileName.SetTextWithoutNotify(fi.Name);
     postLoadAction?.Invoke(currentpath);
   }
 

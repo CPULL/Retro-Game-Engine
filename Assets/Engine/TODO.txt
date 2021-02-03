@@ -23,4 +23,3 @@ Add "Edit" buttons in RomEdit (music, tilemap)
 Add global TryCatch in Dev tools
 Handle loading errors (data size is shorter than expected): music, arcade
 
-When loading, update the name of the files to save
