@@ -1,18 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using TMPro;
 using UnityEngine;
 
-public class CodeEditor : MonoBehaviour
-{
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+public class CodeEditor : MonoBehaviour {
+  TMP_InputField te;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+  // Start is called before the first frame update
+  void Start() {
+  }
+
+  // Update is called once per frame
+  void Update() {
+
+  }
 }
