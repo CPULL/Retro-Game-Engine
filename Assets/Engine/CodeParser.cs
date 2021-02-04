@@ -1382,7 +1382,10 @@ public class CodeParser : MonoBehaviour {
         if (!string.IsNullOrEmpty(pre)) {
           // Check that we do not have letters, ], and )
           char c = pre[0];
-          if (char.IsLetter(c)) return m.Value;
+          if (char.IsLetter(c)) {
+            atLeastOneReplacement = false;
+            return m.Value; 
+          }
           if (c == ']') throw new Exception("Syntax error in expression: " + line + "\n" + origForException);
           if (c == ')') throw new Exception("Syntax error in expression: " + line + "\n" + origForException);
         }

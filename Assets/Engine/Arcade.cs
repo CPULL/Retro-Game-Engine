@@ -814,6 +814,7 @@ public class Arcade : MonoBehaviour {
     else {
       t = Instantiate(TilemapTemplate, Layers[order]).GetComponent<TMap>();
       t.gameObject.SetActive(true);
+      t.gameObject.name = "Tilemap" + id;
       tilemaps.Add(id, t);
     }
     t.order = order;

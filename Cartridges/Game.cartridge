@@ -1,13 +1,23 @@
 Name: Shadow of the Beast
 /* Layers
 
-5 mountains
-4 grassu
-3 trresu
-2 treesd 
+7 mountains
+6 grassu
+5 trresu
+4 grassm
+3 treesd 
 2 grassd
 1 char
 0 front
+
+	xpm
+	xpgu
+	xptu
+	xpgm
+	xptd
+	xpgd
+	xpf
+
 */
 
 
@@ -24,30 +34,35 @@ Start {
 	spos(0, 150-16, 120)
 	spen(0,1)
 	t=0
-	xgu=0
-	xgd=0
-	xm=0
-	Tilemap(1, 5, Mountains:)
+	xpm=0
+	xpgu=0
+	xpgm=0
+	xpgd=0
+	xptu=0
+	xptd=0
+	xpf=0
+	Tilemap(1, 7, Mountains:)
 	TilePos(1, 0, 84)
-	Tilemap(2, 4, GrassUp:)
+	Tilemap(2, 6, GrassU:)
 	TilePos(2, 0, 132)
-	Tilemap(4, 3, TreesU:)
-	TilePos(4, 0, 14)
-	Tilemap(5, 2, TreesD:)
-	TilePos(5, 0, 42)
-	Tilemap(3, 2, GrassDown:)
-	TilePos(3, 0, 156)
+	Tilemap(3, 5, TreesU:)
+	TilePos(3, 0, 14)
+	Tilemap(4, 4, GrassM:)
+	TilePos(4, 0, 148)
+	Tilemap(5, 3, TreesD:)
+	TilePos(5, 0, 156)
+	Tilemap(6, 2, GrassD:)
+	TilePos(6, 0, 164)
 	spri(0,1)
-	Tilemap(6, 0, Front:)
-	TilePos(6, 0, 148)
+	Tilemap(7, 0, Front:)
+	TilePos(7, 0, 148)
 	
-	y=1
+	y=100
 	
 	
 	
-	gsize = 40*64-320
-	msize = 45*64-320
-	tsize = 40*64-320
+	size40 = 40*64-320
+	size45 = 45*64-320
 
 	
 	for(i=0,i<320,i+=8) {
@@ -60,7 +75,7 @@ update {
 	if (keyud) y-=1
 	if (keydd) y+=1
 //	spri(0, y)
-//	write(" " + y + " / " + dir + "  ", 0, 0, c550, c005)
+	write(" " + y + " ", 0, 0, c550, c005)
 	
 
 
@@ -85,43 +100,49 @@ update {
 		i = 12 * t
 		if (t>1) t-=1
 		sprite(0, sp[i % 12], 0)
-		xm-=dir * 120 * deltaTime
-		xgu-=dir * 170 * deltaTime
-		xtu-=dir * 175 * deltaTime
-		xtd-=dir * 185 * deltaTime
-		xgd-=dir * 200 * deltaTime
-		xf-=dir * 220 * deltaTime
+		xpm-=dir * 120 * deltaTime
+		xpgu-=dir * 135 * deltaTime
+		xptu-=dir * 150 * deltaTime
+		xpgm-=dir * 165 * deltaTime
+		xptd-=dir * 180 * deltaTime
+		xpgd-=dir * 205 * deltaTime
+		xpf-=dir * 220 * deltaTime
 	}
-	
-	// GrassUp
-	TilePos(2, xgu, 132)
-	if (xgu < -gsize) xgu+=gsize
-	if (xgu > 0) xgu-=gsize
-
-	// TreesUp
-	TilePos(4, xtu, 14)
-	if (xtu < -tsize) xtu+=tsize
-	if (xtu > 0) xtu-=tsize
-
-	// TreesDown
-	TilePos(5, xtd, 42)
-	if (xtd < -tsize) xtd+=tsize
-	if (xtd > 0) xtd-=tsize
-
-	// GrassDown
-	TilePos(3, xgd, 156)
-	if (xgd < -gsize) xgd+=gsize
-	if (xgd > 0) xgd-=gsize
 
 	// Mountains
-	TilePos(1, xm, 84)
-	if (xm < -msize) xm+=msize
-	if (xm > 0) xm-=msize
+	TilePos(1, xpm, 84)
+	if (xpm < -size45) xpm+=size45
+	if (xpm > 0) xpm-=size45
+
+	// GrassUp
+	TilePos(2, xpgu, 132)
+	if (xpgu < -size40) xpgu+=size40
+	if (xpgu > 0) xpgu-=size40
+
+	// TreesUp
+	TilePos(3, xptu, 14)
+	if (xptu < -size40) xptu+=size40
+	if (xptu > 0) xptu-=size40
+
+	// GrassUp
+	TilePos(4, xpgm, 148)
+	if (xpgm < -size40) xpgm+=size40
+	if (xpgm > 0) xpgm-=size40
+
+	// TreesDown
+	TilePos(5, xptd, 42)
+	if (xptd < -size40) xptd+=size40
+	if (xptd > 0) xptd-=size40
+
+	// GrassDown
+	TilePos(6, xpgd, 164)
+	if (xpgd < -size40) xpgd+=size40
+	if (xpgd > 0) xpgd-=size40
 
 	// Front
-	TilePos(6, xf, 148)
-	if (xf < -tsize) xf+=tsize
-	if (xf > 0) xf-=tsize
+	TilePos(7, xpf, 148)
+	if (xpf < -size40) xpf+=size40
+	if (xpf > 0) xpf-=size40
 }
 
 Config {
