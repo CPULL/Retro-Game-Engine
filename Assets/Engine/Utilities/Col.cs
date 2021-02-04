@@ -5,36 +5,6 @@ public class Col {
   /*
     6*6*6 = 216 full colors no alpha
     40 for alphas (1 bit each chroma + 5 level of alpha)
-
-    33 66
-
-  20 -> 
-  
-  0)  d,d,d
-  1)  c,c,c
-  2)  b,b,b
-  3)  a,a,a
-  4)  d,a,a
-  5)  d,d,a
-  6)  a,d,d
-  7)  a,d,d
-  8)  a,a,d
-  9)  d,a,d
-  10)  c,b,b
-  11)  c,c,b
-  12)  b,c,b
-  13)  b,c,c
-  14)  b,b,c
-  15)  c,b,c
-  16)  
-  17)  
-  18)  
-  19)  transparent
-  
-  16a, 16b, 17a, 17b, 18a, 18b, 19b
-
-  dcc, ddc, cdc, cdd, ccd, dcd, black at 80%
-
    */
 
   internal readonly static Color32[] alphas = new Color32[] {
@@ -58,7 +28,38 @@ public class Col {
     new Color32(0, 0, 0, 200), new Color32(0, 0, 0, 0),
   };
 
+  readonly static Color32[] Palette = new Color32[256];
+  static bool UsingPalette;
+
+  public static void UsePalette(bool use) {
+    UsingPalette = use;
+    if (use) {
+      Palette[0] = new Color32(0, 0, 0, 255);
+      Palette[255] = new Color32(0, 0, 0, 0);
+    }
+  }
+
+  public static void SetPalette(byte[] data, int start) {
+    byte num = data[start];
+    if (num < 1) return;
+    if (num > 254) num = 254;
+    for (int i = 0; i < num; i++) {
+      int pos = start + 1 + i * 4;
+      byte r = data[pos + 0];
+      byte g = data[pos + 1];
+      byte b = data[pos + 2];
+      byte a = data[pos + 3];
+      Palette[i + 1] = new Color32(r, g, b, a);
+    }
+  }
+
+  public static void SetPalette(int col, byte r, byte g, byte b, byte a) {
+    if (col < 1 || col > 254) return;
+    Palette[col] = new Color32(r, g, b, a);
+  }
+
   public static Color32 GetColor(byte col) {
+    if (UsingPalette) return Palette[col];
     if (col < 216) {
       byte b = (byte)(col % 6);
       col -= b;

@@ -173,9 +173,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgClr = new Regex("[\\s]*clr\\((.+)\\)[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgFrame = new Regex("frame", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   
-  
   readonly Regex rgWrite = new Regex("[\\s]*write[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-
   readonly Regex rgLine = new Regex("[\\s]*line[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgGetP = new Regex("[\\s]*getp[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSetP = new Regex("[\\s]*setp[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -224,6 +222,9 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgMusicStop = new Regex("[\\s]*stopmusic[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMusicPos = new Regex("[\\s]*musicpos[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMusicVoices = new Regex("[\\s]*musicvoices[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
+  readonly Regex rgPalette = new Regex("[\\s]*usepalette[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSetPalette = new Regex("[\\s]*setpalette[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgCMPlt = new Regex("(`[a-z]{3,}¶)([\\s]*\\<[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCMPle = new Regex("(`[a-z]{3,}¶)([\\s]*\\<\\=[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -702,6 +703,29 @@ public class CodeParser : MonoBehaviour {
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
       if (num != 5 && num != 7) throw new Exception("Invalid Image(), wrong number of parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [Palette] = UsePalette([EXP])
+    if (expected.IsGood(Expected.Val.Statement) && rgPalette.IsMatch(line)) {
+      Match m = rgPalette.Match(line);
+      CodeNode node = new CodeNode(BNF.PALETTE, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 1) throw new Exception("Invalid UsePalette(), one and only one parameter is required. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [SetPalette] = rgSetPalette([EXP], [EXP])
+    // [SetPalette] = rgSetPalette([EXP], [EXP], [EXP], [EXP], [EXP])
+    if (expected.IsGood(Expected.Val.Statement) && rgSetPalette.IsMatch(line)) {
+      Match m = rgSetPalette.Match(line);
+      CodeNode node = new CodeNode(BNF.SETPALETTECOLOR, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 2 && num != 5) throw new Exception("Invalid SetPalette(), either 2 or 5 parameters are required. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }

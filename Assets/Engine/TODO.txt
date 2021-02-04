@@ -10,7 +10,6 @@ FUTURE: step by step debugger
 FUTURE: map keys
 FUTURE: precompile Nodes
 FUTURE: Custom fonts
-FUTURE: add palette (may require shader to alter quickly colors)
 
 
 wait() should not block the framerate
@@ -20,5 +19,8 @@ Add "Edit" buttons in RomEdit (music, tilemap)
 Add global TryCatch in Dev tools
 Handle loading errors (data size is shorter than expected): music, arcade
 
-Re-do again the grass, I do not like it
-We had some spurious tiles in a tilemap
+Bug: We had some spurious tiles in a tilemap when the items were deleted
+
+Add palette (probably it is already done and working)
+Add DevTool Palette editor
+Update Sprite and Tilemap editors to use Palette

@@ -386,6 +386,10 @@ public class CodeNode {
           return res;
         }
 
+        case BNF.PALETTE: return "UsePalette(" + CN1?.ToString(indent) + ")";
+        case BNF.SETPALETTECOLOR: return "SetPaletteColor(" + CN1?.ToString(indent) + ", " + CN2?.ToString(indent) + ", " + CN3?.ToString(indent) + ", " + CN4?.ToString(indent) + ", " + CN5?.ToString(indent) + ", " + ")";
+
+
         default:
           res += "[[Missing:" + type + "]]";
           break;
@@ -664,6 +668,8 @@ public enum BNF {
   TILEGET,
   TILEGETROT,
   NOP,
+  PALETTE,
+  SETPALETTECOLOR,
 }
 
 public enum VT {

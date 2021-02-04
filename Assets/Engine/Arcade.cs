@@ -804,7 +804,7 @@ public class Arcade : MonoBehaviour {
 
   void Tilemap(byte id, byte order, int start) {
     if (order < 0) order = 0;
-    if (order > 10) order = 10;
+    if (order > 12) order = 12;
 
     // check if we have the tilemap with this ID
     TMap t;
@@ -1365,6 +1365,16 @@ public class Arcade : MonoBehaviour {
           else
             TilePos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToBool(culture));
           return false;
+        }
+
+        case BNF.PALETTE: { Col.UsePalette(Evaluate(n.CN1).ToBool(culture)); return false; }
+        case BNF.SETPALETTECOLOR: {
+          if (n.children.Count == 1) Col.SetPalette(mem, Evaluate(n.CN1).ToInt(culture));
+          else
+           Col.SetPalette(Evaluate(n.CN1).ToByte(culture), 
+                          Evaluate(n.CN1).ToByte(culture),  Evaluate(n.CN2).ToByte(culture), 
+                          Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture)); 
+          return false; 
         }
 
         case BNF.NOP: return false;
