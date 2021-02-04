@@ -90,9 +90,9 @@ public class TileInPalette : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     Texture2D texture = (Texture2D)img.texture;
     for (int x = 0; x < tw; x++)
       for (int y = 0; y < th; y++) {
-        Color32 c = pixels[x + tw * y].Get();
-        rawData[x + tw * y] = Col.GetColorByte(c);
-        texture.SetPixel(x, th - y - 1, c);
+        byte c = pixels[x + tw * y].Get();
+        rawData[x + tw * y] = c;
+        texture.SetPixel(x, th - y - 1, Col.GetColor(c));
       }
     texture.Apply();
     img.texture = texture;

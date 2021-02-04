@@ -12,6 +12,7 @@ public class SpriteEditor : MonoBehaviour {
       WidthSlider.SetValueWithoutNotify(1);
       HeightSlider.SetValueWithoutNotify(1);
       pixels = new Pixel[0];
+      selected = new bool[0];
       ChangeSpriteSize();
       SetUndo(false);
     }
@@ -27,18 +28,25 @@ public class SpriteEditor : MonoBehaviour {
   public TMP_InputField Values;
   public Button LoadSubButton;
   public Palette palette;
+  bool[] selected = null;
 
-  public Image CurrentColor;
+  public Image CurrentColorImg;
+  byte CurrentColor = 255;
   Color32 Transparent = new Color32(0, 0, 0, 0);
-  Color32 BorderNormal = new Color32(206, 224, 223, 120);
   ActionVal action = ActionVal.No;
   Vector2Int start = Vector2Int.zero;
   int w, h;
   public Sprite[] boxes;
   public TextMeshProUGUI Message;
-  readonly List<Color32[]> undo = new List<Color32[]>();
-  Color32 lastPixelColor;
+  readonly List<byte[]> undo = new List<byte[]>();
+  byte lastPixelColor;
   readonly int[] sizes = new int[] { 8, 16, 24, 32, 40, 48, 56, 64 };
+
+  public void SetCurrentColor(int col) {
+    if (col < 0) col = 0;
+    if (col > 255) col = 255;
+    CurrentColor = (byte)col;
+  }
 
   public void ChangeSpriteSizeText() {
     WidthSliderText.text = "Width: " + sizes[(int)WidthSlider.value];
@@ -62,13 +70,14 @@ public class SpriteEditor : MonoBehaviour {
       t.SetParent(null);
 
     pixels = new Pixel[num];
+    selected = new bool[num];
     Sprite box = w <= 16 && h <= 16 ? boxes[2] : boxes[1];
     if (w >= 40 || h >= 40) box = boxes[0];
 
     for (int i = 0; i < num; i++) {
       Pixel pixel = Instantiate(PixelPrefab, SpriteGrid.transform).GetComponent<Pixel>();
       pixel.Init(i, Transparent, ClickPixel, OverPixel);
-      pixel.border.sprite = box;
+      pixel.SetBorderSprite(box);
       pixels[i] = pixel;
     }
 
@@ -91,21 +100,29 @@ public class SpriteEditor : MonoBehaviour {
     int y = (pos - x) / w;
 
     if (action == ActionVal.Pick) {
-      CurrentColor.color = pixels[pos].img.color;
-      // Update the palette
-      palette.blockSliders[0].SetValueWithoutNotify((int)(CurrentColor.color.r * 5));
-      palette.blockSliders[1].SetValueWithoutNotify((int)(CurrentColor.color.g * 5));
-      palette.blockSliders[2].SetValueWithoutNotify((int)(CurrentColor.color.b * 5));
-      palette.AlterColor();
-      action = ActionVal.No;
-      SetButtons(-1);
+      CurrentColor = pixels[pos].Get();
+      palette.AlterColor(CurrentColor);
+      return;
+    }
+
+    if (action == ActionVal.SelectAll) {
+      CurrentColor = pixels[pos].Get();
+      palette.AlterColor(CurrentColor);
+
+      // Check all pixels that had the exact same color and keep all of them selected
+      for (int i = 0; i < pixels.Length; i++) {
+        Pixel p = pixels[i];
+        selected[i] = p.Get() == CurrentColor;
+        if (selected[i]) p.Select();
+        else p.Deselect();
+      }
       return;
     }
 
     if (action == ActionVal.LineStart) {
       start.x = x;
       start.y = y;
-      pixels[pos].border.color = Color.red;
+      pixels[pos].Select();
       action = ActionVal.LineEnd;
       return;
     }
@@ -116,14 +133,14 @@ public class SpriteEditor : MonoBehaviour {
       int y2 = y;
       DrawLine(x1, y1, x2, y2, false);
       for (int i = 0; i < pixels.Length; i++)
-        pixels[i].border.color = BorderNormal;
+        pixels[i].Deselect();
       return;
     }
 
     if (action == ActionVal.BoxStart) {
       start.x = x;
       start.y = y;
-      pixels[pos].border.color = Color.red;
+      pixels[pos].Select();
       action = ActionVal.BoxEnd;
       return;
     }
@@ -134,14 +151,14 @@ public class SpriteEditor : MonoBehaviour {
       int y2 = y;
       DrawBox(x1, y1, x2, y2, false, false);
       for (int i = 0; i < pixels.Length; i++)
-        pixels[i].border.color = BorderNormal;
+        pixels[i].Deselect();
       return;
     }
 
     if (action == ActionVal.BoxStartF) {
       start.x = x;
       start.y = y;
-      pixels[pos].border.color = Color.red;
+      pixels[pos].Select();
       action = ActionVal.BoxEndF;
       return;
     }
@@ -152,14 +169,14 @@ public class SpriteEditor : MonoBehaviour {
       int y2 = y;
       DrawBox(x1, y1, x2, y2, false, true);
       for (int i = 0; i < pixels.Length; i++)
-        pixels[i].border.color = BorderNormal;
+        pixels[i].Deselect();
       return;
     }
 
     if (action == ActionVal.EllipseStart) {
       start.x = x;
       start.y = y;
-      pixels[pos].border.color = Color.red;
+      pixels[pos].Select();
       action = ActionVal.EllipseEnd;
       return;
     }
@@ -170,14 +187,14 @@ public class SpriteEditor : MonoBehaviour {
       int y2 = y;
       DrawEllipse(x1, y1, x2, y2, false, false);
       for (int i = 0; i < pixels.Length; i++)
-        pixels[i].border.color = BorderNormal;
+        pixels[i].Deselect();
       return;
     }
 
     if (action == ActionVal.EllipseStartF) {
       start.x = x;
       start.y = y;
-      pixels[pos].border.color = Color.red;
+      pixels[pos].Select();
       action = ActionVal.EllipseEndF;
       return;
     }
@@ -188,21 +205,21 @@ public class SpriteEditor : MonoBehaviour {
       int y2 = y;
       DrawEllipse(x1, y1, x2, y2, false, true);
       for (int i = 0; i < pixels.Length; i++)
-        pixels[i].border.color = BorderNormal;
+        pixels[i].Deselect();
       return;
     }
 
     if (action == ActionVal.Fill) {
-      Fill(x, y, CurrentColor.color);
+      Fill(x, y, CurrentColor);
       return;
     }
 
-    if (pixels[pos].Get() == CurrentColor.color)
-      pixels[pos].Set(Transparent);
+    if (pixels[pos].Get() == CurrentColor)
+      pixels[pos].Set(255);
     else
-      pixels[pos].Set(CurrentColor.color);
+      pixels[pos].Set(CurrentColor);
     SetUndo(true);
-    lastPixelColor = CurrentColor.color;
+    lastPixelColor = CurrentColor;
   }
 
   private void OverPixel(int pos) {
@@ -212,7 +229,7 @@ public class SpriteEditor : MonoBehaviour {
       int y1 = start.y;
       int y2 = (pos - x2) / w;
       for (int i = 0; i < pixels.Length; i++)
-        pixels[i].border.color = BorderNormal;
+        pixels[i].Deselect();
       DrawLine(x1, y1, x2, y2, true);
     }
 
@@ -222,7 +239,7 @@ public class SpriteEditor : MonoBehaviour {
       int y1 = start.y;
       int y2 = (pos - x2) / w;
       for (int i = 0; i < pixels.Length; i++)
-        pixels[i].border.color = BorderNormal;
+        pixels[i].Deselect();
       DrawBox(x1, y1, x2, y2, true, action == ActionVal.BoxEndF);
     }
 
@@ -232,12 +249,12 @@ public class SpriteEditor : MonoBehaviour {
       int y1 = start.y;
       int y2 = (pos - x2) / w;
       for (int i = 0; i < pixels.Length; i++)
-        pixels[i].border.color = BorderNormal;
+        pixels[i].Deselect();
       DrawEllipse(x1, y1, x2, y2, true, action == ActionVal.EllipseEndF);
     }
 
     if (action == ActionVal.FreeDraw && Input.GetMouseButton(0)) {
-      pixels[pos].Set(CurrentColor.color);
+      pixels[pos].Set(CurrentColor);
     }
   }
 
@@ -247,11 +264,12 @@ public class SpriteEditor : MonoBehaviour {
 
   void SetButtons(int num) {
     foreach (Button b in Buttons)
-      b.image.sprite = UISpriteNot;
-    for (int i = 0; i < w * h; i++)
-      pixels[i].border.color = BorderNormal;
+      b.GetComponent<Image>().sprite = UISpriteNot;
+    if (num != 0 && num != 5 && num != 9)
+      for (int i = 0; i < w * h; i++)
+        pixels[i].Deselect();
     if (num != -1)
-      Buttons[num].image.sprite = UISpriteSel;
+      Buttons[num].GetComponent<Image>().sprite = UISpriteSel;
   }
 
   public void Clear() {
@@ -262,7 +280,7 @@ public class SpriteEditor : MonoBehaviour {
     SetUndo(false);
     int num = w * h;
     for (int i = 0; i < num; i++)
-      pixels[i].Set(Transparent);
+      pixels[i].Set(255);
   }
 
 
@@ -274,7 +292,7 @@ public class SpriteEditor : MonoBehaviour {
     }
     else {
       action = ActionVal.FreeDraw;
-      SetButtons(0);
+      SetButtons(1);
     }
   }
 
@@ -285,7 +303,7 @@ public class SpriteEditor : MonoBehaviour {
     }
     else {
       action = ActionVal.LineStart;
-      SetButtons(1);
+      SetButtons(6);
     }
   }
 
@@ -503,7 +521,7 @@ public class SpriteEditor : MonoBehaviour {
     SetUndo(false);
     if (dir == 0) {
       for (int x = 0; x < w; x++) {
-        Color32 tmp = pixels[x + 0].Get();
+        byte tmp = pixels[x + 0].Get();
         for (int y = 0; y < h - 1; y++) {
           pixels[x + w * y].Set(pixels[x + w * (y + 1)].Get());
         }
@@ -512,7 +530,7 @@ public class SpriteEditor : MonoBehaviour {
     }
     else if (dir == 2) {
       for (int x = 0; x < w; x++) {
-        Color32 tmp = pixels[x + (h - 1)].Get();
+        byte tmp = pixels[x + (h - 1)].Get();
         for (int y = h - 1; y > 0; y--) {
           pixels[x + w * y].Set(pixels[x + w * (y - 1)].Get());
         }
@@ -521,7 +539,7 @@ public class SpriteEditor : MonoBehaviour {
     }
     else if (dir == 3) {
       for (int y = 0; y < h; y++) {
-        Color32 tmp = pixels[0 + w * y].Get();
+        byte tmp = pixels[0 + w * y].Get();
         for (int x = 0; x < w - 1; x++) {
           pixels[x + w * y].Set(pixels[x + 1 + w * y].Get());
         }
@@ -530,7 +548,7 @@ public class SpriteEditor : MonoBehaviour {
     }
     else if (dir == 1) {
       for (int y = 0; y < h; y++) {
-        Color32 tmp = pixels[w - 1 + w * y].Get();
+        byte tmp = pixels[w - 1 + w * y].Get();
         for (int x = w - 1; x > 0; x--) {
           pixels[x + w * y].Set(pixels[x - 1 + w * y].Get());
         }
@@ -542,11 +560,11 @@ public class SpriteEditor : MonoBehaviour {
   public void Flip(bool horiz) {
     action = ActionVal.No;
     SetButtons(-1);
-    SetUndo(true);
+    SetUndo(false);
     if (horiz) {
       for (int y = 0; y < h; y++) {
         for (int x = 0; x < w / 2; x++) {
-          Color32 tmp = pixels[x + w * y].Get();
+          byte tmp = pixels[x + w * y].Get();
           pixels[x + w * y].Set(pixels[(w - x - 1) + w * y].Get());
           pixels[(w - x - 1) + w * y].Set(tmp);
         }
@@ -555,7 +573,7 @@ public class SpriteEditor : MonoBehaviour {
     else {
       for (int x = 0; x < h; x++) {
         for (int y = 0; y < h / 2; y++) {
-          Color32 tmp = pixels[x + w * y].Get();
+          byte tmp = pixels[x + w * y].Get();
           pixels[x + w * y].Set(pixels[x + w * (h - y - 1)].Get());
           pixels[x + w * (h - y - 1)].Set(tmp);
         }
@@ -571,8 +589,8 @@ public class SpriteEditor : MonoBehaviour {
     int nw = h;
     int nh = w;
     // Extend to max size
-    Color32[] dst1 = new Color32[max * max];
-    Color32[] dst2 = new Color32[max * max];
+    byte[] dst1 = new byte[max * max];
+    byte[] dst2 = new byte[max * max];
     for (int x = 0; x < w; x++) {
       for (int y = 0; y < h; y++) {
         dst1[x + max * y] = pixels[x + w * y].Get();
@@ -606,15 +624,20 @@ public class SpriteEditor : MonoBehaviour {
 
   public void PickColor() {
     action = ActionVal.Pick;
-    SetButtons(-1);
+    SetButtons(0);
+  }
+
+  public void SelectAll() {
+    action = ActionVal.SelectAll;
+    SetButtons(5);
   }
 
   void DrawPixel(int x, int y, bool border) {
     if (x < 0 || x >= w || y < 0 || y >= h) return;
     if (border)
-      pixels[x + w * y].border.color = Color.red;
+      pixels[x + w * y].Select();
     else
-      pixels[x + w * y].Set(CurrentColor.color);
+      pixels[x + w * y].Set(CurrentColor);
   }
 
   public void Fill() {
@@ -625,6 +648,16 @@ public class SpriteEditor : MonoBehaviour {
     else {
       action = ActionVal.Fill;
       SetButtons(4);
+    }
+  }
+
+  public void Replace() {
+    action = ActionVal.No;
+    SetButtons(-1);
+    SetUndo(false);
+    for (int i = 0; i < selected.Length; i++) {
+      if (selected[i])
+        pixels[i].Set(CurrentColor);
     }
   }
 
@@ -644,10 +677,10 @@ public class SpriteEditor : MonoBehaviour {
     yield return PBar.Progress(1);
     for (int i = 0; i < num; i += 4) {
       yield return PBar.Progress(1 + i);
-      res += Col.GetColorByte(pixels[i].Get()).ToString("X2");
-      if (i + 1 < num) res += Col.GetColorByte(pixels[i + 1].Get()).ToString("X2");
-      if (i + 2 < num) res += Col.GetColorByte(pixels[i + 2].Get()).ToString("X2");
-      if (i + 3 < num) res += Col.GetColorByte(pixels[i + 3].Get()).ToString("X2");
+      res += pixels[i].Get().ToString("X2");
+      if (i + 1 < num) res += pixels[i + 1].Get().ToString("X2");
+      if (i + 2 < num) res += pixels[i + 2].Get().ToString("X2");
+      if (i + 3 < num) res += pixels[i + 3].Get().ToString("X2");
       res += " ";
     }
     res += "\n";
@@ -701,7 +734,7 @@ public class SpriteEditor : MonoBehaviour {
     if (block.Length < 2 + w * h) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a sprite"); yield break; }
     for (int i = 0; i < w * h; i++) {
       if (i % w == 0) yield return PBar.Progress(128 + i / w);
-      pixels[i].Set(Col.GetColor(block[2 + i]));
+      pixels[i].Set(block[2 + i]);
     }
 
     Values.gameObject.SetActive(false);
@@ -737,7 +770,7 @@ public class SpriteEditor : MonoBehaviour {
         for (int x = 0; x < w; x++) {
           // Normalize the color
           int pos = x + w * ty;
-          pixels[x + w * y].Set(Col.NormalizeColor(tps[pos].r, tps[pos].g, tps[pos].b, tps[pos].a));
+          pixels[x + w * y].Set(Col.GetColorByte(tps[pos].r, tps[pos].g, tps[pos].b, tps[pos].a));
         }
       }
     }
@@ -764,7 +797,7 @@ public class SpriteEditor : MonoBehaviour {
     yield return PBar.Progress(1);
     for (int i = 0; i < num; i++) {
       if (i % w == 0) yield return PBar.Progress(2 + i);
-      block[2+i] = Col.GetColorByte(pixels[i].Get());
+      block[2+i] = pixels[i].Get();
     }
     chunk.AddBlock("Sprite", LabelType.Sprite, block);
 
@@ -808,7 +841,7 @@ public class SpriteEditor : MonoBehaviour {
     if (res.block.Length < 2 + w * h) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a sprite"); yield break; }
     for (int i = 0; i < w * h; i++) {
       if (i % 4 == 0) yield return PBar.Progress(128 + i);
-      pixels[i].Set(Col.GetColor(res.block[2 + i]));
+      pixels[i].Set(res.block[2 + i]);
     }
     PBar.Hide();
   }
@@ -826,7 +859,8 @@ public class SpriteEditor : MonoBehaviour {
     return !(x < 0 || y < 0 || x >= w || y >= h);
   }
 
-  public void Fill(int x, int y, Color32 color) {
+  public void Fill(int x, int y, byte color) {
+    SetUndo(false);
     // Visited pixels array
     bool[,] vis = new bool[w, h];
 
@@ -847,25 +881,25 @@ public class SpriteEditor : MonoBehaviour {
       Vector2Int coord = obj.Dequeue();
       int x1 = coord.x;
       int y1 = coord.y;
-      Color32 preColor = pixels[x1 + w * y1].Get();
+      byte preColor = pixels[x1 + w * y1].Get();
       pixels[x1 + w * y1].Set(color);
 
-      if (ValidCoord(x1 + 1, y1) && !vis[x1 + 1, y1] && pixels[x1 + 1 + w * y1].img.color == preColor) {
+      if (ValidCoord(x1 + 1, y1) && !vis[x1 + 1, y1] && pixels[x1 + 1 + w * y1].Get() == preColor) {
         obj.Enqueue(new Vector2Int(x1 + 1, y1));
         vis[x1 + 1, y1] = true;
       }
 
-      if (ValidCoord(x1 - 1, y1) && !vis[x1 - 1, y1] && pixels[x1 - 1 + w * y1].img.color == preColor) {
+      if (ValidCoord(x1 - 1, y1) && !vis[x1 - 1, y1] && pixels[x1 - 1 + w * y1].Get() == preColor) {
         obj.Enqueue(new Vector2Int(x1 - 1, y1));
         vis[x1 - 1, y1] = true;
       }
 
-      if (ValidCoord(x1, y1 + 1) && !vis[x1, y1 + 1] && pixels[x1 + w * (y1 + 1)].img.color == preColor) {
+      if (ValidCoord(x1, y1 + 1) && !vis[x1, y1 + 1] && pixels[x1 + w * (y1 + 1)].Get() == preColor) {
         obj.Enqueue(new Vector2Int(x1, y1 + 1));
         vis[x1, y1 + 1] = true;
       }
 
-      if (ValidCoord(x1, y1 - 1) && !vis[x1, y1 - 1] && pixels[x1 + w * (y1 - 1)].img.color == preColor) {
+      if (ValidCoord(x1, y1 - 1) && !vis[x1, y1 - 1] && pixels[x1 + w * (y1 - 1)].Get() == preColor) {
         obj.Enqueue(new Vector2Int(x1, y1 - 1));
         vis[x1, y1 - 1] = true;
       }
@@ -874,11 +908,11 @@ public class SpriteEditor : MonoBehaviour {
 
   bool lastUndoWasPixel = false;
   void SetUndo(bool pixel) {
-    Color32[] val = new Color32[w * h];
+    byte[] val = new byte[w * h];
     for (int x = 0; x < w; x++)
       for (int y = 0; y < h; y++)
         val[x + w * y] = pixels[x + w * y].Get();
-    if (pixel && lastUndoWasPixel && CurrentColor.color == lastPixelColor && undo.Count > 0)
+    if (pixel && lastUndoWasPixel && CurrentColor == lastPixelColor && undo.Count > 0)
       undo[undo.Count - 1] = val;
     else
       undo.Add(val);
@@ -889,7 +923,7 @@ public class SpriteEditor : MonoBehaviour {
     action = ActionVal.No;
     SetButtons(-1);
     if (undo.Count == 0) return;
-    Color32[] val = undo[undo.Count - 1];
+    byte[] val = undo[undo.Count - 1];
     undo.RemoveAt(undo.Count - 1);
     if (lastUndoWasPixel) {
       val = undo[undo.Count - 1];
@@ -912,6 +946,7 @@ public class SpriteEditor : MonoBehaviour {
   public void ImportFrom(TileInPalette tile) {
     if (pixels == null) {
       pixels = new Pixel[tile.tw * tile.th];
+      selected = new bool[tile.tw * tile.th];
       w = tile.tw;
       h = tile.th;
     }
@@ -924,7 +959,7 @@ public class SpriteEditor : MonoBehaviour {
     for (int x = 0; x < tile.tw; x++)
       for (int y = 0; y < tile.th; y++) {
         byte col = tile.rawData[x + w * y];
-        pixels[x + w * y].Set(Col.GetColor(col));
+        pixels[x + w * y].Set(col);
       }
 
     SetUndo(false);
@@ -937,6 +972,7 @@ public class SpriteEditor : MonoBehaviour {
       pixels = new Pixel[data[0]/*tw*/ * data[1]/*th*/];
       w = data[0];
       h = data[1];
+      selected = new bool[w * h];
     }
     for (int i = 0; i < sizes.Length; i++) {
       if (sizes[i] <= w) WidthSlider.SetValueWithoutNotify(i);
@@ -947,7 +983,7 @@ public class SpriteEditor : MonoBehaviour {
     for (int x = 0; x < w; x++)
       for (int y = 0; y < h; y++) {
         byte col = data[2 + x + w * y];
-        pixels[x + w * y].Set(Col.GetColor(col));
+        pixels[x + w * y].Set(col);
       }
     SetUndo(false);
     Done.gameObject.SetActive(true);
@@ -966,8 +1002,7 @@ public class SpriteEditor : MonoBehaviour {
       data[0] = (byte)w;
       data[1] = (byte)h;
       for (int i = 0; i < pixels.Length; i++) {
-        Color32 c = pixels[i].Get();
-        data[2 + i] = Col.GetColorByte(c);
+        data[2 + i] = pixels[i].Get();
       }
       romeditor.UpdateLine(data, LabelType.Sprite);
     }
@@ -979,5 +1014,5 @@ public class SpriteEditor : MonoBehaviour {
   public Confirm Confirm;
 }
 
-public enum ActionVal { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, BoxStartF, BoxEndF, EllipseStartF, EllipseEndF, Fill, FreeDraw, Pick }
+public enum ActionVal { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, BoxStartF, BoxEndF, EllipseStartF, EllipseEndF, Fill, FreeDraw, Pick, SelectAll, Replace }
 

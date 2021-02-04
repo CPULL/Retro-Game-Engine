@@ -9,6 +9,7 @@ public class Palette : MonoBehaviour {
   public Image FrontSelectedColor;
   public Pixel[] BasicColors;
   public Pixel[] AlphaColors;
+  public SpriteEditor spriteEditor;
 
   private void Start() {
     for (int i = 0; i < BasicColors.Length; i++) {
@@ -85,11 +86,13 @@ public class Palette : MonoBehaviour {
         break;
     }
     AlterColor();
+    spriteEditor.SetCurrentColor(Col.GetByteFrom6((int)blockSliders[0].value, (int)blockSliders[1].value, (int)blockSliders[2].value, 255));
   }
 
   private void SetAlpha(int val) {
     MainColor = Col.alphas[val];
     FrontSelectedColor.color = MainColor;
+    spriteEditor.SetCurrentColor(216 + val);
   }
 
   void UpdateColors(byte r, byte g, byte b) {
@@ -113,6 +116,15 @@ public class Palette : MonoBehaviour {
     UpdateColors(r, g, b);
     MainColor = Col.GetColorFrom6(r, g, b);
     FrontSelectedColor.color = MainColor;
+    spriteEditor.SetCurrentColor(Col.GetByteFrom6(r, g, b, MainColor.a * 255));
   }
 
+  public void AlterColor(byte col) {
+    FrontSelectedColor.color = Col.GetColor(col);
+    MainColor = FrontSelectedColor.color;
+    blockSliders[0].SetValueWithoutNotify((int)(FrontSelectedColor.color.r * 5));
+    blockSliders[1].SetValueWithoutNotify((int)(FrontSelectedColor.color.g * 5));
+    blockSliders[2].SetValueWithoutNotify((int)(FrontSelectedColor.color.b * 5));
+    UpdateColors((byte)blockSliders[0].value, (byte)blockSliders[1].value, (byte)blockSliders[2].value);
+  }
 }
