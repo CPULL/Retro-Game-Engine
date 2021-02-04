@@ -13,15 +13,16 @@ FUTURE: Custom fonts
 FUTURE: add palette (may require shader to alter quickly colors)
 
 
-Add progress bar when loading and parsing data
 wait() should not block the frame
-
-In tilemap add screen reference frame
 
 Add "Edit" buttons in RomEdit (music, tilemap)
 
 Add global TryCatch in Dev tools
 Handle loading errors (data size is shorter than expected): music, arcade
 
-Rotation of tiles is not stored
-Clean does not remove rotation
+Add copy/paste in tilemap
+Add a way to do filled rects and circles (sprite and tilemap)
+Add a way to remove/replace all colors of a given type (sprite)
+
+Split the grass tiles in 3 or 4 levels, use the previous feature to do it quicly
+Make them to scroll at the same speed of the trees they are linked to

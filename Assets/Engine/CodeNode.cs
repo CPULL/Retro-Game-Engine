@@ -623,6 +623,7 @@ public enum BNF {
   SPEN,
   SPOS,
   SROT,
+  SPRI,
   STINT,
   SSCALE,
   SETP,

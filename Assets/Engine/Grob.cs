@@ -115,5 +115,9 @@ public class Grob {
     Pos(x, y, scalew, scaleh, true);
   }
 
+  internal void Parent(Transform parent) {
+    rt.transform.SetParent(parent);
+  }
+
 }
 

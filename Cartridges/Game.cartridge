@@ -1,4 +1,15 @@
 Name: Shadow of the Beast
+/* Layers
+
+5 mountains
+4 grassu
+3 trresu
+2 treesd 
+2 grassd
+1 char
+0 front
+*/
+
 
 Start {
 	wait(.1)
@@ -16,26 +27,28 @@ Start {
 	xgu=0
 	xgd=0
 	xm=0
-	Tilemap(1, 3, Mountains:)
+	Tilemap(1, 5, Mountains:)
 	TilePos(1, 0, 84)
 	Tilemap(2, 4, GrassUp:)
 	TilePos(2, 0, 132)
-	Tilemap(3, 4, GrassDown:)
-	TilePos(3, 0, 156)
-	
-	y=28
-	Tilemap(4, 1, TreesU:)
-	TilePos(4, 0, 12)
-	
-	Tilemap(5, 0, TreesD:)
+	Tilemap(4, 3, TreesU:)
+	TilePos(4, 0, 14)
+	Tilemap(5, 2, TreesD:)
 	TilePos(5, 0, 42)
+	Tilemap(3, 2, GrassDown:)
+	TilePos(3, 0, 156)
+	spri(0,1)
+	Tilemap(6, 0, Front:)
+	TilePos(6, 0, 148)
+	
+	y=1
+	
 	
 	
 	gsize = 40*64-320
 	msize = 45*64-320
 	tsize = 40*64-320
-	ym=84
-	yg=132
+
 	
 	for(i=0,i<320,i+=8) {
 		image(background:+2, i, 68, 8, 64)
@@ -44,10 +57,10 @@ Start {
 }
 
 update {
-	if (keyud) tsize-=64
-	if (keydd) tsize+=64
-//	TilePos(5, 0, 42)
-//	write(" " + tsize + " / " + dir + "  ", 0, 0, c550, c005)
+	if (keyud) y-=1
+	if (keydd) y+=1
+//	spri(0, y)
+//	write(" " + y + " / " + dir + "  ", 0, 0, c550, c005)
 	
 
 
@@ -77,6 +90,7 @@ update {
 		xtu-=dir * 175 * deltaTime
 		xtd-=dir * 185 * deltaTime
 		xgd-=dir * 200 * deltaTime
+		xf-=dir * 220 * deltaTime
 	}
 	
 	// GrassUp
@@ -85,7 +99,7 @@ update {
 	if (xgu > 0) xgu-=gsize
 
 	// TreesUp
-	TilePos(4, xtu, 12)
+	TilePos(4, xtu, 14)
 	if (xtu < -tsize) xtu+=tsize
 	if (xtu > 0) xtu-=tsize
 
@@ -103,6 +117,11 @@ update {
 	TilePos(1, xm, 84)
 	if (xm < -msize) xm+=msize
 	if (xm > 0) xm-=msize
+
+	// Front
+	TilePos(6, xf, 148)
+	if (xf < -tsize) xf+=tsize
+	if (xf > 0) xf-=tsize
 }
 
 Config {

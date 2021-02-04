@@ -781,16 +781,29 @@ public class Arcade : MonoBehaviour {
     sprites[num].Scale(sx, sy);
   }
 
+  void SpritePri(int num, int order) {
+    if (order < -1) order = -1;
+    if (order > 10) order = 10;
+    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
+    if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined");
+
+    if (order == -1)
+      sprites[num].Parent(SpritesFrontLayer);
+    else
+      sprites[num].Parent(Layers[order]);
+  }
+
   #endregion Sprites
 
   #region Tilemap ****************************************************************************************************************************************************************************************************
   readonly Dictionary<byte, TMap> tilemaps = new Dictionary<byte, TMap>();
+  public Transform SpritesFrontLayer;
   public Transform[] Layers;
   public GameObject TilemapTemplate;
 
   void Tilemap(byte id, byte order, int start) {
     if (order < 0) order = 0;
-    if (order > 8) order = 8;
+    if (order > 10) order = 10;
 
     // check if we have the tilemap with this ID
     TMap t;
@@ -814,7 +827,7 @@ public class Arcade : MonoBehaviour {
     t.transform.localPosition = new Vector3(scaleW * scrollx, -scaleH * scrolly, 0);
     if (order != 255) {
       if (order < 0) order = 0;
-      if (order > 8) order = 8;
+      if (order > 10) order = 10;
       t.transform.SetParent(Layers[order]);
     }
     t.enabled = enabled;
@@ -1197,6 +1210,8 @@ public class Arcade : MonoBehaviour {
         case BNF.SROT: SpriteRot(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToBool(culture)); return false;
 
         case BNF.SPEN: SpriteEnable(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToBool(culture)); return false;
+
+        case BNF.SPRI: SpritePri(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToByte(culture)); return false;
 
         case BNF.STINT: SpriteTint(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToByte(culture)); return false;
 

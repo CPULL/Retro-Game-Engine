@@ -203,6 +203,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSrot = new Regex("[\\s]*srot[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSPen = new Regex("[\\s]*spen[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSPri = new Regex("[\\s]*spri[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSTint = new Regex("[\\s]*stint[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSScale = new Regex("[\\s]*sscale[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   
@@ -774,6 +775,18 @@ public class CodeParser : MonoBehaviour {
       int num = ParsePars(node, pars);
       if (num != 3)
         throw new Exception("Invalid SScale(), wrong number of parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [SPRI] num, enable
+    if (expected.IsGood(Expected.Val.Statement) && rgSPri.IsMatch(line)) {
+      Match m = rgSPri.Match(line);
+      CodeNode node = new CodeNode(BNF.SPRI, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 2)
+        throw new Exception("Invalid SPri(), wrong number of parameters. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }
