@@ -59,6 +59,12 @@ TextureImporter:
   - first:
       213: 5468131686034379089
     second: SpriteEditorButtons_18
+  - first:
+      213: -4542567999643116083
+    second: SpriteEditorButtons_19
+  - first:
+      213: -8852307924635320496
+    second: SpriteEditorButtons_20
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -552,6 +558,48 @@ TextureImporter:
       bones: []
       spriteID: 151132b0cc4b2eb40800000000000000
       internalID: 5468131686034379089
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SpriteEditorButtons_19
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 0
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dcd173dc87e85f0c0800000000000000
+      internalID: -4542567999643116083
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SpriteEditorButtons_20
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 0
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 05f7cb518d8462580800000000000000
+      internalID: -8852307924635320496
       vertices: []
       indices: 
       edges: []

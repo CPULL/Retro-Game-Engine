@@ -17,8 +17,6 @@ public class SpriteEditor : MonoBehaviour {
     }
   }
 
-  #region Sprite Editor ************************************************************************************************************************************************************************************
-
   public GameObject PixelPrefab;
   public GridLayoutGroup SpriteGrid;
   Pixel[] pixels = null;
@@ -134,7 +132,25 @@ public class SpriteEditor : MonoBehaviour {
       int x2 = x;
       int y1 = start.y;
       int y2 = y;
-      DrawBox(x1, y1, x2, y2, false);
+      DrawBox(x1, y1, x2, y2, false, false);
+      for (int i = 0; i < pixels.Length; i++)
+        pixels[i].border.color = BorderNormal;
+      return;
+    }
+
+    if (action == ActionVal.BoxStartF) {
+      start.x = x;
+      start.y = y;
+      pixels[pos].border.color = Color.red;
+      action = ActionVal.BoxEndF;
+      return;
+    }
+    if (action == ActionVal.BoxEndF) {
+      int x1 = start.x;
+      int x2 = x;
+      int y1 = start.y;
+      int y2 = y;
+      DrawBox(x1, y1, x2, y2, false, true);
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
       return;
@@ -152,7 +168,25 @@ public class SpriteEditor : MonoBehaviour {
       int x2 = x;
       int y1 = start.y;
       int y2 = y;
-      DrawEllipse(x1, y1, x2, y2, false);
+      DrawEllipse(x1, y1, x2, y2, false, false);
+      for (int i = 0; i < pixels.Length; i++)
+        pixels[i].border.color = BorderNormal;
+      return;
+    }
+
+    if (action == ActionVal.EllipseStartF) {
+      start.x = x;
+      start.y = y;
+      pixels[pos].border.color = Color.red;
+      action = ActionVal.EllipseEndF;
+      return;
+    }
+    if (action == ActionVal.EllipseEndF) {
+      int x1 = start.x;
+      int x2 = x;
+      int y1 = start.y;
+      int y2 = y;
+      DrawEllipse(x1, y1, x2, y2, false, true);
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
       return;
@@ -182,24 +216,24 @@ public class SpriteEditor : MonoBehaviour {
       DrawLine(x1, y1, x2, y2, true);
     }
 
-    if (action == ActionVal.BoxEnd) {
+    if (action == ActionVal.BoxEnd || action == ActionVal.BoxEndF) {
       int x1 = start.x;
       int x2 = pos % w;
       int y1 = start.y;
       int y2 = (pos - x2) / w;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
-      DrawBox(x1, y1, x2, y2, true);
+      DrawBox(x1, y1, x2, y2, true, action == ActionVal.BoxEndF);
     }
 
-    if (action == ActionVal.EllipseEnd) {
+    if (action == ActionVal.EllipseEnd || action == ActionVal.EllipseEndF) {
       int x1 = start.x;
       int x2 = pos % w;
       int y1 = start.y;
       int y2 = (pos - x2) / w;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].border.color = BorderNormal;
-      DrawEllipse(x1, y1, x2, y2, true);
+      DrawEllipse(x1, y1, x2, y2, true, action == ActionVal.EllipseEndF);
     }
 
     if (action == ActionVal.FreeDraw && Input.GetMouseButton(0)) {
@@ -255,25 +289,49 @@ public class SpriteEditor : MonoBehaviour {
     }
   }
 
-  public void Box() {
-    if (action == ActionVal.BoxStart) {
-      action = ActionVal.No;
-      SetButtons(-1);
+  public void Box(bool filled) {
+    if (filled) {
+      if (action == ActionVal.BoxStartF) {
+        action = ActionVal.No;
+        SetButtons(-1);
+      }
+      else {
+        action = ActionVal.BoxStartF;
+        SetButtons(7);
+      }
     }
     else {
-      action = ActionVal.BoxStart;
-      SetButtons(2);
+      if (action == ActionVal.BoxStart) {
+        action = ActionVal.No;
+        SetButtons(-1);
+      }
+      else {
+        action = ActionVal.BoxStart;
+        SetButtons(2);
+      }
     }
   }
 
-  public void Ellipse() {
-    if (action == ActionVal.EllipseStart) {
-      action = ActionVal.No;
-      SetButtons(-1);
+  public void Ellipse(bool filled) {
+    if (filled) {
+      if (action == ActionVal.EllipseStartF) {
+        action = ActionVal.No;
+        SetButtons(-1);
+      }
+      else {
+        action = ActionVal.EllipseStartF;
+        SetButtons(8);
+      }
     }
     else {
-      action = ActionVal.EllipseStart;
-      SetButtons(3);
+      if (action == ActionVal.EllipseStart) {
+        action = ActionVal.No;
+        SetButtons(-1);
+      }
+      else {
+        action = ActionVal.EllipseStart;
+        SetButtons(3);
+      }
     }
   }
 
@@ -342,30 +400,43 @@ public class SpriteEditor : MonoBehaviour {
     }
   }
 
-  void DrawBox(int x1, int y1, int x2, int y2, bool border) {
+  void DrawBox(int x1, int y1, int x2, int y2, bool border, bool filled) {
     if (!border) {
       SetUndo(false);
-      action = ActionVal.BoxStart;
+      if (filled)
+        action = ActionVal.BoxStartF;
+      else
+        action = ActionVal.BoxStart;
     }
     int sx = x1; if (sx > x2) sx = x2;
     int sy = y1; if (sy > y2) sy = y2;
     int ex = x1; if (ex < x2) ex = x2;
     int ey = y1; if (ey < y2) ey = y2;
 
-    for (int x = sx; x <= ex; x++) {
-      DrawPixel(x, y1, border);
-      DrawPixel(x, y2, border);
+    if (filled) {
+      for (int y = sy; y <= ey; y++)
+        for (int x = sx; x <= ex; x++)
+          DrawPixel(x, y, border);
     }
-    for (int y = sy; y <= ey; y++) {
-      DrawPixel(x1, y, border);
-      DrawPixel(x2, y, border); 
+    else {
+      for (int x = sx; x <= ex; x++) {
+        DrawPixel(x, y1, border);
+        DrawPixel(x, y2, border);
+      }
+      for (int y = sy; y <= ey; y++) {
+        DrawPixel(x1, y, border);
+        DrawPixel(x2, y, border);
+      }
     }
   }
 
-  void DrawEllipse(int x1, int y1, int x2, int y2, bool border) {
+  void DrawEllipse(int x1, int y1, int x2, int y2, bool border, bool filled) {
     if (!border) {
       SetUndo(false);
-      action = ActionVal.EllipseStart;
+      if (filled)
+        action = ActionVal.EllipseStartF;
+      else
+        action = ActionVal.EllipseStart;
     }
 
     if (x1 > x2) { int tmp = x1; x1 = x2; x2 = tmp; }
@@ -381,10 +452,19 @@ public class SpriteEditor : MonoBehaviour {
 
     for (float x = 0; x <= rx; ) {
       float y = Mathf.Sqrt((a2 - x*x) * b2 / a2);
-      DrawPixel(Mathf.RoundToInt(cx + x), Mathf.RoundToInt(cy + y), border); 
-      DrawPixel(Mathf.RoundToInt(cx - x), Mathf.RoundToInt(cy + y), border); 
-      DrawPixel(Mathf.RoundToInt(cx + x), Mathf.RoundToInt(cy - y), border); 
-      DrawPixel(Mathf.RoundToInt(cx - x), Mathf.RoundToInt(cy - y), border);
+      if (filled) {
+        for (int px = Mathf.RoundToInt(cx - x); px <= Mathf.RoundToInt(cx + x); px++) {
+          for (int py = Mathf.RoundToInt(cy - y); py <= Mathf.RoundToInt(cy + y); py++) {
+            DrawPixel(px, py, border);
+          }
+        }
+      }
+      else {
+        DrawPixel(Mathf.RoundToInt(cx + x), Mathf.RoundToInt(cy + y), border);
+        DrawPixel(Mathf.RoundToInt(cx - x), Mathf.RoundToInt(cy + y), border);
+        DrawPixel(Mathf.RoundToInt(cx + x), Mathf.RoundToInt(cy - y), border);
+        DrawPixel(Mathf.RoundToInt(cx - x), Mathf.RoundToInt(cy - y), border);
+      }
       // Calculate the error, new y should be the same or 1 pixel off
       float oldx = x, oldy = y, incr = .01f;
       while (Mathf.Abs(x - oldx) < 1f && Mathf.Abs(y - oldy) < 1f) {
@@ -393,12 +473,21 @@ public class SpriteEditor : MonoBehaviour {
       }
     }
 
-    for (float y = 0; y <= ry; ) {
-      float x = Mathf.Sqrt((b2 - y*y) * a2 / b2);
-      DrawPixel(Mathf.RoundToInt(cx + x), Mathf.RoundToInt(cy + y), border); 
-      DrawPixel(Mathf.RoundToInt(cx - x), Mathf.RoundToInt(cy + y), border); 
-      DrawPixel(Mathf.RoundToInt(cx + x), Mathf.RoundToInt(cy - y), border); 
-      DrawPixel(Mathf.RoundToInt(cx - x), Mathf.RoundToInt(cy - y), border);
+    for (float y = 0; y <= ry;) {
+      float x = Mathf.Sqrt((b2 - y * y) * a2 / b2);
+      if (filled) {
+        for (int px = Mathf.RoundToInt(cx - x); px <= Mathf.RoundToInt(cx + x); px++) {
+          for (int py = Mathf.RoundToInt(cy - y); py <= Mathf.RoundToInt(cy + y); py++) {
+            DrawPixel(px, py, border);
+          }
+        }
+      }
+      else {
+        DrawPixel(Mathf.RoundToInt(cx + x), Mathf.RoundToInt(cy + y), border); 
+        DrawPixel(Mathf.RoundToInt(cx - x), Mathf.RoundToInt(cy + y), border); 
+        DrawPixel(Mathf.RoundToInt(cx + x), Mathf.RoundToInt(cy - y), border); 
+        DrawPixel(Mathf.RoundToInt(cx - x), Mathf.RoundToInt(cy - y), border);
+      }
       // Calculate the error, new y should be the same or 1 pixel off
       float oldx = x, oldy = y, incr = .01f;
       while (Mathf.Abs(x - oldx) < 1f && Mathf.Abs(y - oldy) < 1f) {
@@ -819,8 +908,6 @@ public class SpriteEditor : MonoBehaviour {
     }
   }
 
-  #endregion Sprite Editor
-
   public Button Done;
   public void ImportFrom(TileInPalette tile) {
     if (pixels == null) {
@@ -892,10 +979,5 @@ public class SpriteEditor : MonoBehaviour {
   public Confirm Confirm;
 }
 
-public enum ActionVal { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, Fill, FreeDraw, Pick }
+public enum ActionVal { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, BoxStartF, BoxEndF, EllipseStartF, EllipseEndF, Fill, FreeDraw, Pick }
 
-/*
- Add right click to keep the current draw item
-lines do not end correctly (check Bispoo video)
- 
- */
