@@ -996,7 +996,7 @@ public class TilemapEditor : MonoBehaviour {
       int maxy = importY2 - importY1;
       int maxx = importX2 - importX1;
 
-      yield return PBar.Show("Generating textures", 1, 1 + ih + maxy * maxy + 1);
+      yield return PBar.Show("Generating textures", 1, 1 + ih + maxx * maxy + 1);
 
       // Normalize the color
       Color32[] tps = texture.GetPixels32();
@@ -1045,17 +1045,24 @@ public class TilemapEditor : MonoBehaviour {
             }
 
             TileInMap tile = map[importX1 + x, importY1 + y];
-            if (def == 0) {
+            if (ts.Count >= 255) {
+              tile.img.texture = emptyTexture;
+              tile.id = 0;
+              tile.rot = 0;
+            }
+            else if (def == 0) {
               CreateNewTile();
               currentPaletteTile.UpdateTexture(tileData);
               tile.img.texture = currentPaletteTile.img.texture;
               tile.id = currentPaletteTile.id;
+              tile.rot = 0;
               ts.Add(tile.id, tileData);
             }
             else {
               TileInPalette palt = Palette[def];
               tile.img.texture = palt.img.texture;
               tile.id = palt.id;
+              tile.rot = 0;
             }
           }
           else { // Empty tile

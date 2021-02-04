@@ -211,4 +211,8 @@ public class FileBrowser : MonoBehaviour {
   public void Exit() {
     FileBrowserContents.SetActive(false);
   }
+
+  internal static void SetLocation(string path) {
+    inst.lastFolder = path;
+  }
 }

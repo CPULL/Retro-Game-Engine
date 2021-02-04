@@ -13,14 +13,12 @@ FUTURE: Custom fonts
 FUTURE: add palette (may require shader to alter quickly colors)
 
 
-wait() should not block the frame
+wait() should not block the framerate
 
 Add "Edit" buttons in RomEdit (music, tilemap)
 
 Add global TryCatch in Dev tools
 Handle loading errors (data size is shorter than expected): music, arcade
-
-Add copy/paste in tilemap
 
 Re-do again the grass, I do not like it
 We had some spurious tiles in a tilemap

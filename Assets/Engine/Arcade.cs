@@ -205,6 +205,7 @@ public class Arcade : MonoBehaviour {
     audioManager.Init();
 
     if (SceneManager.GetActiveScene().name == "ArcadePlus") {
+      FileBrowser.SetLocation(Application.dataPath + "\\..\\Cartridges\\");
       FileBrowser.Load(SelectCartridge, FileBrowser.FileType.Cartridges);
     }
     else {
