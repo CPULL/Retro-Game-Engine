@@ -560,16 +560,21 @@ public class TilemapEditor : MonoBehaviour {
             for (int y = 0; y < h; y++)
               if (map[x, y] == currentPaletteMap) {
                 selected[x, y] = !selected[x, y];
-                if (selected[x, y]) {
-                  map[x, y].Select();
-                  foreach (byte id in Palette.Keys)
-                    if (id == tile.id) {
-                      if (currentPaletteTile != null) currentPaletteTile.Deselect();
-                      currentPaletteTile = Palette[id];
-                    }
-                }
-                else map[x, y].Deselect();
+                y = h;
+                x = w;
               }
+
+          for (int x = 0; x < w; x++)
+            for (int y = 0; y < h; y++)
+              if (selected[x, y]) map[x, y].Select();
+              else map[x, y].Deselect();
+
+          foreach (byte id in Palette.Keys)
+            if (id == tile.id) {
+              if (currentPaletteTile != null) currentPaletteTile.Deselect();
+              currentPaletteTile = Palette[id];
+            }
+
         }
         else if (Input.GetKey(KeyCode.LeftShift)) {
           // Find out x,y position
@@ -975,7 +980,6 @@ public class TilemapEditor : MonoBehaviour {
 
   IEnumerator LoadImageCoroutine(string path) {
     string url = string.Format("file://{0}", path);
-
     yield return PBar.Show("Loading file", 0, 100);
 
     using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url)) {
@@ -1068,6 +1072,9 @@ public class TilemapEditor : MonoBehaviour {
     for (int bx = 0; bx < w; bx++)
       for (int by = 0; by < h; by++)
         map[bx, by].Deselect();
+    drawMode = DrawMode.None;
+    for (int i = 0; i < SelectionButtons.Length; i++)
+      SelectionButtons[i].enabled = false;
 
     PBar.Hide();
   }
@@ -1109,23 +1116,6 @@ public class TilemapEditor : MonoBehaviour {
     float numtilesh = psh / th;
 
     mapGrid.cellSize = new Vector2(scaledw / numtilesw, scaledh/ numtilesh);
-    // 49.5 for 16 and 256
-    // 99  for 32 and 256
-    // 14.2 for 32 and 320
-
-
-    /*
-     * y = a*t/w
-     * 
-     * scalew/nt = rw
-     * 
-     * 
-     * 
-     * 
-     * 
-     *
-     *
-     */
   }
 
   public void DisableScreen() {
@@ -1170,15 +1160,17 @@ public class TilemapEditor : MonoBehaviour {
       for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++) {
           copied[x, y] = new Copied { id = map[x, y].id, rot = map[x, y].rot, valid = selected[x, y] };
-          if (selected[x, y] && xcopied == -1 && ycopied == -1) {
-            xcopied = x;
-            ycopied = y;
+          if (selected[x, y]) {
+            if (xcopied == -1 && ycopied == -1) {
+              xcopied = x;
+              ycopied = y;
+            }
+            selected[x, y] = false;
+            map[x, y].Deselect();
+            map[x, y].img.texture = emptyTexture;
+            map[x, y].id = 0;
+            map[x, y].rot = 0;
           }
-          selected[x, y] = false;
-          map[x, y].Deselect();
-          map[x, y].img.texture = emptyTexture;
-          map[x, y].id = 0;
-          map[x, y].rot = 0;
         }
     }
     if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.V) && copied != null) { // Paste
