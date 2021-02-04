@@ -21,9 +21,6 @@ Add global TryCatch in Dev tools
 Handle loading errors (data size is shorter than expected): music, arcade
 
 Add copy/paste in tilemap
-Add a way to do filled rects and circles (sprite and tilemap)
-Add a way to remove/replace all colors of a given type (sprite)
 
 Re-do again the grass, I do not like it
-
 We had some spurious tiles in a tilemap

@@ -103,8 +103,8 @@ update {
 		xpm-=dir * 120 * deltaTime
 		xpgu-=dir * 135 * deltaTime
 		xptu-=dir * 150 * deltaTime
-		xpgm-=dir * 165 * deltaTime
-		xptd-=dir * 180 * deltaTime
+		xptd-=dir * 165 * deltaTime
+		xpgm-=dir * 180 * deltaTime
 		xpgd-=dir * 205 * deltaTime
 		xpf-=dir * 220 * deltaTime
 	}
@@ -130,7 +130,7 @@ update {
 	if (xpgm > 0) xpgm-=size40
 
 	// TreesDown
-	TilePos(5, xptd, 42)
+	TilePos(5, xptd, 40)
 	if (xptd < -size40) xptd+=size40
 	if (xptd > 0) xptd-=size40
 

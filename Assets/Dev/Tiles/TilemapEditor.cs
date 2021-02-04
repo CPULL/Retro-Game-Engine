@@ -84,6 +84,7 @@ public class TilemapEditor : MonoBehaviour {
 
     // Create the new array and fill what is possible with the old array
     TileInMap[,] newmap = new TileInMap[w, h];
+    selected = new bool[w, h];
     for (int x = 0; x < w; x++)
       for (int y = 0; y < h; y++)
         if (x < pw && y < ph) {
@@ -199,6 +200,7 @@ public class TilemapEditor : MonoBehaviour {
     }
   }
 
+  bool[,] selected;
   TileInPalette currentPaletteTile = null;
   TileInMap currentPaletteMap = null;
   public void SelectTileInPalette(TileInPalette tile) {
@@ -553,12 +555,66 @@ public class TilemapEditor : MonoBehaviour {
     switch (drawMode) {
       case DrawMode.Select:
         tile.Select();
-        foreach (byte id in Palette.Keys)
-          if (id == tile.id) {
-            if (currentPaletteTile != null) currentPaletteTile.Deselect();
-            currentPaletteTile = Palette[id];
-            currentPaletteTile.Select();
-          }
+        if (Input.GetKey(KeyCode.LeftControl)) {
+          for (int x = 0; x < w; x++)
+            for (int y = 0; y < h; y++)
+              if (map[x, y] == currentPaletteMap) {
+                selected[x, y] = !selected[x, y];
+                if (selected[x, y]) {
+                  map[x, y].Select();
+                  foreach (byte id in Palette.Keys)
+                    if (id == tile.id) {
+                      if (currentPaletteTile != null) currentPaletteTile.Deselect();
+                      currentPaletteTile = Palette[id];
+                    }
+                }
+                else map[x, y].Deselect();
+              }
+        }
+        else if (Input.GetKey(KeyCode.LeftShift)) {
+          // Find out x,y position
+          int sx = -1, sy = -1;
+          for (int x = 0; x < w; x++)
+            for (int y = 0; y < h; y++)
+              if (map[x, y] == currentPaletteMap) {
+                sx = x;
+                sy = y;
+                x = w + 1;
+                y = h + 1;
+              }
+          // Find the x,y of the first selected item
+          int dx = -1, dy = -1;
+          for (int x = 0; x < w; x++)
+            for (int y = 0; y < h; y++)
+              if (selected[x, y]) {
+                dx = x;
+                dy = y;
+                x = w + 1;
+                y = h + 1;
+              }
+          if (dx == -1) return;
+
+          if (sx > dx) { int tmp = sx; sx = dx; dx = tmp; }
+          if (sy > dy) { int tmp = sy; sy = dy; dy = tmp; }
+          for (int x = sx; x <= dx; x++)
+            for (int y = sy; y <= dy; y ++) {
+              selected[x, y] = true;
+              map[x, y].Select();
+            }
+        }
+        else {
+          for (int x = 0; x < w; x++)
+            for (int y = 0; y < h; y++) {
+              if (selected[x, y]) map[x, y].Deselect();
+              selected[x, y] = (map[x, y] == currentPaletteMap);
+            }
+          foreach (byte id in Palette.Keys)
+            if (id == tile.id) {
+              if (currentPaletteTile != null) currentPaletteTile.Deselect();
+              currentPaletteTile = Palette[id];
+              currentPaletteTile.Select();
+            }
+        }
         break;
 
       case DrawMode.Draw:
@@ -837,34 +893,44 @@ public class TilemapEditor : MonoBehaviour {
 
     for (int i = 0; i < RotationButtons.Length; i++)
       RotationButtons[i].enabled = rot == i;
-    currentPaletteMap.rot = (byte)rot;
+
+    for (int x = 0; x < w; x++)
+      for (int y = 0; y < h; y++) {
+        if (selected[x, y]) {
+          TileInMap tile = map[x, y];
+          Rot(tile, (byte)rot);
+        }
+      }
+  }
+
+  public void Rot(TileInMap tile, byte rot) {
+    tile.rot = rot;
     switch (rot) {
       case 0:
-        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 0);
+        tile.transform.rotation = Quaternion.Euler(0, 0, 0);
         break;
       case 1:
-        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 180, 0);
+        tile.transform.rotation = Quaternion.Euler(0, 180, 0);
         break;
       case 2:
-        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, -90);
+        tile.transform.rotation = Quaternion.Euler(0, 0, -90);
         break;
       case 3:
-        currentPaletteMap.transform.rotation = Quaternion.Euler(180, 0, -90);
+        tile.transform.rotation = Quaternion.Euler(180, 0, -90);
         break;
       case 4:
-        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 180);
+        tile.transform.rotation = Quaternion.Euler(0, 0, 180);
         break;
       case 5:
-        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 180, 180);
+        tile.transform.rotation = Quaternion.Euler(0, 180, 180);
         break;
       case 6:
-        currentPaletteMap.transform.rotation = Quaternion.Euler(0, 0, 90);
+        tile.transform.rotation = Quaternion.Euler(0, 0, 90);
         break;
       case 7:
-        currentPaletteMap.transform.rotation = Quaternion.Euler(180, 0, 90);
+        tile.transform.rotation = Quaternion.Euler(180, 0, 90);
         break;
     }
-
   }
 
   public void ImportTilesFromPicture() {
@@ -1078,5 +1144,77 @@ public class TilemapEditor : MonoBehaviour {
     SreenSizeText.text = "Screen\n" + sh + "x" + sv;
     SreenSizeSubText.text = sh + "x" + sv;
     noScreen = false;
+  }
+
+  Copied[,] copied = null;
+  int xcopied = -1;
+  int ycopied = -1;
+  private void Update() {
+    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.C)) { // Copy
+      copied = new Copied[w, h];
+      xcopied = -1;
+      ycopied = -1;
+      for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++) {
+          copied[x, y] = new Copied { id = map[x, y].id, rot = map[x, y].rot, valid = selected[x, y] };
+          if (selected[x, y] && xcopied == -1 && ycopied == -1) {
+            xcopied = x;
+            ycopied = y;
+          }
+        }
+    }
+    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.X)) { // Cut
+      copied = new Copied[w, h];
+      xcopied = -1;
+      ycopied = -1;
+      for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++) {
+          copied[x, y] = new Copied { id = map[x, y].id, rot = map[x, y].rot, valid = selected[x, y] };
+          if (selected[x, y] && xcopied == -1 && ycopied == -1) {
+            xcopied = x;
+            ycopied = y;
+          }
+          selected[x, y] = false;
+          map[x, y].Deselect();
+          map[x, y].img.texture = emptyTexture;
+          map[x, y].id = 0;
+          map[x, y].rot = 0;
+        }
+    }
+    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.V) && copied != null) { // Paste
+      if (xcopied == -1) return;
+      int px = -1, py = -1;
+      for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++)
+          if (map[x, y] == currentPaletteMap) {
+            px = x;
+            py = y;
+            x = w + 1;
+            y = h + 1;
+          }
+      if (px == -1) return;
+      for (int x = px; x < w; x++)
+        for (int y = py; y < h; y++) {
+          int cx = xcopied + x - px;
+          int cy = ycopied + y - py;
+          if (cx < 0 || cy < 0 || cx >= w || cy >= h) continue;
+          if (copied[cx, cy].valid) {
+            byte id = copied[cx, cy].id;
+            if (Palette.ContainsKey(id)) {
+              map[x, y].img.texture = Palette[id].img.texture;
+              map[x, y].id = Palette[id].id;
+              map[x, y].rot = copied[cx, cy].rot;
+              Rot(map[x, y], map[x, y].rot);
+            }
+          }
+        }
+
+    }
+  }
+
+  private struct Copied {
+    public byte id;
+    public byte rot;
+    public bool valid;
   }
 }
