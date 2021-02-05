@@ -6,14 +6,24 @@ using UnityEngine.UI;
 public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler {
   public int pos = 0;
   Action<int> ClickCall;
+  Action<Pixel> UseCall;
   Action<int> OverCall;
   [SerializeField] private Image img;
   [SerializeField] private Image border;
   Color32 Highlight = new Color32(255, 224, 223, 220);
-  Color32 Normal = new Color32(206, 224, 223, 120);
   byte color;
   bool init = false;
   static Color32 BorderNormal = new Color32(206, 224, 223, 120);
+
+  public void Init(int p, Color32 c, Action<Pixel> cb, Color32 defBorder) {
+    pos = p;
+    UseCall = cb;
+    ClickCall = null;
+    OverCall = null;
+    if (img == null) img = GetComponent<Image>();
+    img.color = c;
+    BorderNormal = defBorder;
+  }
 
   public void Init(int p, Color32 c, Action<int> cb, Action<int> oc) {
     pos = p;
@@ -41,7 +51,10 @@ public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, 
   }
 
   public void OnPointerClick(PointerEventData eventData) {
-    if (eventData.button == 0) ClickCall(pos);
+    if (eventData.button == 0) {
+      ClickCall?.Invoke(pos);
+      UseCall?.Invoke(this);
+    }
   }
 
   public void OnPointerEnter(PointerEventData eventData) {
@@ -52,7 +65,7 @@ public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, 
 
   public void OnPointerExit(PointerEventData eventData) {
     if (border == null) return;
-    border.color = Normal;
+    border.color = BorderNormal;
   }
 
   internal void SetBorderSprite(Sprite box) {

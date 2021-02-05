@@ -1,0 +1,285 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: RGEPalette
+  m_Shader: {fileID: 4800000, guid: a406a99f42b66ee4fad8326f33cc1851, type: 3}
+  m_ShaderKeywords: _DOIT_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - _DoIt: 1
+    m_Colors:
+    - _Color: {r: 0, g: 0, b: 0, a: 1}
+    - _Color01: {r: 1, g: 1, b: 1, a: 1}
+    - _Color02: {r: 1, g: 1, b: 1, a: 1}
+    - _Color03: {r: 1, g: 1, b: 1, a: 1}
+    - _Color04: {r: 1, g: 1, b: 1, a: 1}
+    - _Color05: {r: 1, g: 1, b: 1, a: 1}
+    - _Color06: {r: 1, g: 1, b: 1, a: 1}
+    - _Color07: {r: 1, g: 1, b: 1, a: 1}
+    - _Color08: {r: 1, g: 1, b: 1, a: 1}
+    - _Color09: {r: 1, g: 1, b: 1, a: 1}
+    - _Color0A: {r: 1, g: 1, b: 1, a: 1}
+    - _Color0B: {r: 1, g: 1, b: 1, a: 1}
+    - _Color0C: {r: 1, g: 1, b: 1, a: 1}
+    - _Color0D: {r: 1, g: 1, b: 1, a: 1}
+    - _Color0E: {r: 1, g: 1, b: 1, a: 1}
+    - _Color0F: {r: 1, g: 1, b: 1, a: 1}
+    - _Color10: {r: 1, g: 1, b: 1, a: 1}
+    - _Color11: {r: 1, g: 1, b: 1, a: 1}
+    - _Color12: {r: 1, g: 1, b: 1, a: 1}
+    - _Color13: {r: 1, g: 1, b: 1, a: 1}
+    - _Color14: {r: 1, g: 1, b: 1, a: 1}
+    - _Color15: {r: 1, g: 1, b: 1, a: 1}
+    - _Color16: {r: 1, g: 1, b: 1, a: 1}
+    - _Color17: {r: 1, g: 1, b: 1, a: 1}
+    - _Color18: {r: 1, g: 1, b: 1, a: 1}
+    - _Color19: {r: 1, g: 1, b: 1, a: 1}
+    - _Color1A: {r: 1, g: 1, b: 1, a: 1}
+    - _Color1B: {r: 1, g: 1, b: 1, a: 1}
+    - _Color1C: {r: 1, g: 1, b: 1, a: 1}
+    - _Color1D: {r: 1, g: 1, b: 1, a: 1}
+    - _Color1E: {r: 1, g: 1, b: 1, a: 1}
+    - _Color1F: {r: 1, g: 1, b: 1, a: 1}
+    - _Color20: {r: 1, g: 1, b: 1, a: 1}
+    - _Color21: {r: 1, g: 1, b: 1, a: 1}
+    - _Color22: {r: 1, g: 1, b: 1, a: 1}
+    - _Color23: {r: 1, g: 1, b: 1, a: 1}
+    - _Color24: {r: 1, g: 1, b: 1, a: 1}
+    - _Color25: {r: 1, g: 1, b: 1, a: 1}
+    - _Color26: {r: 1, g: 1, b: 1, a: 1}
+    - _Color27: {r: 1, g: 1, b: 1, a: 1}
+    - _Color28: {r: 1, g: 1, b: 1, a: 1}
+    - _Color29: {r: 1, g: 1, b: 1, a: 1}
+    - _Color2A: {r: 1, g: 1, b: 1, a: 1}
+    - _Color2B: {r: 1, g: 1, b: 1, a: 1}
+    - _Color2C: {r: 1, g: 1, b: 1, a: 1}
+    - _Color2D: {r: 1, g: 1, b: 1, a: 1}
+    - _Color2E: {r: 1, g: 1, b: 1, a: 1}
+    - _Color2F: {r: 1, g: 1, b: 1, a: 1}
+    - _Color30: {r: 1, g: 1, b: 1, a: 1}
+    - _Color31: {r: 1, g: 1, b: 1, a: 1}
+    - _Color32: {r: 1, g: 1, b: 1, a: 1}
+    - _Color33: {r: 1, g: 1, b: 1, a: 1}
+    - _Color34: {r: 1, g: 1, b: 1, a: 1}
+    - _Color35: {r: 1, g: 1, b: 1, a: 1}
+    - _Color36: {r: 1, g: 1, b: 1, a: 1}
+    - _Color37: {r: 1, g: 1, b: 1, a: 1}
+    - _Color38: {r: 1, g: 1, b: 1, a: 1}
+    - _Color39: {r: 1, g: 1, b: 1, a: 1}
+    - _Color3A: {r: 1, g: 1, b: 1, a: 1}
+    - _Color3B: {r: 1, g: 1, b: 1, a: 1}
+    - _Color3C: {r: 1, g: 1, b: 1, a: 1}
+    - _Color3D: {r: 1, g: 1, b: 1, a: 1}
+    - _Color3E: {r: 1, g: 1, b: 1, a: 1}
+    - _Color3F: {r: 1, g: 1, b: 1, a: 1}
+    - _Color40: {r: 1, g: 1, b: 1, a: 1}
+    - _Color41: {r: 1, g: 1, b: 1, a: 1}
+    - _Color42: {r: 1, g: 1, b: 1, a: 1}
+    - _Color43: {r: 1, g: 1, b: 1, a: 1}
+    - _Color44: {r: 1, g: 1, b: 1, a: 1}
+    - _Color45: {r: 1, g: 1, b: 1, a: 1}
+    - _Color46: {r: 1, g: 1, b: 1, a: 1}
+    - _Color47: {r: 1, g: 1, b: 1, a: 1}
+    - _Color48: {r: 1, g: 1, b: 1, a: 1}
+    - _Color49: {r: 1, g: 1, b: 1, a: 1}
+    - _Color4A: {r: 1, g: 1, b: 1, a: 1}
+    - _Color4B: {r: 1, g: 1, b: 1, a: 1}
+    - _Color4C: {r: 1, g: 1, b: 1, a: 1}
+    - _Color4D: {r: 1, g: 1, b: 1, a: 1}
+    - _Color4E: {r: 1, g: 1, b: 1, a: 1}
+    - _Color4F: {r: 1, g: 1, b: 1, a: 1}
+    - _Color50: {r: 1, g: 1, b: 1, a: 1}
+    - _Color51: {r: 1, g: 1, b: 1, a: 1}
+    - _Color52: {r: 1, g: 1, b: 1, a: 1}
+    - _Color53: {r: 1, g: 1, b: 1, a: 1}
+    - _Color54: {r: 1, g: 1, b: 1, a: 1}
+    - _Color55: {r: 1, g: 1, b: 1, a: 1}
+    - _Color56: {r: 1, g: 1, b: 1, a: 1}
+    - _Color57: {r: 1, g: 1, b: 1, a: 1}
+    - _Color58: {r: 1, g: 1, b: 1, a: 1}
+    - _Color59: {r: 1, g: 1, b: 1, a: 1}
+    - _Color5A: {r: 1, g: 1, b: 1, a: 1}
+    - _Color5B: {r: 1, g: 1, b: 1, a: 1}
+    - _Color5C: {r: 1, g: 1, b: 1, a: 1}
+    - _Color5D: {r: 1, g: 1, b: 1, a: 1}
+    - _Color5E: {r: 1, g: 1, b: 1, a: 1}
+    - _Color5F: {r: 1, g: 1, b: 1, a: 1}
+    - _Color60: {r: 1, g: 1, b: 1, a: 1}
+    - _Color61: {r: 1, g: 1, b: 1, a: 1}
+    - _Color62: {r: 1, g: 1, b: 1, a: 1}
+    - _Color63: {r: 1, g: 1, b: 1, a: 1}
+    - _Color64: {r: 1, g: 1, b: 1, a: 1}
+    - _Color65: {r: 1, g: 1, b: 1, a: 1}
+    - _Color66: {r: 1, g: 1, b: 1, a: 1}
+    - _Color67: {r: 1, g: 1, b: 1, a: 1}
+    - _Color68: {r: 1, g: 1, b: 1, a: 1}
+    - _Color69: {r: 1, g: 1, b: 1, a: 1}
+    - _Color6A: {r: 1, g: 1, b: 1, a: 1}
+    - _Color6B: {r: 1, g: 1, b: 1, a: 1}
+    - _Color6C: {r: 1, g: 1, b: 1, a: 1}
+    - _Color6D: {r: 1, g: 1, b: 1, a: 1}
+    - _Color6E: {r: 1, g: 1, b: 1, a: 1}
+    - _Color6F: {r: 1, g: 1, b: 1, a: 1}
+    - _Color70: {r: 1, g: 1, b: 1, a: 1}
+    - _Color71: {r: 1, g: 1, b: 1, a: 1}
+    - _Color72: {r: 1, g: 1, b: 1, a: 1}
+    - _Color73: {r: 1, g: 1, b: 1, a: 1}
+    - _Color74: {r: 1, g: 1, b: 1, a: 1}
+    - _Color75: {r: 1, g: 1, b: 1, a: 1}
+    - _Color76: {r: 1, g: 1, b: 1, a: 1}
+    - _Color77: {r: 1, g: 1, b: 1, a: 1}
+    - _Color78: {r: 1, g: 1, b: 1, a: 1}
+    - _Color79: {r: 1, g: 1, b: 1, a: 1}
+    - _Color7A: {r: 1, g: 1, b: 1, a: 1}
+    - _Color7B: {r: 1, g: 1, b: 1, a: 1}
+    - _Color7C: {r: 1, g: 1, b: 1, a: 1}
+    - _Color7D: {r: 1, g: 1, b: 1, a: 1}
+    - _Color7E: {r: 1, g: 1, b: 1, a: 1}
+    - _Color7F: {r: 1, g: 1, b: 1, a: 1}
+    - _Color80: {r: 1, g: 1, b: 1, a: 1}
+    - _Color81: {r: 1, g: 1, b: 1, a: 1}
+    - _Color82: {r: 1, g: 1, b: 1, a: 1}
+    - _Color83: {r: 1, g: 1, b: 1, a: 1}
+    - _Color84: {r: 1, g: 1, b: 1, a: 1}
+    - _Color85: {r: 1, g: 1, b: 1, a: 1}
+    - _Color86: {r: 1, g: 1, b: 1, a: 1}
+    - _Color87: {r: 1, g: 1, b: 1, a: 1}
+    - _Color88: {r: 1, g: 1, b: 1, a: 1}
+    - _Color89: {r: 1, g: 1, b: 1, a: 1}
+    - _Color8A: {r: 1, g: 1, b: 1, a: 1}
+    - _Color8B: {r: 1, g: 1, b: 1, a: 1}
+    - _Color8C: {r: 1, g: 1, b: 1, a: 1}
+    - _Color8D: {r: 1, g: 1, b: 1, a: 1}
+    - _Color8E: {r: 1, g: 1, b: 1, a: 1}
+    - _Color8F: {r: 1, g: 1, b: 1, a: 1}
+    - _Color90: {r: 1, g: 1, b: 1, a: 1}
+    - _Color91: {r: 1, g: 1, b: 1, a: 1}
+    - _Color92: {r: 1, g: 1, b: 1, a: 1}
+    - _Color93: {r: 1, g: 1, b: 1, a: 1}
+    - _Color94: {r: 1, g: 1, b: 1, a: 1}
+    - _Color95: {r: 1, g: 1, b: 1, a: 1}
+    - _Color96: {r: 1, g: 1, b: 1, a: 1}
+    - _Color97: {r: 1, g: 1, b: 1, a: 1}
+    - _Color98: {r: 1, g: 1, b: 1, a: 1}
+    - _Color99: {r: 1, g: 1, b: 1, a: 1}
+    - _Color9A: {r: 1, g: 1, b: 1, a: 1}
+    - _Color9B: {r: 1, g: 1, b: 1, a: 1}
+    - _Color9C: {r: 1, g: 1, b: 1, a: 1}
+    - _Color9D: {r: 1, g: 1, b: 1, a: 1}
+    - _Color9E: {r: 1, g: 1, b: 1, a: 1}
+    - _Color9F: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorA0: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorA1: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorA2: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorA3: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorA4: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorA5: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorA6: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorA7: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorA8: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorA9: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorAA: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorAB: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorAC: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorAD: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorAE: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorAF: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorB0: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorB1: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorB2: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorB3: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorB4: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorB5: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorB6: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorB7: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorB8: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorB9: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorBA: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorBB: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorBC: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorBD: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorBE: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorBF: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorC0: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorC1: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorC2: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorC3: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorC4: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorC5: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorC6: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorC7: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorC8: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorC9: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorCA: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorCB: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorCC: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorCD: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorCE: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorCF: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorD0: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorD1: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorD2: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorD3: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorD4: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorD5: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorD6: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorD7: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorD8: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorD9: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorDA: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorDB: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorDC: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorDD: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorDE: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorDF: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorE0: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorE1: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorE2: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorE3: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorE4: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorE5: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorE6: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorE7: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorE8: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorE9: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorEA: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorEB: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorEC: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorED: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorEE: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorEF: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorF0: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorF1: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorF2: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorF3: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorF4: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorF5: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorF6: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorF7: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorF8: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorF9: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorFA: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorFB: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorFC: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorFD: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorFE: {r: 1, g: 1, b: 1, a: 1}
+    - _UVCenter: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []
