@@ -1,8 +1,23 @@
-﻿using UnityEngine;
+﻿using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
 public class PaletteEditor : MonoBehaviour {
   Pixel[] pixels = new Pixel[256];
   public Transform PaletteContainer;
+  public Slider HueSlider;
+  public Slider RSlider;
+  public TextMeshProUGUI RVal;
+  public Slider GSlider;
+  public TextMeshProUGUI GVal;
+  public Slider BSlider;
+  public TextMeshProUGUI BVal;
+  public Slider ASlider;
+  public TextMeshProUGUI AVal;
+  public TMP_InputField HexColor;
+  public RawImage SelectedColor;
+  public RawImage ColorPicker;
+  Texture2D ColorPickerTexture;
 
   void Start() {
     int pos = 0;
@@ -12,6 +27,12 @@ public class PaletteEditor : MonoBehaviour {
       pos++;
     }
 
+    ColorPickerTexture = new Texture2D(256, 256, TextureFormat.RGB24, false);
+    for (int y = 255; y >= 0; y--)
+      for (int x = 0; x < 255; x++)
+        ColorPickerTexture.SetPixel(x, y, new Color32((byte)x, (byte)y, 0, 255));
+    ColorPickerTexture.Apply();
+    ColorPicker.texture = ColorPickerTexture;
   }
 
   // Update is called once per frame
