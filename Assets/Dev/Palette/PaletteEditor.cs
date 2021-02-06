@@ -190,54 +190,24 @@ public class PaletteEditor : MonoBehaviour {
       HexColor.SetTextWithoutNotify(r.ToString("X2") + g.ToString("X2") + g.ToString("X2") + a.ToString("X2"));
   }
 
-  void Update() {
-
-  }
-
+  Pixel previous = null;
   void SelectPalettePixel(Pixel p) {
-    Debug.Log(p.pos);
+    if (previous != null) previous.Deselect();
+    Color32 c = p.Get32();
+    RSlider.SetValueWithoutNotify(c.r);
+    GSlider.SetValueWithoutNotify(c.g);
+    BSlider.SetValueWithoutNotify(c.b);
+    ASlider.SetValueWithoutNotify(c.a);
+    p.Select();
+    previous = p;
+    SetColor();
   }
 
 
-  void Rgb2Hsl(byte rb, byte gb, byte bb, out int hue, byte sat, byte lum) {
-    // convert r,g,b [0,255] range to [0,1]
-    float r = rb / 255f;
-    float g = gb / 255f;
-    float b = bb / 255f;
-    // get the min and max of r,g,b
-    float max = r > g ? r : g;
-    max = max > b ? max : b;
-    float min  = r < g ? r : g;
-    min = min < b ? min : b;
-
-    // lightness is the average of the largest and smallest color components
-    lum = (byte)((max + min) * 127.999f);
-    if (max == min) { // no saturation
-      hue = 0;
-      sat = 0;
-    }
-    else {
-      var c = max - min; // chroma
-                         // saturation is simply the chroma scaled to fill
-                         // the interval [0, 1] for every combination of hue and lightness
-      sat = (byte)(255 * (c / (1 - Mathf.Abs(2 * (lum / 255) - 1))));
-      hue = 0;
-      if (max == r) {
-        hue = (int)(360 * (g - b) / c);
-      }
-      if (max == g) {
-        hue = (int)(360 * ((b - r) / c + 2));
-      }
-      if (max == b) {
-        hue = (int)(360 * ((r - g) / c + 4));
-      }
-    }
-  }
 }
 
 /*
 
-some way to get a color by rgb and hsl
 a way to load a sprite and see it with a palette
 a way to get a sprite from normal and convert to palette (generating palette or using current palette)
 a way to save a converted sprite
