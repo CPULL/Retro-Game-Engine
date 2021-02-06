@@ -161,6 +161,14 @@ public class FileBrowser : MonoBehaviour {
     ShowFolder(di.FullName);
   }
 
+  public void Home() {
+    string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+    LoadButton.interactable = true;
+    DirectoryInfo di = new DirectoryInfo(desktop);
+    if (di == null) return;
+    ShowFolder(di.FullName);
+  }
+
   public void LoadFile() {
     FileInfo fi = new FileInfo(currentpath);
     lastFolder = fi.Directory.FullName;

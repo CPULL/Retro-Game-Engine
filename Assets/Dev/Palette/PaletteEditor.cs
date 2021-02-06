@@ -1,6 +1,8 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections;
+using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 public class PaletteEditor : MonoBehaviour {
@@ -204,9 +206,59 @@ public class PaletteEditor : MonoBehaviour {
   }
 
 
+
+  public RawImage MainPic;
+  public void LoadFile() {
+    FileBrowser.Load(PostLoadImage, FileBrowser.FileType.Pics);
+  }
+
+  void PostLoadImage(string path) {
+    StartCoroutine(LoadImageCoroutine(path));
+  }
+  IEnumerator LoadImageCoroutine(string path) {
+    string url = string.Format("file://{0}", path);
+
+    using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url)) {
+      yield return www.SendWebRequest();
+      yield return PBar.Show("Loading file", 5, 12);
+      Texture2D texture = DownloadHandlerTexture.GetContent(www);
+      // Get the top-left part of the image fitting in the sprite size
+      yield return PBar.Progress(5);
+      TextureScale.Point(texture, 512, 512);
+      yield return PBar.Progress(10);
+
+      Color32[] tps = texture.GetPixels32();
+      yield return PBar.Progress(12);
+      PBar.Hide();
+
+      MainPic.texture = texture;
+    }
+
+    IEnumerator SetImageColors() {
+      yield return null;
+      for (int y = 0; y < 512; y++) {
+        int ty = 511 - y;
+        yield return PBar.Progress(12 + y);
+        for (int x = 0; x < 512; x++) {
+          // Normalize the color
+          int pos = x + 512 * ty;
+//          pixels[x + w * y].Set(Col.GetColorByte(tps[pos].r, tps[pos].g, tps[pos].b, tps[pos].a));
+        }
+      }
+    }
+  }
 }
 
 /*
+
+Load image
+Load Sprite
+Load Tilemap
+Save Image/Sprite
+Generate palette from image
+Update image with current palette
+Toggle Normal/Palette modes
+
 
 a way to load a sprite and see it with a palette
 a way to get a sprite from normal and convert to palette (generating palette or using current palette)
