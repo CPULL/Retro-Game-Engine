@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
@@ -207,7 +208,8 @@ public class PaletteEditor : MonoBehaviour {
 
 
 
-  public RawImage MainPic;
+  public RawImage MainPicOrig;
+  public RawImage MainPicPalette;
   public void LoadFile() {
     FileBrowser.Load(PostLoadImage, FileBrowser.FileType.Pics);
   }
@@ -220,38 +222,247 @@ public class PaletteEditor : MonoBehaviour {
 
     using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url)) {
       yield return www.SendWebRequest();
-      yield return PBar.Show("Loading file", 5, 12);
+      yield return PBar.Show("Loading file", 5, 10);
       Texture2D texture = DownloadHandlerTexture.GetContent(www);
       // Get the top-left part of the image fitting in the sprite size
       yield return PBar.Progress(5);
-      TextureScale.Point(texture, 512, 512);
+
+      float sw = (int)PicSizeH.value * 8;
+      if (sw < 8) sw = 8;
+      if (sw > 320) sw = 320;
+      float sh = (int)PicSizeV.value * 4;
+      if (sh < 8) sh = 8;
+      if (sh > 256) sh = 256;
+      TextureScale.Point(texture, (int)sw, (int)sh);
+      texture.filterMode = FilterMode.Point;
+      texture.Apply();
+      Texture2D palText = new Texture2D((int)sw, (int)sh, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+      palText.SetPixels32(texture.GetPixels32());
+      texture.Apply();
+      palText.Apply();
+
       yield return PBar.Progress(10);
-
-      Color32[] tps = texture.GetPixels32();
-      yield return PBar.Progress(12);
       PBar.Hide();
-
-      MainPic.texture = texture;
-    }
-
-    IEnumerator SetImageColors() {
-      yield return null;
-      for (int y = 0; y < 512; y++) {
-        int ty = 511 - y;
-        yield return PBar.Progress(12 + y);
-        for (int x = 0; x < 512; x++) {
-          // Normalize the color
-          int pos = x + 512 * ty;
-//          pixels[x + w * y].Set(Col.GetColorByte(tps[pos].r, tps[pos].g, tps[pos].b, tps[pos].a));
-        }
-      }
+      MainPicOrig.texture = texture;
+      MainPicPalette.texture = palText;
+      ChangePicSizeCompleted();
     }
   }
+  public GameObject PicSizeVals;
+  public Slider PicSizeH;
+  public Slider PicSizeV;
+  public TextMeshProUGUI PicSizeText;
+  public TextMeshProUGUI PicSizeSubText;
+  public void ChangePicSize() {
+    PicSizeVals.SetActive(true);
+  }
+
+  public void ChangePicSizeCompleted() {
+    PicSizeVals.SetActive(false);
+    float w = (int)PicSizeH.value * 8;
+    if (w < 8) w = 8;
+    if (w > 320) w = 320;
+    float h = (int)PicSizeV.value * 4;
+    if (h < 8) h = 8;
+    if (h > 256) h = 256;
+
+    if (w > h) {
+      h = 512 * h / w;
+      w = 512;
+    }
+    else {
+      w = 512 * w / h;
+      h = 512;
+    }
+    MainPicOrig.GetComponent<RectTransform>().sizeDelta = new Vector2(w, h);
+  }
+
+  public void ChangeScreenSlider() {
+    float w = (int)PicSizeH.value * 8;
+    if (w < 8) w = 8;
+    if (w > 320) w = 320;
+    float h = (int)PicSizeV.value * 4;
+    if (h < 8) h = 8;
+    if (h > 256) h = 256;
+    PicSizeText.text = "Size\n" + w + "x" + h;
+    PicSizeSubText.text = w + "x" + h;
+  }
+
+  public void GenerateBestPalette() {
+    StartCoroutine(GeneratingBestPalette());
+  }
+  public void ApplyPalette() {
+    StartCoroutine(ApplyingPalette());
+  }
+  public void ApplyDefaultPalette() {
+    StartCoroutine(GeneratingBestPalette());
+  }
+
+  IEnumerator GeneratingBestPalette() {
+    Texture2D texture = (Texture2D)MainPicOrig.texture;
+    int w = texture.width;
+    int h = texture.height;
+    Color[] tcs = texture.GetPixels();
+    Dictionary<Color32, int> cols = new Dictionary<Color32, int>();
+    yield return PBar.Show("Generating", 0, h+100); ;
+
+    for (int y = 0; y < h; y++) {
+      yield return PBar.Progress(y);
+      for (int x = 0; x < w; x++) {
+        Color32 c = tcs[x + w * y];
+        if (c.Equals(Transparent) || c.Equals(Black)) continue;
+        if (cols.ContainsKey(c)) cols[c]++;
+        else cols[c] = 1;
+      }
+    }
+
+
+    if (cols.Count > 254) { // Quantize
+      int prog = 0;
+      // For each color found, find the distance from the closest color. 
+      Dictionary<Color32, float> dists = new Dictionary<Color32, float>();
+      foreach(Color32 col in cols.Keys) {
+        PBar.Progress(h + prog / cols.Count);
+        prog++;
+        Color.RGBToHSV(col, out _, out float sat, out float val);
+        Color32 best;
+        float bestdist = float.MaxValue;
+        foreach (Color32 pc in cols.Keys) {
+          if (pc.Equals(col)) continue;
+          Color.RGBToHSV(pc, out _, out float psat, out float pval);
+          float dr = (col.r - pc.r);
+          float dg = (col.g - pc.g);
+          float db = (col.b - pc.b);
+          float da = (col.a - pc.a);
+          float ds = (sat - psat);
+          float dv = (val - pval);
+          float dist = (dr * dr + dg * dg + db * db) / 3 + da * da + ds * ds + dv * dv * dv;
+          if (bestdist > dist) {
+            bestdist = dist;
+            best = pc;
+          }
+        }
+        dists.Add(col, bestdist);
+      }
+      // Get the colors with min distance and merge them with the others until we have less than 254 colors
+      CV[] vals = new CV[dists.Count];
+      int pos = 0;
+      foreach (Color32 c in dists.Keys) {
+        vals[pos] = new CV { col = c, dist = dists[c], quant = cols[c] };
+        pos++;
+      }
+
+      System.Array.Sort(vals, delegate (CV a, CV b) {
+        return (a.dist * a.quant).CompareTo(b.dist * b.quant);
+      });
+      cols.Clear();
+      for (int i = 0; i < 254; i++)
+        cols.Add(vals[i].col, i);
+    }
+
+    yield return null;
+    int num = 1;
+    pixels[0].Set32(Black);
+    pixels[255].Set32(Transparent);
+    Color32[] pal = new Color32[256];
+    while (num < 255 && cols.Count > 0) {
+      if (num % 16 == 0) yield return PBar.Progress(h + num / 16);
+      int max = -1;
+      Color32 c = Color.white;
+      foreach (Color32 key in cols.Keys) {
+        int val = cols[key];
+        if (max < val) {
+          max = val;
+          c = key;
+        }
+      }
+      if (max == -1) break;
+      pal[num] = c;
+      cols.Remove(c);
+      pixels[num].Set32(c);
+      num++;
+    }
+    for (int i = num; i < 256; i++) {
+      pixels[i].Set32(Transparent);
+    }
+
+    for (int i = 1; i < 255; i++) {
+      string id = "_Color" + i.ToString("X2");
+      RGEPalette.SetColor(id, pixels[i].Get32());
+    }
+
+    PBar.Hide();
+  }
+
+  IEnumerator ApplyingPalette() {
+    int w = MainPicOrig.texture.width;
+    int h = MainPicOrig.texture.height;
+    yield return PBar.Show("Applying palette", 0, h);
+
+    Texture2D origt = (Texture2D)MainPicOrig.texture;
+    Texture2D palt = (Texture2D)MainPicPalette.texture;
+
+    // For each texture pixel, find the bast pixel in the palette
+    Color32[] cols = origt.GetPixels32();
+    for (int y = 0; y < h; y++) {
+      PBar.Progress(y);
+      for (int x = 0; x < w; x++) {
+        int pos = x + w * y;
+        Color32 col = cols[pos];
+        Color.RGBToHSV(col, out _, out float sat, out float val);
+
+        int best = -1;
+        float bestdist = float.MaxValue;
+        for (int i = 0; i < 256; i++) {
+          Color32 pc = pixels[i].Get32();
+          Color.RGBToHSV(pc, out _, out float psat, out float pval);
+
+          float dr = (col.r - pc.r);
+          float dg = (col.g - pc.g);
+          float db = (col.b - pc.b);
+          float da = (col.a - pc.a);
+          float ds = (sat - psat);
+          float dv = (val - pval);
+          float dist = (dr * dr + dg * dg + db * db) / 3 + da * da + ds * ds + dv * dv * dv;
+          if (bestdist > dist) {
+            bestdist = dist;
+            best = i;
+          }
+        }
+        int hi = (best & 0xF0) >> 4;
+        int lo = (best & 0xF);
+        palt.SetPixel(x, y, new Color(hi / 15f, lo / 15f, 0, 255));
+      }
+    }
+    // Update the "paletized" texture with the found color index
+    palt.Apply();
+    MainPicPalette.texture = palt;
+
+    // Show the paletized rawimage and toggle the flag
+    // FIXME
+
+    PBar.Hide();
+  }
+
+  Color32 Transparent = new Color32(0, 0, 0, 0);
+  Color32 Black = new Color32(0, 0, 0, 255);
+  public Material RGEPalette;
+
+  class CV {
+    public Color32 col;
+    public float quant;
+    public float dist;
+  }
+
 }
 
 /*
 
-Load image
+
+slider to decide how many colors to use
+toggle to enable/disable palette
+Add second texture for image to use a palette material
+
 Load Sprite
 Load Tilemap
 Save Image/Sprite

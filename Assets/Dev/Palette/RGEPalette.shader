@@ -2,7 +2,6 @@
 {
     Properties
     {
-        [HideInInspector] _Color("Tint", Color) = (0, 0, 0, 1)
         [HideInInspector] _MainTex("Texture", 2D) = "white" {}
         [HideInInspector] _UVCenter("_UVCenter", Vector) = (0,0,0,0)
 
@@ -315,7 +314,6 @@
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
-            sampler2D _SwapTex;
             float _DoIt;
 
     fixed4 _Color01, _Color02, _Color03, _Color04, _Color05, _Color06, _Color07, _Color08, _Color09, _Color0A, _Color0B, _Color0C, _Color0D, _Color0E, _Color0F;
@@ -352,8 +350,7 @@
             {
               float2 uv = IN.uv;
               fixed4 col = tex2D(_MainTex, uv);
-              if (col.a == 0) return col;
-              if (_DoIt == 0) return tex2D(_SwapTex, uv);
+              if (col.a == 0 || _DoIt == 0) return col;
 
               int h = col.r * 16;
               int l = col.g * 16;

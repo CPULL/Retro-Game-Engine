@@ -83,4 +83,7 @@ public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, 
   internal Color32 Get32() {
     return new Color32((byte)(255 * img.color.r), (byte)(255 * img.color.g), (byte)(255 * img.color.b), (byte)(255 * img.color.a));
   }
+  internal void Set32(Color32 c) {
+    img.color = c;
+  }
 }
