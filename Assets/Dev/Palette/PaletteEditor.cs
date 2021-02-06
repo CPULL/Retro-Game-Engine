@@ -30,6 +30,8 @@ public class PaletteEditor : MonoBehaviour {
     foreach(Transform t in PaletteContainer) {
       pixels[pos] = t.GetComponent<Pixel>();
       pixels[pos].Init(pos, Col.GetColor((byte)pos), SelectPalettePixel, Color.black);
+      string id = "_Color" + pos.ToString("X2");
+      RGEPalette.SetColor(id, pixels[pos].Get32());
       pos++;
     }
 
@@ -66,6 +68,7 @@ public class PaletteEditor : MonoBehaviour {
       HexColor.SetTextWithoutNotify(r.ToString("X2") + g.ToString("X2") + g.ToString("X2"));
     else
       HexColor.SetTextWithoutNotify(r.ToString("X2") + g.ToString("X2") + g.ToString("X2") + a.ToString("X2"));
+    SetSelectedPixel();
   }
 
   readonly Regex rghex = new Regex("[0-9a-f]{3,8}", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
@@ -130,6 +133,7 @@ public class PaletteEditor : MonoBehaviour {
           Color.HSVToRGB(h, x / 255f, y / 255f));
     ColorPickerTexture.Apply();
     ColorPicker.texture = ColorPickerTexture;
+    SetSelectedPixel();
   }
 
   public void SetColorH() {
@@ -162,6 +166,7 @@ public class PaletteEditor : MonoBehaviour {
       HexColor.SetTextWithoutNotify(r.ToString("X2") + g.ToString("X2") + g.ToString("X2"));
     else
       HexColor.SetTextWithoutNotify(r.ToString("X2") + g.ToString("X2") + g.ToString("X2") + a.ToString("X2"));
+    SetSelectedPixel();
   }
 
   public void SetColorSV(float s, float v) {
@@ -191,21 +196,28 @@ public class PaletteEditor : MonoBehaviour {
       HexColor.SetTextWithoutNotify(r.ToString("X2") + g.ToString("X2") + g.ToString("X2"));
     else
       HexColor.SetTextWithoutNotify(r.ToString("X2") + g.ToString("X2") + g.ToString("X2") + a.ToString("X2"));
+    SetSelectedPixel();
   }
 
-  Pixel previous = null;
+  Pixel selectedPixel = null;
   void SelectPalettePixel(Pixel p) {
-    if (previous != null) previous.Deselect();
+    if (selectedPixel != null) selectedPixel.Deselect();
     Color32 c = p.Get32();
     RSlider.SetValueWithoutNotify(c.r);
     GSlider.SetValueWithoutNotify(c.g);
     BSlider.SetValueWithoutNotify(c.b);
     ASlider.SetValueWithoutNotify(c.a);
     p.Select();
-    previous = p;
+    selectedPixel = p;
     SetColor();
   }
 
+  void SetSelectedPixel() {
+    if (selectedPixel == null) return;
+    selectedPixel.Set32(SelectedColor.color);
+    string id = "_Color" + selectedPixel.pos.ToString("X2");
+    RGEPalette.SetColor(id, pixels[selectedPixel.pos].Get32());
+  }
 
 
   public RawImage MainPicOrig;
