@@ -311,191 +311,37 @@ public class PaletteEditor : MonoBehaviour {
     StartCoroutine(GeneratingBestPalette());
   }
 
+  ColorImageQuantizer ciq = new ColorImageQuantizer(new MedianCutQuantizer());
+
   IEnumerator GeneratingBestPalette() {
     Texture2D texture = (Texture2D)MainPicOrig.texture;
-    int tw = texture.width;
-    int th = texture.height;
-    Color[] tcs = texture.GetPixels();
-    Dictionary<int, Rhsv> hash = new Dictionary<int, Rhsv>();
-    yield return PBar.Show("Generating", 0, th + 100); ;
-    int pos = 0;
+    yield return PBar.Show("Generating", 0, 2); ;
 
+    int num = (int)NumColorsS.value;
+    int sa = (int)StartAtS.value;
 
-    ColorImageQuantizer ciq = new ColorImageQuantizer(new MedianCutQuantizer());
-    Color32[] colorTable = ciq.CalculatePalette(texture, 254);
-
+    Color32[] colorTable = ciq.CalculatePalette(texture, num);
+    yield return PBar.Progress(1);
 
     Color32[] colors = new Color32[256];
     colors[0] = Black;
     colors[255] = Transparent;
-    for (int i = 1; i < 255; i++) {
-      colors[i] = colorTable[i - 1];
-      pixels[i].Set32(colors[i]);
+    for (int i = 0; i < 256; i++) {
+      if (i < sa || i >= sa + num)
+        colors[i] = pixels[i].Get32();
+      else {
+        colors[i] = colorTable[i - sa];
+        pixels[i].Set32(colors[i]);
+      }
     }
-    ShufflePalette();
+    yield return PBar.Progress(2);
 
     Texture2D newImage = ciq.ReduceColors(texture, colors);
     newImage.Apply();
     MainPicPalette.texture = newImage;
+    yield return PBar.Progress(3);
 
     PBar.Hide();
-
-    yield break;
-
-
-    // Reconstruct the texture by picking the best color from the final values
-    Color32[] res = new Color32[tcs.Length];
-    for (int y = 0; y < th; y++) {
-      yield return PBar.Progress(th + y);
-      for (int x = 0; x < tw; x++) {
-        pos = x + tw * y;
-
-        if (tcs[pos].a < .9f) res[pos] = Transparent;
-        else {
-          int best = 0;
-          float dist = float.MaxValue;
-          for (int i = 0; i < 256; i++) {
-            float d =
-              (tcs[pos].r - colors[i].r) * (tcs[pos].r - colors[i].r) +
-              (tcs[pos].g - colors[i].g) * (tcs[pos].g - colors[i].g) +
-              (tcs[pos].b - colors[i].b) * (tcs[pos].b - colors[i].b);
-            if (d < dist) {
-              dist = d;
-              best = i;
-            }
-          }
-          res[pos] = colors[best];
-        }
-      }
-    }
-
-    /*
-    for (int y = 0; y < th; y++) {
-      yield return PBar.Progress(y);
-      for (int x = 0; x < tw; x++) {
-        pos = x + tw * y;
-        Color.RGBToHSV(tcs[pos], out float h, out float s, out float v);
-        if (tcs[pos].a < .9f) continue; // Pixels with alpha will be excluded
-        Rhsv val = new Rhsv(h, s, v);
-        int id = val.ID();
-        if (hash.ContainsKey(id)) hash[id].num++;
-        else hash[id] = val;
-      }
-    }
-    Dictionary<int, Rhsv> final = null;
-    int tries = 5;
-    while (tries > 0) {
-      tries--;
-
-      if (hash.Count < 254) {
-        final = hash;
-        break;
-      }
-
-      // Split in 3 ones, by the different hey
-      Dictionary<int, Rhsv> hashH = new Dictionary<int, Rhsv>();
-      Dictionary<int, Rhsv> hashS = new Dictionary<int, Rhsv>();
-      Dictionary<int, Rhsv> hashV = new Dictionary<int, Rhsv>();
-      foreach (int key in hash.Keys) {
-        Rhsv val = hash[key];
-
-        int id = val.IDH();
-        if (hashH.ContainsKey(id)) {
-          Rhsv n = hashH[id].JoinH(val);
-          hashH.Remove(id);
-          hashH[n.IDH()] = n;
-        }
-        else hashH[id] = val;
-
-        id = val.IDS();
-        if (hashS.ContainsKey(id)) {
-          Rhsv n = hashS[id].JoinSV(val);
-          hashS.Remove(id);
-          hashS[n.IDS()] = n;
-        }
-        else hashS[id] = val;
-
-        id = val.IDV();
-        if (hashV.ContainsKey(id)) {
-          Rhsv n = hashV[id].JoinSV(val);
-          hashV.Remove(id);
-          hashV[n.IDV()] = n;
-        }
-        else hashV[id] = val;
-      }
-
-      if (hashH.Count < 254) { // Use HUE
-        final = hashV;
-        Debug.Log("Hue wins");
-        break;
-      }
-      if (hashS.Count < 254) { // Use SAT
-        final = hashS;
-        Debug.Log("Sat wins");
-        break;
-      }
-      if (hashV.Count < 254) { // Use VAL
-        final = hashV;
-        Debug.Log("Val wins");
-        break;
-      }
-
-      // Re-construct the hashes
-      hash.Clear();
-      foreach(Rhsv val in hashH.Values) {
-        int id = val.ID();
-        if (hash.ContainsKey(id)) hash[id] = hash[id].JoinH(val);
-        else hash[id] = new Rhsv(val.h, val.s, val.v) { num = val.num };
-      }
-      foreach(Rhsv val in hashS.Values) {
-        int id = val.ID();
-        if (hash.ContainsKey(id)) hash[id] = hash[id].JoinH(val);
-        else hash[id] = new Rhsv(val.h, val.s, val.v) { num = val.num };
-      }
-      foreach (Rhsv val in hashV.Values) {
-        int id = val.ID();
-        if (hash.ContainsKey(id)) hash[id] = hash[id].JoinH(val);
-        else hash[id] = new Rhsv(val.h, val.s, val.v) { num = val.num };
-      }
-
-      // Reduce the amount of colors by reducing the hash mode
-      Rhsv[] vals = new Rhsv[hash.Count];
-      pos = 0;
-      // Check for each value we have the sum of all distances from all other values.
-      foreach (Rhsv val in hash.Values) {
-        vals[pos++] = val;
-        val.dist = 0;
-        foreach (Rhsv val2 in hash.Values) {
-          val.Dist(val2, hhh, sss, vvv);
-        }
-      }
-
-      // Then sort by distance (higher first) and get only the first 90%
-      Array.Sort(vals, (x, y) => y.dist.CompareTo(x.dist));
-      hash.Clear();
-      int len = (int)(vals.Length * .95f);
-      for (int i = 0; i < len; i++) {
-        Rhsv val = vals[i];
-        hash[val.ID()] = val;
-      }
-      final = hash;
-    }
-
-
-
-    // We have now the final array to be used, sort it by HSV and luma
-    Rhsv[] colorsToSort = new Rhsv[254];
-    pos = 0;
-    foreach (Rhsv val in final.Values) {
-      colorsToSort[pos++] = val;
-      if (pos == 254) break;
-    }
-    for (int i = pos; i < 254; i++) {
-      colorsToSort[i] = new Rhsv(0, 0, 1);
-    }
-    Array.Sort(colorsToSort, (x, y) => (int)((x.h - y.h) + (x.v - y.v) * 2) );
-
-    */
   }
 
   public void ShufflePalette() {
@@ -521,8 +367,53 @@ public class PaletteEditor : MonoBehaviour {
     }
   }
 
+  public void UseDefaultPalette() {
+    for (int i = 0; i < 256; i++) {
+      pixels[i].Set32(Col.GetColor((byte)i));
+      string id = "_Color" + i.ToString("X2");
+      RGEPalette.SetColor(id, pixels[i].Get32());
+    }
+  }
 
   IEnumerator ApplyingPalette() {
+    int w = MainPicOrig.texture.width;
+    int h = MainPicOrig.texture.height;
+    yield return PBar.Show("Applying palette", 0, 1 + h);
+
+    Color32[] colors = new Color32[255];
+    for (int i = 0; i < 255; i++) {
+      colors[i] = pixels[i].Get32();
+    }
+    Texture2D newImage = ciq.ReduceColors((Texture2D)MainPicOrig.texture, colors);
+    PBar.Progress(1);
+    Texture2D palt = (Texture2D)MainPicPalette.texture;
+    Color32[] cols = newImage.GetPixels32();
+    for (int y = 0; y < h; y++) {
+      PBar.Progress(1 + y);
+      for (int x = 0; x < w; x++) {
+        int pos = x + w * y;
+        for (int i = 0; i < 256; i++) {
+          if (cols[pos].Equals(colors[i])) {
+            int hi = (i & 0xF0) >> 4;
+            int lo = (i & 0xF);
+            palt.SetPixel(x, y, new Color(hi / 15f, lo / 15f, 0, 255));
+            break;
+          }
+        }
+      }
+    }
+    palt.Apply();
+    MainPicPalette.texture = palt;
+    PBar.Hide();
+  }
+
+  public Toggle PaletteModeToggle;
+  public void AlterPaletteMode() {
+    MainPicOrig.enabled = !PaletteModeToggle.isOn;
+    MainPicPalette.enabled = PaletteModeToggle.isOn;
+  }
+
+  IEnumerator OLDApplyingPalette() {
     int w = MainPicOrig.texture.width;
     int h = MainPicOrig.texture.height;
     yield return PBar.Show("Applying palette", 0, h);
@@ -572,15 +463,33 @@ public class PaletteEditor : MonoBehaviour {
     PBar.Hide();
   }
 
+  public Slider NumColorsS;
+  public TextMeshProUGUI NumColorsT;
+  public Slider StartAtS;
+  public TextMeshProUGUI StartAtT;
+
+  public void ChangeMaxColors() {
+    int num = (int)NumColorsS.value;
+    NumColorsT.text = "Num colors: " + num;
+    if (num + StartAtS.value > 254) {
+      StartAtS.SetValueWithoutNotify(254 - num);
+      StartAtT.text = "Start at: " + (254 - num);
+    }
+  }
+
+  public void ChangeStartAt() {
+    int num = (int)NumColorsS.value;
+    int sa = (int)StartAtS.value;
+    StartAtT.text = "Start at: " + sa;
+    if (num + StartAtS.value > 254) {
+      NumColorsS.SetValueWithoutNotify(254 - sa);
+      NumColorsT.text = "Num colors: " + (254 - sa);
+    }
+  }
+
   Color32 Transparent = new Color32(0, 0, 0, 0);
   Color32 Black = new Color32(0, 0, 0, 255);
   public Material RGEPalette;
-
-  public float hhh = 1;
-  public float sss = 1;
-  public float vvv = 1;
-
-
 }
 
 /*
