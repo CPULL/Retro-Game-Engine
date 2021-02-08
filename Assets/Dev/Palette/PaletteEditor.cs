@@ -274,8 +274,8 @@ public class PaletteEditor : MonoBehaviour {
   }
 
 
-  public RawImage MainPicOrig;
-  public RawImage MainPicPalette;
+  public RawImage PicOrig;
+  public RawImage PicPalette;
   public void LoadFile() {
     FileBrowser.Load(PostLoadImage, FileBrowser.FileType.Pics);
   }
@@ -309,8 +309,8 @@ public class PaletteEditor : MonoBehaviour {
 
       yield return PBar.Progress(10);
       PBar.Hide();
-      MainPicOrig.texture = texture;
-      MainPicPalette.texture = palText;
+      PicOrig.texture = texture;
+      PicPalette.texture = palText;
       ChangePicSizeCompleted();
     }
   }
@@ -340,8 +340,8 @@ public class PaletteEditor : MonoBehaviour {
       w = 512 * w / h;
       h = 512;
     }
-    MainPicOrig.GetComponent<RectTransform>().sizeDelta = new Vector2(w, h);
-    MainPicPalette.GetComponent<RectTransform>().sizeDelta = new Vector2(w, h);
+    PicOrig.GetComponent<RectTransform>().sizeDelta = new Vector2(w, h);
+    PicPalette.GetComponent<RectTransform>().sizeDelta = new Vector2(w, h);
   }
 
   public void ChangeScreenSlider() {
@@ -356,21 +356,21 @@ public class PaletteEditor : MonoBehaviour {
   }
 
   public void GenerateBestPalette() {
-    if (MainPicOrig.texture == null) {
+    if (PicOrig.texture == null) {
       Dev.inst.HandleError("No image loaded!");
       return;
     }
     StartCoroutine(GeneratingBestPalette());
   }
   public void ApplyPalette() {
-    if (MainPicOrig.texture == null) {
+    if (PicOrig.texture == null) {
       Dev.inst.HandleError("No image loaded!");
       return;
     }
     StartCoroutine(ApplyingPalette());
   }
   public void ApplyDefaultPalette() {
-    if (MainPicOrig.texture == null) {
+    if (PicOrig.texture == null) {
       Dev.inst.HandleError("No image loaded!");
       return;
     }
@@ -378,7 +378,7 @@ public class PaletteEditor : MonoBehaviour {
   }
 
   IEnumerator GeneratingBestPalette() {
-    Texture2D texture = (Texture2D)MainPicOrig.texture;
+    Texture2D texture = (Texture2D)PicOrig.texture;
     yield return PBar.Show("Generating", 0, 2); ;
 
     int num = 254;
@@ -399,7 +399,7 @@ public class PaletteEditor : MonoBehaviour {
 
     Texture2D newImage = ciq.ReduceColors(texture, colorTable);
     newImage.Apply();
-    MainPicPalette.texture = newImage;
+    PicPalette.texture = newImage;
     yield return PBar.Progress(3);
     RGEPalette.SetColorArray("_Colors", palette);
 
@@ -438,16 +438,16 @@ public class PaletteEditor : MonoBehaviour {
   }
 
   IEnumerator ApplyingPalette() {
-    int w = MainPicOrig.texture.width;
-    int h = MainPicOrig.texture.height;
+    int w = PicOrig.texture.width;
+    int h = PicOrig.texture.height;
     yield return PBar.Show("Applying palette", 0, 1 + h);
 
     Color32[] colors = new Color32[256];
     for (int i = 0; i < 256; i++)
       colors[i] = palette[i];
-    Texture2D newImage = ciq.ReduceColors((Texture2D)MainPicOrig.texture, colors);
+    Texture2D newImage = ciq.ReduceColors((Texture2D)PicOrig.texture, colors);
     PBar.Progress(1);
-    Texture2D palt = (Texture2D)MainPicPalette.texture;
+    Texture2D palt = (Texture2D)PicPalette.texture;
     Color32[] cols = newImage.GetPixels32();
     for (int y = 0; y < h; y++) {
       PBar.Progress(1 + y);
@@ -464,15 +464,15 @@ public class PaletteEditor : MonoBehaviour {
       }
     }
     palt.Apply();
-    MainPicPalette.texture = palt;
+    PicPalette.texture = palt;
     RGEPalette.SetColorArray("_Colors", palette); // Should not be necessary but just in case
     PBar.Hide();
   }
 
   public Toggle PaletteModeToggle;
   public void AlterPaletteMode() {
-    MainPicOrig.enabled = !PaletteModeToggle.isOn;
-    MainPicPalette.enabled = PaletteModeToggle.isOn;
+    PicOrig.enabled = !PaletteModeToggle.isOn;
+    PicPalette.enabled = PaletteModeToggle.isOn;
   }
 
   Color32 Transparent = new Color32(0, 0, 0, 0);
@@ -496,10 +496,29 @@ public class PaletteEditor : MonoBehaviour {
       RGEPalette.SetColorArray("_Colors", palette);
     }
   }
+
+  public GameObject RomLineTemplate;
+  public GameObject RomList;
+  public Transform RomContent;
+
+  public void LoadTxt() { }
+  public void LoadBin() { }
+  public void LoadRom() { }
+
+  public void SaveTxt() { }
+  public void SaveBin() { }
+  public void SaveRom() { }
+  public void ConvertRom() { }
+  public void SaveItemAsRom() { }
+
+
 }
 
 /*
-Bug we were no more able to select items or to remove duplicates (but no errors in console)
+
+Add rom list in the center
+Add miniarea to see the other texture (swap between orig and palette)
+When selecting a line in rom list, if it is an image load it
 
 Load Sprite
 Load Tilemap
