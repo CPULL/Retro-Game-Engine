@@ -413,56 +413,6 @@ public class PaletteEditor : MonoBehaviour {
     MainPicPalette.enabled = PaletteModeToggle.isOn;
   }
 
-  IEnumerator OLDApplyingPalette() {
-    int w = MainPicOrig.texture.width;
-    int h = MainPicOrig.texture.height;
-    yield return PBar.Show("Applying palette", 0, h);
-
-    Texture2D origt = (Texture2D)MainPicOrig.texture;
-    Texture2D palt = (Texture2D)MainPicPalette.texture;
-
-    // For each texture pixel, find the bast pixel in the palette
-    Color32[] cols = origt.GetPixels32();
-    for (int y = 0; y < h; y++) {
-      PBar.Progress(y);
-      for (int x = 0; x < w; x++) {
-        int pos = x + w * y;
-        Color32 col = cols[pos];
-        Color.RGBToHSV(col, out _, out float sat, out float val);
-
-        int best = -1;
-        float bestdist = float.MaxValue;
-        for (int i = 0; i < 256; i++) {
-          Color32 pc = pixels[i].Get32();
-          Color.RGBToHSV(pc, out _, out float psat, out float pval);
-
-          float dr = (col.r - pc.r);
-          float dg = (col.g - pc.g);
-          float db = (col.b - pc.b);
-          float da = (col.a - pc.a);
-          float ds = (sat - psat);
-          float dv = (val - pval);
-          float dist = (dr * dr + dg * dg + db * db) / 3 + da * da + ds * ds + dv * dv * dv;
-          if (bestdist > dist) {
-            bestdist = dist;
-            best = i;
-          }
-        }
-        int hi = (best & 0xF0) >> 4;
-        int lo = (best & 0xF);
-        palt.SetPixel(x, y, new Color(hi / 15f, lo / 15f, 0, 255));
-      }
-    }
-    // Update the "paletized" texture with the found color index
-    palt.Apply();
-    MainPicPalette.texture = palt;
-
-    // Show the paletized rawimage and toggle the flag
-    // FIXME
-
-    PBar.Hide();
-  }
-
   public Slider NumColorsS;
   public TextMeshProUGUI NumColorsT;
   public Slider StartAtS;
@@ -490,14 +440,30 @@ public class PaletteEditor : MonoBehaviour {
   Color32 Transparent = new Color32(0, 0, 0, 0);
   Color32 Black = new Color32(0, 0, 0, 255);
   public Material RGEPalette;
+
+  public void dbg() {
+    Texture2D t = (Texture2D)MainPicPalette.texture;
+    t.Resize(16, 16);
+    for (int y = 0; y < 16; y++) {
+      for (int x = 0; x < 16; x++) {
+        byte r = (byte)(4 + y * 8);
+        byte g = (byte)(4 + x * 8);
+        t.SetPixel(x, 15 - y, new Color32(r, g, 0, 255));
+      }
+    }
+    t.Apply();
+    MainPicPalette.texture = t;
+  }
+
 }
 
 /*
 
+Use some sort of selection tool (left and right clicks on pixels) to select the start and end of the part of the palette to handle
+Implement move and copy/paste of selected palette range
+Fix color mapping (to convert to indexed colors)
 
-slider to decide how many colors to use
-toggle to enable/disable palette
-Add second texture for image to use a palette material
+
 
 Load Sprite
 Load Tilemap
@@ -507,7 +473,6 @@ Update image with current palette
 Toggle Normal/Palette modes
 
 
-a way to load a sprite and see it with a palette
 a way to get a sprite from normal and convert to palette (generating palette or using current palette)
 a way to save a converted sprite
 a way to convert back a sprite to normal mode
