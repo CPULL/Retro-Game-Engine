@@ -248,6 +248,24 @@ public class PaletteEditor : MonoBehaviour {
     }
   }
 
+  public void RemoveDuplicates() {
+    for (int i = 1; i < 255; i++) {
+      Color32 c = palette[i];
+      bool duplicated = false;
+      for (int j = 0; j < 256; j++) {
+        if (i != j && palette[j] == c) {
+          duplicated = true;
+          break;
+        }
+      }
+      if (duplicated) {
+        palette[i] = Transparent;
+      }
+      pixels[i].Set32(palette[i]);
+    }
+    RGEPalette.SetColorArray("_Colors", palette);
+  }
+
   void SetSelectedPixel() {
     if (selectedPixel == null) return;
     selectedPixel.Set32(SelectedColor.color);
@@ -376,25 +394,23 @@ public class PaletteEditor : MonoBehaviour {
   }
 
   public void ShufflePalette() {
-    Rhsv[] cs = new Rhsv[254];
-    for (int i = 1; i < 255; i++) {
-      Color.RGBToHSV(pixels[i].Get32(), out float h, out float s, out float v);
-      cs[i - 1] = new Rhsv(h, s, v);
-    }
-    Array.Sort(cs, delegate (Rhsv x, Rhsv y) {
-      Color32 a = x.C32();
-      Color32 b = y.C32();
-      int c = a.r.CompareTo(b.r);
+    Color32[] tosort = new Color32[254];
+    for (int i = 1; i < 255; i++)
+      tosort[i - 1] = palette[i];
+    Array.Sort(tosort, delegate (Color32 x, Color32 y) {
+      int c = y.a.CompareTo(x.a);
       if (c != 0) return c;
-      c = a.g.CompareTo(b.g);
+      c = x.r.CompareTo(y.r);
       if (c != 0) return c;
-      return a.b.CompareTo(b.b);
+      c = x.g.CompareTo(y.g);
+      if (c != 0) return c;
+      return x.b.CompareTo(y.b);
     });
 
     palette[0] = Color.black;
     palette[255] = Transparent;
     for (int i = 1; i < 255; i++) {
-      palette[i] = cs[i - 1].C32();
+      palette[i] = tosort[i - 1];
       pixels[i].Set32(palette[i]);
     }
     RGEPalette.SetColorArray("_Colors", palette);
@@ -448,29 +464,39 @@ public class PaletteEditor : MonoBehaviour {
 
   Color32 Transparent = new Color32(0, 0, 0, 0);
   public Material RGEPalette;
+
+  Color32[] copied = null;
+  private void Update() {
+    if (minsel == -1 || maxsel == -1) return;
+    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.C)) {
+      copied = new Color32[maxsel - minsel + 1];
+      for (int i = minsel; i <= maxsel; i++) {
+        copied[i - minsel] = palette[i];
+      }
+    }
+    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.V) && copied != null) {
+      for (int i = 0; i < copied.Length; i++) {
+        if (i + minsel > 254) break;
+        palette[minsel + i] = copied[i];
+        pixels[minsel + i].Set32(copied[i]);
+      }
+      RGEPalette.SetColorArray("_Colors", palette);
+    }
+  }
 }
 
 /*
 
-Use some sort of selection tool (left and right clicks on pixels) to select the start and end of the part of the palette to handle
-Implement move and copy/paste of selected palette range
-Fix color mapping (to convert to indexed colors)
-
-
-
 Load Sprite
 Load Tilemap
+Load part of a rom
+Convert all graphical items in a rom
 Save Image/Sprite
-Generate palette from image
-Update image with current palette
-Toggle Normal/Palette modes
+Saveload palette (bin and text)
 
 
-a way to get a sprite from normal and convert to palette (generating palette or using current palette)
 a way to save a converted sprite
 a way to convert back a sprite to normal mode
-
-load/save buttons (bin and text)
 
 
 */
