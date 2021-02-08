@@ -26,6 +26,7 @@ public class PaletteEditor : MonoBehaviour {
   public RectTransform ColorPickerH;
   public RectTransform ColorPickerV;
   readonly ColorImageQuantizer ciq = new ColorImageQuantizer(new MedianCutQuantizer());
+  readonly Pixel[] Pixels = new Pixel[256];
   readonly Color[] palette = new Color[256];
 
 
@@ -35,6 +36,7 @@ public class PaletteEditor : MonoBehaviour {
       pixels[pos] = t.GetComponent<Pixel>();
       palette[pos] = Col.GetColor((byte)pos);
       pixels[pos].Init(pos, palette[pos], SelectPalettePixel, Color.black);
+      Pixels[pos] = pixels[pos];
       pos++;
     }
     RGEPalette.SetColorArray("_Colors", palette);
@@ -204,7 +206,9 @@ public class PaletteEditor : MonoBehaviour {
   }
 
   Pixel selectedPixel = null;
-  void SelectPalettePixel(Pixel p) {
+  int minsel = -1;
+  int maxsel = -1;
+  void SelectPalettePixel(Pixel p, bool left) {
     if (selectedPixel != null) selectedPixel.Deselect();
     Color32 c = p.Get32();
     RSlider.SetValueWithoutNotify(c.r);
@@ -214,6 +218,34 @@ public class PaletteEditor : MonoBehaviour {
     p.Select();
     selectedPixel = p;
     SetColor();
+
+    if (left)
+      minsel = p.pos;
+    else
+      maxsel = p.pos;
+    if (minsel != -1 && maxsel != -1) {
+      if (minsel > maxsel) { int tmp = minsel; minsel = maxsel; maxsel = tmp; }
+      if (minsel < 1) minsel = 1;
+      if (maxsel > 254) maxsel = 254;
+      for (int i = 0; i < 256; i++) {
+        pixels[i].InRange(i >= minsel && i <= maxsel);
+      }
+    }
+  }
+
+  public void SelectColors(bool all) {
+    if (all) {
+      minsel = 1;
+      maxsel = 254;
+      for (int i = 1; i < 255; i++)
+        pixels[i].InRange(true);
+    }
+    else {
+      minsel = -1;
+      maxsel = -1;
+      for (int i = 1; i < 255; i++)
+        pixels[i].InRange(false);
+    }
   }
 
   void SetSelectedPixel() {
@@ -318,29 +350,27 @@ public class PaletteEditor : MonoBehaviour {
     Texture2D texture = (Texture2D)MainPicOrig.texture;
     yield return PBar.Show("Generating", 0, 2); ;
 
-    int num = (int)NumColorsS.value;
-    int sa = (int)StartAtS.value;
+    int num = 254;
+    if (minsel != -1 && maxsel != -1) {
+      num = maxsel - minsel + 1;
+    }
 
     Color32[] colorTable = ciq.CalculatePalette(texture, num);
     yield return PBar.Progress(1);
 
-    Color32[] colors = new Color32[256];
-    colors[0] = Black;
-    colors[255] = Transparent;
-    for (int i = 0; i < 256; i++) {
-      if (i < sa || i >= sa + num)
-        colors[i] = pixels[i].Get32();
-      else {
-        colors[i] = colorTable[i - sa];
-        pixels[i].Set32(colors[i]);
-      }
+    int start = minsel == -1 ? 1 : minsel;
+    int end = maxsel == -1 ? 254 : maxsel;
+    for (int i = start; i <= end; i++) {
+      palette[i] = colorTable[i - start];
+      pixels[i].Set32(palette[i]);
     }
     yield return PBar.Progress(2);
 
-    Texture2D newImage = ciq.ReduceColors(texture, colors);
+    Texture2D newImage = ciq.ReduceColors(texture, colorTable);
     newImage.Apply();
     MainPicPalette.texture = newImage;
     yield return PBar.Progress(3);
+    RGEPalette.SetColorArray("_Colors", palette);
 
     PBar.Hide();
   }
@@ -372,10 +402,10 @@ public class PaletteEditor : MonoBehaviour {
 
   public void UseDefaultPalette() {
     for (int i = 0; i < 256; i++) {
-      pixels[i].Set32(Col.GetColor((byte)i));
-      string id = "_Color" + i.ToString("X2");
-      RGEPalette.SetColor(id, pixels[i].Get32());
+      palette[i] = Col.GetColor((byte)i);
+      pixels[i].Set32(palette[i]);
     }
+    RGEPalette.SetColorArray("_Colors", palette);
   }
 
   IEnumerator ApplyingPalette() {
@@ -406,6 +436,7 @@ public class PaletteEditor : MonoBehaviour {
     }
     palt.Apply();
     MainPicPalette.texture = palt;
+    RGEPalette.SetColorArray("_Colors", palette); // Should not be necessary but just in case
     PBar.Hide();
   }
 
@@ -415,32 +446,7 @@ public class PaletteEditor : MonoBehaviour {
     MainPicPalette.enabled = PaletteModeToggle.isOn;
   }
 
-  public Slider NumColorsS;
-  public TextMeshProUGUI NumColorsT;
-  public Slider StartAtS;
-  public TextMeshProUGUI StartAtT;
-
-  public void ChangeMaxColors() {
-    int num = (int)NumColorsS.value;
-    NumColorsT.text = "Num colors: " + num;
-    if (num + StartAtS.value > 254) {
-      StartAtS.SetValueWithoutNotify(254 - num);
-      StartAtT.text = "Start at: " + (254 - num);
-    }
-  }
-
-  public void ChangeStartAt() {
-    int num = (int)NumColorsS.value;
-    int sa = (int)StartAtS.value;
-    StartAtT.text = "Start at: " + sa;
-    if (num + StartAtS.value > 254) {
-      NumColorsS.SetValueWithoutNotify(254 - sa);
-      NumColorsT.text = "Num colors: " + (254 - sa);
-    }
-  }
-
   Color32 Transparent = new Color32(0, 0, 0, 0);
-  Color32 Black = new Color32(0, 0, 0, 255);
   public Material RGEPalette;
 }
 

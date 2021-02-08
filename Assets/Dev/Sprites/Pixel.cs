@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler {
   public int pos = 0;
   Action<int> ClickCall;
-  Action<Pixel> UseCall;
+  Action<Pixel, bool> UseCall;
   Action<int> OverCall;
   [SerializeField] private Image img;
   [SerializeField] private Image border;
@@ -14,8 +14,10 @@ public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, 
   byte color;
   bool init = false;
   static Color32 BorderNormal = new Color32(206, 224, 223, 120);
+  static Color32 BorderActive = new Color32(150, 250, 150, 220);
+  bool active = false;
 
-  public void Init(int p, Color32 c, Action<Pixel> cb, Color32 defBorder) {
+  public void Init(int p, Color32 c, Action<Pixel, bool> cb, Color32 defBorder) {
     pos = p;
     UseCall = cb;
     ClickCall = null;
@@ -51,9 +53,12 @@ public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, 
   }
 
   public void OnPointerClick(PointerEventData eventData) {
-    if (eventData.button == 0) {
+    if (eventData.button == PointerEventData.InputButton.Left) {
       ClickCall?.Invoke(pos);
-      UseCall?.Invoke(this);
+      UseCall?.Invoke(this, true);
+    }
+    if (eventData.button == PointerEventData.InputButton.Right) {
+      UseCall?.Invoke(this, false);
     }
   }
 
@@ -65,7 +70,7 @@ public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, 
 
   public void OnPointerExit(PointerEventData eventData) {
     if (border == null) return;
-    border.color = BorderNormal;
+    border.color = active ? BorderActive : BorderNormal;
   }
 
   internal void SetBorderSprite(Sprite box) {
@@ -85,5 +90,10 @@ public class Pixel : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, 
   }
   internal void Set32(Color32 c) {
     img.color = c;
+  }
+
+  internal void InRange(bool activate) {
+    active = activate;
+    border.color = active ? BorderActive : BorderNormal;
   }
 }
