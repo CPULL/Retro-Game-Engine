@@ -500,12 +500,60 @@ public class PaletteEditor : MonoBehaviour {
   public GameObject RomLineTemplate;
   public GameObject RomList;
   public Transform RomContent;
+  public TMP_InputField Values;
+  public Button LoadSubButton;
 
-  public void LoadTxt() { }
+  public void LoadTxt() {
+    Values.gameObject.SetActive(true);
+    LoadSubButton.enabled = true;
+  }
+
+  public void PostLoadTxt() {
+    if (!gameObject.activeSelf) return;
+    StartCoroutine(LoadingTxt());
+  }
+
+  IEnumerator LoadingTxt() {
+    yield return PBar.Show("Loading", 0, 2);
+    string data = Values.text.Trim();
+
+    byte[] block;
+    try {
+      ByteReader.ReadBlock(data, out List<CodeLabel> labels, out block);
+    } catch (System.Exception e) {
+      Dev.inst.HandleError("Parsing error: " + e.Message + "\n" + Values.text);
+      yield break;
+    }
+
+    PBar.Progress(1);
+    int pos = 0;
+    for (int i = 1; i < 255; i++) {
+      byte r = block[pos++];
+      byte g = block[pos++];
+      byte b = block[pos++];
+      byte a = block[pos++];
+      palette[i] = new Color32(r, g, b, a);
+    }
+    Values.gameObject.SetActive(false);
+    LoadSubButton.enabled = false;
+    PBar.Hide();
+  }
   public void LoadBin() { }
   public void LoadRom() { }
 
-  public void SaveTxt() { }
+  public void SaveTxt() { 
+    string res = "Palette:\nusehex\n";
+    for (int i = 1; i < 255; i++) {
+      Color32 c = palette[i];
+      res += c.r.ToString("X2") + c.g.ToString("X2") + c.b.ToString("X2") + c.a.ToString("X2") + " ";
+      if (i % 16 == 0) res += "\n";
+    }
+    res += "\n";
+    Values.gameObject.SetActive(true);
+    Values.text = res;
+    PBar.Hide();
+  }
+
   public void SaveBin() { }
   public void SaveRom() { }
   public void ConvertRom() { }
