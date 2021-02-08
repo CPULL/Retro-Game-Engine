@@ -502,6 +502,7 @@ public class PaletteEditor : MonoBehaviour {
   public Transform RomContent;
   public TMP_InputField Values;
   public Button LoadSubButton;
+  public Confirm confirm;
 
   public void LoadTxt() {
     Values.gameObject.SetActive(true);
@@ -527,7 +528,8 @@ public class PaletteEditor : MonoBehaviour {
 
     PBar.Progress(1);
     int pos = 0;
-    for (int i = 1; i < 255; i++) {
+    byte len = block[pos++];
+    for (int i = 1; i <= len; i++) {
       byte r = block[pos++];
       byte g = block[pos++];
       byte b = block[pos++];
@@ -538,23 +540,92 @@ public class PaletteEditor : MonoBehaviour {
     LoadSubButton.enabled = false;
     PBar.Hide();
   }
-  public void LoadBin() { }
-  public void LoadRom() { }
+  
+  public void LoadBin() {
+    FileBrowser.Load(PostLoadBin, FileBrowser.FileType.Rom);
+  }
 
-  public void SaveTxt() { 
-    string res = "Palette:\nusehex\n";
-    for (int i = 1; i < 255; i++) {
+  public void PostLoadBin(string path) {
+    StartCoroutine(PostLoadingBin(path));
+  }
+  public IEnumerator PostLoadingBin(string path) {
+    yield return PBar.Show("Loading", 0, 3);
+    ByteChunk res = new ByteChunk();
+    try {
+      ByteReader.ReadBinBlock(path, res);
+    } catch (System.Exception e) {
+      Dev.inst.HandleError("Parsing error: " + e.Message);
+      yield break;
+    }
+
+    if (res.block.Length < 254 * 4 + 1) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a palette"); yield break; }
+
+    PBar.Progress(1);
+    int pos = 0;
+    byte len = res.block[pos++];
+    for (int i = 1; i <= len; i++) {
+      byte r = res.block[pos++];
+      byte g = res.block[pos++];
+      byte b = res.block[pos++];
+      byte a = res.block[pos++];
+      palette[i] = new Color32(r, g, b, a);
+    }
+
+    PBar.Hide();
+  }
+
+  public void SaveTxt() {
+    if (minsel != -1 && maxsel != -1) {
+      confirm.Set("Are you sure to save only " + (maxsel - minsel + 1) + " palette items?", SaveTextPost);
+    }
+    SaveTextPost();
+  }
+  void SaveTextPost() {
+    int start = minsel == -1 ? 1 : minsel;
+    int end = maxsel == -1 ? 254 : maxsel;
+    string res = "Palette:\nusehex\n" + (end - start + 1).ToString("X2") + "\n";
+    for (int i = start; i <= end; i++) {
       Color32 c = palette[i];
       res += c.r.ToString("X2") + c.g.ToString("X2") + c.b.ToString("X2") + c.a.ToString("X2") + " ";
-      if (i % 16 == 0) res += "\n";
+      if ((i - start) % 8 == 7) res += "\n";
     }
     res += "\n";
     Values.gameObject.SetActive(true);
     Values.text = res;
-    PBar.Hide();
   }
 
-  public void SaveBin() { }
+  public void SaveBin() {
+    if (minsel != -1 && maxsel != -1) {
+      confirm.Set("Are you sure to save only " + (maxsel - minsel + 1) + " palette items?", SaveBinPost);
+    }
+    SaveBinPost();
+  }
+
+  void SaveBinPost() {
+    FileBrowser.Save(SaveBinPost, FileBrowser.FileType.Rom);
+  }
+
+  void SaveBinPost(string path, string name) {
+    ByteChunk chunk = new ByteChunk();
+    int start = minsel == -1 ? 1 : minsel;
+    int end = maxsel == -1 ? 254 : maxsel;
+    byte[] block = new byte[1 + (end - start + 1) * 4];
+    block[0] = (byte)(end - start + 1);
+    int pos = 1;
+    for (int i = start; i <= end; i++) {
+      Color32 c = palette[i];
+      block[pos++] = c.r;
+      block[pos++] = c.g;
+      block[pos++] = c.b;
+      block[pos++] = c.a;
+    }
+    chunk.AddBlock("Palette", LabelType.Sprite, block);
+    ByteReader.SaveBinBlock(path, name, chunk);
+  }
+
+
+  public void LoadRom() { }
+
   public void SaveRom() { }
   public void ConvertRom() { }
   public void SaveItemAsRom() { }
