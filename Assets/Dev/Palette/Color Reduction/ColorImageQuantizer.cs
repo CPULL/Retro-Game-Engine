@@ -176,7 +176,10 @@ public class ColorImageQuantizer {
         byte colorIndex = (byte)GetClosestColor(data[x + width * y]);
 
         // write color index as pixel's value to destination image
-        data[x + width * y] = paletteToUse[colorIndex];
+        if (colorIndex == 255)
+          data[x + width * y] = new Color32(0, 0, 0, 0);
+        else
+          data[x + width * y] = paletteToUse[colorIndex];
       }
     }
     destImage.SetPixels32(data);

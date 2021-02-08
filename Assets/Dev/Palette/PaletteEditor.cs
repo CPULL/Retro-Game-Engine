@@ -486,6 +486,7 @@ public class PaletteEditor : MonoBehaviour {
 }
 
 /*
+Bug we were no more able to select items or to remove duplicates (but no errors in console)
 
 Load Sprite
 Load Tilemap
