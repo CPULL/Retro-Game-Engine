@@ -25,16 +25,19 @@ public class PaletteEditor : MonoBehaviour {
   Texture2D ColorPickerTexture;
   public RectTransform ColorPickerH;
   public RectTransform ColorPickerV;
+  readonly ColorImageQuantizer ciq = new ColorImageQuantizer(new MedianCutQuantizer());
+  readonly Color[] palette = new Color[256];
+
 
   void Start() {
     int pos = 0;
     foreach(Transform t in PaletteContainer) {
       pixels[pos] = t.GetComponent<Pixel>();
-      pixels[pos].Init(pos, Col.GetColor((byte)pos), SelectPalettePixel, Color.black);
-      string id = "_Color" + pos.ToString("X2");
-      RGEPalette.SetColor(id, pixels[pos].Get32());
+      palette[pos] = Col.GetColor((byte)pos);
+      pixels[pos].Init(pos, palette[pos], SelectPalettePixel, Color.black);
       pos++;
     }
+    RGEPalette.SetColorArray("_Colors", palette);
 
     RSlider.SetValueWithoutNotify(255);
     GSlider.SetValueWithoutNotify(255);
@@ -216,8 +219,8 @@ public class PaletteEditor : MonoBehaviour {
   void SetSelectedPixel() {
     if (selectedPixel == null) return;
     selectedPixel.Set32(SelectedColor.color);
-    string id = "_Color" + selectedPixel.pos.ToString("X2");
-    RGEPalette.SetColor(id, pixels[selectedPixel.pos].Get32());
+    palette[selectedPixel.pos] = pixels[selectedPixel.pos].Get32();
+    RGEPalette.SetColorArray("_Colors", palette);
   }
 
 
@@ -311,8 +314,6 @@ public class PaletteEditor : MonoBehaviour {
     StartCoroutine(GeneratingBestPalette());
   }
 
-  ColorImageQuantizer ciq = new ColorImageQuantizer(new MedianCutQuantizer());
-
   IEnumerator GeneratingBestPalette() {
     Texture2D texture = (Texture2D)MainPicOrig.texture;
     yield return PBar.Show("Generating", 0, 2); ;
@@ -360,11 +361,13 @@ public class PaletteEditor : MonoBehaviour {
       return a.b.CompareTo(b.b);
     });
 
+    palette[0] = Color.black;
+    palette[255] = Transparent;
     for (int i = 1; i < 255; i++) {
-      pixels[i].Set32(cs[i - 1].C32());
-      string id = "_Color" + i.ToString("X2");
-      RGEPalette.SetColor(id, cs[i - 1].C32());
+      palette[i] = cs[i - 1].C32();
+      pixels[i].Set32(palette[i]);
     }
+    RGEPalette.SetColorArray("_Colors", palette);
   }
 
   public void UseDefaultPalette() {
@@ -380,10 +383,9 @@ public class PaletteEditor : MonoBehaviour {
     int h = MainPicOrig.texture.height;
     yield return PBar.Show("Applying palette", 0, 1 + h);
 
-    Color32[] colors = new Color32[255];
-    for (int i = 0; i < 255; i++) {
-      colors[i] = pixels[i].Get32();
-    }
+    Color32[] colors = new Color32[256];
+    for (int i = 0; i < 256; i++)
+      colors[i] = palette[i];
     Texture2D newImage = ciq.ReduceColors((Texture2D)MainPicOrig.texture, colors);
     PBar.Progress(1);
     Texture2D palt = (Texture2D)MainPicPalette.texture;
@@ -394,9 +396,9 @@ public class PaletteEditor : MonoBehaviour {
         int pos = x + w * y;
         for (int i = 0; i < 256; i++) {
           if (cols[pos].Equals(colors[i])) {
-            int hi = (i & 0xF0) >> 4;
-            int lo = (i & 0xF);
-            palt.SetPixel(x, y, new Color(hi / 15f, lo / 15f, 0, 255));
+            int hi = ((i & 0xF0) >> 4) * 8 + 4;
+            int lo = (i & 0xF) * 8 + 4;
+            palt.SetPixel(x, y, new Color(hi / 255f, lo / 255f, 0, 255));
             break;
           }
         }
@@ -440,21 +442,6 @@ public class PaletteEditor : MonoBehaviour {
   Color32 Transparent = new Color32(0, 0, 0, 0);
   Color32 Black = new Color32(0, 0, 0, 255);
   public Material RGEPalette;
-
-  public void dbg() {
-    Texture2D t = (Texture2D)MainPicPalette.texture;
-    t.Resize(16, 16);
-    for (int y = 0; y < 16; y++) {
-      for (int x = 0; x < 16; x++) {
-        byte r = (byte)(4 + y * 8);
-        byte g = (byte)(4 + x * 8);
-        t.SetPixel(x, 15 - y, new Color32(r, g, 0, 255));
-      }
-    }
-    t.Apply();
-    MainPicPalette.texture = t;
-  }
-
 }
 
 /*
