@@ -341,6 +341,7 @@ public class PaletteEditor : MonoBehaviour {
       h = 512;
     }
     MainPicOrig.GetComponent<RectTransform>().sizeDelta = new Vector2(w, h);
+    MainPicPalette.GetComponent<RectTransform>().sizeDelta = new Vector2(w, h);
   }
 
   public void ChangeScreenSlider() {
@@ -355,12 +356,24 @@ public class PaletteEditor : MonoBehaviour {
   }
 
   public void GenerateBestPalette() {
+    if (MainPicOrig.texture == null) {
+      Dev.inst.HandleError("No image loaded!");
+      return;
+    }
     StartCoroutine(GeneratingBestPalette());
   }
   public void ApplyPalette() {
+    if (MainPicOrig.texture == null) {
+      Dev.inst.HandleError("No image loaded!");
+      return;
+    }
     StartCoroutine(ApplyingPalette());
   }
   public void ApplyDefaultPalette() {
+    if (MainPicOrig.texture == null) {
+      Dev.inst.HandleError("No image loaded!");
+      return;
+    }
     StartCoroutine(GeneratingBestPalette());
   }
 
