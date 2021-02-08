@@ -619,36 +619,100 @@ public class PaletteEditor : MonoBehaviour {
       block[pos++] = c.b;
       block[pos++] = c.a;
     }
-    chunk.AddBlock("Palette", LabelType.Sprite, block);
+    chunk.AddBlock("Palette", LabelType.Palette, block);
     ByteReader.SaveBinBlock(path, name, chunk);
   }
 
+  readonly List<RomLine> lines = new List<RomLine>();
 
-  public void LoadRom() { }
+  public void LoadRom() {
+    FileBrowser.Load(LoadRomPost, FileBrowser.FileType.Rom);
+  }
+  public void LoadRomPost(string path) {
+    foreach (Transform t in RomContent)
+      Destroy(t.gameObject);
+    lines.Clear();
+    StartCoroutine(LoadingRomPost(path));
+    RomList.SetActive(true);
+  }
+
+  IEnumerator LoadingRomPost(string path) {
+    yield return PBar.Show("Loading", 25, 350);
+    ByteChunk res = new ByteChunk();
+    ByteReader.ReadBinBlock(path, res);
+    yield return PBar.Progress(50);
+
+    int num = res.labels.Count;
+    int step = 0;
+    int start = lines.Count;
+
+    foreach (CodeLabel l in res.labels) {
+      step++;
+      if (step % 4 == 0) yield return PBar.Progress(50 + 100 * step / num);
+      RomLine line = Instantiate(RomLineTemplate, RomContent).GetComponent<RomLine>();
+
+      line.gameObject.name = l.name;
+      line.gameObject.SetActive(true);
+      line.Label.SetTextWithoutNotify(l.name);
+      line.Type.text = (int)l.type + " " + l.type.ToString();
+      line.ltype = l.type;
+      lines.Add(line);
+      line.Check.onValueChanged.AddListener((check) => { SelectLine(line, check); });
+    }
+    step = 0;
+    for (int i = 0; i < res.labels.Count - 1; i++) {
+      step++;
+      if (step % 4 == 0) yield return PBar.Progress(150 + 100 * step / num);
+      int size = res.labels[i + 1].start - res.labels[i].start;
+      lines[start + i].size = size;
+      lines[start + i].Size.text = size.ToString();
+    }
+    lines[start + res.labels.Count - 1].size = res.block.Length - res.labels[res.labels.Count - 1].start;
+    lines[start + res.labels.Count - 1].Size.text = lines[start + res.labels.Count - 1].size.ToString();
+
+    step = 0;
+    for (int i = 0; i < res.labels.Count; i++) {
+      step++;
+      if (step % 4 == 0) yield return PBar.Progress(250 + 100 * step / num);
+      int size = lines[start + i].size;
+      byte[] data = new byte[size];
+      for (int j = 0; j < size; j++) {
+        data[j] = res.block[res.labels[i].start + j];
+      }
+      lines[start + i].Data = data;
+    }
+    PBar.Hide();
+  }
+
 
   public void SaveRom() { }
   public void ConvertRom() { }
   public void SaveItemAsRom() { }
 
+  public void SelectLine(RomLine line, bool check) {
+    if (!check) return;
+    int.TryParse(line.Type.text.Substring(0, 2).Trim(), out int t);
+    LabelType type = (LabelType)t;
+
+    if (type == LabelType.Image) ; // Find w and h and load (update maybe the screensize)
+    if (type == LabelType.Sprite) ; // Find w and h and load (update maybe the screensize)
+    if (type == LabelType.Tile) ; // Go up until we find the tilemap label (find current position) and then get w and h and then load tile
+    if (type == LabelType.Palette) ; // Ask if we should replace current palette
+
+    Debug.Log("Load: " + line.Label.text);
+  }
 
 }
+// By selecting a line, if it is an image, load it like a normal image (it will be easier because ti will be already as bytes)
+// If the item is a palette, then propose to load it and replace the current palette
+// Add button to update the item in te rom
 
 /*
 
-Add rom list in the center
-Add miniarea to see the other texture (swap between orig and palette)
 When selecting a line in rom list, if it is an image load it
-
-Load Sprite
-Load Tilemap
-Load part of a rom
 Convert all graphical items in a rom
-Save Image/Sprite
-Saveload palette (bin and text)
-
 
 a way to save a converted sprite
 a way to convert back a sprite to normal mode
-
 
 */
