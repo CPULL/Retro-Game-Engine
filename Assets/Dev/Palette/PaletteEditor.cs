@@ -800,7 +800,19 @@ public class PaletteEditor : MonoBehaviour {
 
   }
 
-  public void SaveRom() { }
+  public void SaveRom() {
+    if (lines == null || lines.Count == 0) return;
+    FileBrowser.Save(SaveRomPost, FileBrowser.FileType.Rom);
+  }
+
+  public void SaveRomPost(string path, string name) {
+    ByteChunk chunk = new ByteChunk();
+    foreach (RomLine line in lines) {
+      chunk.AddBlock(line.Label.text.Trim(), line.ltype, line.Data);
+    }
+    ByteReader.SaveBinBlock(path, name, chunk);
+  }
+
   public void ConvertRom() { }
 
   public void SelectLine(RomLine line, bool check) {
