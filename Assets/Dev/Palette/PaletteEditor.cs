@@ -352,8 +352,10 @@ public class PaletteEditor : MonoBehaviour {
       w = 512 * w / h;
       h = 512;
     }
-    PicOrig.GetComponent<RectTransform>().sizeDelta = new Vector2(w, h);
-    PicPalette.GetComponent<RectTransform>().sizeDelta = new Vector2(w, h);
+    Vector2 size = new Vector2(w, h);
+    PicOrig.GetComponent<RectTransform>().sizeDelta = size;
+    PicPalette.GetComponent<RectTransform>().sizeDelta = size;
+    PicDefault.GetComponent<RectTransform>().sizeDelta = size;
   }
 
   public void ChangeScreenSlider() {
@@ -705,11 +707,14 @@ public class PaletteEditor : MonoBehaviour {
     img[2] = (byte)((h & 0xff00) >> 8);
     img[3] = (byte)(h & 0xff);
     pos = 4;
+    Color32[] pcs = new Color32[256];
+    for (int i = 0; i < 256; i++)
+      pcs[i] = palette[i];
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {
-        Color32 c = cols[x + 2 * y];
-        byte b = (byte)(((c.r - 4) / 8) << 4 + (c.g - 4) / 8);
-        img[pos++] = b;
+        Color32 c = cols[x + w * (h - y - 1)];
+        int b = (((c.r  - 4) / 8) << 4) + (c.g - 4) / 8;
+        img[pos++] = (byte)b;
       }
     }
     chunk.AddBlock("Image", LabelType.Image, img);
@@ -787,11 +792,11 @@ public class PaletteEditor : MonoBehaviour {
     LabelType type = (LabelType)t;
 
     if (type == LabelType.Image || type == LabelType.Sprite) { // Find w and h and load (update maybe the screensize)
-      int w = line.Data[0];
-      int h = line.Data[1];
-      LoadImages(w, h, line.Data, 2);
+      int w = (line.Data[0] << 8) + line.Data[1];
+      int h = (line.Data[2] << 8) + line.Data[3];
+      LoadImages(w, h, line.Data, 4);
     }
-    if (type == LabelType.Tile) { // Go up until we find the tilemap label (find current position) and then get w and h and then load tile
+    else if (type == LabelType.Tile) { // Go up until we find the tilemap label (find current position) and then get w and h and then load tile
       for (int i = 0; i < lines.Count; i++) {
         if (lines[i] == line) {
           for (int j = i - 1; j >= 0; j--) {
@@ -807,9 +812,8 @@ public class PaletteEditor : MonoBehaviour {
         }
       }
     }
-    if (type == LabelType.Palette) // Ask if we should replace current palette
+    else if (type == LabelType.Palette) // Ask if we should replace current palette
       confirm.Set("Load this palette?", () => { LoadPalette(line.Data); });
-
   }
 
   void LoadPalette(byte[] data) {
@@ -824,6 +828,7 @@ public class PaletteEditor : MonoBehaviour {
       palette[i + 1] = c;
       pixels[i + 1].Set32(c);
     }
+    RGEPalette.SetColorArray("_Colors", palette);
   }
 
   void LoadImages(int w, int h, byte[] data, int start) {

@@ -717,8 +717,8 @@ public class SpriteEditor : MonoBehaviour {
     }
 
     PBar.Progress(128);
-    int wb = block[0] << 8 + block[1];
-    int hb = block[2] << 8 + block[3];
+    int wb = (block[0] << 8) + block[1];
+    int hb = (block[2] << 8) + block[3];
     if (wb < 8 || hb < 8 || wb > 64 || hb > 64) {
       Message.text = "This does not look like a sprite.";
       PBar.Hide();
@@ -829,8 +829,8 @@ public class SpriteEditor : MonoBehaviour {
     if (res.block.Length <= 2) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a sprite"); yield break; }
 
     PBar.Progress(128);
-    int wb = res.block[0] << 8 + res.block[1];
-    int hb = res.block[2] << 8 + res.block[3];
+    int wb = (res.block[0] << 8) + res.block[1];
+    int hb = (res.block[2] << 8) + res.block[3];
     if (wb < 8 || hb < 8 || wb > 64 || hb > 64) {
       Dev.inst.HandleError("This does not look like a sprite.");
       yield break;

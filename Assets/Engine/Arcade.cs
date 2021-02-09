@@ -702,8 +702,8 @@ public class Arcade : MonoBehaviour {
 
   void Image(int pointer, int px, int py, int w, int h, int startx = 0, int starty = 0) {
     int pos;
-    int imw = mem[pointer] << 8 + mem[pointer + 1];
-    int imh = mem[pointer + 2] << 8 + mem[pointer + 3];
+    int imw = (mem[pointer] << 8) + mem[pointer + 1];
+    int imh = (mem[pointer + 2] << 8) + mem[pointer + 3];
     if (imw < 8 || imh < 8) throw new Exception("Invalid image");
     for (int y = 0; y < h; y++)
       for (int x = 0; x < w; x++) {
@@ -732,8 +732,8 @@ public class Arcade : MonoBehaviour {
 
   void Sprite(int num, int pointer, bool filter = false) {
     if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
-    int sx = mem[pointer] << 8 + mem[pointer + 1];
-    int sy = mem[pointer + 2] << 8 + mem[pointer + 3];
+    int sx = (mem[pointer] << 8) + mem[pointer + 1];
+    int sy = (mem[pointer + 2] << 8) + mem[pointer + 3];
     if (labelTextures.ContainsKey(pointer)) {
       sprites[num].Set(sx, sy, labelTextures[pointer], scaleW, scaleH, filter);
     }
