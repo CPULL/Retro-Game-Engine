@@ -176,10 +176,7 @@ public class ColorImageQuantizer {
         byte colorIndex = (byte)GetClosestColor(data[x + width * y]);
 
         // write color index as pixel's value to destination image
-        if (colorIndex == 255)
-          data[x + width * y] = new Color32(0, 0, 0, 0);
-        else
-          data[x + width * y] = paletteToUse[colorIndex];
+        data[x + width * y] = paletteToUse[colorIndex];
       }
     }
     destImage.SetPixels32(data);
@@ -195,8 +192,6 @@ public class ColorImageQuantizer {
 
   // Get closest color from palette to specified color
   private int GetClosestColor(Color32 color) {
-    if (color.a < 200) return 255;
-
     if ((useCaching) && (cache.ContainsKey(color))) {
       return cache[color];
     }
@@ -208,8 +203,9 @@ public class ColorImageQuantizer {
       int dr = color.r - paletteToUse[i].r;
       int dg = color.g - paletteToUse[i].g;
       int db = color.b - paletteToUse[i].b;
+      int da = color.a - paletteToUse[i].a;
 
-      int error = dr * dr + dg * dg + db * db;
+      int error = dr * dr + dg * dg + db * db + da * da;
 
       if (error < minError) {
         minError = error;

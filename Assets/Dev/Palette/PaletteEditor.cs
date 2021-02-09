@@ -467,11 +467,11 @@ public class PaletteEditor : MonoBehaviour {
     Texture2D palt = (Texture2D)PicPalette.texture;
     Color32[] cols = newImage.GetPixels32();
     for (int y = 0; y < h; y++) {
-      PBar.Progress(1 + y);
+      if (y % 4 == 0) yield return PBar.Progress(1 + y);
       for (int x = 0; x < w; x++) {
         int pos = x + w * y;
         for (int i = 0; i < 256; i++) {
-          if (cols[pos].Equals(colors[i])) {
+          if (ColorEqual(cols[pos], colors[i])) {
             int hi = ((i & 0xF0) >> 4) * 8 + 4;
             int lo = (i & 0xF) * 8 + 4;
             palt.SetPixel(x, y, new Color(hi / 255f, lo / 255f, 0, 255));
@@ -488,11 +488,11 @@ public class PaletteEditor : MonoBehaviour {
     Texture2D pald = (Texture2D)PicDefault.texture;
     cols = newImage.GetPixels32();
     for (int y = 0; y < h; y++) {
-      PBar.Progress(2 + h + y);
+      if (y % 4 == 0) yield return PBar.Progress(2 + h + y);
       for (int x = 0; x < w; x++) {
         int pos = x + w * y;
         for (int i = 0; i < 256; i++) {
-          if (cols[pos].Equals(defaultPalette[i])) {
+          if (ColorEqual(cols[pos], defaultPalette[i])) {
             int hi = ((i & 0xF0) >> 4) * 8 + 4;
             int lo = (i & 0xF) * 8 + 4;
             pald.SetPixel(x, y, new Color(hi / 255f, lo / 255f, 0, 255));
@@ -739,18 +739,52 @@ public class PaletteEditor : MonoBehaviour {
     int.TryParse(line.Type.text.Substring(0, 2).Trim(), out int t);
     LabelType type = (LabelType)t;
 
-    if (type == LabelType.Image) { // Find w and h and load (update maybe the screensize)
+    if (type == LabelType.Image || type == LabelType.Sprite) { // Find w and h and load (update maybe the screensize)
+      int w = line.Data[0];
+      int h = line.Data[1];
+      // Change screen size
+      PicSizeH.SetValueWithoutNotify(Mathf.Ceil(w / 8));
+      PicSizeV.SetValueWithoutNotify(Mathf.Ceil(h / 4));
 
+      // Load data
+      Texture2D palo = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+      Texture2D palt = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+      Texture2D pald = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+      Color32[] rawo = new Color32[w * h];
+      Color32[] rawp = new Color32[w * h];
+      for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+          int pos = x + w * y;
+          byte data = line.Data[2 + x + w * (h - y - 1)];
+          int hi = ((data & 0xF0) >> 4) * 8 + 4;
+          int lo = (data & 0xF) * 8 + 4;
 
-
+          rawo[pos] = palette[data];
+          rawp[pos] = new Color32((byte)hi, (byte)lo, 0, 255);
+        }
+      }
+      palo.SetPixels32(rawo);
+      palt.SetPixels32(rawp);
+      pald.SetPixels32(rawp);
+      palo.Apply();
+      palt.Apply();
+      pald.Apply();
+      PicOrig.texture = palo;
+      PicPalette.texture = palt;
+      PicDefault.texture = pald;
     }
-    if (type == LabelType.Sprite) ; // Find w and h and load (update maybe the screensize)
     if (type == LabelType.Tile) ; // Go up until we find the tilemap label (find current position) and then get w and h and then load tile
     if (type == LabelType.Palette) ; // Ask if we should replace current palette
 
     Debug.Log("Load: " + line.Label.text);
   }
 
+  bool ColorEqual(Color32 a, Color32 b) {
+    if (a.r == b.r && a.g == b.g && a.b == b.b) {
+      if (Math.Abs(a.a - b.a) < 16) return true;
+    }
+    return false;
+  }
 }
 // By selecting a line, if it is an image, load it like a normal image (it will be easier because ti will be already as bytes)
 // If the item is a palette, then propose to load it and replace the current palette
