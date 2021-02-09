@@ -550,6 +550,7 @@ public class PaletteEditor : MonoBehaviour {
   public TMP_InputField Values;
   public Button LoadSubButton;
   public Confirm confirm;
+  public Button UpdateItemButton;
 
   public void LoadTxt() {
     Values.gameObject.SetActive(true);
@@ -782,27 +783,44 @@ public class PaletteEditor : MonoBehaviour {
     PBar.Hide();
   }
 
+  RomLine currentLine = null;
+  public void UpdateItem() {
+    int w = PicPalette.texture.width;
+    int h = PicPalette.texture.height;
+    switch (currentLine.ltype) {
+      case LabelType.Image:
+      case LabelType.Sprite:
+        currentLine.Data = SaveImages(w, h, (Texture2D)PicPalette.texture, true);
+        break;
+
+      case LabelType.Tile:
+        currentLine.Data = SaveImages(w, h, (Texture2D)PicPalette.texture, false);
+        break;
+    }
+
+  }
 
   public void SaveRom() { }
   public void ConvertRom() { }
 
   public void SelectLine(RomLine line, bool check) {
+    UpdateItemButton.gameObject.SetActive(false);
     if (!check) return;
-    int.TryParse(line.Type.text.Substring(0, 2).Trim(), out int t);
-    LabelType type = (LabelType)t;
+    LabelType type = line.ltype;
 
+    currentLine = line;
     if (type == LabelType.Image || type == LabelType.Sprite) { // Find w and h and load (update maybe the screensize)
       int w = (line.Data[0] << 8) + line.Data[1];
       int h = (line.Data[2] << 8) + line.Data[3];
       LoadImages(w, h, line.Data, 4);
+
     }
     else if (type == LabelType.Tile) { // Go up until we find the tilemap label (find current position) and then get w and h and then load tile
       for (int i = 0; i < lines.Count; i++) {
         if (lines[i] == line) {
           for (int j = i - 1; j >= 0; j--) {
-            int.TryParse(lines[j].Type.text.Substring(0, 2).Trim(), out int tt);
-            LabelType ttt = (LabelType)tt;
-            if (ttt == LabelType.Tilemap) {
+            LabelType t = line.ltype;
+            if (t == LabelType.Tilemap) {
               int w = lines[j].Data[2];
               int h = lines[j].Data[3];
               LoadImages(w, h, line.Data, 0);
@@ -832,6 +850,7 @@ public class PaletteEditor : MonoBehaviour {
   }
 
   void LoadImages(int w, int h, byte[] data, int start) {
+    UpdateItemButton.gameObject.SetActive(true);
     // Change screen size
     PicSizeH.SetValueWithoutNotify(Mathf.Ceil(w / 8));
     PicSizeV.SetValueWithoutNotify(Mathf.Ceil(h / 4));
@@ -866,6 +885,27 @@ public class PaletteEditor : MonoBehaviour {
     PicDefault.texture = pald;
   }
 
+  byte[] SaveImages(int w, int h, Texture2D palt, bool saveSize) {
+    byte[] data = new byte[4 + w * h];
+    int start = 0;
+    if (saveSize) {
+      data[0] = (byte)((w & 0xff00) >> 8);
+      data[1] = (byte)(w & 0xff);
+      data[2] = (byte)((h & 0xff00) >> 8);
+      data[3] = (byte)(h & 0xff);
+      start = 4;
+    }
+    Color32[] rawp = palt.GetPixels32();
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        int pos = x + w * y;
+        byte val = (byte)((((rawp[pos].r - 4) / 8) << 4) + (rawp[pos].g - 4) / 8);
+        data[start + x + w * (h - y - 1)] = val;
+      }
+    }
+    return data;
+  }
+
   bool ColorEqual(Color32 a, Color32 b) {
     if (a.r == b.r && a.g == b.g && a.b == b.b) {
       if (Math.Abs(a.a - b.a) < 16) return true;
@@ -879,5 +919,4 @@ public class PaletteEditor : MonoBehaviour {
 Have src and dst palettes
 Convert should load all images, recreate some sort of original rgb texture and then re-apply the color adaptation with the new palette, then update every item
 Add button to update the current item in the rom
-Add button to save current item as image rom + palette
 */
