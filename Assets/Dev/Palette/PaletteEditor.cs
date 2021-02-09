@@ -742,41 +742,61 @@ public class PaletteEditor : MonoBehaviour {
     if (type == LabelType.Image || type == LabelType.Sprite) { // Find w and h and load (update maybe the screensize)
       int w = line.Data[0];
       int h = line.Data[1];
-      // Change screen size
-      PicSizeH.SetValueWithoutNotify(Mathf.Ceil(w / 8));
-      PicSizeV.SetValueWithoutNotify(Mathf.Ceil(h / 4));
-
-      // Load data
-      Texture2D palo = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
-      Texture2D palt = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
-      Texture2D pald = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
-      Color32[] rawo = new Color32[w * h];
-      Color32[] rawp = new Color32[w * h];
-      for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-          int pos = x + w * y;
-          byte data = line.Data[2 + x + w * (h - y - 1)];
-          int hi = ((data & 0xF0) >> 4) * 8 + 4;
-          int lo = (data & 0xF) * 8 + 4;
-
-          rawo[pos] = palette[data];
-          rawp[pos] = new Color32((byte)hi, (byte)lo, 0, 255);
+      LoadImages(w, h, line.Data, 2);
+    }
+    if (type == LabelType.Tile) { // Go up until we find the tilemap label (find current position) and then get w and h and then load tile
+      for (int i = 0; i < lines.Count; i++) {
+        if (lines[i] == line) {
+          for (int j = i - 1; j >= 0; j--) {
+            int.TryParse(lines[j].Type.text.Substring(0, 2).Trim(), out int tt);
+            LabelType ttt = (LabelType)tt;
+            if (ttt == LabelType.Tilemap) {
+              int w = lines[j].Data[2];
+              int h = lines[j].Data[3];
+              LoadImages(w, h, line.Data, 0);
+              return;
+            }
+          }
         }
       }
-      palo.SetPixels32(rawo);
-      palt.SetPixels32(rawp);
-      pald.SetPixels32(rawp);
-      palo.Apply();
-      palt.Apply();
-      pald.Apply();
-      PicOrig.texture = palo;
-      PicPalette.texture = palt;
-      PicDefault.texture = pald;
     }
-    if (type == LabelType.Tile) ; // Go up until we find the tilemap label (find current position) and then get w and h and then load tile
     if (type == LabelType.Palette) ; // Ask if we should replace current palette
 
-    Debug.Log("Load: " + line.Label.text);
+  }
+
+  void LoadImages(int w, int h, byte[] data, int start) {
+    // Change screen size
+    PicSizeH.SetValueWithoutNotify(Mathf.Ceil(w / 8));
+    PicSizeV.SetValueWithoutNotify(Mathf.Ceil(h / 4));
+
+    // Load data
+    Texture2D palo = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+    Texture2D palt = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+    Texture2D pald = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+    Color32[] rawo = new Color32[w * h];
+    Color32[] rawp = new Color32[w * h];
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        int pos = x + w * y;
+        byte val = data[start + x + w * (h - y - 1)];
+        int hi = ((val & 0xF0) >> 4) * 8 + 4;
+        int lo = (val & 0xF) * 8 + 4;
+        if (SelectedModes[1].enabled)
+          rawo[pos] = palette[val];
+        else
+          rawo[pos] = defaultPalette[val];
+        rawp[pos] = new Color32((byte)hi, (byte)lo, 0, 255);
+      }
+    }
+    palo.SetPixels32(rawo);
+    palt.SetPixels32(rawp);
+    pald.SetPixels32(rawp);
+    palo.Apply();
+    palt.Apply();
+    pald.Apply();
+    PicOrig.texture = palo;
+    PicPalette.texture = palt;
+    PicDefault.texture = pald;
   }
 
   bool ColorEqual(Color32 a, Color32 b) {
