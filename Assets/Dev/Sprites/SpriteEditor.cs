@@ -668,11 +668,10 @@ public class SpriteEditor : MonoBehaviour {
   IEnumerator Saving() {
     yield return PBar.Show("Saving", 0, 1 + w * h);
     SetButtons(-1);
-    string res = "SpriteSize:\nusehex\n";
+    string res = "Sprite:\nusehex\n";
     byte sizex = (byte)w;
     byte sizey = (byte)h;
     res += sizex.ToString("X2") + " " + sizey.ToString("X2") + "\n";
-    res += "Sprite:\n";
     int num = w * h;
     yield return PBar.Progress(1);
     for (int i = 0; i < num; i += 4) {

@@ -700,25 +700,27 @@ public class Arcade : MonoBehaviour {
     }
   }
 
-  void Image(int pointer, int px, int py, int w, int h, int linestart = 0, int linesize = 0) {
+  void Image(int pointer, int px, int py, int w, int h, int startx = 0, int starty = 0) {
     int pos;
+    byte imw = mem[pointer];
+    byte imh = mem[pointer + 1];
+    if (imw < 8 || imh < 8) throw new Exception("Invalid image");
     for (int y = 0; y < h; y++)
       for (int x = 0; x < w; x++) {
-        int xx = x + px;
-        int yy = y + py;
-        if (xx < 0 || xx >= sw || yy < 0 || yy > sh) continue;
+        int dx = x + px;
+        int dy = y + py;
+        if (dx < 0 || dx >= sw || dy < 0 || dy > sh) continue;
 
-        if (linestart == 0 && linesize == 0) {
-          pos = pointer + x + w * y;
-        }
-        else {
-          pos = pointer + x + linestart + linesize * y;
-        }
+        int sx = startx + x;
+        int sy = starty + y;
+        if (sx < 0 || sy < 0 || sx >= imw || sy >= imh) continue;
+
+        pos = pointer + 2 + sx + imw * sy;
         byte col = mem[pos];
         if (col != 255) {
           Color32 pixel = Col.GetColor(col);
-          pixels[xx + sw * yy] = pixel;
-          texture.SetPixel(xx, hm1 - yy, pixel);
+          pixels[dx + sw * dy] = pixel;
+          texture.SetPixel(dx, hm1 - dy, pixel);
         }
       }
   }
@@ -737,17 +739,6 @@ public class Arcade : MonoBehaviour {
     }
     else {
       labelTextures.Add(pointer, sprites[num].Set(sx, sy, mem, pointer + 2, scaleW, scaleH, filter));
-    }
-  }
-  
-  void Sprite(int num, int sx, int sy, int pointer, bool filter = false) {
-    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
-
-    if (labelTextures.ContainsKey(pointer)) {
-      sprites[num].Set(sx, sy, labelTextures[pointer], scaleW, scaleH, filter);
-    }
-    else {
-      labelTextures.Add(pointer, sprites[num].Set(sx, sy, mem, pointer, scaleW, scaleH, filter));
     }
   }
   
@@ -1127,9 +1118,9 @@ public class Arcade : MonoBehaviour {
           Value w = Evaluate(n.CN4);
           Value h = Evaluate(n.CN5);
           if (n.children.Count > 5) {
-            Value linestart = Evaluate(n.CN6);
-            Value linesize = Evaluate(n.CN7);
-            Image(addr.ToInt(culture), px.ToInt(culture), py.ToInt(culture), w.ToInt(culture), h.ToInt(culture), linestart.ToInt(culture), linesize.ToInt(culture));
+            Value startx = Evaluate(n.CN6);
+            Value starty = Evaluate(n.CN7);
+            Image(addr.ToInt(culture), px.ToInt(culture), py.ToInt(culture), w.ToInt(culture), h.ToInt(culture), startx.ToInt(culture), starty.ToInt(culture));
           }
           else
             Image(addr.ToInt(culture), px.ToInt(culture), py.ToInt(culture), w.ToInt(culture), h.ToInt(culture));
@@ -1194,10 +1185,7 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.SPRITE: {
-          if (n.children.Count < 4) // Sprite(num, pointer, filter)
-            Sprite(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToBool(culture));
-          else // Sprite(num, x, y, pointer, filter)
-            Sprite(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture), Evaluate(n.CN4).ToInt(culture), Evaluate(n.CN5).ToBool(culture));
+          Sprite(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToBool(culture));
           return false;
         }
 

@@ -739,7 +739,11 @@ public class PaletteEditor : MonoBehaviour {
     int.TryParse(line.Type.text.Substring(0, 2).Trim(), out int t);
     LabelType type = (LabelType)t;
 
-    if (type == LabelType.Image) ; // Find w and h and load (update maybe the screensize)
+    if (type == LabelType.Image) { // Find w and h and load (update maybe the screensize)
+
+
+
+    }
     if (type == LabelType.Sprite) ; // Find w and h and load (update maybe the screensize)
     if (type == LabelType.Tile) ; // Go up until we find the tilemap label (find current position) and then get w and h and then load tile
     if (type == LabelType.Palette) ; // Ask if we should replace current palette

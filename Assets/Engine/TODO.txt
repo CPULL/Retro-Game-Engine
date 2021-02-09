@@ -26,5 +26,7 @@ Add DevTool Palette editor
 Update Sprite and Tilemap editors to use Palette
 Add a way to copy a block of memory
 Extend the setpalette to set just a subset of colors
+be sure images and sprite rom definition always start with the sizes
 
 in config add: palette mode on off and keymap to define keys for the game
+
