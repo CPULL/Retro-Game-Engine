@@ -669,9 +669,12 @@ public class SpriteEditor : MonoBehaviour {
     yield return PBar.Show("Saving", 0, 1 + w * h);
     SetButtons(-1);
     string res = "Sprite:\nusehex\n";
-    byte sizex = (byte)w;
-    byte sizey = (byte)h;
-    res += sizex.ToString("X2") + " " + sizey.ToString("X2") + "\n";
+    byte sizexh = (byte)((w & 0xff00) >> 8);
+    byte sizexl = (byte)(w & 0xff);
+    byte sizeyh = (byte)((h & 0xff00) >> 8);
+    byte sizeyl = (byte)(h & 0xff);
+
+    res += sizexh.ToString("X2") + " " + sizexl.ToString("X2") + " " + sizeyh.ToString("X2") + " " + sizeyl.ToString("X2") + "\n";
     int num = w * h;
     yield return PBar.Progress(1);
     for (int i = 0; i < num; i += 4) {
@@ -714,8 +717,8 @@ public class SpriteEditor : MonoBehaviour {
     }
 
     PBar.Progress(128);
-    byte wb = block[0];
-    byte hb = block[1];
+    int wb = block[0] << 8 + block[1];
+    int hb = block[2] << 8 + block[3];
     if (wb < 8 || hb < 8 || wb > 64 || hb > 64) {
       Message.text = "This does not look like a sprite.";
       PBar.Hide();
@@ -789,14 +792,16 @@ public class SpriteEditor : MonoBehaviour {
     ByteChunk chunk = new ByteChunk();
 
     SetButtons(-1);
-    byte[] block = new byte[2 + w * h];
-    block[0] = (byte)w;
-    block[1] = (byte)h;
+    byte[] block = new byte[4 + w * h];
+    block[0] = (byte)((w & 0xff00) >> 8);
+    block[1] = (byte)(w & 0xff);
+    block[2] = (byte)((h & 0xff00) >> 8);
+    block[3] = (byte)(h & 0xff);
     int num = w * h;
     yield return PBar.Progress(1);
     for (int i = 0; i < num; i++) {
       if (i % w == 0) yield return PBar.Progress(2 + i);
-      block[2+i] = pixels[i].Get();
+      block[4 + i] = pixels[i].Get();
     }
     chunk.AddBlock("Sprite", LabelType.Sprite, block);
 
@@ -824,8 +829,8 @@ public class SpriteEditor : MonoBehaviour {
     if (res.block.Length <= 2) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a sprite"); yield break; }
 
     PBar.Progress(128);
-    byte wb = res.block[0];
-    byte hb = res.block[1];
+    int wb = res.block[0] << 8 + res.block[1];
+    int hb = res.block[2] << 8 + res.block[3];
     if (wb < 8 || hb < 8 || wb > 64 || hb > 64) {
       Dev.inst.HandleError("This does not look like a sprite.");
       yield break;
@@ -840,7 +845,7 @@ public class SpriteEditor : MonoBehaviour {
     if (res.block.Length < 2 + w * h) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a sprite"); yield break; }
     for (int i = 0; i < w * h; i++) {
       if (i % 4 == 0) yield return PBar.Progress(128 + i);
-      pixels[i].Set(res.block[2 + i]);
+      pixels[i].Set(res.block[4 + i]);
     }
     PBar.Hide();
   }

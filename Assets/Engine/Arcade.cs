@@ -702,8 +702,8 @@ public class Arcade : MonoBehaviour {
 
   void Image(int pointer, int px, int py, int w, int h, int startx = 0, int starty = 0) {
     int pos;
-    byte imw = mem[pointer];
-    byte imh = mem[pointer + 1];
+    int imw = mem[pointer] << 8 + mem[pointer + 1];
+    int imh = mem[pointer + 2] << 8 + mem[pointer + 3];
     if (imw < 8 || imh < 8) throw new Exception("Invalid image");
     for (int y = 0; y < h; y++)
       for (int x = 0; x < w; x++) {
@@ -715,7 +715,7 @@ public class Arcade : MonoBehaviour {
         int sy = starty + y;
         if (sx < 0 || sy < 0 || sx >= imw || sy >= imh) continue;
 
-        pos = pointer + 2 + sx + imw * sy;
+        pos = pointer + 4 + sx + imw * sy;
         byte col = mem[pos];
         if (col != 255) {
           Color32 pixel = Col.GetColor(col);
@@ -732,13 +732,13 @@ public class Arcade : MonoBehaviour {
 
   void Sprite(int num, int pointer, bool filter = false) {
     if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
-    int sx = mem[pointer];
-    int sy = mem[pointer+1];
+    int sx = mem[pointer] << 8 + mem[pointer + 1];
+    int sy = mem[pointer + 2] << 8 + mem[pointer + 3];
     if (labelTextures.ContainsKey(pointer)) {
       sprites[num].Set(sx, sy, labelTextures[pointer], scaleW, scaleH, filter);
     }
     else {
-      labelTextures.Add(pointer, sprites[num].Set(sx, sy, mem, pointer + 2, scaleW, scaleH, filter));
+      labelTextures.Add(pointer, sprites[num].Set(sx, sy, mem, pointer + 4, scaleW, scaleH, filter));
     }
   }
   
