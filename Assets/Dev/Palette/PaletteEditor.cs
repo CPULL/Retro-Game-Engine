@@ -580,6 +580,7 @@ public class PaletteEditor : MonoBehaviour {
       byte b = block[pos++];
       byte a = block[pos++];
       palette[i] = new Color32(r, g, b, a);
+      pixels[i].Set32(palette[i]);
     }
     Values.gameObject.SetActive(false);
     LoadSubButton.enabled = false;
@@ -614,6 +615,7 @@ public class PaletteEditor : MonoBehaviour {
       byte b = res.block[pos++];
       byte a = res.block[pos++];
       palette[i] = new Color32(r, g, b, a);
+      pixels[i].Set32(palette[i]);
     }
 
     PBar.Hide();
@@ -665,6 +667,52 @@ public class PaletteEditor : MonoBehaviour {
       block[pos++] = c.a;
     }
     chunk.AddBlock("Palette", LabelType.Palette, block);
+    ByteReader.SaveBinBlock(path, name, chunk);
+  }
+
+  public void SaveItemAsRom() {
+    if (PicPalette.texture == null) return;
+    FileBrowser.Save(SaveItemAsRomPost, FileBrowser.FileType.Rom);
+  }
+
+  void SaveItemAsRomPost(string path, string name) {
+    ByteChunk chunk = new ByteChunk();
+    int start = minsel == -1 ? 1 : minsel;
+    int end = maxsel == -1 ? 254 : maxsel;
+    byte[] block = new byte[1 + (end - start + 1) * 4];
+    block[0] = (byte)(end - start + 1);
+    int pos = 1;
+    for (int i = start; i <= end; i++) {
+      Color32 c = palette[i];
+      block[pos++] = c.r;
+      block[pos++] = c.g;
+      block[pos++] = c.b;
+      block[pos++] = c.a;
+    }
+    chunk.AddBlock("Palette", LabelType.Palette, block);
+
+    Texture2D pic = (Texture2D)PicPalette.texture;
+    int w = pic.width;
+    int h = pic.height;
+    if (w < 8) w = 8;
+    if (h < 8) h = 8;
+    if (w > 320) w = 320;
+    if (h > 256) h = 256;
+    Color32[] cols = pic.GetPixels32();
+    byte[] img = new byte[4 + w * h];
+    img[0] = (byte)((w & 0xff00) >> 8);
+    img[1] = (byte)(w & 0xff);
+    img[2] = (byte)((h & 0xff00) >> 8);
+    img[3] = (byte)(h & 0xff);
+    pos = 4;
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        Color32 c = cols[x + 2 * y];
+        byte b = (byte)(((c.r - 4) / 8) << 4 + (c.g - 4) / 8);
+        img[pos++] = b;
+      }
+    }
+    chunk.AddBlock("Image", LabelType.Image, img);
     ByteReader.SaveBinBlock(path, name, chunk);
   }
 
@@ -732,7 +780,6 @@ public class PaletteEditor : MonoBehaviour {
 
   public void SaveRom() { }
   public void ConvertRom() { }
-  public void SaveItemAsRom() { }
 
   public void SelectLine(RomLine line, bool check) {
     if (!check) return;
@@ -760,8 +807,23 @@ public class PaletteEditor : MonoBehaviour {
         }
       }
     }
-    if (type == LabelType.Palette) ; // Ask if we should replace current palette
+    if (type == LabelType.Palette) // Ask if we should replace current palette
+      confirm.Set("Load this palette?", () => { LoadPalette(line.Data); });
 
+  }
+
+  void LoadPalette(byte[] data) {
+    byte len = data[0];
+    int pos = 1;
+    for (int i = 0; i < len; i++) {
+      Color32 c = Transparent;
+      c.r = data[pos++];
+      c.g = data[pos++];
+      c.b = data[pos++];
+      c.a = data[pos++];
+      palette[i + 1] = c;
+      pixels[i + 1].Set32(c);
+    }
   }
 
   void LoadImages(int w, int h, byte[] data, int start) {
@@ -806,16 +868,11 @@ public class PaletteEditor : MonoBehaviour {
     return false;
   }
 }
-// By selecting a line, if it is an image, load it like a normal image (it will be easier because ti will be already as bytes)
-// If the item is a palette, then propose to load it and replace the current palette
-// Add button to update the item in te rom
+
 
 /*
-
-When selecting a line in rom list, if it is an image load it
-Convert all graphical items in a rom
-
-a way to save a converted sprite
-a way to convert back a sprite to normal mode
-
+Have src and dst palettes
+Convert should load all images, recreate some sort of original rgb texture and then re-apply the color adaptation with the new palette, then update every item
+Add button to update the current item in the rom
+Add button to save current item as image rom + palette
 */
