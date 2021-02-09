@@ -85,7 +85,17 @@ public class FileBrowser : MonoBehaviour {
 
     LoadButton.interactable = false;
     try {
-      string[] dirs = Directory.GetDirectories(path);
+      string[] dirs;
+      if (path.Equals("/") && (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)) {
+        DriveInfo[] drives = DriveInfo.GetDrives();
+        dirs = new string[drives.Length];
+        int pos = 0;
+        foreach (DriveInfo di in drives)
+          dirs[pos++] = di.RootDirectory.FullName;
+      }
+      else {
+        dirs = Directory.GetDirectories(path);
+      }
       string[] fils = Directory.GetFiles(path);
       foreach(string dp in dirs) {
         DirectoryInfo dir = new DirectoryInfo(dp);
@@ -163,10 +173,16 @@ public class FileBrowser : MonoBehaviour {
 
   public void Home() {
     string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-    LoadButton.interactable = true;
+    if (string.IsNullOrEmpty(desktop) && Application.platform == RuntimePlatform.LinuxEditor) desktop = "~/";
+    LoadButton.interactable = false;
     DirectoryInfo di = new DirectoryInfo(desktop);
     if (di == null) return;
     ShowFolder(di.FullName);
+  }
+
+  public void Root() {
+    LoadButton.interactable = false;
+    ShowFolder("/");
   }
 
   public void LoadFile() {
