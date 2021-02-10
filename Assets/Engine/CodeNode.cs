@@ -168,6 +168,9 @@ public class CodeNode {
         case BNF.CLR: res += id + "Clr(" + CN1.ToString(indent) + ")"; break;
         case BNF.DTIME: res += "dateTime"; break;
 
+        case BNF.LUMA: return id + "Luma(" + CN1?.ToString(indent) + ")";
+        case BNF.CONTRAST: return id + "Contrast(" + CN1?.ToString(indent) + ")";
+
         case BNF.WRITE: {
           res += id + "Write(" +
             CN1.ToString(indent) + ", " +
@@ -568,7 +571,7 @@ public enum BNF {
   ARRAY,
   INT, 
   FLT,
-  COLOR, PAL,
+  COLOR, PAL, LUMA, CONTRAST,
   STR,
   MEM, MEMlong, MEMlongb, MEMlongi, MEMlongf, MEMlongs, MEMchar,
   OPpar, OPsum, OPsub, OPmul, OPdiv, OPmod, OPand, OPor, OPxor, OPlsh, OPrsh,

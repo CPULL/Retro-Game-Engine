@@ -102,6 +102,8 @@ public class CodeParser : MonoBehaviour {
     "wave",
     "while",
     "write",
+    "luma",
+    "contrast",
   };
 
   #region Regex
@@ -172,7 +174,9 @@ public class CodeParser : MonoBehaviour {
 
   readonly Regex rgClr = new Regex("[\\s]*clr\\((.+)\\)[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgFrame = new Regex("frame", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  
+  readonly Regex rgLuma = new Regex("[\\s]*luma[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgContrast = new Regex("[\\s]*contrast[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
   readonly Regex rgWrite = new Regex("[\\s]*write[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgLine = new Regex("[\\s]*line[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgGetP = new Regex("[\\s]*getp[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -656,6 +660,30 @@ public class CodeParser : MonoBehaviour {
       int num = ParsePars(node, pars);
       if (num < 3) throw new Exception("Invalid SetP(), not enough parameters. Line: " + (linenumber + 1));
       if (num > 3) throw new Exception("Invalid SetP(), too many parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [Luma] = Luma([EXPR])
+    if (expected.IsGood(Expected.Val.Statement) && rgLuma.IsMatch(line)) {
+      Match m = rgLuma.Match(line);
+      if (m.Groups.Count < 1) throw new Exception("Invalid Luma() command. Line: " + (linenumber + 1));
+      CodeNode node = new CodeNode(BNF.LUMA, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 1) throw new Exception("Invalid Luma(), one and only one parameter is required. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [Contrast] = Contrast([EXPR])
+    if (expected.IsGood(Expected.Val.Statement) && rgContrast.IsMatch(line)) {
+      Match m = rgContrast.Match(line);
+      if (m.Groups.Count < 1) throw new Exception("Invalid Contrast() command. Line: " + (linenumber + 1));
+      CodeNode node = new CodeNode(BNF.LUMA, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 1) throw new Exception("Invalid Contrast(), one and only one parameter is required. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }

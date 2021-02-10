@@ -5,6 +5,8 @@
         [HideInInspector] _MainTex("Texture", 2D) = "white" {}
         [HideInInspector] _UVCenter("_UVCenter", Vector) = (0,0,0,0)
         [MaterialToggle] _UsePalette("_UsePalette", Float) = 0
+        _Luma("_Luma", Range(-1, 1)) = 0
+        _Contrast("_Contrast", Range(-1, 1)) = 0
     }
 
 
@@ -30,6 +32,7 @@
 
 
             fixed4 _Colors[256];
+            float _Contrast, _Luma;
 
             struct appdata
             {
@@ -66,9 +69,20 @@
 
               uint h = ((uint)(col.r * 256) - 4) / 8;
               uint l = ((uint)(col.g * 256) - 4) / 8;
-              if (h == 0 && l == 0) return __Black;
               if (h > 15 && l > 15) return __Transp;
-              return _Colors[h * 16 + l];
+              col = _Colors[h * 16 + l];
+              if (h == 0 && l == 0) col = __Black;
+
+              if (_Luma == 0 && _Contrast == 0) return col;
+              if (_Luma < -1) _Luma = -1;
+              if (_Luma > 1) _Luma = 1;
+              if (_Contrast < -1) _Contrast = -1;
+              if (_Contrast > 1) _Contrast = 1;
+
+              col.rgb = ((col.rgb - 0.5f) * (_Contrast + 1)) + 0.5f;
+              col.rgb += _Luma;
+
+              return col;
             }
             ENDCG
         }

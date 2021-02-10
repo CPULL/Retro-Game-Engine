@@ -221,6 +221,8 @@ public class Arcade : MonoBehaviour {
     RGEPalette.SetColorArray("_Colors", palette);
     Col.UsePalette(false);
     RGEPalette.SetInt("_UsePalette", 0);
+    RGEPalette.SetFloat("_Luma", 0);
+    RGEPalette.SetFloat("_Contrast", 0);
   }
 
   public void SelectCartridge(string path) {
@@ -443,6 +445,17 @@ public class Arcade : MonoBehaviour {
     texture.SetPixel(x, hm1 - y, pixel);
   }
 
+  void Luma(float v) {
+    if (v < -1) v = -1;
+    if (v > 1) v = 1;
+    RGEPalette.SetFloat("_Luma", v);
+  }
+  void Contrast(float v) {
+    if (v < -1) v = -1;
+    if (v > 1) v = 1;
+    RGEPalette.SetFloat("_Contrast", v);
+  }
+
   void SetPixel(int x, int y, byte r, byte g, byte b) {
     if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
     Color32 pixel = pixels[x + sw * y];
@@ -556,7 +569,6 @@ public class Arcade : MonoBehaviour {
       if (pos > wm1) return;
     }
   }
-
 
   void WriteC6(string txt, int x, int y, byte col, byte back) {
     if (back == 255) back = 0;
@@ -1378,6 +1390,9 @@ public class Arcade : MonoBehaviour {
                           Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture)); 
           return false; 
         }
+
+        case BNF.LUMA: { Luma(Evaluate(n.CN1).ToInt(culture)); return false; }
+        case BNF.CONTRAST: { Contrast(Evaluate(n.CN1).ToInt(culture)); return false; }
 
         case BNF.NOP: return false;
 
