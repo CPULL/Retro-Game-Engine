@@ -4,7 +4,7 @@
     {
         [HideInInspector] _MainTex("Texture", 2D) = "white" {}
         [HideInInspector] _UVCenter("_UVCenter", Vector) = (0,0,0,0)
-        [MaterialToggle] _DoIt("DoIt", Float) = 0
+        [MaterialToggle] _UsePalette("_UsePalette", Float) = 0
     }
 
 
@@ -46,7 +46,7 @@
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
-            float _DoIt;
+            float _UsePalette;
             static const fixed4 __Black = fixed4(0, 0, 0, 1);
             static const fixed4 __Transp = fixed4(0, 0, 0, 0);
 
@@ -62,7 +62,7 @@
             {
               float2 uv = IN.uv;
               fixed4 col = tex2D(_MainTex, uv);
-              if (col.a == 0 || _DoIt == 0) return col;
+              if (col.a == 0 || _UsePalette == 0) return col;
 
               uint h = ((uint)(col.r * 256) - 4) / 8;
               uint l = ((uint)(col.g * 256) - 4) / 8;

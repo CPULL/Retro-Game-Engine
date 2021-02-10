@@ -39,6 +39,8 @@ public class Arcade : MonoBehaviour {
   readonly Dictionary<string, CodeNode> functions = new Dictionary<string, CodeNode>();
   readonly bool[] inputs = new bool[27];
   readonly System.Globalization.CultureInfo culture = new System.Globalization.CultureInfo("en-US");
+  public Material RGEPalette;
+  readonly Color[] palette = new Color[256];
 
   public enum Keys {
     L = 0,  Lu = 1,  Ld = 2,
@@ -210,9 +212,13 @@ public class Arcade : MonoBehaviour {
     }
     else {
       // Load Game.Cartridge
-      SelectCartridge(Application.dataPath + "\\..\\Cartridges\\Game.cartridge");
+      SelectCartridge(Application.dataPath + "\\..\\Cartridges\\GameX.cartridge");
     }
     texture.Apply();
+    for (int i = 0; i < 256; i++)
+      palette[i] = Col.GetColor((byte)i);
+    RGEPalette.SetColorArray("_Colors", palette);
+    RGEPalette.SetInt("_UsePalette", 0);
   }
 
   public void SelectCartridge(string path) {
@@ -327,6 +333,12 @@ public class Arcade : MonoBehaviour {
           int pos = memsize;
           for (int i = 0; i < romsize; i++)
             mem[pos++] = romdef.bVal[i];
+        }
+
+        // PALETTE ****************************************************************************************************************** PALETTE
+        CodeNode paldef = data.Get(BNF.PaletteConfig);
+        if (paldef != null) {
+          RGEPalette.SetInt("_UsePalette", paldef.iVal);
         }
 
         // LABELS *************************************************************************************************************** LABELS

@@ -43,7 +43,6 @@
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
-            float _DoIt;
             static const fixed4 __Black = fixed4(0, 0, 0, 1);
             static const fixed4 __Transp = fixed4(0, 0, 0, 0);
 

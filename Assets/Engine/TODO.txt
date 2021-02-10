@@ -19,17 +19,17 @@ Add global TryCatch in Dev tools
 Handle loading errors (data size is shorter than expected): music, arcade
 
 
-Add palette (probably it is already done and working)
 Update Sprite and Tilemap editors to use Palette
 Add a way to copy a block of memory
-Extend the setpalette to set just a subset of colors
-
-in config add: palette mode on off and keymap to define keys for the game
 
 In music editor add a few empty lines at begin and end of the view, and have some sort of highlighted line on the center
-Change mode for hex and bin (use postfixes)
 Add a way in roms to add a generic set of data (hex editor)
 
 
 Bug: We had some spurious tiles in a tilemap when the items were deleted
 Bug: wait() should not block the framerate
+
+
+!in config add: palette mode on off and keymap to define keys for the game
+when starting up set the palette shader if the palette is active, set the default colors for the shader (use DoIt to have it enabled or disabled)
+Extend the setpalette to set just a subset of colors

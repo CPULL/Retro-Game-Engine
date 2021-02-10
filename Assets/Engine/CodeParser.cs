@@ -239,7 +239,8 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgLabelGet = new Regex("[\\s]*label[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgConfScreen = new Regex("screen[\\s]*\\([\\s]*([0-9]+)[\\s]*,[\\s]*([0-9]+)[\\s]*(,[\\s]*[fn])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgRam = new Regex("ram[\\s]*\\([\\s]*([0-9]+)[\\s]*([bkm])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgConfRam = new Regex("ram[\\s]*\\([\\s]*([0-9]+)[\\s]*([bkm])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgConfPalette = new Regex("palette[\\s]*\\([\\s]*([0-1])[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgName = new Regex("^name:[\\s]*([a-z0-9_\\s]+)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgStart = new Regex("^start[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -2096,12 +2097,20 @@ public class CodeParser : MonoBehaviour {
       else if (clean.IndexOf("ram") != -1) { // RAM ****************************************************************** RAM
         int pos = clean.IndexOf(")");
         clean = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
-        Match m = rgRam.Match(clean);
+        Match m = rgConfRam.Match(clean);
         int.TryParse(m.Groups[1].Value.Trim(), out int size);
         char unit = (m.Groups[2].Value.Trim().ToLowerInvariant() + " ")[0];
         if (unit == 'k') size *= 1024;
         if (unit == 'm') size *= 1024 * 1024;
         CodeNode n = new CodeNode(BNF.Ram, null, linenum) { iVal = size };
+        config.Add(n);
+      }
+      else if (clean.IndexOf("palette") != -1) { // PALETTE ****************************************************************** PALETTE
+        int pos = clean.IndexOf(")");
+        clean = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
+        Match m = rgConfPalette.Match(clean);
+        int.TryParse(m.Groups[1].Value.Trim(), out int on);
+        CodeNode n = new CodeNode(BNF.PaletteConfig, null, linenum) { iVal = on };
         config.Add(n);
       }
       else
