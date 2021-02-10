@@ -5,12 +5,12 @@ Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks"
 
 
 FUTURE: Code editor
-FUTURE: Font editor
 FUTURE: step by step debugger
-FUTURE: map keys
 FUTURE: precompile Nodes
+FUTURE: Font editor
 FUTURE: Custom fonts
 FUTURE: Favorites in FileBrowser
+FUTURE: map keys
 
 
 
@@ -21,7 +21,7 @@ Handle loading errors (data size is shorter than expected): music, arcade
 
 
 Update Sprite and Tilemap editors to use Palette
-Add a way to copy a block of memory
+Add a way to copy a block of memory: memcopy(dst, src, len)
 
 In music editor add a few empty lines at begin and end of the view, and have some sort of highlighted line on the center
 Add a way in roms to add a generic set of data (hex editor)
