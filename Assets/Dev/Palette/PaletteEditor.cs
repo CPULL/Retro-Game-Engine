@@ -813,8 +813,6 @@ public class PaletteEditor : MonoBehaviour {
     ByteReader.SaveBinBlock(path, name, chunk);
   }
 
-  public void ConvertRom() { }
-
   public void SelectLine(RomLine line, bool check) {
     UpdateItemButton.gameObject.SetActive(false);
     if (!check) return;
@@ -923,6 +921,252 @@ public class PaletteEditor : MonoBehaviour {
       if (Math.Abs(a.a - b.a) < 16) return true;
     }
     return false;
+  }
+
+  public GameObject ConvertRomArea;
+  public void ConvertRom() {
+    if (lines == null || lines.Count == 0) return;
+    ConvertRomArea.SetActive(!ConvertRomArea.activeSelf);
+  }
+  readonly Color32[] srcPalette = new Color32[256];
+  readonly Color32[] dstPalette = new Color32[256];
+  public void SetSourcePalette() {
+    for (int i = 1; i < 255; i++) {
+      srcPalette[i] = palette[i];
+    }
+    srcPalette[0] = Color.black;
+    srcPalette[255] = Transparent;
+  }
+  public void ShowSourcePalette() {
+    if (srcPalette[0].a == 0) {
+      Dev.inst.HandleError("No source palette defined!");
+      return;
+    }
+    for (int i = 1; i < 255; i++) {
+      pixels[i].Set32(srcPalette[i]);
+      palette[i] = srcPalette[i];
+    }
+    pixels[0].Set32(Color.black);
+    pixels[255].Set32(Transparent);
+  }
+  public void SetDestinationPalette() {
+    for (int i = 1; i < 255; i++) {
+      dstPalette[i] = palette[i];
+    }
+    dstPalette[0] = Color.black;
+    dstPalette[255] = Transparent;
+  }
+  public void ShowDestinationPalette() {
+    if (dstPalette[0].a == 0) {
+      Dev.inst.HandleError("No destination palette defined!");
+      return;
+    }
+    for (int i = 1; i < 255; i++) {
+      pixels[i].Set32(dstPalette[i]);
+      palette[i] = dstPalette[i];
+    }
+    pixels[0].Set32(Color.black);
+    pixels[255].Set32(Transparent);
+  }
+  public void GenerateBestPaletteFromImagesAndPalettesInRom() {
+    StartCoroutine(GeneratingBestPaletteFromRom());
+  }
+  IEnumerator GeneratingBestPaletteFromRom() {
+    yield return PBar.Show("Generating best palette", 0, lines.Count + 2);
+    Color32[] pal = new Color32[256];
+    for (int i = 0; i < 256; i++)
+      pal[i] = Col.GetColor((byte)i); // Default palette as starting one
+
+    // Get all rom lines, if a palette is defined grab it
+    Dictionary<Color32, int> final = new Dictionary<Color32, int>();
+    int tsize = 1;
+    int pos = 0;
+    for (int l = 0; l < lines.Count; l++) {
+      RomLine line = lines[l];
+      yield return PBar.Progress(l + 1);
+      if (line.ltype == LabelType.Palette) {
+        int num = line.Data[0];
+        for (int i = 0; i < num; i++)
+          pal[i + 1] = new Color32(line.Data[i * 4 + 1], line.Data[i * 4 + 2], line.Data[i * 4 + 3], line.Data[i * 4 + 4]);
+      }
+      else if (line.ltype == LabelType.Image || line.ltype == LabelType.Sprite) {
+        // For each image, get the top 256 used colors
+        Dictionary<Color32, int> map = new Dictionary<Color32, int>();
+        int size = ((line.Data[0] << 8) + line.Data[1]) * ((line.Data[2] << 8) + line.Data[3]);
+        for (int i = 0; i < size; i++) {
+          Color32 c = pal[line.Data[4 + i]];
+          if (map.ContainsKey(c)) map[c] = map[c] + 1;
+          else map[c] = 1;
+        }
+        // Transform to array and sort
+        CV[] vals = new CV[map.Count];
+        pos = 0;
+        foreach (Color32 c in map.Keys) {
+          vals[pos].c = c;
+          vals[pos].v = map[c];
+          pos++;
+        }
+        Array.Sort(vals, (a, b) => a.v.CompareTo(b.v));
+        for (int i = 0; i < vals.Length && i < 256; i++) {
+          if (final.ContainsKey(vals[i].c)) final[vals[i].c] = final[vals[i].c] + vals[i].v;
+          else final[vals[i].c] = vals[i].v;
+        }
+      }
+      else if (line.ltype == LabelType.Tilemap) {
+        tsize = line.Data[2] * line.Data[3];
+      }
+      else if (line.ltype == LabelType.Tile) {
+        // For each tile, get the top 256 used colors
+        Dictionary<Color32, int> map = new Dictionary<Color32, int>();
+        for (int i = 0; i < tsize && i < line.Data.Length; i++) {
+          Color32 c = pal[line.Data[i]];
+          if (map.ContainsKey(c)) map[c] = map[c] + 1;
+          else map[c] = 1;
+        }
+        // Transform to array and sort
+        CV[] vals = new CV[map.Count];
+        pos = 0;
+        foreach (Color32 c in map.Keys) {
+          vals[pos].c = c;
+          vals[pos].v = map[c];
+          pos++;
+        }
+        Array.Sort(vals, (a, b) => a.v.CompareTo(b.v));
+        for (int i = 0; i < vals.Length && i < 256; i++) {
+          if (final.ContainsKey(vals[i].c)) final[vals[i].c] = final[vals[i].c] + vals[i].v;
+          else final[vals[i].c] = vals[i].v;
+        }
+      }
+    }
+    // final array of colors, about 1024 items max, and create a texture with the found colors proportional to the lenght
+    CV[] fvals = new CV[final.Count];
+    pos = 0;
+    foreach (Color32 c in final.Keys) {
+      fvals[pos].c = c;
+      fvals[pos].v = final[c];
+      pos++;
+    }
+    Array.Sort(fvals, (a, b) => a.v.CompareTo(b.v));
+    int numpixels = 0;
+    for (int i = 0; i < fvals.Length && i < 1024; i++) {
+      numpixels += fvals[i].v;
+    }
+    tsize = Mathf.CeilToInt(Mathf.Sqrt(numpixels) + 1);
+    Texture2D t = new Texture2D(tsize, tsize, TextureFormat.RGBA32, false);
+    int vpos = 0;
+    pos = 0;
+    while (numpixels > 0) {
+      int tot = fvals[vpos].v;
+      Color32 c = fvals[vpos].c;
+
+      for (int i = 0; i < tot; i++) {
+        int x = pos % tsize;
+        int y = pos / tsize;
+        t.SetPixel(x, y, c);
+        pos++;
+      }
+      vpos++;
+      numpixels -= tot;
+      if (vpos >= fvals.Length) break;
+      if (pos >= tsize * tsize) break;
+    }
+    t.Apply();
+    yield return PBar.Progress(lines.Count + 2);
+
+    // Call the color reduction to generate the best palette
+    Color32[] colorTable = ciq.CalculatePalette(t, 254);
+    // Save palette as destination (and show it)
+    for (int i = 1; i < 255; i++) {
+      palette[i] = colorTable[i - 1];
+      dstPalette[i] = palette[i];
+      pixels[i].Set32(palette[i]);
+    }
+    dstPalette[0] = Color.black;
+    dstPalette[255] = Transparent;
+
+    RGEPalette.SetColorArray("_Colors", palette);
+    PBar.Hide();
+  }
+  public void ConvertAllImagesInRom() {
+    if (dstPalette[0].a == 0) {
+      Dev.inst.HandleError("No destination palette defined!");
+      return;
+    }
+
+    StartCoroutine(ConvertingAllImagesInRom());
+  }
+  IEnumerator ConvertingAllImagesInRom() {
+    // Same logic to find best palette, but in this case we convert to true color the images (with the previous palette in the rom) and then apply the palette
+    yield return PBar.Show("Converting pictures", 0, lines.Count + 2);
+    Color32[] pal = new Color32[256];
+    for (int i = 0; i < 256; i++)
+      pal[i] = Col.GetColor((byte)i); // Default palette as starting one
+
+    // Get all rom lines, if a palette is defined grab it
+    int tw = 1;
+    int th = 1;
+    for (int l = 0; l < lines.Count; l++) {
+      RomLine line = lines[l];
+      yield return PBar.Progress(l + 1);
+      if (line.ltype == LabelType.Palette) {
+        int num = line.Data[0];
+        for (int i = 0; i < num; i++)
+          pal[i + 1] = new Color32(line.Data[i * 4 + 1], line.Data[i * 4 + 2], line.Data[i * 4 + 3], line.Data[i * 4 + 4]);
+      }
+      else if (line.ltype == LabelType.Image || line.ltype == LabelType.Sprite) {
+        int w = (line.Data[0] << 8) + line.Data[1];
+        int h = (line.Data[2] << 8) + line.Data[3];
+        line.Data = ConvertImages(w, h, line.Data, 4, pal);
+      }
+      else if (line.ltype == LabelType.Tilemap) {
+        tw = line.Data[2];
+        th = line.Data[3];
+      }
+      else if (line.ltype == LabelType.Tile) {
+        line.Data = ConvertImages(tw, th, line.Data, 0, pal);
+      }
+    }
+    PBar.Hide();
+  }
+
+  byte[] ConvertImages(int w, int h, byte[] data, int start, Color32[] pal) {
+    Texture2D palo = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+    Color32[] rawo = new Color32[w * h];
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        int pos = x + w * y;
+        byte val = data[start + x + w * (h - y - 1)];
+        rawo[pos] = pal[val];
+      }
+    }
+    palo.SetPixels32(rawo);
+    palo.Apply();
+    Texture2D rest = ciq.ReduceColors(palo, dstPalette);
+    byte[] res = new byte[data.Length];
+    if (start > 0) {
+      res[0] = data[0]; // Same size
+      res[1] = data[1];
+      res[2] = data[2];
+      res[3] = data[3];
+    }
+    Color32[] cols = rest.GetPixels32();
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        for (int i = 0; i < 256; i++) {
+          if (ColorEqual(cols[x + w * y], dstPalette[i])) {
+            res[start + x + w * (h - y - 1)] = (byte)i;
+            break;
+          }
+        }
+      }
+    }
+    return res;
+  }
+
+
+  struct CV {
+    public Color32 c;
+    public int v;
   }
 }
 
