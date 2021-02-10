@@ -928,45 +928,13 @@ public class PaletteEditor : MonoBehaviour {
     if (lines == null || lines.Count == 0) return;
     ConvertRomArea.SetActive(!ConvertRomArea.activeSelf);
   }
-  readonly Color32[] srcPalette = new Color32[256];
   readonly Color32[] dstPalette = new Color32[256];
-  public void SetSourcePalette() {
-    for (int i = 1; i < 255; i++) {
-      srcPalette[i] = palette[i];
-    }
-    srcPalette[0] = Color.black;
-    srcPalette[255] = Transparent;
-  }
-  public void ShowSourcePalette() {
-    if (srcPalette[0].a == 0) {
-      Dev.inst.HandleError("No source palette defined!");
-      return;
-    }
-    for (int i = 1; i < 255; i++) {
-      pixels[i].Set32(srcPalette[i]);
-      palette[i] = srcPalette[i];
-    }
-    pixels[0].Set32(Color.black);
-    pixels[255].Set32(Transparent);
-  }
   public void SetDestinationPalette() {
     for (int i = 1; i < 255; i++) {
       dstPalette[i] = palette[i];
     }
     dstPalette[0] = Color.black;
     dstPalette[255] = Transparent;
-  }
-  public void ShowDestinationPalette() {
-    if (dstPalette[0].a == 0) {
-      Dev.inst.HandleError("No destination palette defined!");
-      return;
-    }
-    for (int i = 1; i < 255; i++) {
-      pixels[i].Set32(dstPalette[i]);
-      palette[i] = dstPalette[i];
-    }
-    pixels[0].Set32(Color.black);
-    pixels[255].Set32(Transparent);
   }
   public void GenerateBestPaletteFromImagesAndPalettesInRom() {
     StartCoroutine(GeneratingBestPaletteFromRom());
@@ -1163,16 +1131,72 @@ public class PaletteEditor : MonoBehaviour {
     return res;
   }
 
+  public void UpdateInRom() {
+    if (lines == null || lines.Count == 0 || currentLine == null) return;
+    if (currentLine.ltype == LabelType.Palette) {
+      currentLine.Data = new byte[254 * 4 + 1];
+      currentLine.Data[0] = 254;
+      int pos = 1;
+      for (int i = 1; i < 255; i++) {
+        Color32 c = palette[i];
+        currentLine.Data[pos++] = c.r;
+        currentLine.Data[pos++] = c.g;
+        currentLine.Data[pos++] = c.b;
+        currentLine.Data[pos++] = c.a;
+      }
+    }
+    else if (currentLine.ltype == LabelType.Image || currentLine.ltype == LabelType.Sprite) {
+      int w = (int)PicSizeH.value * 8;
+      if (w < 8) w = 8;
+      if (w > 320) w = 320;
+      int h = (int)PicSizeV.value * 4;
+      if (h < 8) h = 8;
+      if (h > 256) h = 256;
+
+      byte[] img = new byte[4 + w * h];
+      img[0] = (byte)((w & 0xff00) >> 8);
+      img[1] = (byte)(w & 0xff);
+      img[2] = (byte)((h & 0xff00) >> 8);
+      img[3] = (byte)(h & 0xff);
+      Color32[] cols = ((Texture2D)PicPalette.texture).GetPixels32();
+      for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+          for (int i = 0; i < 256; i++) {
+            if (ColorEqual(cols[x + w * y], palette[i])) {
+              img[4 + x + w * (h - y - 1)] = (byte)i;
+              break;
+            }
+          }
+        }
+      }
+      currentLine.Data = img;
+    }
+    else if (currentLine.ltype == LabelType.Tile) {
+      int w = (int)PicSizeH.value * 8;
+      if (w < 8) w = 8;
+      if (w > 320) w = 320;
+      int h = (int)PicSizeV.value * 4;
+      if (h < 8) h = 8;
+      if (h > 256) h = 256;
+
+      byte[] img = new byte[w * h];
+      Color32[] cols = ((Texture2D)PicPalette.texture).GetPixels32();
+      for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+          for (int i = 0; i < 256; i++) {
+            if (ColorEqual(cols[x + w * y], palette[i])) {
+              img[x + w * (h - y - 1)] = (byte)i;
+              break;
+            }
+          }
+        }
+      }
+      currentLine.Data = img;
+    }
+  }
 
   struct CV {
     public Color32 c;
     public int v;
   }
 }
-
-
-/*
-Have src and dst palettes
-Convert should load all images, recreate some sort of original rgb texture and then re-apply the color adaptation with the new palette, then update every item
-Add button to update the current item in the rom
-*/
