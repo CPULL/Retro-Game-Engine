@@ -49,7 +49,7 @@ public class Col {
     return UsingPalette;
   }
 
-  public static void SetPalette(byte[] data, int start) {
+  public static void SetPalette(byte[] data, int start, int offset) {
     byte num = data[start];
     if (num < 1) return;
     if (num > 254) num = 254;
@@ -59,7 +59,8 @@ public class Col {
       byte g = data[pos + 1];
       byte b = data[pos + 2];
       byte a = data[pos + 3];
-      Palette[i + 1] = new Color32(r, g, b, a);
+      pos = i + 1 + offset;
+      if (pos > 0 && pos < 255) Palette[pos] = new Color32(r, g, b, a);
     }
   }
 

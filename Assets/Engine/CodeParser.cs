@@ -754,7 +754,7 @@ public class CodeParser : MonoBehaviour {
       CodeNode node = new CodeNode(BNF.SETPALETTECOLOR, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 2 && num != 5) throw new Exception("Invalid SetPalette(), either 2 or 5 parameters are required. Line: " + (linenumber + 1));
+      if (num != 2 && num != 3 && num != 5) throw new Exception("Invalid SetPalette(), either 2, 3, or 5 parameters are required. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }

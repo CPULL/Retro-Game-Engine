@@ -31,6 +31,4 @@ Bug: We had some spurious tiles in a tilemap when the items were deleted
 Bug: wait() should not block the framerate
 
 
-Extend the setpalette to set just a subset of colors
 
-Add contrast and luminosity parameters to paletteshader

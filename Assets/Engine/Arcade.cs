@@ -1383,7 +1383,8 @@ public class Arcade : MonoBehaviour {
 
         case BNF.PALETTE: { Col.UsePalette(Evaluate(n.CN1).ToBool(culture)); return false; }
         case BNF.SETPALETTECOLOR: {
-          if (n.children.Count == 1) Col.SetPalette(mem, Evaluate(n.CN1).ToInt(culture));
+          if (n.children.Count == 1) Col.SetPalette(mem, Evaluate(n.CN1).ToInt(culture), 0);
+          if (n.children.Count == 2) Col.SetPalette(mem, Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture));
           else
            Col.SetPalette(Evaluate(n.CN1).ToByte(culture), 
                           Evaluate(n.CN1).ToByte(culture),  Evaluate(n.CN2).ToByte(culture), 
