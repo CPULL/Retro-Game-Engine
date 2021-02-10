@@ -283,14 +283,11 @@ public class ByteReader {
         data = data.Substring(part.Length).Trim();
         continue;
       }
-      // Data
 
+      // Data
       data = data.Substring(part.Length).Trim();
-      if ((part.Length > 2 && part[0] == '0' && part[1] == 'x') || (part.Length > 1 && part[0] == 'x')) { // Do we start with 0x?
-        if (part[0] == 'x')
-          part = part.Substring(1);
-        else
-          part = part.Substring(2);
+      if (part.Length > 1 && part[part.Length - 1] == 'x' && part[1] == 'x') { // Do we end with x?
+        part = part.Substring(0, part.Length - 1);
         // Get 2 chars as a byte in hex, and continue till the end of the string
         while (part.Length > 0) {
           string val = part[0] + (part.Length > 1 ? part[1].ToString() : " ");
@@ -301,8 +298,8 @@ public class ByteReader {
           }
         }
       }
-      else if (part.Length > 2 && part[0] == '0' && part[1] == 'b') { // Do we start with 0b?
-        part = part.Substring(2);
+      else if (part.Length > 1 && part[part.Length - 1] == 'b') { // Do we end with b?
+        part = part.Substring(0, part.Length - 1);
         // Parse all value, then split in bytes
         int b;
         try {
@@ -328,8 +325,7 @@ public class ByteReader {
           consolidator.AddByte(b0);
         }
       }
-
-      if (mode == ReadMode.Dec) { // Parse it as dec, split in bytes
+      else if (mode == ReadMode.Dec) { // Parse it as dec, split in bytes
         int b;
         try {
           b = Convert.ToInt32(part, 10);
