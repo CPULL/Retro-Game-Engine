@@ -38,7 +38,7 @@ public class FileBrowser : MonoBehaviour {
     inst.SaveButton.interactable = false;
     inst.LoadButton.gameObject.SetActive(true);
     inst.SaveButton.gameObject.SetActive(false);
-    inst.FileName.gameObject.SetActive(false);
+    inst.FileName.interactable = false;
     inst.load = true;
 
     // Does the directory exist?
@@ -63,7 +63,7 @@ public class FileBrowser : MonoBehaviour {
     inst.SaveButton.interactable = false;
     inst.LoadButton.gameObject.SetActive(false);
     inst.SaveButton.gameObject.SetActive(true);
-    inst.FileName.gameObject.SetActive(true);
+    inst.FileName.interactable = false;
     inst.load = false;
 
     // Does the directory exist?
@@ -147,6 +147,7 @@ public class FileBrowser : MonoBehaviour {
     FileInfoText2.gameObject.SetActive(true);
     FileInfoText1.text = "File: " + fi.Name + "\nPath: " + fi.Directory.FullName;
     FileInfoText2.text = "Size: " + fi.Length + "\nExtension: " + fi.Extension;
+    FileName.SetTextWithoutNotify(fi.Name);
   }
 
   public void SelectFileSave(string path) {

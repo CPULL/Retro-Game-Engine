@@ -12,21 +12,24 @@ FUTURE: precompile Nodes
 FUTURE: Custom fonts
 
 
-wait() should not block the framerate
 
 Add "Edit" buttons in RomEdit (music, tilemap)
 
 Add global TryCatch in Dev tools
 Handle loading errors (data size is shorter than expected): music, arcade
 
-Bug: We had some spurious tiles in a tilemap when the items were deleted
 
 Add palette (probably it is already done and working)
-Add DevTool Palette editor
 Update Sprite and Tilemap editors to use Palette
 Add a way to copy a block of memory
 Extend the setpalette to set just a subset of colors
-be sure images and sprite rom definition always start with the sizes
 
 in config add: palette mode on off and keymap to define keys for the game
 
+In music editor add a few empty lines at begin and end of the view, and have some sort of highlighted line on the center
+Change mode for hex and bin (use postfixes)
+Add a way in roms to add a generic set of data (hex editor)
+
+
+Bug: We had some spurious tiles in a tilemap when the items were deleted
+Bug: wait() should not block the framerate
