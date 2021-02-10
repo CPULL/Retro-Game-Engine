@@ -29,6 +29,7 @@ public class Col {
   };
 
   readonly static Color32[] Palette = new Color32[256];
+  readonly static Color32[] PaletteIndex = new Color32[256];
   static bool UsingPalette;
 
   public static void UsePalette(bool use) {
@@ -36,7 +37,16 @@ public class Col {
     if (use) {
       Palette[0] = new Color32(0, 0, 0, 255);
       Palette[255] = new Color32(0, 0, 0, 0);
+      for (int col = 0; col < 256; col++) {
+        int hi = ((col & 0xF0) >> 4) * 8 + 4;
+        int lo = (col & 0xF) * 8 + 4;
+        PaletteIndex[col]= new Color32((byte)hi, (byte)lo, 0, 255); ;
+      }
     }
+  }
+
+  public static bool UsePalette() {
+    return UsingPalette;
   }
 
   public static void SetPalette(byte[] data, int start) {
@@ -59,7 +69,7 @@ public class Col {
   }
 
   public static Color32 GetColor(byte col) {
-    if (UsingPalette) return Palette[col];
+    if (UsingPalette) return PaletteIndex[col];
     if (col < 216) {
       byte b = (byte)(col % 6);
       col -= b;

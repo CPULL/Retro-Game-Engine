@@ -81,7 +81,6 @@ public class CodeParser : MonoBehaviour {
     "ram",
     "return",
     "screen",
-    "screen",
     "setp",
     "sin",
     "sound",
@@ -119,7 +118,8 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgVar = new Regex("(?<=[^a-z0-9`@_]|^)([a-z][0-9a-z]{0,7})([^a-z0-9\\(¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgArray = new Regex("(?<=[^a-z0-9`@_]|^)([a-z][0-9a-z]{0,7})\\[((?>\\[(?<c>)|[^\\[\\]]+|\\](?<-c>))*(?(c)(?!)))\\]", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgHex = new Regex("([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})x", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgCol = new Regex("c([0-5])([0-5])([0-5])([0-4])?", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgCol = new Regex("([0-5])([0-5])([0-5])([0-4])?c", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgPal = new Regex("([0-9]{1,3})p", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgQString = new Regex("\\\\\"", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgString = new Regex("(\")([^\"]*)(\")", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDeltat = new Regex("deltatime", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1380,6 +1380,19 @@ public class CodeParser : MonoBehaviour {
         if (a > 4) a = 4;
         CodeNode n = new CodeNode(BNF.COLOR, GenId("CL"), origForException, linenumber) {
           iVal = Col.GetByteFrom6(r, g, b, a)
+        };
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // Replace PAL => `PLx
+      line = rgPal.Replace(line, m => {
+        atLeastOneReplacement = true;
+        int.TryParse(m.Groups[1].Value, out int p);
+        if (p < 0 || p > 255) p = 1;
+        CodeNode n = new CodeNode(BNF.PAL, GenId("PL"), origForException, linenumber) {
+          iVal = p
         };
         nodes[n.id] = n;
         return n.id;

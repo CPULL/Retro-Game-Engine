@@ -80,6 +80,7 @@ public class Arcade : MonoBehaviour {
       }
       sprites[0].Pos(0, 0, scaleW, scaleH, false);
       updateDelay = 0;
+      RGEPalette.SetInt("_UsePalette", Col.UsePalette() ? 1 : 0);
     }
 
     int nowScreenW = UnityEngine.Screen.width;
@@ -218,6 +219,7 @@ public class Arcade : MonoBehaviour {
     for (int i = 0; i < 256; i++)
       palette[i] = Col.GetColor((byte)i);
     RGEPalette.SetColorArray("_Colors", palette);
+    Col.UsePalette(false);
     RGEPalette.SetInt("_UsePalette", 0);
   }
 
@@ -338,7 +340,7 @@ public class Arcade : MonoBehaviour {
         // PALETTE ****************************************************************************************************************** PALETTE
         CodeNode paldef = data.Get(BNF.PaletteConfig);
         if (paldef != null) {
-          RGEPalette.SetInt("_UsePalette", paldef.iVal);
+          Col.UsePalette(paldef.iVal != 0);
         }
 
         // LABELS *************************************************************************************************************** LABELS

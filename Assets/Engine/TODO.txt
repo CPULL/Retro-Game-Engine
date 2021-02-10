@@ -10,6 +10,7 @@ FUTURE: step by step debugger
 FUTURE: map keys
 FUTURE: precompile Nodes
 FUTURE: Custom fonts
+FUTURE: Favorites in FileBrowser
 
 
 
@@ -30,6 +31,6 @@ Bug: We had some spurious tiles in a tilemap when the items were deleted
 Bug: wait() should not block the framerate
 
 
-!in config add: palette mode on off and keymap to define keys for the game
-when starting up set the palette shader if the palette is active, set the default colors for the shader (use DoIt to have it enabled or disabled)
 Extend the setpalette to set just a subset of colors
+
+Add contrast and luminosity parameters to paletteshader

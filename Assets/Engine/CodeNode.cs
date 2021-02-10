@@ -114,22 +114,21 @@ public class CodeNode {
           }
         }
         break;
-        case BNF.REG: res += id + " R" + Reg + "\n"; break;
-        case BNF.INT: res += id + " " + iVal + "\n"; break;
-        case BNF.COLOR:
-          res += id + " c" + Col.GetColorString(iVal) + "\n"; break;
-        case BNF.FLT: res += id + " " + fVal + "\n"; break;
-        case BNF.STR: res += id + " \"" + sVal + "\"\n"; break;
-        case BNF.MEM: res += id + " [" + CN1.ToString(indent + 1) + "]" + "\n"; break;
-        case BNF.MEMlong: res += id + " [" + CN1.ToString(indent + 1) + "@]" + "\n"; break;
-        case BNF.MEMlongb: res += id + " [" + CN1.ToString(indent + 1) + "@b]" + "\n"; break;
-        case BNF.MEMlongi: res += id + " [" + CN1.ToString(indent + 1) + "@i]" + "\n"; break;
-        case BNF.MEMlongf: res += id + " [" + CN1.ToString(indent + 1) + "@f]" + "\n"; break;
-        case BNF.MEMlongs: res += id + " [" + CN1.ToString(indent + 1) + "@s]" + "\n"; break;
-        case BNF.MEMchar: res += id + " [" + CN1.ToString(indent + 1) + "@c]" + "\n"; break;
+        case BNF.REG: res += id + " R" + Reg; break;
+        case BNF.INT: res += id + " " + iVal; break;
+        case BNF.COLOR: res += id + Col.GetColorString(iVal) + "c"; break;
+        case BNF.PAL: res += id + iVal + "p"; break;
+        case BNF.FLT: res += id + " " + fVal; break;
+        case BNF.STR: res += id + " \"" + sVal + "\""; break;
+        case BNF.MEM: res += id + " [" + CN1.ToString(indent + 1) + "]"; break;
+        case BNF.MEMlong: res += id + " [" + CN1.ToString(indent + 1) + "@]"; break;
+        case BNF.MEMlongb: res += id + " [" + CN1.ToString(indent + 1) + "@b]"; break;
+        case BNF.MEMlongi: res += id + " [" + CN1.ToString(indent + 1) + "@i]"; break;
+        case BNF.MEMlongf: res += id + " [" + CN1.ToString(indent + 1) + "@f]"; break;
+        case BNF.MEMlongs: res += id + " [" + CN1.ToString(indent + 1) + "@s]"; break;
+        case BNF.MEMchar: res += id + " [" + CN1.ToString(indent + 1) + "@c]"; break;
 
-
-        case BNF.ARRAY: res += id + " R" + Reg + "[" + CN1.ToString(indent + 1) + "]" + "\n"; break;
+        case BNF.ARRAY: res += id + " R" + Reg + "[" + CN1.ToString(indent + 1) + "]"; break;
 
         case BNF.OPpar:
           res += "(" + CN1.ToString(indent + 1) + ")";
@@ -232,7 +231,7 @@ public class CodeNode {
 
         case BNF.IF: {
           res += id + "if (" + CN1.ToString(indent) + ") { ..." + CN2?.ToString(indent) + "... }";
-          if (CN3 != null) res += id + " else { ..." + CN3.ToString(indent) + "... }"; 
+          if (CN3 != null) res += id + " else { ..." + CN3.ToString(indent) + "... }";
           break;
         }
         case BNF.Else: res += id + "else { ..." + (children.Count - 1) + "... }"; break;
@@ -266,6 +265,7 @@ public class CodeNode {
           break;
         case BNF.Ram: res += id + "ram(" + iVal + ")"; break;
         case BNF.Rom: res += id + "rom(" + iVal + ")"; break;
+        case BNF.PaletteConfig: res += id + "Palette(" + iVal + ")"; break;
 
         case BNF.Label:
         case BNF.LAB: res += id + "[" + sVal + iVal + "]"; break;
@@ -302,6 +302,7 @@ public class CodeNode {
         case BNF.SPEN: return id + "SPEn(" + CN1.ToString(indent) + ", " + CN2.ToString(indent) + ")";
         case BNF.STINT: return id + "STint(" + CN1.ToString(indent) + ", " + CN2.ToString(indent) + ")";
         case BNF.SSCALE: return id + "SScale(" + CN1.ToString(indent) + ", " + CN2.ToString(indent) + ", " + CN3.ToString(indent) + ")";
+        case BNF.SPRI: return id + "SPri(" + CN1.ToString(indent) + ", " + CN2.ToString(indent) + ")";
 
         case BNF.FunctionDef:
           return id + sVal + (CN1 == null ? "()" : CN1.ToString(indent)) + " {" + (CN2 == null ? "" : (CN2.children == null ? CN2.ToString(indent) : CN2.children.Count.ToString())) + "}";
@@ -388,7 +389,6 @@ public class CodeNode {
 
         case BNF.PALETTE: return "UsePalette(" + CN1?.ToString(indent) + ")";
         case BNF.SETPALETTECOLOR: return "SetPaletteColor(" + CN1?.ToString(indent) + ", " + CN2?.ToString(indent) + ", " + CN3?.ToString(indent) + ", " + CN4?.ToString(indent) + ", " + CN5?.ToString(indent) + ", " + ")";
-
 
         default:
           res += "[[Missing:" + type + "]]";
@@ -568,7 +568,7 @@ public enum BNF {
   ARRAY,
   INT, 
   FLT,
-  COLOR,
+  COLOR, PAL,
   STR,
   MEM, MEMlong, MEMlongb, MEMlongi, MEMlongf, MEMlongs, MEMchar,
   OPpar, OPsum, OPsub, OPmul, OPdiv, OPmod, OPand, OPor, OPxor, OPlsh, OPrsh,
