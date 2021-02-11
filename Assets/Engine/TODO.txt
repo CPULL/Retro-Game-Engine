@@ -30,8 +30,5 @@ Bug: wait() should not block the framerate
 
 Add a way in roms to add a generic set of data (hex editor)
 
-BUG: finding the best colors may create some unwanted alpha colors
 
-
-PaletteEditor changing colors does not work (wrong colors are selected)
 Implement edit palette in spriteeditor

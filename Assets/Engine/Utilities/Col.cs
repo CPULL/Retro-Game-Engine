@@ -242,7 +242,9 @@ public class Col {
         cols[j] = GetColorForPalette((byte)i);
       paletteTextures[i].SetPixels32(cols);
       paletteTextures[i].Apply();
+      Palette[i] = GetColor((byte)i);
     }
+    UsePalette(false);
   }
 
   public static Texture2D GetPaletteTexture(byte pos) {

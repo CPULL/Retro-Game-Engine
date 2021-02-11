@@ -286,46 +286,7 @@ public class ByteReader {
 
       // Data
       data = data.Substring(part.Length).Trim();
-      if (part.Length > 1 && part[part.Length - 1] == 'x' && part[1] == 'x') { // Do we end with x?
-        part = part.Substring(0, part.Length - 1);
-        // Get 2 chars as a byte in hex, and continue till the end of the string
-        while (part.Length > 0) {
-          string val = part[0] + (part.Length > 1 ? part[1].ToString() : " ");
-          try {
-            consolidator.AddByte((byte)Convert.ToInt32(val, 16));
-          } catch (Exception) {
-            throw new Exception("Cannot parse \"" + val + "\" as Hex");
-          }
-        }
-      }
-      else if (part.Length > 1 && part[part.Length - 1] == 'b') { // Do we end with b?
-        part = part.Substring(0, part.Length - 1);
-        // Parse all value, then split in bytes
-        int b;
-        try {
-          b = Convert.ToInt32(part, 2);
-        } catch (Exception) {
-          throw new Exception("Cannot parse \"" + part + "\" as Binary");
-        }
-        if (b < 256) consolidator.AddByte((byte)b);
-        else if (b < 65536) {
-          byte l = (byte)(b & 0xff);
-          byte h = (byte)((b & 0xff00) >> 8);
-          consolidator.AddByte(h);
-          consolidator.AddByte(l);
-        }
-        else {
-          byte b0 = (byte)(b & 0xff);
-          byte b1 = (byte)((b & 0xff00) >> 8);
-          byte b2 = (byte)((b & 0xff0000) >> 16);
-          byte b3 = (byte)((b & 0xff000000) >> 24);
-          consolidator.AddByte(b3);
-          consolidator.AddByte(b2);
-          consolidator.AddByte(b1);
-          consolidator.AddByte(b0);
-        }
-      }
-      else if (mode == ReadMode.Dec) { // Parse it as dec, split in bytes
+      if (mode == ReadMode.Dec) { // Parse it as dec, split in bytes
         int b;
         try {
           b = Convert.ToInt32(part, 10);
@@ -368,6 +329,71 @@ public class ByteReader {
           b = Convert.ToInt32(part, 2);
         } catch (Exception) {
           throw new Exception("Cannot parse \"" + part + "\" as Binary");
+        }
+        if (b < 256) consolidator.AddByte((byte)b);
+        else if (b < 65536) {
+          byte l = (byte)(b & 0xff);
+          byte h = (byte)((b & 0xff00) >> 8);
+          consolidator.AddByte(h);
+          consolidator.AddByte(l);
+        }
+        else {
+          byte b0 = (byte)(b & 0xff);
+          byte b1 = (byte)((b & 0xff00) >> 8);
+          byte b2 = (byte)((b & 0xff0000) >> 16);
+          byte b3 = (byte)((b & 0xff000000) >> 24);
+          consolidator.AddByte(b3);
+          consolidator.AddByte(b2);
+          consolidator.AddByte(b1);
+          consolidator.AddByte(b0);
+        }
+      }
+      else if (part.Length > 1 && part[part.Length - 1] == 'x' && part[1] == 'x') { // Do we end with x?
+        part = part.Substring(0, part.Length - 1);
+        // Get 2 chars as a byte in hex, and continue till the end of the string
+        while (part.Length > 0) {
+          string val = part[0] + (part.Length > 1 ? part[1].ToString() : " ");
+          try {
+            consolidator.AddByte((byte)Convert.ToInt32(val, 16));
+          } catch (Exception) {
+            throw new Exception("Cannot parse \"" + val + "\" as Hex");
+          }
+        }
+      }
+      else if (part.Length > 1 && part[part.Length - 1] == 'b') { // Do we end with b?
+        part = part.Substring(0, part.Length - 1);
+        // Parse all value, then split in bytes
+        int b;
+        try {
+          b = Convert.ToInt32(part, 2);
+        } catch (Exception) {
+          throw new Exception("Cannot parse \"" + part + "\" as Binary");
+        }
+        if (b < 256) consolidator.AddByte((byte)b);
+        else if (b < 65536) {
+          byte l = (byte)(b & 0xff);
+          byte h = (byte)((b & 0xff00) >> 8);
+          consolidator.AddByte(h);
+          consolidator.AddByte(l);
+        }
+        else {
+          byte b0 = (byte)(b & 0xff);
+          byte b1 = (byte)((b & 0xff00) >> 8);
+          byte b2 = (byte)((b & 0xff0000) >> 16);
+          byte b3 = (byte)((b & 0xff000000) >> 24);
+          consolidator.AddByte(b3);
+          consolidator.AddByte(b2);
+          consolidator.AddByte(b1);
+          consolidator.AddByte(b0);
+        }
+      }
+      else { // Try decimal
+        part = part.Substring(0, part.Length - 1);
+        int b;
+        try {
+          b = Convert.ToInt32(part, 10);
+        } catch (Exception) {
+          throw new Exception("Cannot parse \"" + part + "\" as Decimal");
         }
         if (b < 256) consolidator.AddByte((byte)b);
         else if (b < 65536) {

@@ -747,10 +747,10 @@ public class SpriteEditor : MonoBehaviour {
     ChangeSpriteSize();
     yield return PBar.Show("Loading", 128, 128 + h);
 
-    if (block.Length < 2 + w * h) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a sprite"); yield break; }
+    if (block.Length < 4 + w * h) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a sprite"); yield break; }
     for (int i = 0; i < w * h; i++) {
       if (i % w == 0) yield return PBar.Progress(128 + i / w);
-      pixels[i].Set(block[2 + i]);
+      pixels[i].Set(block[4 + i]);
     }
 
     Values.gameObject.SetActive(false);
@@ -786,7 +786,7 @@ public class SpriteEditor : MonoBehaviour {
         for (int x = 0; x < w; x++) {
           // Normalize the color
           int pos = x + w * ty;
-          pixels[x + w * y].Set(Col.GetColorByte(tps[pos].r, tps[pos].g, tps[pos].b, tps[pos].a));
+          pixels[x + w * y].Set(Col.GetBestColor(tps[pos]));
         }
       }
     }
@@ -1055,14 +1055,7 @@ public class SpriteEditor : MonoBehaviour {
       if (l.type == LabelType.Palette) {
         int size = res.block[l.start];
         if (res.block.Length < l.start+size) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a palette"); return; }
-        int pos = 0;
-        for (int i = 1; i <= size; i++) {
-          byte r = res.block[pos++];
-          byte g = res.block[pos++];
-          byte b = res.block[pos++];
-          byte a = res.block[pos++];
-          Col.SetPalette(i, new Color32(r, g, b, a));
-        }
+        Col.SetPalette(res.block, l.start, 0);
         break;
       }
     }
@@ -1097,7 +1090,8 @@ public class SpriteEditor : MonoBehaviour {
 
 
   public void EditPalette() {
-
+    Dev.inst.PaletteEditor();
+    paletteEditor.EditPalette();
   }
 
   public void SelectPalettePixel(Pixel b, bool left) {

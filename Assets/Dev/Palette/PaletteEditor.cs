@@ -35,7 +35,6 @@ public class PaletteEditor : MonoBehaviour {
     foreach (Transform t in PaletteContainer) {
       pixels[pos] = t.GetComponent<Pixel>();
       defaultPalette[pos] = Col.GetColor((byte)pos);
-      Col.SetPalette(pos, defaultPalette[pos]);
       dp[pos] = defaultPalette[pos];
       pixels[pos].Init(pos, (byte)pos, SelectPalettePixel, null, Color.black, Color.red, Color.yellow);
       Pixels[pos] = pixels[pos];
@@ -50,6 +49,7 @@ public class PaletteEditor : MonoBehaviour {
     ASlider.SetValueWithoutNotify(255);
     SetColor();
     AlterPaletteMode(0);
+    DoneB.gameObject.SetActive(doneAsActive);
   }
 
   public void SetColor() {
@@ -1176,6 +1176,23 @@ public class PaletteEditor : MonoBehaviour {
       }
       currentLine.Data = img;
     }
+  }
+
+  public Button DoneB;
+  bool doneAsActive = false;
+  public void EditPalette() {
+    // Load the palette from Col (do we need it?)
+
+
+    // Show the Done button
+    DoneB.gameObject.SetActive(true);
+    doneAsActive = true;
+  }
+
+  public void Done() {
+    DoneB.gameObject.SetActive(false);
+    Dev.inst.SpriteEditor();
+    doneAsActive = false;
   }
 
   struct CV {
