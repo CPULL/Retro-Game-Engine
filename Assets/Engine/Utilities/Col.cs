@@ -1,12 +1,6 @@
 ﻿using UnityEngine;
 
 public class Col {
-
-  /*
-    6*6*6 = 216 full colors no alpha
-    40 for alphas (1 bit each chroma + 5 level of alpha)
-   */
-
   internal readonly static Color32[] alphas = new Color32[] {
     new Color32(222, 20, 20, 170), new Color32(222, 222, 20, 170), new Color32(20, 222, 20, 170),
     new Color32(20, 222, 222, 170), new Color32(20, 20, 222, 170), new Color32(222, 20, 222, 170),
@@ -40,7 +34,7 @@ public class Col {
       for (int col = 0; col < 256; col++) {
         int hi = ((col & 0xF0) >> 4) * 8 + 4;
         int lo = (col & 0xF) * 8 + 4;
-        PaletteIndex[col]= new Color32((byte)hi, (byte)lo, 0, 255); ;
+        PaletteIndex[col] = new Color32((byte)hi, (byte)lo, 0, 255);
       }
     }
   }
@@ -144,7 +138,6 @@ public class Col {
     }
   }
 
-
   public static byte GetColorByte(int rs, int gs, int bs, int a) {
     return GetColorByte(new Color32((byte)rs, (byte)gs, (byte)bs, (byte)a));
   }
@@ -208,4 +201,50 @@ public class Col {
   public static byte C(byte r, byte g, byte b) {
     return GetColorByte(new Color32((byte)(r * 51), (byte)(g * 51), (byte)(b * 51), 255));
   }
+
+  public static Color32 GetColorForPalette(byte pos) {
+    int hi = ((pos & 0xF0) >> 4) * 8 + 4;
+    int lo = (pos & 0xF) * 8 + 4;
+    return new Color32((byte)hi, (byte)lo, 0, 255); ;
+  }
+
+  private static Texture2D[] paletteTextures;
+
+  public static void InitPalette() {
+    paletteTextures = new Texture2D[256];
+    Color32[] cols = new Color32[16];
+    for (int i = 0; i < 256; i++) {
+      paletteTextures[i] = new Texture2D(4, 4, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+      for (int j = 0; j < 16; j++)
+        cols[j] = GetColorForPalette((byte)i);
+      paletteTextures[i].SetPixels32(cols);
+      paletteTextures[i].Apply();
+    }
+  }
+
+  public static Texture2D GetPaletteTexture(byte pos) {
+    return paletteTextures[pos];
+  }
+
+  public static byte GetBestColor(Color32 color) {
+    byte colorIndex = 0;
+    int minError = int.MaxValue;
+    for (int i = 0; i < 256; i++) {
+      int dr = color.r - Palette[i].r;
+      int dg = color.g - Palette[i].g;
+      int db = color.b - Palette[i].b;
+      int da = color.a - Palette[i].a;
+      int error = dr * dr + dg * dg + db * db + da * da;
+      if (error < minError) {
+        minError = error;
+        colorIndex = (byte)i;
+      }
+    }
+    return colorIndex;
+  }
+
+  public static Color32 GetPaletteColor(byte pos) {
+    return Palette[pos];
+  }
 }
+

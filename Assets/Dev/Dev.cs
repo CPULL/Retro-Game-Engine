@@ -18,6 +18,7 @@ public class Dev : MonoBehaviour {
 
   private void Awake() {
     inst = this;
+    Col.InitPalette();
   }
 
   public void CodeEditor() {

@@ -6,6 +6,8 @@ using UnityEngine.Networking;
 using UnityEngine.UI;
 
 public class SpriteEditor : MonoBehaviour {
+  readonly Color32[] paletteCols = new Color32[256];
+  public Material RGEPalette;
 
   private void Start() {
     if (pixels == null) {
@@ -16,11 +18,24 @@ public class SpriteEditor : MonoBehaviour {
       ChangeSpriteSize();
       SetUndo(false);
     }
+
+    int pos = 0;
+    Color[] cols = new Color[256];
+    palPixels = new Pixel[256];
+    foreach (Transform t in PaletteContainer) {
+      palPixels[pos] = t.GetComponent<Pixel>();
+      paletteCols[pos] = Col.GetColor((byte)pos);
+      cols[pos] = paletteCols[pos];
+      palPixels[pos].Init(pos, (byte)pos, SelectPalettePixel, null, Color.black, Color.red, Color.yellow);
+      pos++;
+    }
+    RGEPalette.SetColorArray("_Colors", cols);
   }
 
   public GameObject PixelPrefab;
   public GridLayoutGroup SpriteGrid;
   Pixel[] pixels = null;
+  Pixel[] palPixels = null;
   public Slider WidthSlider;
   public Slider HeightSlider;
   public TextMeshProUGUI WidthSliderText;
@@ -76,7 +91,7 @@ public class SpriteEditor : MonoBehaviour {
 
     for (int i = 0; i < num; i++) {
       Pixel pixel = Instantiate(PixelPrefab, SpriteGrid.transform).GetComponent<Pixel>();
-      pixel.Init(i, Transparent, ClickPixel, OverPixel);
+      pixel.Init(i, 255, ClickPixel, OverPixel, Color.black, Color.red, Color.yellow);
       pixel.SetBorderSprite(box);
       pixels[i] = pixel;
     }
@@ -95,26 +110,26 @@ public class SpriteEditor : MonoBehaviour {
     undo.Clear();
   }
 
-  private void ClickPixel(int pos) {
-    int x = pos % w;
-    int y = (pos - x) / w;
+  private void ClickPixel(Pixel p, bool left) {
+    int x = p.pos % w;
+    int y = (p.pos - x) / w;
 
     if (action == ActionVal.Pick) {
-      CurrentColor = pixels[pos].Get();
+      CurrentColor = p.Get();
       palette.AlterColor(CurrentColor);
       return;
     }
 
     if (action == ActionVal.SelectAll) {
-      CurrentColor = pixels[pos].Get();
+      CurrentColor = p.Get();
       palette.AlterColor(CurrentColor);
 
       // Check all pixels that had the exact same color and keep all of them selected
       for (int i = 0; i < pixels.Length; i++) {
-        Pixel p = pixels[i];
-        selected[i] = p.Get() == CurrentColor;
-        if (selected[i]) p.Select();
-        else p.Deselect();
+        Pixel px = pixels[i];
+        selected[i] = px.Get() == CurrentColor;
+        if (selected[i]) px.Select();
+        else px.Deselect();
       }
       return;
     }
@@ -122,7 +137,7 @@ public class SpriteEditor : MonoBehaviour {
     if (action == ActionVal.LineStart) {
       start.x = x;
       start.y = y;
-      pixels[pos].Select();
+      p.Select();
       action = ActionVal.LineEnd;
       return;
     }
@@ -140,7 +155,7 @@ public class SpriteEditor : MonoBehaviour {
     if (action == ActionVal.BoxStart) {
       start.x = x;
       start.y = y;
-      pixels[pos].Select();
+      p.Select();
       action = ActionVal.BoxEnd;
       return;
     }
@@ -151,14 +166,14 @@ public class SpriteEditor : MonoBehaviour {
       int y2 = y;
       DrawBox(x1, y1, x2, y2, false, false);
       for (int i = 0; i < pixels.Length; i++)
-        pixels[i].Deselect();
+        p.Deselect();
       return;
     }
 
     if (action == ActionVal.BoxStartF) {
       start.x = x;
       start.y = y;
-      pixels[pos].Select();
+      p.Select();
       action = ActionVal.BoxEndF;
       return;
     }
@@ -176,7 +191,7 @@ public class SpriteEditor : MonoBehaviour {
     if (action == ActionVal.EllipseStart) {
       start.x = x;
       start.y = y;
-      pixels[pos].Select();
+      p.Select();
       action = ActionVal.EllipseEnd;
       return;
     }
@@ -187,14 +202,14 @@ public class SpriteEditor : MonoBehaviour {
       int y2 = y;
       DrawEllipse(x1, y1, x2, y2, false, false);
       for (int i = 0; i < pixels.Length; i++)
-        pixels[i].Deselect();
+        p.Deselect();
       return;
     }
 
     if (action == ActionVal.EllipseStartF) {
       start.x = x;
       start.y = y;
-      pixels[pos].Select();
+      p.Select();
       action = ActionVal.EllipseEndF;
       return;
     }
@@ -205,7 +220,7 @@ public class SpriteEditor : MonoBehaviour {
       int y2 = y;
       DrawEllipse(x1, y1, x2, y2, false, true);
       for (int i = 0; i < pixels.Length; i++)
-        pixels[i].Deselect();
+        p.Deselect();
       return;
     }
 
@@ -214,20 +229,20 @@ public class SpriteEditor : MonoBehaviour {
       return;
     }
 
-    if (pixels[pos].Get() == CurrentColor)
-      pixels[pos].Set(255);
+    if (p.Get() == CurrentColor)
+      p.Set(255);
     else
-      pixels[pos].Set(CurrentColor);
+      p.Set(CurrentColor);
     SetUndo(true);
     lastPixelColor = CurrentColor;
   }
 
-  private void OverPixel(int pos) {
+  private void OverPixel(Pixel p) {
     if (action == ActionVal.LineEnd) {
       int x1 = start.x;
-      int x2 = pos % w;
+      int x2 = p.pos % w;
       int y1 = start.y;
-      int y2 = (pos - x2) / w;
+      int y2 = (p.pos - x2) / w;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].Deselect();
       DrawLine(x1, y1, x2, y2, true);
@@ -235,9 +250,9 @@ public class SpriteEditor : MonoBehaviour {
 
     if (action == ActionVal.BoxEnd || action == ActionVal.BoxEndF) {
       int x1 = start.x;
-      int x2 = pos % w;
+      int x2 = p.pos % w;
       int y1 = start.y;
-      int y2 = (pos - x2) / w;
+      int y2 = (p.pos - x2) / w;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].Deselect();
       DrawBox(x1, y1, x2, y2, true, action == ActionVal.BoxEndF);
@@ -245,16 +260,16 @@ public class SpriteEditor : MonoBehaviour {
 
     if (action == ActionVal.EllipseEnd || action == ActionVal.EllipseEndF) {
       int x1 = start.x;
-      int x2 = pos % w;
+      int x2 = p.pos % w;
       int y1 = start.y;
-      int y2 = (pos - x2) / w;
+      int y2 = (p.pos - x2) / w;
       for (int i = 0; i < pixels.Length; i++)
         pixels[i].Deselect();
       DrawEllipse(x1, y1, x2, y2, true, action == ActionVal.EllipseEndF);
     }
 
     if (action == ActionVal.FreeDraw && Input.GetMouseButton(0)) {
-      pixels[pos].Set(CurrentColor);
+      p.Set(CurrentColor);
     }
   }
 
@@ -1013,9 +1028,94 @@ public class SpriteEditor : MonoBehaviour {
     gameObject.SetActive(false);
   }
 
+
+  public void TogglePalette() {
+    LoadPaletteB.gameObject.SetActive(TogglePaletteB.isOn);
+    ConvertPaletteB.gameObject.SetActive(TogglePaletteB.isOn);
+    PaletteView.SetActive(TogglePaletteB.isOn);
+    ColorsView.SetActive(!TogglePaletteB.isOn);
+  }
+
+  public void LoadPalette() {
+    FileBrowser.Load(PostLoadPalette, FileBrowser.FileType.Rom);
+  }
+
+  public void PostLoadPalette(string path) {
+    // Read the rom, get the first palette (show error if missing)
+    // Set all pixels and the paletteCols[] with the palette values
+
+    ByteChunk res = new ByteChunk();
+    try {
+      ByteReader.ReadBinBlock(path, res);
+    } catch (System.Exception e) {
+      Dev.inst.HandleError("Parsing error: " + e.Message);
+      return;
+    }
+
+    foreach(CodeLabel l in res.labels) {
+      if (l.type == LabelType.Palette) {
+        int size = res.block[l.start];
+        if (res.block.Length < l.start+size) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a palette"); return; }
+        int pos = 0;
+        for (int i = 1; i <= size; i++) {
+          byte r = res.block[pos++];
+          byte g = res.block[pos++];
+          byte b = res.block[pos++];
+          byte a = res.block[pos++];
+          paletteCols[i] = new Color32(r, g, b, a);
+          palPixels[i].Set32(paletteCols[i]);
+        }
+        break;
+      }
+    }
+
+    // Update the colors of the image by picking the best color we have in the palette
+    for (int i = 0; i < pixels.Length; i++) {
+      Color32 c = pixels[i].Get32();
+      byte pos = GetClosestColor(c);
+      pixels[i].Set32(paletteCols[pos]);
+    }
+  }
+
+
+
+  private byte GetClosestColor(Color32 color) {
+    byte colorIndex = 0;
+    int minError = int.MaxValue;
+    for (int i = 0; i < 256; i++) {
+      int dr = color.r - paletteCols[i].r;
+      int dg = color.g - paletteCols[i].g;
+      int db = color.b - paletteCols[i].b;
+      int da = color.a - paletteCols[i].a;
+      int error = dr * dr + dg * dg + db * db + da * da;
+      if (error < minError) {
+        minError = error;
+        colorIndex = (byte)i;
+      }
+    }
+    return colorIndex;
+  }
+
+
+  public void EditPalette() {
+
+  }
+
+  public void SelectPalettePixel(Pixel b, bool left) {
+    CurrentColor = (byte)b.pos;
+    CurrentColorImg.color = paletteCols[CurrentColor];
+  }
+
   public TilemapEditor mapeditor;
   public RomEditor romeditor;
   public Confirm Confirm;
+  public Toggle TogglePaletteB;
+  public Button LoadPaletteB;
+  public Button ConvertPaletteB;
+  public GameObject PaletteView;
+  public Transform PaletteContainer;
+  public GameObject ColorsView;
+  public PaletteEditor paletteEditor;
 }
 
 public enum ActionVal { No, LineStart, LineEnd, BoxStart, BoxEnd, EllipseStart, EllipseEnd, BoxStartF, BoxEndF, EllipseStartF, EllipseEndF, Fill, FreeDraw, Pick, SelectAll, Replace }

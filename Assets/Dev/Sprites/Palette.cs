@@ -14,11 +14,11 @@ public class Palette : MonoBehaviour {
   private void Start() {
     for (int i = 0; i < BasicColors.Length; i++) {
       Pixel p = BasicColors[i];
-      p.Init(i, SetColor, null);
+      p.InitBasic(i, SetColor);
     }
 
     for (int i = 0; i < 40; i++) {
-      AlphaColors[i].Init(i, Col.alphas[i], SetAlpha, null);
+      AlphaColors[i].InitBasic(i, Col.alphas[i], SetAlpha);
     }
 
     for (int i = 0; i < 3; i++) {
@@ -37,8 +37,8 @@ public class Palette : MonoBehaviour {
     }
   }
 
-  private void SetColor(int val) {
-    switch (val) {
+  private void SetColor(Pixel p, bool _) {
+    switch (p.pos) {
       case 0:
         blockSliders[0].SetValueWithoutNotify(0);
         blockSliders[1].SetValueWithoutNotify(0);
@@ -89,10 +89,10 @@ public class Palette : MonoBehaviour {
     spriteEditor.SetCurrentColor(Col.GetByteFrom6((int)blockSliders[0].value, (int)blockSliders[1].value, (int)blockSliders[2].value, 255));
   }
 
-  private void SetAlpha(int val) {
-    MainColor = Col.alphas[val];
+  private void SetAlpha(Pixel p, bool _) {
+    MainColor = Col.alphas[p.pos];
     FrontSelectedColor.color = MainColor;
-    spriteEditor.SetCurrentColor(216 + val);
+    spriteEditor.SetCurrentColor(216 + p.pos);
   }
 
   void UpdateColors(byte r, byte g, byte b) {

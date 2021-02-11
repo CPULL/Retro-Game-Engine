@@ -38,7 +38,7 @@ public class PaletteEditor : MonoBehaviour {
       palette[pos] = Col.GetColor((byte)pos);
       defaultPalette[pos] = Col.GetColor((byte)pos);
       dp[pos] = defaultPalette[pos];
-      pixels[pos].Init(pos, palette[pos], SelectPalettePixel, Color.black);
+      pixels[pos].Init(pos, (byte)pos, SelectPalettePixel, null, Color.black, Color.red, Color.yellow);
       Pixels[pos] = pixels[pos];
       pos++;
     }
