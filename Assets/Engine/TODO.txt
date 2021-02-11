@@ -11,6 +11,7 @@ FUTURE: Font editor
 FUTURE: Custom fonts
 FUTURE: Favorites in FileBrowser
 FUTURE: map keys
+FUTURE: load/save capabilities
 
 
 
@@ -27,6 +28,5 @@ Bug: We had some spurious tiles in a tilemap when the items were deleted
 Bug: wait() should not block the framerate
 
 
-Rom Editor: have a way to export a single item
-Rom Editor: have a way to add some raw binary data (loading a file or using some sort of text or hex editor)
+[DECIDE] Rom Editor: have a way to add some raw binary data (loading a file or using some sort of text or hex editor)
 

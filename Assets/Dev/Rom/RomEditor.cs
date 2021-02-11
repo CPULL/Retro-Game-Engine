@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
@@ -268,7 +269,7 @@ public class RomEditor : MonoBehaviour {
   }
 
   public void UpdateName(RomLine line, string name) {
-    foreach(string key in names.Keys)
+    foreach (string key in names.Keys)
       if (names[key] == line) {
         names.Remove(key);
         break;
@@ -362,7 +363,7 @@ public class RomEditor : MonoBehaviour {
   }
 
   public void ChangeType() {
-    foreach(RomLine l in lines) {
+    foreach (RomLine l in lines) {
       if (l.Check.isOn) {
         l.Type.text = ItemType.value + " " + ((LabelType)ItemType.value).ToString();
         l.ltype = (LabelType)ItemType.value;
@@ -371,7 +372,7 @@ public class RomEditor : MonoBehaviour {
   }
 
   public void EditLine() {
-    foreach(RomLine line in lines) {
+    foreach (RomLine line in lines) {
       if (line.Check.isOn) {
         switch (line.ltype) {
           case LabelType.Sprite:
@@ -421,7 +422,35 @@ public class RomEditor : MonoBehaviour {
   }
 
   private void LoadRawDataPost(string path) {
-
+    FileStream fs = new FileStream(path, FileMode.Open);
+    FileInfo fi = new FileInfo(path);
+    byte[] data = null;
+    try {
+      data = new byte[fi.Length];
+      fs.Read(data, 0, (int)fi.Length);
+    } catch (System.Exception e) {
+      Dev.inst.HandleError("Reading error: " + path + " \n" + e.Message);
+    } finally {
+      fs.Close();
+    }
+    if (data == null) return;
+    // Finally create the block
+    RomLine line = Instantiate(LineTemplate, Container).GetComponent<RomLine>();
+    string name = HandleDuplicateNames("RawData", line);
+    line.gameObject.name = name;
+    line.gameObject.SetActive(true);
+    line.Label.SetTextWithoutNotify(name);
+    line.Type.text = (int)LabelType.RawData + " " + LabelType.RawData.ToString();
+    line.ltype = LabelType.RawData;
+    lines.Add(line);
+    line.Delete.onClick.AddListener(() => { Delete(line); });
+    line.MoveUp.onClick.AddListener(() => { MoveUp(line); });
+    line.MoveDown.onClick.AddListener(() => { MoveDown(line); });
+    line.Label.onEndEdit.AddListener((myname) => { UpdateName(line, myname); });
+    line.Check.onValueChanged.AddListener((check) => { SelectLine(line, check); });
+    line.Data = data;
+    line.size = data.Length;
+    line.Size.text = data.Length.ToString();
   }
 
   public void AddRawDataCreate() {
@@ -439,7 +468,7 @@ public class RomEditor : MonoBehaviour {
       return;
     }
     size *= mult;
-    // Finally crete the block
+    // Finally create the block
     RomLine line = Instantiate(LineTemplate, Container).GetComponent<RomLine>();
     string name = HandleDuplicateNames("RawData", line);
     line.gameObject.name = name;
@@ -459,13 +488,31 @@ public class RomEditor : MonoBehaviour {
     AddRawDataBlock.SetActive(false);
   }
 
-  public void HexEditor() {
-
-  }
-
   public void SaveBlock() {
-
+    FileBrowser.Save(PostSaveBlock, FileBrowser.FileType.Rom);
   }
+
+  public void PostSaveBlock(string path, string name) {
+    StartCoroutine(PostSavingBlock(path, name));
+  }
+  IEnumerator PostSavingBlock(string path, string name) {
+    yield return PBar.Show("Saving", 0, 2 + Container.childCount);
+    int pos = 1;
+    ByteChunk chunk = new ByteChunk();
+    foreach (RomLine line in lines) {
+      yield return PBar.Progress(pos++);
+      if (line.Check.isOn) {
+        chunk.AddBlock(line.Label.text.Trim(), line.ltype, line.Data);
+      }
+    }
+    yield return PBar.Progress(pos++);
+    ByteReader.SaveBinBlock(path, name, chunk);
+    PBar.Hide();
+  }
+
+  public void HexEditor() {
+    // FIXME decide if we need it
+  }
+
 
 }
-
