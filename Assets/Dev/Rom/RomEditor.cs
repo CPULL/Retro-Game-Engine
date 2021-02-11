@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
@@ -407,5 +406,66 @@ public class RomEditor : MonoBehaviour {
       break;
     }
   }
+
+  public GameObject AddRawDataBlock;
+  public TMP_InputField RawDataSize;
+
+  public void AddRawData() {
+    // Show to load something or to create an empty block of a defined size
+    AddRawDataBlock.SetActive(!AddRawDataBlock.activeSelf);
+  }
+
+  public void AddRawDataLoad() {
+    FileBrowser.Load(LoadRawDataPost, FileBrowser.FileType.All);
+    AddRawDataBlock.SetActive(false);
+  }
+
+  private void LoadRawDataPost(string path) {
+
+  }
+
+  public void AddRawDataCreate() {
+    string val = RawDataSize.text.Trim().ToLowerInvariant();
+    if (string.IsNullOrEmpty(val)) {
+      Dev.inst.HandleError("Invalid size specified for the raw data block.");
+      return;
+    }
+    int mult = 1;
+    if (val[val.Length - 1] == 'k') { mult = 1024; val = val.Substring(0, val.Length - 1); }
+    if (val[val.Length - 1] == 'm') { mult = 1024 * 1024; val = val.Substring(0, val.Length - 1); }
+    val = val.Trim();
+    if (!int.TryParse(val, out int size)) {
+      Dev.inst.HandleError("Invalid size specified for the raw data block.");
+      return;
+    }
+    size *= mult;
+    // Finally crete the block
+    RomLine line = Instantiate(LineTemplate, Container).GetComponent<RomLine>();
+    string name = HandleDuplicateNames("RawData", line);
+    line.gameObject.name = name;
+    line.gameObject.SetActive(true);
+    line.Label.SetTextWithoutNotify(name);
+    line.Type.text = (int)LabelType.RawData + " " + LabelType.RawData.ToString();
+    line.ltype = LabelType.RawData;
+    lines.Add(line);
+    line.Delete.onClick.AddListener(() => { Delete(line); });
+    line.MoveUp.onClick.AddListener(() => { MoveUp(line); });
+    line.MoveDown.onClick.AddListener(() => { MoveDown(line); });
+    line.Label.onEndEdit.AddListener((myname) => { UpdateName(line, myname); });
+    line.Check.onValueChanged.AddListener((check) => { SelectLine(line, check); });
+    line.Data = new byte[size];
+    line.size = size;
+    line.Size.text = size.ToString();
+    AddRawDataBlock.SetActive(false);
+  }
+
+  public void HexEditor() {
+
+  }
+
+  public void SaveBlock() {
+
+  }
+
 }
 
