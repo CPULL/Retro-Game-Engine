@@ -33,6 +33,4 @@ Add a way in roms to add a generic set of data (hex editor)
 BUG: finding the best colors may create some unwanted alpha colors
 
 
-Sprite editor does not really work with palette colors
-We may need to change "Pixel" and use the material to show the actual pixel
-BUG: border of pixels in sprite editor is wrong
+Implement edit palette in spriteeditor

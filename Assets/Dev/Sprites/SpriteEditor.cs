@@ -47,7 +47,6 @@ public class SpriteEditor : MonoBehaviour {
 
   public Image CurrentColorImg;
   byte CurrentColor = 255;
-  Color32 Transparent = new Color32(0, 0, 0, 0);
   ActionVal action = ActionVal.No;
   Vector2Int start = Vector2Int.zero;
   int w, h;

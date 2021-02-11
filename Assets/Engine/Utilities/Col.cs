@@ -23,8 +23,19 @@ public class Col {
   };
 
   readonly static Color32[] Palette = new Color32[256];
+  readonly static Color[] PaletteFloat = new Color[256];
   readonly static Color32[] PaletteIndex = new Color32[256];
   static bool UsingPalette;
+
+  internal static Color[] GetPalette() {
+    for (int i = 0; i < 256; i++)
+      PaletteFloat[i] = Palette[i];
+    return PaletteFloat;
+  }
+
+  internal static Color32 GetPaletteCol(int pos) {
+    return Palette[pos];
+  }
 
   public static void UsePalette(bool use) {
     UsingPalette = use;
@@ -41,6 +52,13 @@ public class Col {
 
   public static bool UsePalette() {
     return UsingPalette;
+  }
+
+  public static void SetPalette(Color[] pal) {
+    for (int i = 0; i < pal.Length; i++) {
+      PaletteFloat[i] = pal[i];
+      Palette[i] = pal[i];
+    }
   }
 
   public static void SetPalette(byte[] data, int start, int offset) {
@@ -61,6 +79,11 @@ public class Col {
   public static void SetPalette(int col, byte r, byte g, byte b, byte a) {
     if (col < 1 || col > 254) return;
     Palette[col] = new Color32(r, g, b, a);
+  }
+
+  public static void SetPalette(int col, Color32 c) {
+    if (col < 1 || col > 254) return;
+    Palette[col] = c;
   }
 
   public static Color32 GetColor(byte col) {
