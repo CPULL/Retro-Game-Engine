@@ -27,7 +27,6 @@ public class PaletteEditor : MonoBehaviour {
   public RectTransform ColorPickerV;
   readonly ColorImageQuantizer ciq = new ColorImageQuantizer(new MedianCutQuantizer());
   readonly Pixel[] Pixels = new Pixel[256];
-//  readonly Color[] palette = new Color[256];
   readonly Color32[] defaultPalette = new Color32[256];
 
   void Start() {
@@ -76,9 +75,9 @@ public class PaletteEditor : MonoBehaviour {
     ColorPickerTexture.Apply();
     ColorPicker.texture = ColorPickerTexture;
     if (a == 255)
-      HexColor.SetTextWithoutNotify(r.ToString("X2") + g.ToString("X2") + g.ToString("X2"));
+      HexColor.SetTextWithoutNotify(r.ToString("X2") + g.ToString("X2") + b.ToString("X2"));
     else
-      HexColor.SetTextWithoutNotify(r.ToString("X2") + g.ToString("X2") + g.ToString("X2") + a.ToString("X2"));
+      HexColor.SetTextWithoutNotify(r.ToString("X2") + g.ToString("X2") + b.ToString("X2") + a.ToString("X2"));
     SetSelectedPixel();
   }
 
@@ -267,7 +266,6 @@ public class PaletteEditor : MonoBehaviour {
       if (duplicated) {
         pal[i] = Transparent;
       }
-      pixels[i].Set32(pal[i]);
     }
     Col.SetPalette(pal);
     RGEPalette.SetColorArray("_Colors", pal);
@@ -275,8 +273,7 @@ public class PaletteEditor : MonoBehaviour {
 
   void SetSelectedPixel() {
     if (selectedPixel == null) return;
-    selectedPixel.Set32(SelectedColor.color);
-    Col.SetPalette(selectedPixel.pos, pixels[selectedPixel.pos].Get32());
+    Col.SetPalette(selectedPixel.pos, SelectedColor.color);
     RGEPalette.SetColorArray("_Colors", Col.GetPalette());
   }
 
@@ -407,10 +404,8 @@ public class PaletteEditor : MonoBehaviour {
 
     int start = minsel == -1 ? 1 : minsel;
     int end = maxsel == -1 ? 254 : maxsel;
-    for (int i = start; i <= end; i++) {
+    for (int i = start; i <= end; i++)
       Col.SetPalette(i, colorTable[i - start]);
-      pixels[i].Set32(colorTable[i - start]);
-    }
     yield return PBar.Progress(2);
 
     Texture2D newImage = ciq.ReduceColors(texture, colorTable);
@@ -444,16 +439,13 @@ public class PaletteEditor : MonoBehaviour {
     Col.SetPalette(255, Transparent);
     for (int i = 1; i < 255; i++) {
       Col.SetPalette(i, tosort[i - 1]);
-      pixels[i].Set32(tosort[i - 1]);
     }
     RGEPalette.SetColorArray("_Colors", Col.GetPalette());
   }
 
   public void UseDefaultPalette() {
     for (int i = 0; i < 256; i++) {
-      Color32 c = Col.GetColor((byte)i);
-      Col.SetPalette(i, c);
-      pixels[i].Set32(c);
+      Col.SetPalette(i, Col.GetColor((byte)i));
     }
     RGEPalette.SetColorArray("_Colors", Col.GetPalette());
   }
@@ -543,7 +535,6 @@ public class PaletteEditor : MonoBehaviour {
       for (int i = 0; i < copied.Length; i++) {
         if (i + minsel > 254) break;
         Col.SetPalette(minsel + i,  copied[i]);
-        pixels[minsel + i].Set32(copied[i]);
       }
       RGEPalette.SetColorArray("_Colors", Col.GetPalette());
     }
@@ -583,9 +574,9 @@ public class PaletteEditor : MonoBehaviour {
     Col.SetPalette(block, 0, 0);
     byte len = block[0];
     Color[] tmp = Col.GetPalette();
-    for (int i = 1; i <= len; i++) {
-      pixels[i].Set32(tmp[i]);
-    }
+    for (int i = 1; i <= len; i++)
+      Col.SetPalette(i, tmp[i]);
+    RGEPalette.SetColorArray("_Colors", Col.GetPalette());
     Values.gameObject.SetActive(false);
     LoadSubButton.enabled = false;
     PBar.Hide();
@@ -612,11 +603,7 @@ public class PaletteEditor : MonoBehaviour {
 
     PBar.Progress(1);
     Col.SetPalette(res.block, 0, 0);
-    byte len = res.block[0];
-    Color[] tmp = Col.GetPalette();
-    for (int i = 1; i <= len; i++) {
-      pixels[i].Set32(tmp[i]);
-    }
+    RGEPalette.SetColorArray("_Colors", Col.GetPalette());
 
     PBar.Hide();
   }
@@ -852,7 +839,6 @@ public class PaletteEditor : MonoBehaviour {
       c.b = data[pos++];
       c.a = data[pos++];
       Col.SetPalette(i + 1, c);
-      pixels[i + 1].Set32(c);
     }
     RGEPalette.SetColorArray("_Colors", Col.GetPalette());
   }
@@ -1045,7 +1031,6 @@ public class PaletteEditor : MonoBehaviour {
     for (int i = 1; i < 255; i++) {
       Col.SetPalette(i, colorTable[i - 1]);
       dstPalette[i] = colorTable[i - 1];
-      pixels[i].Set32(colorTable[i - 1]);
     }
     dstPalette[0] = Color.black;
     dstPalette[255] = Transparent;

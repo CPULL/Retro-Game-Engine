@@ -1061,18 +1061,18 @@ public class SpriteEditor : MonoBehaviour {
           byte g = res.block[pos++];
           byte b = res.block[pos++];
           byte a = res.block[pos++];
-          paletteCols[i] = new Color32(r, g, b, a);
-          palPixels[i].Set32(paletteCols[i]);
+          Col.SetPalette(i, new Color32(r, g, b, a));
         }
         break;
       }
     }
+    RGEPalette.SetColorArray("_Colors", Col.GetPalette());
 
     // Update the colors of the image by picking the best color we have in the palette
     for (int i = 0; i < pixels.Length; i++) {
       Color32 c = pixels[i].Get32();
       byte pos = GetClosestColor(c);
-      pixels[i].Set32(paletteCols[pos]);
+      pixels[i].Set(pos);
     }
   }
 
