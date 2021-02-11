@@ -1395,6 +1395,19 @@ public class Arcade : MonoBehaviour {
         case BNF.LUMA: { Luma(Evaluate(n.CN1).ToInt(culture)); return false; }
         case BNF.CONTRAST: { Contrast(Evaluate(n.CN1).ToInt(culture)); return false; }
 
+        case BNF.MEMCPY: {
+          int dst = Evaluate(n.CN1).ToInt(culture);
+          int src = Evaluate(n.CN2).ToInt(culture);
+          int len = Evaluate(n.CN3).ToInt(culture);
+          for (int i = 0; i < len; i++) {
+            int sp = src + i;
+            int dp = dst + i;
+            if (sp < 0 || sp >= mem.Length || dp < 0 || dp >= mem.Length) continue;
+            mem[dp] = mem[sp];
+          }
+          return false;
+        }
+
         case BNF.NOP: return false;
 
         default: {

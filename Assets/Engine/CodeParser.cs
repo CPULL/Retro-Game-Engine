@@ -193,6 +193,7 @@ public class CodeParser : MonoBehaviour {
   readonly Regex rgWait = new Regex("[\\s]*wait[\\s]*\\(([^,]+)(,[\\s]*([fn]))?\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDestroy = new Regex("[\\s]*destroy[\\s]*\\(([^,]+)\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgImage = new Regex("[\\s]*image[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgMemCpy = new Regex("[\\s]*memcpy[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSin = new Regex("[\\s]*sin[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCos = new Regex("[\\s]*cos[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -724,14 +725,24 @@ public class CodeParser : MonoBehaviour {
       return;
     }
 
-    // [Image] = circle([EXP], [EXP], [EXP], [EXP], [EXP], [[EXP],[EXP]])
-    // int pointer, int px, int py, int w, int h, int linestart = 0, int linesize = 0
+    // [Image] = Image(???)
     if (expected.IsGood(Expected.Val.Statement) && rgImage.IsMatch(line)) {
       Match m = rgImage.Match(line);
       CodeNode node = new CodeNode(BNF.IMAGE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
       if (num != 5 && num != 7) throw new Exception("Invalid Image(), wrong number of parameters. Line: " + (linenumber + 1));
+      parent.Add(node);
+      return;
+    }
+
+    // [MemCpy] = MemCpy([EXP], [EXP], [EXP])
+    if (expected.IsGood(Expected.Val.Statement) && rgMemCpy.IsMatch(line)) {
+      Match m = rgMemCpy.Match(line);
+      CodeNode node = new CodeNode(BNF.MEMCPY, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 3) throw new Exception("Invalid MamCpy(), three and only three parameters are required. Line: " + (linenumber + 1));
       parent.Add(node);
       return;
     }

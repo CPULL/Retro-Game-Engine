@@ -20,15 +20,14 @@ Add global TryCatch in Dev tools
 Handle loading errors (data size is shorter than expected): music, arcade
 
 
-Update Sprite and Tilemap editors to use Palette
-Add a way to copy a block of memory: memcopy(dst, src, len)
-
 In music editor add a few empty lines at begin and end of the view, and have some sort of highlighted line on the center
-Add a way in roms to add a generic set of data (hex editor)
 
 
 Bug: We had some spurious tiles in a tilemap when the items were deleted
 Bug: wait() should not block the framerate
 
 
+
+Update Sprite and Tilemap editors to use Palette
+Add a way in roms to add a generic set of data (hex editor)
 

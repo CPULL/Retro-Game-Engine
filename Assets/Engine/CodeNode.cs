@@ -393,6 +393,8 @@ public class CodeNode {
         case BNF.PALETTE: return "UsePalette(" + CN1?.ToString(indent) + ")";
         case BNF.SETPALETTECOLOR: return "SetPaletteColor(" + CN1?.ToString(indent) + ", " + CN2?.ToString(indent) + ", " + CN3?.ToString(indent) + ", " + CN4?.ToString(indent) + ", " + CN5?.ToString(indent) + ", " + ")";
 
+        case BNF.MEMCPY: return "MemCpy(" + CN1?.ToString(indent) + ", " + CN2?.ToString(indent) + ", " + CN3?.ToString(indent) + ")";
+
         default:
           res += "[[Missing:" + type + "]]";
           break;
@@ -595,6 +597,7 @@ public enum BNF {
   LEN, PLEN, SUBSTRING, TRIM,
   KEY, KEYx, KEYy,
   SIN, COS, TAN, ATAN2, SQR, POW,
+  MEMCPY,
   
   
   SOUND, WAVE, MUTE, VOLUME, PITCH, PAN,
