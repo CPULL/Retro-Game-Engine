@@ -28,7 +28,27 @@ public class CodeEditor : MonoBehaviour {
         EditLines[i].SetLine(i, lines[i]);
       }
     }
+    SetScroll();
+  }
 
+  bool settingScroll = false;
+  void SetScroll() {
+    settingScroll = true;
+    float size = 30f / lines.Count;
+    if (size > 1) size = 1;
+    VerticalCodeBar.size = size;
+    VerticalCodeBar.SetValueWithoutNotify((float)currentLine / lines.Count);
+    int steps = lines.Count - 30;
+    if (steps < 0) steps = 0;
+    VerticalCodeBar.numberOfSteps = steps;
+    settingScroll = false;
+  }
+
+  public void ScrollByBar() {
+    if (settingScroll) return;
+    currentLine = Mathf.RoundToInt(VerticalCodeBar.value * lines.Count);
+    Debug.Log("Scrolling " + currentLine);
+    FullDraw();
   }
 
   float autorepeat = 0;
@@ -62,11 +82,18 @@ public class CodeEditor : MonoBehaviour {
       FullDraw();
     }
 
-    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.D)) {
-      string line = lines[currentLine];
-      lines.Insert(currentLine, line);
-      currentLine++;
-      FullDraw();
+    if (Input.GetKey(KeyCode.LeftControl)) {
+      if (Input.GetKeyDown(KeyCode.D)) {
+        string line = lines[currentLine];
+        lines.Insert(currentLine, line);
+        currentLine++;
+        FullDraw();
+      }
+      if (Input.GetKeyDown(KeyCode.Delete) && lines.Count > 1) {
+        lines.RemoveAt(currentLine);
+        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
+        FullDraw();
+      }
     }
 
     if (Input.GetKeyDown(KeyCode.F1)) {
@@ -162,20 +189,11 @@ public class CodeEditor : MonoBehaviour {
       EditLines[editLine].Line.Select();
     }
 
-    if (lines.Count < 31) {
-      VerticalCodeBar.numberOfSteps = 0;
-      VerticalCodeBar.SetValueWithoutNotify(0);
-      VerticalCodeBar.size = 1;
-    }
-    else {
-      VerticalCodeBar.numberOfSteps = lines.Count - 31;
-      VerticalCodeBar.size = 1 / VerticalCodeBar.numberOfSteps;
-      VerticalCodeBar.SetValueWithoutNotify(currentLine);
-    }
-
+    SetScroll();
   }
 
   void FullDraw() {
+    if (editLine >= lines.Count) editLine = lines.Count - 1;
     if (currentLine < 8) {
       for (int line = 0; line < 31; line++) {
         if (line >= lines.Count) {
@@ -205,15 +223,12 @@ public class CodeEditor : MonoBehaviour {
           EditLines[line].Clean();
       }
     }
-
-    // FIXME scrollbar size and position
-
+    SetScroll();
   }
 }
 
 /*
 
-Ctrl+Del to remove line
 Multi line Selection 
 Ctrl+C, +V, +X
 Ctrl+G jump
