@@ -39,6 +39,17 @@ public class CodeEditor : MonoBehaviour {
       ScrollLines(false);
     }
 
+    if (Input.GetKeyDown(KeyCode.PageDown)) {
+      currentLine += 30;
+      if (currentLine >= lines.Count) currentLine = lines.Count - 1;
+      FullDraw();
+    }
+    if (Input.GetKeyDown(KeyCode.PageUp)) {
+      currentLine -= 30;
+      if (currentLine < 0) currentLine = 0;
+      FullDraw();
+    }
+
     if (Input.GetKeyDown(KeyCode.F1)) {
 
     }
@@ -51,13 +62,14 @@ public class CodeEditor : MonoBehaviour {
   }
 
   public void LineSelected(int num) {
+    if (lines[currentLine] != EditLines[editLine].Line.text) {
+      lines[currentLine] = EditLines[editLine].Line.text;
+    }
     currentLine = EditLines[num].linenum;
     editLine = num;
-    dbg.text = "edit " + num.ToString() + " line " + currentLine;
   }
 
   public void LineDeselected(int num) {
-    dbg.text = num.ToString() + " desel";
   }
 
   void ScrollLines(bool down) {
@@ -75,6 +87,22 @@ public class CodeEditor : MonoBehaviour {
 
     // Change editline. If it is <8 then scroll up, if it is >22 then scroll down
     if (down) editLine++; else editLine--;
+    if (editLine < 0) editLine = 0;
+    if (editLine > 22) {
+      if (lines.Count < 23)
+        editLine = lines.Count - 1;
+      else
+        editLine = 22;
+      for (int line = 0; line < 31; line++) {
+        int pos = currentLine - editLine + line;
+        if (pos >= 0 && pos < lines.Count) {
+          EditLines[line].SetLine(pos, lines[pos]);
+        }
+        else {
+          EditLines[line].Clean();
+        }
+      }
+    }
 
     if (editLine < 8) {
       // What is our line number?
@@ -128,10 +156,45 @@ public class CodeEditor : MonoBehaviour {
 
   }
 
+  void FullDraw() {
+    if (currentLine < 8) {
+      for (int line = 0; line < 31; line++) {
+        if (line >= lines.Count) {
+          EditLines[line].Clean();
+        }
+        else {
+          EditLines[line].SetLine(line, lines[line]);
+        }
+      }
+      editLine = currentLine;
+      EditLines[editLine].Line.Select();
+    }
+    else {
+      for (int line = editLine; line >= 0; line--) {
+        int pos = currentLine - (editLine - line);
+        if (pos >= 0 && pos < lines.Count)
+          EditLines[line].SetLine(pos, lines[pos]);
+        else
+          EditLines[line].Clean();
+      }
+
+      for (int line = editLine + 1; line < 31; line++) {
+        int pos = currentLine + (line - editLine);
+        if (pos >= 0 && pos < lines.Count)
+          EditLines[line].SetLine(pos, lines[pos]);
+        else
+          EditLines[line].Clean();
+      }
+    }
+
+    // FIXME scrollbar size and position
+
+  }
 }
 
 /*
-Courier font
+
+Repeat on Up/Down
 Ctrl+D to duplicate line
 Ctrl+Del to remove line
 Multi line Selection 
