@@ -31,12 +31,24 @@ public class CodeEditor : MonoBehaviour {
 
   }
 
+  float autorepeat = 0;
   private void Update() {
+    if (autorepeat > 0) autorepeat -= Time.deltaTime;
     if (Input.GetKeyDown(KeyCode.DownArrow)) {
       ScrollLines(true);
+      autorepeat = .12f;
+    }
+    else if (Input.GetKey(KeyCode.DownArrow) && autorepeat <= 0) {
+      ScrollLines(true);
+      autorepeat = .08f;
     }
     if (Input.GetKeyDown(KeyCode.UpArrow) && currentLine > 0) {
       ScrollLines(false);
+      autorepeat = .12f;
+    }
+    else if (Input.GetKey(KeyCode.UpArrow) && autorepeat <= 0) {
+      ScrollLines(true);
+      autorepeat = .08f;
     }
 
     if (Input.GetKeyDown(KeyCode.PageDown)) {
@@ -194,7 +206,6 @@ public class CodeEditor : MonoBehaviour {
 
 /*
 
-Repeat on Up/Down
 Ctrl+D to duplicate line
 Ctrl+Del to remove line
 Multi line Selection 
