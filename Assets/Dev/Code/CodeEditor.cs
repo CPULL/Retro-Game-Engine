@@ -62,6 +62,13 @@ public class CodeEditor : MonoBehaviour {
       FullDraw();
     }
 
+    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.D)) {
+      string line = lines[currentLine];
+      lines.Insert(currentLine, line);
+      currentLine++;
+      FullDraw();
+    }
+
     if (Input.GetKeyDown(KeyCode.F1)) {
 
     }
@@ -206,7 +213,6 @@ public class CodeEditor : MonoBehaviour {
 
 /*
 
-Ctrl+D to duplicate line
 Ctrl+Del to remove line
 Multi line Selection 
 Ctrl+C, +V, +X
