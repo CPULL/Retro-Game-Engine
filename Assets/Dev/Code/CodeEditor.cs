@@ -36,13 +36,15 @@ public class CodeEditor : MonoBehaviour {
     EventSystem.current.SetSelectedGameObject(EditLines[0].Line.gameObject);
   }
 
-  void Redraw() {
-    // Save if we need
-    for (int i = 0; i < EditLines.Length; i++) {
-      int pos = EditLines[i].linenum;
-      if (pos >= 0 && pos < lines.Count) {
-        if (lines[pos] != EditLines[i].Line.text) {
-          lines[pos] = EditLines[i].Line.text;
+  void Redraw(bool doNotUpdate = false) {
+    if (!doNotUpdate) {
+      // Save if we need
+      for (int i = 0; i < EditLines.Length; i++) {
+        int pos = EditLines[i].linenum;
+        if (pos >= 0 && pos < lines.Count) {
+          if (lines[pos] != EditLines[i].Line.text) {
+            lines[pos] = EditLines[i].Line.text;
+          }
         }
       }
     }
@@ -64,6 +66,39 @@ public class CodeEditor : MonoBehaviour {
         }
     }
     SetScroll();
+
+    // Selection
+    if (selectionS != -1 && selectionE != -1) {
+      // Find the editrow with the startid, if less than 0 set it at 0, if more than 30 set it as 30
+      // Find the editrow with the endid, if less than 0 set it at 0, if more than 30 set it as 30
+      int rowStart = -1, rowEnd = -1;
+      for (int i = 0; i < 31; i++) {
+        if (EditLines[i].linenum == selectionS) rowStart = i;
+        if (EditLines[i].linenum == selectionE) rowEnd = i;
+      }
+
+      if (rowStart == -1 && rowEnd == -1) SelectionRT.sizeDelta = new Vector2(1280, 0);
+      else if (rowStart == -1 && rowEnd != -1) {
+        SelectionRT.sizeDelta = new Vector2(1280, 33 * (rowEnd + 1));
+        SelectionRT.anchoredPosition = new Vector2(0, 0);
+      }
+      else if (rowStart != -1 && rowEnd == -1) {
+        SelectionRT.sizeDelta = new Vector2(1280, 33 * (30 - rowStart));
+        SelectionRT.anchoredPosition = new Vector2(0, -33 * rowStart);
+      }
+      else {
+        SelectionRT.sizeDelta = new Vector2(1280, 33 * (1 + rowEnd - rowStart));
+        SelectionRT.anchoredPosition = new Vector2(0, -33 * rowStart);
+      }
+
+      foreach (CodeLine cl in EditLines)
+        if (cl.Line.isFocused) {
+          cl.Line.ReleaseSelection();
+        }
+    }
+    else
+      SelectionRT.sizeDelta = new Vector2(1280, 0);
+
   }
 
   bool settingScroll = false;
@@ -98,38 +133,175 @@ public class CodeEditor : MonoBehaviour {
     bool pup = Input.GetKey(KeyCode.UpArrow);
     bool pdown = Input.GetKey(KeyCode.DownArrow);
 
-    // Normal movement
-    if ((up || (pup && autorepeat <= 0)) && !shift && currentLine > 0) {
-      currentLine--;
-      if (editLine > 0) editLine--;
-      EditLines[editLine].Line.Select();
-      EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-      Redraw();
-      autorepeat = up ? .4f : .06f;
+    if (!shift) {
+      // Normal movement
+      if ((up || (pup && autorepeat <= 0)) && !shift && currentLine > 0) {
+        SaveLine();
+        currentLine--;
+        if (editLine > 0) editLine--;
+        EditLines[editLine].Line.Select();
+        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
+        autorepeat = up ? .4f : .06f;
+        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
+          selectionS = -1;
+          selectionE = -1;
+        }
+        Redraw();
+      }
+      else if ((down || (pdown && autorepeat <= 0)) && !shift) {
+        SaveLine();
+        if (editLine < 28) editLine++;
+        currentLine++;
+        if (currentLine >= lines.Count) lines.Add("");
+        EditLines[editLine].Line.Select();
+        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
+        autorepeat = down ? .4f : .06f;
+        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
+          selectionS = -1;
+          selectionE = -1;
+        }
+        Redraw();
+      }
+      else if (Input.GetKeyDown(KeyCode.PageUp)) {
+        SaveLine();
+        currentLine -= 31;
+        if (currentLine < 0) currentLine = 0;
+        // We may need to recalculate the currentLine from the editLine
+        if (EditLines[editLine].linenum != -1) currentLine = EditLines[editLine].linenum;
+        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
+          selectionS = -1;
+          selectionE = -1;
+        }
+        Redraw();
+      }
+      else if (Input.GetKeyDown(KeyCode.PageDown)) {
+        SaveLine();
+        currentLine += 31;
+        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
+        if (EditLines[editLine].linenum != -1) currentLine = EditLines[editLine].linenum;
+        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
+          selectionS = -1;
+          selectionE = -1;
+        }
+        Redraw();
+      }
+
+      // Clear and duplicate
+      if (ctrl && Input.GetKeyDown(KeyCode.D)) {
+        SaveLine();
+        string line = lines[currentLine];
+        lines.Insert(currentLine, line);
+        Redraw(true);
+      }
+      if (ctrl && Input.GetKeyDown(KeyCode.Delete) && lines.Count > 1) {
+        lines.RemoveAt(currentLine);
+        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
+        Redraw(true);
+      }
+
+
+      //FIXME debug
+      dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE;
+
+
     }
-    else if ((down || (pdown && autorepeat <= 0)) && !shift) {
-      if (editLine < 28) editLine++;
-      currentLine++;
-      if (currentLine >= lines.Count) lines.Add("");
-      EditLines[editLine].Line.Select();
-      EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-      Redraw();
-      autorepeat = down ? .4f : .06f;
+    else {
+      // Selection
+      if (down && (selectionS == -1 || selectionE == -1)) { // If nothing is selected, select current line and move up or down
+        SaveLine();
+        selectionS = currentLine;
+        selectionE = currentLine;
+        if (editLine < 28) {
+          editLine++;
+          EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject); // This will update currentline
+        }
+        else
+          currentLine++;
+        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
+        Redraw();
+
+        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 0";
+
+      }
+      else if (up && (selectionS == -1 || selectionE == -1)) { // If nothing is selected, select current line and move up or down
+        SaveLine();
+        selectionS = currentLine;
+        selectionE = currentLine;
+        if (currentLine > 0) currentLine--;
+        if (editLine > 0) editLine--;
+        Redraw();
+        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
+
+        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 1";
+
+      }
+      else if (currentLine <= selectionS && up) { // Extend
+        selectionS--;
+        if (selectionS < 0) selectionS = 0;
+        if (currentLine > 0) currentLine--;
+        if (editLine > 0) editLine--;
+        Redraw();
+        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
+
+        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 2";
+
+      }
+      else if (currentLine >= selectionE && down) { // Extend
+        selectionE++;
+        if (selectionE >= lines.Count) selectionE = lines.Count - 1;
+        if (editLine < 28) {
+          editLine++;
+          EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
+        }
+        else
+          currentLine++;
+        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
+        Redraw();
+
+        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 3";
+      }
+      else if (currentLine <= selectionS && down) { // Reduce
+        selectionS++;
+        if (selectionS > selectionE) {
+          int tmp = selectionS;
+          selectionS = selectionE;
+          selectionE = tmp;
+        }
+        if (editLine < 28) {
+          editLine++;
+          EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
+        }
+        else
+          currentLine++;
+        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
+        Redraw();
+
+        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 4";
+
+      }
+      else if (currentLine >= selectionE && up) { // Reduce
+        selectionE--;
+        if (selectionS > selectionE) {
+          int tmp = selectionS;
+          selectionS = selectionE;
+          selectionE = tmp;
+        }
+        if (currentLine > 0) currentLine--;
+        if (editLine > 0) editLine--;
+        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
+        Redraw();
+
+        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 5";
+
+      }
     }
-    else if (Input.GetKeyDown(KeyCode.PageUp)) {
-      currentLine -= 31;
-      if (currentLine < 0) currentLine = 0;
-      Redraw();
-      // We may need to recalculate the currentLine from the editLine
-      if (EditLines[editLine].linenum != -1) currentLine = EditLines[editLine].linenum;
-    }
-    else if (Input.GetKeyDown(KeyCode.PageDown)) {
-      currentLine += 31;
-      if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-      Redraw();
-      if (EditLines[editLine].linenum != -1) currentLine = EditLines[editLine].linenum;
-    }
-    dbg.text = currentLine + " / " + editLine;
+
+  }
+
+  void SaveLine() {
+    // Save the line if needed
+    if (lines[currentLine] != EditLines[editLine].Line.text)
+      lines[currentLine] = EditLines[editLine].Line.text;
   }
 
   public void LineSelected(int num) {
@@ -159,112 +331,9 @@ public class CodeEditor : MonoBehaviour {
 
 
   void Update2() { 
-    if (true) {
-      bool down = Input.GetKeyDown(KeyCode.DownArrow);
-      bool up = Input.GetKeyDown(KeyCode.UpArrow);
-      // Nothing selected, select current line and move up or down
-      if ((down || up) && (selectionS == -1 || selectionE == -1)) {
-        selectionS = currentLine;
-        selectionE = currentLine;
-      }
-      else if (currentLine <= selectionS && up) { // Extend
-        selectionS--;
-        if (selectionS < 0) selectionS = 0;
-        ScrollLines(false);
-      }
-      else if (currentLine >= selectionE && down) { // Extend
-        selectionE++;
-        if (selectionE >= lines.Count) selectionE = lines.Count - 1;
-        ScrollLines(true);
-      }
-      else if (currentLine <= selectionS && down) { // Reduce
-        selectionS++;
-        if (selectionS > selectionE) {
-          selectionS = -1;
-          selectionE = -1;
-        }
-        ScrollLines(true);
-      }
-      else if (currentLine >= selectionE && up) { // Reduce
-        selectionE--;
-        if (selectionS > selectionE) {
-          selectionS = -1;
-          selectionE = -1;
-        }
-        ScrollLines(false);
-      }
 
-      if (selectionS != -1 && selectionE != -1) {
-        // Find the editrow with the startid, if less than 0 set it at 0, if more than 30 set it as 30
-        // Find the editrow with the endid, if less than 0 set it at 0, if more than 30 set it as 30
-        int rowStart = -1, rowEnd = -1;
-        for (int i = 0; i < 31; i++) {
-          if (EditLines[i].linenum == selectionS) rowStart = i;
-          if (EditLines[i].linenum == selectionE) rowEnd = i;
-        }
-
-        if (rowStart == -1 && rowEnd == -1) SelectionRT.sizeDelta = new Vector2(0, 33);
-        else if (rowStart == -1 && rowEnd != -1) {
-          SelectionRT.sizeDelta = new Vector2(1280, 33 * (rowEnd + 1));
-          SelectionRT.anchoredPosition = new Vector2(0, 0);
-        }
-        else if (rowStart != -1 && rowEnd == -1) {
-          SelectionRT.sizeDelta = new Vector2(1280, 33 * (30 - rowStart));
-          SelectionRT.anchoredPosition = new Vector2(0, -33 * rowStart);
-        }
-        else  {
-          SelectionRT.sizeDelta = new Vector2(1280, 33 * (1 + rowEnd - rowStart));
-          SelectionRT.anchoredPosition = new Vector2(0, -33 * rowStart);
-        }
-
-        foreach(CodeLine cl in EditLines)
-          if (cl.Line.isFocused) {
-            cl.Line.ReleaseSelection();
-          }
-      }
-    }
-    else {
-      if (Input.GetKeyDown(KeyCode.DownArrow)) {
-        ScrollLines(true);
-        autorepeat = .12f;
-      }
-      else if (Input.GetKey(KeyCode.DownArrow) && autorepeat <= 0) {
-        ScrollLines(true);
-        autorepeat = .08f;
-      }
-      if (Input.GetKeyDown(KeyCode.UpArrow) && currentLine > 0) {
-        ScrollLines(false);
-        autorepeat = .12f;
-      }
-      else if (Input.GetKey(KeyCode.UpArrow) && currentLine > 0 && autorepeat <= 0) {
-        ScrollLines(false);
-        autorepeat = .08f;
-      }
-    }
-
-    if (Input.GetKeyDown(KeyCode.PageDown)) {
-      currentLine += 30;
-      if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-      FullDraw();
-    }
-    if (Input.GetKeyDown(KeyCode.PageUp)) {
-      currentLine -= 30;
-      if (currentLine < 0) currentLine = 0;
-      FullDraw();
-    }
 
     if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) {
-      if (Input.GetKeyDown(KeyCode.D)) {
-        string line = lines[currentLine];
-        lines.Insert(currentLine, line);
-        currentLine++;
-        FullDraw();
-      }
-      if (Input.GetKeyDown(KeyCode.Delete) && lines.Count > 1) {
-        lines.RemoveAt(currentLine);
-        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-        FullDraw();
-      }
       if (Input.GetKeyDown(KeyCode.C) && selectionS != -1 && selectionE != -1) {
         copied = "";
         for (int line = selectionS; line <= selectionE; line++) {
