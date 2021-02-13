@@ -154,21 +154,37 @@ public class CodeEditor : MonoBehaviour {
       // Ctrl+C
       if (Input.GetKeyDown(KeyCode.C) && selectionS != -1 && selectionE != -1) {
         copied = "";
+        SaveLine();
         for (int line = selectionS; line <= selectionE; line++) {
           copied += lines[line];
           if (line != selectionE) copied += "\n";
         }
-        dbg.text = copied;
         selectionS = -1;
         selectionE = -1;
         SelectionRT.sizeDelta = new Vector2(1280, 0);
       }
 
+      // Ctrl+X
+      if (Input.GetKeyDown(KeyCode.X) && selectionS != -1 && selectionE != -1) {
+        copied = "";
+        SaveLine();
+        for (int line = selectionS; line <= selectionE; line++) {
+          copied += lines[line];
+          if (line != selectionE) copied += "\n";
+        }
+        // Remove the copied lines
+        for (int i = 0; i < selectionE - selectionS + 1; i++)
+          lines.RemoveAt(selectionS);
+        selectionS = -1;
+        selectionE = -1;
+        SelectionRT.sizeDelta = new Vector2(1280, 0);
+        Redraw(true);
+      }
+
       // Ctrl+V
       if (Input.GetKeyDown(KeyCode.V)) {
-        // If we have lines, paste them as lines
+        // If we have copied lines, paste them as lines
         // If we have something in clipboard that has at least one newline, treat it as pasting lines (and do not save the currentEditLine because it will contain invalid data
-
         if (string.IsNullOrEmpty(copied)) {
           string clip = GUIUtility.systemCopyBuffer;
           if (clip.IndexOf('\n') != -1) copied = clip;
@@ -184,13 +200,8 @@ public class CodeEditor : MonoBehaviour {
           for (int i = rows.Length - 1; i >= 0; i--) {
             lines.Insert(currentLine, rows[i].Trim(' ', '\t', '\n', '\r'));
           }
-          dbg.text = "Pasted: " + num + " lines";
           Redraw(true);
         }
-        else dbg.text = "nothing to paste";
-
-        // If we had something to paste, Do not save the 
-
       }
 
 
