@@ -25,10 +25,10 @@ public class CodeEditor : MonoBehaviour {
       cl.Line.onFocusSelectAll = false;
       cl.Line.restoreOriginalTextOnEscape = true;
     }
-    EditLines[0].SetLine(0, "ZERO");
-    lines.Add("ZERO");
+    EditLines[0].SetLine(0, "");
+    lines.Add("");
 
-    for (int i = 1; i < 45; i++) {
+    for (int i = 1; i < -45; i++) {
       lines.Add("[" + i + "] " + (i%2==0? (i * i * i * i + i * i + i).ToString("X4") : ""));
     }
     for (int i = 0; i < EditLines.Length; i++) {
@@ -136,6 +136,7 @@ public class CodeEditor : MonoBehaviour {
     bool down = Input.GetKeyDown(KeyCode.DownArrow);
     bool pup = Input.GetKey(KeyCode.UpArrow);
     bool pdown = Input.GetKey(KeyCode.DownArrow);
+    bool enter = Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
 
     if (ctrl) { // ******************************* Control *********************************************************************************************
       // Clear and duplicate
@@ -312,11 +313,16 @@ public class CodeEditor : MonoBehaviour {
         }
         Redraw();
       }
-      else if ((down || (pdown && autorepeat <= 0)) && !shift) {
+      else if ((down || (pdown && autorepeat <= 0) || enter) && !shift) {
         SaveLine();
         if (editLine < 28) editLine++;
         currentLine++;
         if (currentLine >= lines.Count) lines.Add("");
+        else if (enter) {
+          lines.Insert(currentLine, "");
+          Redraw(true);
+        }
+        
         EditLines[editLine].Line.Select();
         EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
         autorepeat = down ? .4f : .06f;
@@ -359,14 +365,17 @@ public class CodeEditor : MonoBehaviour {
   }
 
   void SaveLine() {
+    if (currentLine < 0 || currentLine >= lines.Count || editLine < 0 || editLine >= EditLines.Length) return;
     // Save the line if needed
     if (lines[currentLine] != EditLines[editLine].Line.text)
       lines[currentLine] = EditLines[editLine].Line.text;
   }
 
   public void LineSelected(int num) {
-    currentLine = EditLines[num].linenum;
     editLine = num;
+    int line = EditLines[num].linenum;
+    if (line == -1) return;
+    currentLine = line;
   }
 
   public void LineDeselected(int num) {
@@ -376,190 +385,13 @@ public class CodeEditor : MonoBehaviour {
 
 
 
-  // ******************************************************************** RCYCLE ********************************************************************
-
-
-
-
-
-
-
-
-
-  void Update2() { 
-
-
-    if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) {
-      if (Input.GetKeyDown(KeyCode.X) && selectionS != -1 && selectionE != -1) {
-        copied = "";
-        for (int line = selectionS; line <= selectionE; line++) {
-          copied += lines[line];
-          if (line != selectionE) copied += "\n";
-        }
-        dbg.text = copied;
-
-        // Find where was the startLine in the Edit lines, redraw all lines from this editline to the end (usig the same line numbers)
-        for (int line = selectionS; line <= selectionE; line++) {
-          lines.RemoveAt(selectionS);
-        }
-        if (EditLines[0].linenum > selectionS) { // Redraw all, reduce the line numbers by (end-start+1)
-          int num = selectionE - selectionS + 1;
-          for (int i = 0; i < EditLines.Length; i++) {
-            int nn = EditLines[i].linenum - num;
-            if (nn < lines.Count) EditLines[i].SetLine(nn, lines[nn]);
-            else EditLines[i].Clean();
-          }
-        }
-        else {
-          for (int pos = 0; pos < EditLines.Length; pos++) {
-            if (EditLines[pos].linenum == selectionS) {
-              int num = selectionE - selectionS + 1;
-              for (int i = pos; i < EditLines.Length; i++) {
-                int nn = EditLines[i].linenum - num;
-                if (nn < lines.Count) EditLines[i].SetLine(nn, lines[nn]);
-                else EditLines[i].Clean();
-              }
-              break;
-            }
-          }
-        }
-
-        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-        editLine = 0;
-        selectionS = -1;
-        selectionE = -1;
-        SelectionRT.sizeDelta = new Vector2(1280, 0);
-      }
-    }
-
-  }
-
-
-  void ScrollLines(bool down) {
-    // Save the editline
-    if (lines[currentLine] != EditLines[editLine].Line.text) {
-      lines[currentLine] = EditLines[editLine].Line.text;
-    }
-    if (down) {
-      currentLine++;
-      if (currentLine >= lines.Count) lines.Add("");
-    }
-    else {
-      currentLine--;
-    }
-
-    // Change editline. If it is <8 then scroll up, if it is >22 then scroll down
-    if (down) editLine++; else editLine--;
-    if (editLine < 0) editLine = 0;
-    if (editLine > 22) {
-      if (lines.Count < 23)
-        editLine = lines.Count - 1;
-      else
-        editLine = 22;
-      for (int line = 0; line < 31; line++) {
-        int pos = currentLine - editLine + line;
-        if (pos >= 0 && pos < lines.Count) {
-          EditLines[line].SetLine(pos, lines[pos]);
-        }
-        else {
-          EditLines[line].Clean();
-        }
-      }
-    }
-
-    if (editLine < 8) {
-      // What is our line number?
-      int linenum = EditLines[editLine].linenum;
-      if (linenum > editLine) {
-        editLine = 7;
-        int pos = linenum - 7;
-        for (int line = 0; line < 31; line++) {
-          int lp = line + pos;
-          if (lp >= 0 && lp < lines.Count) {
-            EditLines[line].SetLine(lp, lines[lp]);
-          }
-          else {
-            EditLines[line].Clean();
-          }
-        }
-      }
-      else {
-        if (editLine < 0) editLine = 0;
-        if (editLine > 30) editLine = 30;
-        if (currentLine < 0) currentLine = 0;
-        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-        EditLines[editLine].SetLine(currentLine, lines[currentLine]);
-        EditLines[editLine].Line.Select();
-      }
-
-    }
-    else if (editLine > 22) {
-      editLine = 22;
-      for (int line = 0; line < 31; line++) {
-        int pos = currentLine - editLine + line;
-        if (pos >= 0 && pos < lines.Count) {
-          EditLines[line].SetLine(pos, lines[pos]);
-        }
-        else {
-          EditLines[line].Clean();
-        }
-      }
-    }
-    else { // Do not scroll, just select the line
-      if (editLine < 0) editLine = 0;
-      if (editLine > 30) editLine = 30;
-      if (currentLine < 0) currentLine = 0;
-      if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-      EditLines[editLine].SetLine(currentLine, lines[currentLine]);
-      EditLines[editLine].Line.Select();
-    }
-
-    SetScroll();
-  }
-
-  void FullDraw() {
-    if (editLine >= lines.Count) editLine = lines.Count - 1;
-    if (currentLine < 8) {
-      for (int line = 0; line < 31; line++) {
-        if (line >= lines.Count) {
-          EditLines[line].Clean();
-        }
-        else {
-          EditLines[line].SetLine(line, lines[line]);
-        }
-      }
-      editLine = currentLine;
-      EditLines[editLine].Line.Select();
-    }
-    else {
-      for (int line = editLine; line >= 0; line--) {
-        int pos = currentLine - (editLine - line);
-        if (pos >= 0 && pos < lines.Count)
-          EditLines[line].SetLine(pos, lines[pos]);
-        else
-          EditLines[line].Clean();
-      }
-
-      for (int line = editLine + 1; line < 31; line++) {
-        int pos = currentLine + (line - editLine);
-        if (pos >= 0 && pos < lines.Count)
-          EditLines[line].SetLine(pos, lines[pos]);
-        else
-          EditLines[line].Clean();
-      }
-    }
-    SetScroll();
-  }
 
 
 }
 
 /*
 
-Removing more items than we have screws up the position and the lines
-
-Ctrl+V, +X
-Ctrl+G jump
+Enter should add an empty line where it is clicked (after current line)
 Ctrl+F find
 Ctrl+H replace
 
