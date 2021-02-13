@@ -478,32 +478,19 @@ public class CodeNode {
         break;
       case BNF.LABG:
         break;
-      case BNF.CASTb:
-        break;
-      case BNF.CASTi:
-        break;
-      case BNF.CASTf:
-        break;
-      case BNF.CASTs:
-        break;
-      case BNF.UOneg:
-        break;
-      case BNF.UOinv:
-        break;
-      case BNF.UOsub:
-        break;
-      case BNF.COMPeq:
-        break;
-      case BNF.COMPne:
-        break;
-      case BNF.COMPlt:
-        break;
-      case BNF.COMPle:
-        break;
-      case BNF.COMPgt:
-        break;
-      case BNF.COMPge:
-        break;
+      case BNF.CASTb: return CN1?.Format(variables) + "<color=#66aCe6>_b</color>";
+      case BNF.CASTi: return CN1?.Format(variables) + "<color=#66aCe6>_i</color>";
+      case BNF.CASTf: return CN1?.Format(variables) + "<color=#66aCe6>_f</color>";
+      case BNF.CASTs: return CN1?.Format(variables) + "<color=#66aCe6>_s</color>";
+      case BNF.UOneg: return "<color=#66aCe6>!</color>" + CN1?.Format(variables);
+      case BNF.UOinv: return "<color=#66aCe6>~</color>" + CN1?.Format(variables);
+      case BNF.UOsub: return "<color=#66aCe6>-</color>" + CN1?.Format(variables);
+      case BNF.COMPeq: return CN1?.Format(variables) + " <b><color=#66aCe6>==</color></b> " + CN2?.Format(variables);
+      case BNF.COMPne: return CN1?.Format(variables) + " <b><color=#66aCe6>!=</color></b> " + CN2?.Format(variables);
+      case BNF.COMPlt: return CN1?.Format(variables) + " <b><color=#66aCe6><</color></b> " + CN2?.Format(variables);
+      case BNF.COMPle: return CN1?.Format(variables) + " <b><color=#66aCe6><=</color></b> " + CN2?.Format(variables);
+      case BNF.COMPgt: return CN1?.Format(variables) + " <b><color=#66aCe6>></color></b> " + CN2?.Format(variables);
+      case BNF.COMPge: return CN1?.Format(variables) + " <b><color=#66aCe6>>=</color></b> " + CN2?.Format(variables);
       case BNF.ASSIGN: return CN1?.Format(variables) + " = " + CN2?.Format(variables);
       case BNF.ASSIGNsum: return CN1?.Format(variables) + " += " + CN2?.Format(variables);
       case BNF.ASSIGNsub: return CN1?.Format(variables) + " -= " + CN2?.Format(variables);
@@ -630,7 +617,7 @@ public class CodeNode {
       case BNF.SETPALETTECOLOR:
         break;
     }
-    return "NOT DONE! " + type;
+    throw new Exception(type + " NOT YET DONE!");
   }
 
   internal bool Evaluable() {

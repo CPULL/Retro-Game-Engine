@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -366,20 +367,37 @@ public class CodeEditor : MonoBehaviour {
 
 
   }
+  readonly Regex rgColorOpen = new Regex("\\<color=#[0-9a-f]{6}\\>", RegexOptions.IgnoreCase);
+  readonly Regex rgColorClose = new Regex("\\</color\\>", RegexOptions.IgnoreCase);
+  readonly Regex rgMarkOpen = new Regex("\\<mark=#[0-9a-f]{8}\\>", RegexOptions.IgnoreCase);
+  readonly Regex rgMarkClose = new Regex("\\</mark\\>", RegexOptions.IgnoreCase);
+  readonly Regex rgBOpen = new Regex("\\<b\\>", RegexOptions.IgnoreCase);
+  readonly Regex rgBClose = new Regex("\\</b\\>", RegexOptions.IgnoreCase);
 
   void SaveLine() {
     if (currentLine < 0 || currentLine >= lines.Count || editLine < 0 || editLine >= EditLines.Length) return;
     // Save the line if needed
-    if (lines[currentLine] != EditLines[editLine].Line.text)
-      lines[currentLine] = EditLines[editLine].Line.text;
+
+    string cleanline = EditLines[editLine].Line.text;
+    cleanline = rgColorOpen.Replace(cleanline, "");
+    cleanline = rgColorClose.Replace(cleanline, "");
+    cleanline = rgMarkOpen.Replace(cleanline, "");
+    cleanline = rgMarkClose.Replace(cleanline, "");
+    cleanline = rgBOpen.Replace(cleanline, "");
+    cleanline = rgBClose.Replace(cleanline, "");
+
+    if (lines[currentLine] != cleanline)
+      lines[currentLine] = cleanline;
     string var = lines[currentLine];
     if (string.IsNullOrEmpty(var)) {
       Result.text = "";
       return;
     }
     try {
-      CodeNode res = cp.ParseLine(lines[currentLine], variables);
+      CodeNode res = cp.ParseLine(cleanline, variables);
       Result.text = res.CN1?.Format(variables);
+      EditLines[editLine].SetLine(EditLines[editLine].linenum, Result.text);
+      // FIXME alter also the line itself, but remove the <color> and <mark> tags
     } catch (System.Exception e) {
       Result.text = "ERROR:\n" + e.Message;
     }

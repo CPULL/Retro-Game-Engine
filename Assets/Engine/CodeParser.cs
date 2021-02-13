@@ -139,9 +139,9 @@ public class CodeParser {
   readonly Regex rgMemC = new Regex("\\[[\\s]*(`[a-z]{3,}¶)[\\s]*@c[\\s]*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMemUnparsed = new Regex("[\\s]*\\[.+\\][\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgUOneg = new Regex("(^|[^0-9\\)])\\![\\s]*(([a-z0-9\\.]+)|(\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)))($|[\\+\\-\\*/&\\|^\\s:\\)\\=\\>\\<])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgUOinv = new Regex("(^|[^0-9\\)])\\~[\\s]*(([a-z0-9\\.]+)|(\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)))($|[\\+\\-\\*/&\\|^\\s:\\)\\=\\>\\<])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgUOsub = new Regex("(^|[^0-9\\)])\\-[\\s]*(([a-z0-9\\.]+)|(\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)))($|[\\+\\-\\*/&\\|^\\s:\\)\\=\\>\\<])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOneg = new Regex("(^|[^0-9\\)])?(\\![\\s]*([a-z0-9\\.]+)|(\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)))($|[\\+\\-\\*/&\\|^\\s:\\)\\=\\>\\<])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOinv = new Regex("(^|[^0-9\\)])?(\\~[\\s]*([a-z0-9\\.]+)|(\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)))($|[\\+\\-\\*/&\\|^\\s:\\)\\=\\>\\<])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOsub = new Regex("(^|[^0-9\\)])?(\\-[\\s]*([a-z0-9\\.]+)|(\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)))($|[\\+\\-\\*/&\\|^\\s:\\)\\=\\>\\<])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgMul = new Regex("(`[a-z]{3,}¶)([\\s]*\\*[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDiv = new Regex("(`[a-z]{3,}¶)([\\s]*/[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1335,7 +1335,7 @@ public class CodeParser {
       // !
       line = rgUOneg.Replace(line, m => {
         atLeastOneReplacement = true;
-        string toReplace = m.Captures[0].Value.Trim();
+        string toReplace = m.Groups[2].Value.Trim();
         toReplace.Trim();
         if (toReplace[0] != '!') throw new Exception("Invalid negation: " + toReplace);
         toReplace = toReplace.Substring(1).Trim();
@@ -1343,7 +1343,7 @@ public class CodeParser {
         CodeNode exp = ParseExpression(toReplace);
         n.Add(exp);
         nodes[n.id] = n;
-        return n.id;
+        return m.Groups[1].Value + n.id;
       });
       if (atLeastOneReplacement) continue;
 
@@ -2002,7 +2002,14 @@ public class CodeParser {
     line = line.Trim(' ', '\t', '\r');
     if (!nodes.ContainsKey(line)) {
       line = rgTag.Replace(line, "").Trim();
-      throw new Exception("Invalid expression at " + (linenumber + 1) + "\n" + origForException + "\n" + line);
+
+      int numQ = 0;
+      foreach (char c in line)
+        if (c == '"') numQ++;
+      if (numQ % 2 == 1)
+        throw new Exception("Invalid expression at " + (linenumber + 1) + "\n" + origForException + "\nProbably a wrong string");
+      else
+        throw new Exception("Invalid expression at " + (linenumber + 1) + "\n" + origForException + "\n" + line);
     }
     return nodes[line];
   }
@@ -2102,17 +2109,17 @@ public class CodeParser {
       }
       break;
       case BNF.OPdiv: {
-        if (lf && rf)   { l.type = BNF.FLT; l.fVal /= r.fVal; }
-        if (!lf && rf)  { l.type = BNF.FLT; l.fVal = l.iVal / r.fVal; }
-        if (lf && !rf)  { l.type = BNF.FLT; l.fVal /= r.iVal; }
-        if (!lf && !rf) { l.type = BNF.INT; l.iVal /= r.iVal; }
+        if (lf && rf)   { l.type = BNF.FLT; if (r.fVal == 0) l.fVal = float.MaxValue; else l.fVal /= r.fVal; }
+        if (!lf && rf)  { l.type = BNF.FLT; if (r.fVal == 0) l.fVal = float.MaxValue; else l.fVal = l.iVal / r.fVal; }
+        if (lf && !rf)  { l.type = BNF.FLT; if (r.iVal == 0) l.fVal = float.MaxValue; else l.fVal /= r.iVal; }
+        if (!lf && !rf) { l.type = BNF.INT; if (r.iVal == 0) l.fVal = float.MaxValue; else l.iVal /= r.iVal; }
       }
       break;
       case BNF.OPmod: {
-        if (lf && rf)   { l.type = BNF.FLT; l.fVal %= r.fVal; }
-        if (!lf && rf)  { l.type = BNF.FLT; l.fVal = l.iVal % r.fVal; }
-        if (lf && !rf)  { l.type = BNF.FLT; l.fVal %= r.iVal; }
-        if (!lf && !rf) { l.type = BNF.INT; l.iVal %= r.iVal; }
+        if (lf && rf)   { l.type = BNF.FLT; if (r.fVal == 0) l.fVal = float.MaxValue; else l.fVal %= r.fVal; }
+        if (!lf && rf)  { l.type = BNF.FLT; if (r.fVal == 0) l.fVal = float.MaxValue; else l.fVal = l.iVal % r.fVal; }
+        if (lf && !rf)  { l.type = BNF.FLT; if (r.iVal == 0) l.fVal = float.MaxValue; else l.fVal %= r.iVal; }
+        if (!lf && !rf) { l.type = BNF.INT; if (r.iVal == 0) l.fVal = float.MaxValue; else l.iVal %= r.iVal; }
       }
       break;
       default: return null;
