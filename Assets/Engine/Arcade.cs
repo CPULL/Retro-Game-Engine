@@ -14,7 +14,7 @@ public class Arcade : MonoBehaviour {
   Texture2D texture;
   Color32[] pixels;
   byte[] raw;
-  CodeParser cp;
+  readonly CodeParser cp = new CodeParser();
   int sw = 256;
   int sh = 160;
   int wm1 = 255;
@@ -182,7 +182,6 @@ public class Arcade : MonoBehaviour {
 
 
   private void Start() {
-    cp = GetComponent<CodeParser>();
     texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
       filterMode = FilterMode.Point
     };

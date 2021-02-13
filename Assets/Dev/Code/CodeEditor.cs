@@ -11,6 +11,8 @@ public class CodeEditor : MonoBehaviour {
   public RectTransform SelectionRT;
   public TextMeshProUGUI dbg;
 
+  readonly CodeParser cp = new CodeParser();
+  readonly Variables variables = new Variables();
   int currentLine = 0;
   int editLine = 0;
   float autorepeat = 0;
@@ -356,8 +358,8 @@ public class CodeEditor : MonoBehaviour {
         Redraw();
       }
 
-      if (Input.anyKeyDown) //FIXME debug
-        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE;
+//      if (Input.anyKeyDown) //FIXME debug
+//        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE;
       
     }
 
@@ -369,6 +371,14 @@ public class CodeEditor : MonoBehaviour {
     // Save the line if needed
     if (lines[currentLine] != EditLines[editLine].Line.text)
       lines[currentLine] = EditLines[editLine].Line.text;
+
+    try {
+      CodeNode res = cp.ParseLine(lines[currentLine], variables);
+      dbg.text = res.CN1?.ToString();
+    } catch (System.Exception e) {
+      dbg.text = "ERROR: " + e.Message;
+    }
+
   }
 
   public void LineSelected(int num) {
@@ -391,7 +401,8 @@ public class CodeEditor : MonoBehaviour {
 
 /*
 
-Enter should add an empty line where it is clicked (after current line)
+Add a "format" call for the CodeNodes, producing some colored code (use Varaibles as input and ident level), add ident level to each Line
+
 Ctrl+F find
 Ctrl+H replace
 

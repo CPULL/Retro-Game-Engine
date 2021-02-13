@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-public class CodeParser : MonoBehaviour {
+public class CodeParser {
   Dictionary<string, CodeNode> nodes = null;
   Dictionary<string, CodeNode> functions = null;
   int idcount = 0;
@@ -493,7 +493,7 @@ public class CodeParser : MonoBehaviour {
         increment = 1;
       }
 
-
+      if (lines == null) return;
       // Check if we have an else
       bool notYetClosed = true;
       for (int i = linenumber + increment; i < lines.Length; i++) {
@@ -1192,8 +1192,17 @@ public class CodeParser : MonoBehaviour {
     throw new Exception("Invalid code at " + (linenumber + 1) + "\n" + origForException);
   }
 
+  public CodeNode ParseLine(string line, Variables vs) {
+    vars = vs;
+    nodes = new Dictionary<string, CodeNode>();
+    CodeNode n = new CodeNode(BNF.BLOCK, line, 0);
+    expected.Set(Expected.Val.Statement);
+    ParseLine(n, line, null);
+    return n;
+  }
 
   void ParseIfBlock(CodeNode ifNode, string after, string[] lines) {
+    if (string.IsNullOrEmpty(after) || lines == null) return;
     CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
     ifNode.Add(b);
     if (rgBlockOpen.IsMatch(after)) {  // [IF] {

@@ -120,52 +120,52 @@ public class CodeNode {
         case BNF.PAL: res += id + iVal + "p"; break;
         case BNF.FLT: res += id + " " + fVal; break;
         case BNF.STR: res += id + " \"" + sVal + "\""; break;
-        case BNF.MEM: res += id + " [" + CN1.ToString(indent + 1) + "]"; break;
-        case BNF.MEMlong: res += id + " [" + CN1.ToString(indent + 1) + "@]"; break;
-        case BNF.MEMlongb: res += id + " [" + CN1.ToString(indent + 1) + "@b]"; break;
-        case BNF.MEMlongi: res += id + " [" + CN1.ToString(indent + 1) + "@i]"; break;
-        case BNF.MEMlongf: res += id + " [" + CN1.ToString(indent + 1) + "@f]"; break;
-        case BNF.MEMlongs: res += id + " [" + CN1.ToString(indent + 1) + "@s]"; break;
-        case BNF.MEMchar: res += id + " [" + CN1.ToString(indent + 1) + "@c]"; break;
+        case BNF.MEM: res += id + " [" + CN1?.ToString(indent + 1) + "]"; break;
+        case BNF.MEMlong: res += id + " [" + CN1?.ToString(indent + 1) + "@]"; break;
+        case BNF.MEMlongb: res += id + " [" + CN1?.ToString(indent + 1) + "@b]"; break;
+        case BNF.MEMlongi: res += id + " [" + CN1?.ToString(indent + 1) + "@i]"; break;
+        case BNF.MEMlongf: res += id + " [" + CN1?.ToString(indent + 1) + "@f]"; break;
+        case BNF.MEMlongs: res += id + " [" + CN1?.ToString(indent + 1) + "@s]"; break;
+        case BNF.MEMchar: res += id + " [" + CN1?.ToString(indent + 1) + "@c]"; break;
 
-        case BNF.ARRAY: res += id + " R" + Reg + "[" + CN1.ToString(indent + 1) + "]"; break;
+        case BNF.ARRAY: res += id + " R" + Reg + "[" + CN1?.ToString(indent + 1) + "]"; break;
 
         case BNF.OPpar:
-          res += "(" + CN1.ToString(indent + 1) + ")";
+          res += "(" + CN1?.ToString(indent + 1) + ")";
           break;
-        case BNF.OPsum: res += "(" + CN1.ToString(indent + 1) + "+" + CN2.ToString(indent + 1) + ")"; break;
-        case BNF.OPsub: res += "(" + CN1.ToString(indent + 1) + "-" + CN2.ToString(indent + 1) + ")"; break;
-        case BNF.OPmul: res += "(" + CN1.ToString(indent + 1) + "*" + CN2.ToString(indent + 1) + ")"; break;
-        case BNF.OPdiv: res += "(" + CN1.ToString(indent + 1) + "/" + CN2.ToString(indent + 1) + ")"; break;
-        case BNF.OPmod: res += "(" + CN1.ToString(indent + 1) + "%" + CN2.ToString(indent + 1) + ")"; break;
-        case BNF.OPand: res += "(" + CN1.ToString(indent + 1) + "&" + CN2.ToString(indent + 1) + ")"; break;
-        case BNF.OPor: res += "(" + CN1.ToString(indent + 1) + "|" + CN2.ToString(indent + 1) + ")"; break;
-        case BNF.OPxor: res += "(" + CN1.ToString(indent + 1) + "^" + CN2.ToString(indent + 1) + ")"; break;
-        case BNF.OPlsh: res += "(" + CN1.ToString(indent + 1) + "<<" + CN2.ToString(indent + 1) + ")"; break;
-        case BNF.OPrsh: res += "(" + CN1.ToString(indent + 1) + ">>" + CN2.ToString(indent + 1) + ")"; break;
+        case BNF.OPsum: res += "(" + CN1?.ToString(indent + 1) + "+" + CN2?.ToString(indent + 1) + ")"; break;
+        case BNF.OPsub: res += "(" + CN1?.ToString(indent + 1) + "-" + CN2?.ToString(indent + 1) + ")"; break;
+        case BNF.OPmul: res += "(" + CN1?.ToString(indent + 1) + "*" + CN2?.ToString(indent + 1) + ")"; break;
+        case BNF.OPdiv: res += "(" + CN1?.ToString(indent + 1) + "/" + CN2?.ToString(indent + 1) + ")"; break;
+        case BNF.OPmod: res += "(" + CN1?.ToString(indent + 1) + "%" + CN2?.ToString(indent + 1) + ")"; break;
+        case BNF.OPand: res += "(" + CN1?.ToString(indent + 1) + "&" + CN2?.ToString(indent + 1) + ")"; break;
+        case BNF.OPor: res += "(" + CN1?.ToString(indent + 1) + "|" + CN2?.ToString(indent + 1) + ")"; break;
+        case BNF.OPxor: res += "(" + CN1?.ToString(indent + 1) + "^" + CN2?.ToString(indent + 1) + ")"; break;
+        case BNF.OPlsh: res += "(" + CN1?.ToString(indent + 1) + "<<" + CN2?.ToString(indent + 1) + ")"; break;
+        case BNF.OPrsh: res += "(" + CN1?.ToString(indent + 1) + ">>" + CN2?.ToString(indent + 1) + ")"; break;
 
-        case BNF.ASSIGN: res += CN1.ToString(indent + 1) + " = " + CN2.ToString(indent + 1); break;
-        case BNF.ASSIGNsum: res += CN1.ToString(indent + 1) + " += " + CN2.ToString(indent + 1); break;
-        case BNF.ASSIGNsub: res += CN1.ToString(indent + 1) + " -= " + CN2.ToString(indent + 1); break;
-        case BNF.ASSIGNmul: res += CN1.ToString(indent + 1) + " *= " + CN2.ToString(indent + 1); break;
-        case BNF.ASSIGNdiv: res += CN1.ToString(indent + 1) + " /= " + CN2.ToString(indent + 1); break;
-        case BNF.ASSIGNmod: res += CN1.ToString(indent + 1) + " %= " + CN2.ToString(indent + 1); break;
-        case BNF.ASSIGNand: res += CN1.ToString(indent + 1) + " &= " + CN2.ToString(indent + 1); break;
-        case BNF.ASSIGNor: res += CN1.ToString(indent + 1) + " |= " + CN2.ToString(indent + 1); break;
-        case BNF.ASSIGNxor: res += CN1.ToString(indent + 1) + " ^= " + CN2.ToString(indent + 1); break;
+        case BNF.ASSIGN: res += CN1?.ToString(indent + 1) + " = " + CN2?.ToString(indent + 1); break;
+        case BNF.ASSIGNsum: res += CN1?.ToString(indent + 1) + " += " + CN2?.ToString(indent + 1); break;
+        case BNF.ASSIGNsub: res += CN1?.ToString(indent + 1) + " -= " + CN2?.ToString(indent + 1); break;
+        case BNF.ASSIGNmul: res += CN1?.ToString(indent + 1) + " *= " + CN2?.ToString(indent + 1); break;
+        case BNF.ASSIGNdiv: res += CN1?.ToString(indent + 1) + " /= " + CN2?.ToString(indent + 1); break;
+        case BNF.ASSIGNand: res += CN1?.ToString(indent + 1) + " &= " + CN2?.ToString(indent + 1); break;
+        case BNF.ASSIGNmod: res += CN1?.ToString(indent + 1) + " %= " + CN2?.ToString(indent + 1); break;
+        case BNF.ASSIGNor: res += CN1?.ToString(indent + 1) + " |= " + CN2?.ToString(indent + 1); break;
+        case BNF.ASSIGNxor: res += CN1?.ToString(indent + 1) + " ^= " + CN2?.ToString(indent + 1); break;
 
-        case BNF.UOneg: res += id + " !" + CN1.ToString(indent); break;
-        case BNF.UOinv: res += id + " ~" + CN1.ToString(indent); break;
-        case BNF.UOsub: res += id + " -" + CN1.ToString(indent); break;
+        case BNF.UOneg: res += id + " !" + CN1?.ToString(indent); break;
+        case BNF.UOinv: res += id + " ~" + CN1?.ToString(indent); break;
+        case BNF.UOsub: res += id + " -" + CN1?.ToString(indent); break;
 
-        case BNF.CASTb: res += id + CN1.ToString(indent) + "_b"; break;
-        case BNF.CASTi: res += id + CN1.ToString(indent) + "_i"; break;
-        case BNF.CASTf: res += id + CN1.ToString(indent) + "_f"; break;
-        case BNF.CASTs: res += id + CN1.ToString(indent) + "_s"; break;
+        case BNF.CASTb: res += id + CN1?.ToString(indent) + "_b"; break;
+        case BNF.CASTi: res += id + CN1?.ToString(indent) + "_i"; break;
+        case BNF.CASTf: res += id + CN1?.ToString(indent) + "_f"; break;
+        case BNF.CASTs: res += id + CN1?.ToString(indent) + "_s"; break;
 
-        case BNF.LEN: res += CN1.ToString(indent) + ".len"; break;
-        case BNF.PLEN: res += CN1.ToString(indent) + ".plen"; break;
-        case BNF.CLR: res += id + "Clr(" + CN1.ToString(indent) + ")"; break;
+        case BNF.LEN: res += CN1?.ToString(indent) + ".len"; break;
+        case BNF.PLEN: res += CN1?.ToString(indent) + ".plen"; break;
+        case BNF.CLR: res += id + "Clr(" + CN1?.ToString(indent) + ")"; break;
         case BNF.DTIME: res += "dateTime"; break;
 
         case BNF.LUMA: return id + "Luma(" + CN1?.ToString(indent) + ")";
