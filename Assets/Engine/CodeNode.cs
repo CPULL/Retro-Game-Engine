@@ -406,6 +406,233 @@ public class CodeNode {
     return res.Replace("  ", " ");
   }
 
+  internal string Format(Variables variables) {
+    switch (type) {
+      case BNF.Program: return "<color=#8080ff>Program</color> (<color=#ff6060>INVALID</color>)";
+      case BNF.Start: return "<color=#8080ff>Start</color> {";
+      case BNF.Update: return "<color=#8080ff>Update</color> {";
+      case BNF.Config: return "<color=#8080ff>Config</color> {";
+      case BNF.Data: return "<color=#8080ff>Data</color> {";
+      case BNF.Functions:
+        break;
+      case BNF.FunctionDef:
+        break;
+      case BNF.FunctionCall:
+        break;
+      case BNF.RETURN:
+        break;
+      case BNF.Params:
+        break;
+      case BNF.ScrConfig:
+        break;
+      case BNF.PaletteConfig:
+        break;
+      case BNF.Ram:
+        break;
+      case BNF.Rom:
+        break;
+      case BNF.Label:
+        break;
+      case BNF.REG: return "<color=#f6fC06>" + variables.GetRegName(Reg) + "</color>";
+      case BNF.ARRAY:
+        break;
+      case BNF.INT: return "<color=#B5CEA8>" + iVal + "</color>";
+      case BNF.FLT: return "<color=#B5CEA8>" + fVal + "</color>";
+      case BNF.COLOR: {
+        UnityEngine.Color32 c = Col.GetColor((byte)iVal);
+        return "<mark=#" + c.r.ToString("x2") + c.g.ToString("x2") + c.b.ToString("x2") + "80>" + Col.GetColorString(iVal) + "c</mark>";
+      }
+      case BNF.PAL:
+        break;
+      case BNF.LUMA:
+        break;
+      case BNF.CONTRAST:
+        break;
+      case BNF.STR: return "<color=#CA9581><mark=#1A151140>\"" + sVal + "\"</mark></color>";
+      case BNF.MEM:
+        break;
+      case BNF.MEMlong:
+        break;
+      case BNF.MEMlongb:
+        break;
+      case BNF.MEMlongi:
+        break;
+      case BNF.MEMlongf:
+        break;
+      case BNF.MEMlongs:
+        break;
+      case BNF.MEMchar:
+        break;
+      case BNF.OPpar: return "<color=#66aCe6>(</color>" + CN1?.Format(variables) + "<color=#66aCe6>)</color>";
+      case BNF.OPsum: return CN1?.Format(variables) + " <color=#66aCe6>+</color> " + CN2?.Format(variables);
+      case BNF.OPsub: return CN1?.Format(variables) + " <color=#66aCe6>-</color> " + CN2?.Format(variables);
+      case BNF.OPmul: return CN1?.Format(variables) + " <color=#66aCe6>*</color> " + CN2?.Format(variables);
+      case BNF.OPdiv: return CN1?.Format(variables) + " <color=#66aCe6>/</color> " + CN2?.Format(variables);
+      case BNF.OPmod: return CN1?.Format(variables) + " <color=#66aCe6>%</color> " + CN2?.Format(variables);
+      case BNF.OPand: return CN1?.Format(variables) + " <color=#66aCe6>&</color> " + CN2?.Format(variables);
+      case BNF.OPor:  return CN1?.Format(variables) + " <color=#66aCe6>|</color> " + CN2?.Format(variables);
+      case BNF.OPxor: return CN1?.Format(variables) + " <color=#66aCe6>^</color> " + CN2?.Format(variables);
+      case BNF.OPlsh: return CN1?.Format(variables) + " <color=#66aCe6><<</color> " + CN2?.Format(variables);
+      case BNF.OPrsh: return CN1?.Format(variables) + " <color=#66aCe6>>></color> " + CN2?.Format(variables);
+      case BNF.LAB:
+        break;
+      case BNF.LABG:
+        break;
+      case BNF.CASTb:
+        break;
+      case BNF.CASTi:
+        break;
+      case BNF.CASTf:
+        break;
+      case BNF.CASTs:
+        break;
+      case BNF.UOneg:
+        break;
+      case BNF.UOinv:
+        break;
+      case BNF.UOsub:
+        break;
+      case BNF.COMPeq:
+        break;
+      case BNF.COMPne:
+        break;
+      case BNF.COMPlt:
+        break;
+      case BNF.COMPle:
+        break;
+      case BNF.COMPgt:
+        break;
+      case BNF.COMPge:
+        break;
+      case BNF.ASSIGN: return CN1?.Format(variables) + " = " + CN2?.Format(variables);
+      case BNF.ASSIGNsum: return CN1?.Format(variables) + " += " + CN2?.Format(variables);
+      case BNF.ASSIGNsub: return CN1?.Format(variables) + " -= " + CN2?.Format(variables);
+      case BNF.ASSIGNmul: return CN1?.Format(variables) + " *= " + CN2?.Format(variables);
+      case BNF.ASSIGNdiv: return CN1?.Format(variables) + " /= " + CN2?.Format(variables);
+      case BNF.ASSIGNmod: return CN1?.Format(variables) + " %= " + CN2?.Format(variables);
+      case BNF.ASSIGNand: return CN1?.Format(variables) + " &= " + CN2?.Format(variables);
+      case BNF.ASSIGNor:  return CN1?.Format(variables) + " |= " + CN2?.Format(variables);
+      case BNF.ASSIGNxor: return CN1?.Format(variables) + " ^= " + CN2?.Format(variables);
+      case BNF.Inc: return CN1?.Format(variables) + "++";
+      case BNF.Dec: return CN1?.Format(variables) + "--";
+      case BNF.BLOCK:
+        break;
+      case BNF.IF:
+        break;
+      case BNF.Else:
+        break;
+      case BNF.WHILE:
+        break;
+      case BNF.FOR:
+        break;
+      case BNF.CLR: return "<color=#569CD6>Clr(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.WRITE:
+        break;
+      case BNF.WAIT: return "<color=#569CD6>Wait(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.DESTROY:
+        break;
+      case BNF.SCREEN:
+        break;
+      case BNF.SPRITE:
+        break;
+      case BNF.SPEN:
+        break;
+      case BNF.SPOS:
+        break;
+      case BNF.SROT:
+        break;
+      case BNF.SPRI:
+        break;
+      case BNF.STINT:
+        break;
+      case BNF.SSCALE:
+        break;
+      case BNF.SETP:
+        break;
+      case BNF.GETP:
+        break;
+      case BNF.LINE:
+        break;
+      case BNF.BOX:
+        break;
+      case BNF.CIRCLE:
+        break;
+      case BNF.IMAGE:
+        break;
+      case BNF.FRAME:
+        break;
+      case BNF.DTIME:
+        break;
+      case BNF.LEN:
+        break;
+      case BNF.PLEN:
+        break;
+      case BNF.SUBSTRING:
+        break;
+      case BNF.TRIM:
+        break;
+      case BNF.KEY:
+        break;
+      case BNF.KEYx:
+        break;
+      case BNF.KEYy:
+        break;
+      case BNF.SIN:
+        break;
+      case BNF.COS:
+        break;
+      case BNF.TAN:
+        break;
+      case BNF.ATAN2:
+        break;
+      case BNF.SQR:
+        break;
+      case BNF.POW:
+        break;
+      case BNF.MEMCPY:
+        break;
+      case BNF.SOUND:
+        break;
+      case BNF.WAVE:
+        break;
+      case BNF.MUTE:
+        break;
+      case BNF.VOLUME:
+        break;
+      case BNF.PITCH:
+        break;
+      case BNF.PAN:
+        break;
+      case BNF.MUSICLOAD:
+        break;
+      case BNF.MUSICPLAY:
+        break;
+      case BNF.MUSICSTOP:
+        break;
+      case BNF.MUSICPOS:
+        break;
+      case BNF.MUSICVOICES:
+        break;
+      case BNF.TILEMAP:
+        break;
+      case BNF.TILEPOS:
+        break;
+      case BNF.TILESET:
+        break;
+      case BNF.TILEGET:
+        break;
+      case BNF.TILEGETROT:
+        break;
+      case BNF.NOP:
+        break;
+      case BNF.PALETTE:
+        break;
+      case BNF.SETPALETTECOLOR:
+        break;
+    }
+    return "NOT DONE! " + type;
+  }
+
   internal bool Evaluable() {
     switch (type) {
       case BNF.REG:

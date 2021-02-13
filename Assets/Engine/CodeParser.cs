@@ -172,7 +172,7 @@ public class CodeParser {
   readonly Regex rgAssOr = new Regex("[\\s]*\\|=[^(\\-=)]=", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgAssXor = new Regex("[\\s]*\\^=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgClr = new Regex("[\\s]*clr\\((.+)\\)[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgClr = new Regex("[\\s]*clr[\\s]*\\((.+)\\)[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgFrame = new Regex("frame", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgLuma = new Regex("[\\s]*luma[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgContrast = new Regex("[\\s]*contrast[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -2102,10 +2102,10 @@ public class CodeParser {
       }
       break;
       case BNF.OPdiv: {
-        if (lf && rf)   { l.type = BNF.FLT; l.fVal *= r.fVal; }
+        if (lf && rf)   { l.type = BNF.FLT; l.fVal /= r.fVal; }
         if (!lf && rf)  { l.type = BNF.FLT; l.fVal = l.iVal / r.fVal; }
-        if (lf && !rf)  { l.type = BNF.FLT; l.fVal *= r.iVal; }
-        if (!lf && !rf) { l.type = BNF.INT; l.iVal *= r.iVal; }
+        if (lf && !rf)  { l.type = BNF.FLT; l.fVal /= r.iVal; }
+        if (!lf && !rf) { l.type = BNF.INT; l.iVal /= r.iVal; }
       }
       break;
       case BNF.OPmod: {

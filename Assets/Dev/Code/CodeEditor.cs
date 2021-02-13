@@ -9,6 +9,7 @@ public class CodeEditor : MonoBehaviour {
   public CodeLine[] EditLines;
   public Scrollbar VerticalCodeBar;
   public RectTransform SelectionRT;
+  public TextMeshProUGUI Result;
   public TextMeshProUGUI dbg;
 
   readonly CodeParser cp = new CodeParser();
@@ -371,12 +372,16 @@ public class CodeEditor : MonoBehaviour {
     // Save the line if needed
     if (lines[currentLine] != EditLines[editLine].Line.text)
       lines[currentLine] = EditLines[editLine].Line.text;
-
+    string var = lines[currentLine];
+    if (string.IsNullOrEmpty(var)) {
+      Result.text = "";
+      return;
+    }
     try {
       CodeNode res = cp.ParseLine(lines[currentLine], variables);
-      dbg.text = res.CN1?.ToString();
+      Result.text = res.CN1?.Format(variables);
     } catch (System.Exception e) {
-      dbg.text = "ERROR: " + e.Message;
+      Result.text = "ERROR:\n" + e.Message;
     }
 
   }
@@ -400,6 +405,8 @@ public class CodeEditor : MonoBehaviour {
 }
 
 /*
+
+Too many new lines if we hit enter
 
 Add a "format" call for the CodeNodes, producing some colored code (use Varaibles as input and ident level), add ident level to each Line
 
