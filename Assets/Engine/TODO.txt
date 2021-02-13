@@ -30,3 +30,4 @@ Bug: wait() should not block the framerate
 
 [DECIDE] Rom Editor: have a way to add some raw binary data (loading a file or using some sort of text or hex editor)
 
+Expand the "simplify node" in parser,to handle more cases (>>, <<, sin, cos, sqrt, !, -. ~)

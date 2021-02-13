@@ -550,32 +550,29 @@ public class CodeNode {
         break;
       case BNF.DTIME:
         break;
-      case BNF.LEN:
-        break;
-      case BNF.PLEN:
-        break;
-      case BNF.SUBSTRING:
-        break;
-      case BNF.TRIM:
-        break;
+      case BNF.LEN:  return CN1?.Format(variables) + "<color=#569CD6>.Len</color>";
+      case BNF.PLEN: return CN1?.Format(variables) + "<color=#569CD6>.PLen</color>";
+      case BNF.SUBSTRING: {
+        if (CN2 == null)
+          throw new Exception("Substring invalid, at lest one parameter is required");
+        if (CN3 == null)
+          return CN1?.Format(variables) + "<color=#569CD6>.Substring(</color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>";
+        else
+          return CN1?.Format(variables) + "<color=#569CD6>.Substring(</color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+      }
+      case BNF.TRIM: return CN1?.Format(variables) + "<color=#569CD6>.Trim</color>";
       case BNF.KEY:
         break;
       case BNF.KEYx:
         break;
       case BNF.KEYy:
         break;
-      case BNF.SIN:
-        break;
-      case BNF.COS:
-        break;
-      case BNF.TAN:
-        break;
-      case BNF.ATAN2:
-        break;
-      case BNF.SQR:
-        break;
-      case BNF.POW:
-        break;
+      case BNF.SIN: return "<color=#569CD6>Sin(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.COS: return "<color=#569CD6>Cos(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.TAN: return "<color=#569CD6>Tan(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.ATAN2: return "<color=#569CD6>Atan2(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.SQR:   return "<color=#569CD6>Sqrt(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.POW: return "<color=#569CD6>Pow(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.MEMCPY:
         break;
       case BNF.SOUND:
