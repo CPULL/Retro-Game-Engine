@@ -13,6 +13,10 @@ public class CodeEditor : MonoBehaviour {
 
   int currentLine = 0;
   int editLine = 0;
+  float autorepeat = 0;
+  int selectionS = -1;
+  int selectionE = -1;
+  string copied = "";
 
   private void Start() {
     foreach(CodeLine cl in EditLines) {
@@ -133,79 +137,66 @@ public class CodeEditor : MonoBehaviour {
     bool pup = Input.GetKey(KeyCode.UpArrow);
     bool pdown = Input.GetKey(KeyCode.DownArrow);
 
-    if (!shift) {
-      // Normal movement
-      if ((up || (pup && autorepeat <= 0)) && !shift && currentLine > 0) {
-        SaveLine();
-        currentLine--;
-        if (editLine > 0) editLine--;
-        EditLines[editLine].Line.Select();
-        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-        autorepeat = up ? .4f : .06f;
-        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
-          selectionS = -1;
-          selectionE = -1;
-        }
-        Redraw();
-      }
-      else if ((down || (pdown && autorepeat <= 0)) && !shift) {
-        SaveLine();
-        if (editLine < 28) editLine++;
-        currentLine++;
-        if (currentLine >= lines.Count) lines.Add("");
-        EditLines[editLine].Line.Select();
-        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-        autorepeat = down ? .4f : .06f;
-        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
-          selectionS = -1;
-          selectionE = -1;
-        }
-        Redraw();
-      }
-      else if (Input.GetKeyDown(KeyCode.PageUp)) {
-        SaveLine();
-        currentLine -= 31;
-        if (currentLine < 0) currentLine = 0;
-        // We may need to recalculate the currentLine from the editLine
-        if (EditLines[editLine].linenum != -1) currentLine = EditLines[editLine].linenum;
-        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
-          selectionS = -1;
-          selectionE = -1;
-        }
-        Redraw();
-      }
-      else if (Input.GetKeyDown(KeyCode.PageDown)) {
-        SaveLine();
-        currentLine += 31;
-        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-        if (EditLines[editLine].linenum != -1) currentLine = EditLines[editLine].linenum;
-        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
-          selectionS = -1;
-          selectionE = -1;
-        }
-        Redraw();
-      }
-
+    if (ctrl) { // ******************************* Control *********************************************************************************************
       // Clear and duplicate
-      if (ctrl && Input.GetKeyDown(KeyCode.D)) {
+      if (Input.GetKeyDown(KeyCode.D)) {
         SaveLine();
         string line = lines[currentLine];
         lines.Insert(currentLine, line);
         Redraw(true);
       }
-      if (ctrl && Input.GetKeyDown(KeyCode.Delete) && lines.Count > 1) {
+      if (Input.GetKeyDown(KeyCode.Delete) && lines.Count > 1) {
         lines.RemoveAt(currentLine);
         if (currentLine >= lines.Count) currentLine = lines.Count - 1;
         Redraw(true);
       }
 
+      // Ctrl+C
+      if (Input.GetKeyDown(KeyCode.C) && selectionS != -1 && selectionE != -1) {
+        copied = "";
+        for (int line = selectionS; line <= selectionE; line++) {
+          copied += lines[line];
+          if (line != selectionE) copied += "\n";
+        }
+        dbg.text = copied;
+        selectionS = -1;
+        selectionE = -1;
+        SelectionRT.sizeDelta = new Vector2(1280, 0);
+      }
 
-      //FIXME debug
-      dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE;
+      // Ctrl+V
+      if (Input.GetKeyDown(KeyCode.V)) {
+        // If we have lines, paste them as lines
+        // If we have something in clipboard that has at least one newline, treat it as pasting lines (and do not save the currentEditLine because it will contain invalid data
+
+        if (string.IsNullOrEmpty(copied)) {
+          string clip = GUIUtility.systemCopyBuffer;
+          if (clip.IndexOf('\n') != -1) copied = clip;
+        }
+        copied = copied.Trim(' ', '\t', '\n', '\r');
+        if (!string.IsNullOrEmpty(copied)) {
+          // How many lines?
+          int num = 1;
+          foreach(char c in copied) {
+            if (c == '\n') num++;
+          }
+          string[] rows = copied.Split('\n');
+          for (int i = rows.Length - 1; i >= 0; i--) {
+            lines.Insert(currentLine, rows[i].Trim(' ', '\t', '\n', '\r'));
+          }
+          dbg.text = "Pasted: " + num + " lines";
+          Redraw(true);
+        }
+        else dbg.text = "nothing to paste";
+
+        // If we had something to paste, Do not save the 
+
+      }
 
 
+      
     }
-    else {
+    else if (shift) { // ******************************* Shift *********************************************************************************************
       // Selection
       if (down && (selectionS == -1 || selectionE == -1)) { // If nothing is selected, select current line and move up or down
         SaveLine();
@@ -294,7 +285,65 @@ public class CodeEditor : MonoBehaviour {
         dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 5";
 
       }
+
     }
+    else { // ******************************* Normal *********************************************************************************************
+      if ((up || (pup && autorepeat <= 0)) && !shift && currentLine > 0) {
+        SaveLine();
+        currentLine--;
+        if (editLine > 0) editLine--;
+        EditLines[editLine].Line.Select();
+        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
+        autorepeat = up ? .4f : .06f;
+        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
+          selectionS = -1;
+          selectionE = -1;
+        }
+        Redraw();
+      }
+      else if ((down || (pdown && autorepeat <= 0)) && !shift) {
+        SaveLine();
+        if (editLine < 28) editLine++;
+        currentLine++;
+        if (currentLine >= lines.Count) lines.Add("");
+        EditLines[editLine].Line.Select();
+        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
+        autorepeat = down ? .4f : .06f;
+        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
+          selectionS = -1;
+          selectionE = -1;
+        }
+        Redraw();
+      }
+      else if (Input.GetKeyDown(KeyCode.PageUp)) {
+        SaveLine();
+        currentLine -= 31;
+        if (currentLine < 0) currentLine = 0;
+        // We may need to recalculate the currentLine from the editLine
+        if (EditLines[editLine].linenum != -1) currentLine = EditLines[editLine].linenum;
+        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
+          selectionS = -1;
+          selectionE = -1;
+        }
+        Redraw();
+      }
+      else if (Input.GetKeyDown(KeyCode.PageDown)) {
+        SaveLine();
+        currentLine += 31;
+        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
+        if (EditLines[editLine].linenum != -1) currentLine = EditLines[editLine].linenum;
+        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
+          selectionS = -1;
+          selectionE = -1;
+        }
+        Redraw();
+      }
+
+      if (Input.anyKeyDown) //FIXME debug
+        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE;
+      
+    }
+
 
   }
 
@@ -324,27 +373,12 @@ public class CodeEditor : MonoBehaviour {
 
 
 
-  float autorepeat = 0;
-  int selectionS = -1;
-  int selectionE = -1;
-  string copied = "";
 
 
   void Update2() { 
 
 
     if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) {
-      if (Input.GetKeyDown(KeyCode.C) && selectionS != -1 && selectionE != -1) {
-        copied = "";
-        for (int line = selectionS; line <= selectionE; line++) {
-          copied += lines[line];
-          if (line != selectionE) copied += "\n";
-        }
-        dbg.text = copied;
-        selectionS = -1;
-        selectionE = -1;
-        SelectionRT.sizeDelta = new Vector2(1280, 0);
-      }
       if (Input.GetKeyDown(KeyCode.X) && selectionS != -1 && selectionE != -1) {
         copied = "";
         for (int line = selectionS; line <= selectionE; line++) {
