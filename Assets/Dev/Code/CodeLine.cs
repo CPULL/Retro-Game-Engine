@@ -19,4 +19,6 @@ public class CodeLine : MonoBehaviour {
     Number.text = "";
     Line.SetTextWithoutNotify("");
   }
+
+
 }
