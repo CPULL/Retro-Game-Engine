@@ -454,10 +454,6 @@ public class CodeEditor : MonoBehaviour {
 
 /*
 
-If we scroll to the last line (arrow and enter) we may go to the second-last line
-Too many new lines if we hit enter
-
-Add a "format" call for the CodeNodes, producing some colored code (use Varaibles as input and ident level), add ident level to each Line
 
 Ctrl+F find
 Ctrl+H replace

@@ -1201,7 +1201,7 @@ public class Arcade : MonoBehaviour {
           scaleW = 1920f / sw;
           scaleH = 1080f / sh;
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
-            filterMode = Evaluate(n.CN3).ToInt(culture) != 0 ? FilterMode.Bilinear : FilterMode.Point
+            filterMode = n.CN3 == null || Evaluate(n.CN3).ToInt(culture) == 0 ? FilterMode.Point : FilterMode.Bilinear
           };
           Screen.texture = texture;
           pixels = texture.GetPixels32();
@@ -1391,8 +1391,8 @@ public class Arcade : MonoBehaviour {
           return false; 
         }
 
-        case BNF.LUMA: { Luma(Evaluate(n.CN1).ToInt(culture)); return false; }
-        case BNF.CONTRAST: { Contrast(Evaluate(n.CN1).ToInt(culture)); return false; }
+        case BNF.LUMA: { Luma(Evaluate(n.CN1).ToFlt(culture)); return false; }
+        case BNF.CONTRAST: { Contrast(Evaluate(n.CN1).ToFlt(culture)); return false; }
 
         case BNF.MEMCPY: {
           int dst = Evaluate(n.CN1).ToInt(culture);

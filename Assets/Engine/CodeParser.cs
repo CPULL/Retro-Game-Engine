@@ -189,9 +189,9 @@ public class CodeParser {
   readonly Regex rgElse = new Regex("[\\s]*else[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFor = new Regex("[\\s]*for[\\s]*\\(([^,]*=[^,]*)?,([^,]*)?,([^,]*)?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgScreen = new Regex("[\\s]*screen[\\s]*\\(([^,]*),([^,]*)(,([^,]*)){0,1}(,([^,]*)){0,1}\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgWait = new Regex("[\\s]*wait[\\s]*\\(([^,]+)(,[\\s]*([fn]))?\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgDestroy = new Regex("[\\s]*destroy[\\s]*\\(([^,]+)\\)[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgScreen = new Regex("[\\s]*screen[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgWait = new Regex("[\\s]*wait[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgDestroy = new Regex("[\\s]*destroy[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgImage = new Regex("[\\s]*image[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMemCpy = new Regex("[\\s]*memcpy[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
@@ -671,13 +671,12 @@ public class CodeParser {
     // [Luma] = Luma([EXPR])
     if (expected.IsGood(Expected.Val.Statement) && rgLuma.IsMatch(line)) {
       Match m = rgLuma.Match(line);
-      if (m.Groups.Count < 1) throw new Exception("Invalid Luma() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.LUMA, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
       if (num != 1) {
         if (noFail) {
-          generatedException = "Invalid Luma(), one and only one parameter is required. Line: " + (linenumber + 1);
+          generatedException = "Invalid Luma(), one and only one parameter is required. Line: " + (linenumber + 1) + "\n<color=#44C6B0>Luma(<i>float</i>)</color>";
           node.type = BNF.ERROR;
           node.sVal = line;
         }
@@ -691,13 +690,12 @@ public class CodeParser {
     // [Contrast] = Contrast([EXPR])
     if (expected.IsGood(Expected.Val.Statement) && rgContrast.IsMatch(line)) {
       Match m = rgContrast.Match(line);
-      if (m.Groups.Count < 1) throw new Exception("Invalid Contrast() command. Line: " + (linenumber + 1));
       CodeNode node = new CodeNode(BNF.LUMA, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
       if (num != 1) {
         if (noFail) {
-          generatedException = "Invalid Contrast(), one and only one parameter is required. Line: " + (linenumber + 1);
+          generatedException = "Invalid Contrast(), one and only one parameter is required. Line: " + (linenumber + 1) + "\n<color=#44C6B0>Luma(<i>float</i>)</color>";
           node.type = BNF.ERROR;
           node.sVal = line;
         }
@@ -749,7 +747,16 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.IMAGE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 5 && num != 7) throw new Exception("Invalid Image(), wrong number of parameters. Line: " + (linenumber + 1));
+      if (num != 5 && num != 7) {
+        if (noFail) {
+          generatedException = "Invalid Image(), wrong number of parameters (either 5 or 7 parameters are required.) Line: " + (linenumber + 1) +
+            "\n<color=#44C6B0>Image(<i>pointer</i>, <i>posx</i>, <i>posy</i>, <i>width</i>, <i>height</i>, [<i>startx</i>, <i>starty</i>)</color>";
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid Image(), wrong number of parameters (either 5 or 7 parameters are required.) Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -762,7 +769,8 @@ public class CodeParser {
       int num = ParsePars(node, pars);
       if (num != 3) {
         if (noFail) {
-          generatedException = "Invalid MemCpy(), 3 parameters are required. Line: " + (linenumber + 1);
+          generatedException = "Invalid MemCpy(), 3 parameters are required. Line: " + (linenumber + 1) +
+            "\n<color=#44C6B0>MemCpy(<i>dst address</i>, <i>src address</i>, <i>len</i>)</color>";
           node.type = BNF.ERROR;
           node.sVal = line;
         }
@@ -781,7 +789,8 @@ public class CodeParser {
       int num = ParsePars(node, pars);
       if (num != 1) {
         if (noFail) {
-          generatedException = "Invalid UsePalette(), one and only one parameter is required. Line: " + (linenumber + 1);
+          generatedException = "Invalid UsePalette(), one and only one parameter is required. Line: " + (linenumber + 1) +
+            "\n<color=#44C6B0>UsePalette(<i>bool</i>)</color>";
           node.type = BNF.ERROR;
           node.sVal = line;
         }
@@ -799,9 +808,11 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.SETPALETTECOLOR, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 2 && num != 3 && num != 5) {
+      if (num != 1 && num != 2 && num != 5) {
         if (noFail) {
-          generatedException = "Invalid SetPalette(), either 2, 3, or 5 parameters are required. Line: " + (linenumber + 1);
+          generatedException = "Invalid SetPalette(), either 1, 2, or 5 parameters are required. Line: " + (linenumber + 1) +
+            "\n<color=#44C6B0>SetPalette(<i>address</i>, [<i>start position</i>])</color>" + 
+            "\n<color=#44C6B0>SetPalette(<i>color number</i>, <i>red</i>, <i>green</i>, <i>blue</i>, <i>alpha</i>)</color>";
           node.type = BNF.ERROR;
           node.sVal = line;
         }
@@ -815,12 +826,19 @@ public class CodeParser {
     // [SCREEN] width, heigth, tiles, filter
     if (expected.IsGood(Expected.Val.Statement) && rgScreen.IsMatch(line)) {
       Match m = rgScreen.Match(line);
-      if (m.Groups.Count < 3) throw new Exception("Invalid Screen() command. Line: " + (linenumber + 1)); // FIXME use standard parameters regex
       CodeNode node = new CodeNode(BNF.SCREEN, line, linenumber);
-      node.Add(ParseExpression(m.Groups[1].Value));
-      node.Add(ParseExpression(m.Groups[2].Value));
-      if (m.Groups.Count > 4 && !string.IsNullOrEmpty(m.Groups[4].Value)) node.Add(ParseExpression(m.Groups[4].Value));
-      if (m.Groups.Count > 6 && !string.IsNullOrEmpty(m.Groups[6].Value)) node.Add(ParseExpression(m.Groups[6].Value));
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num < 2 || num > 4) {
+        if (noFail) {
+          generatedException = "Invalid Screen(), either 2 or 3 parameters are required. Line: " + (linenumber + 1) +
+            "\n<color=#44C6B0>Screen(<i>width</i>, <i>height</i>, [<i>use filter</i>])</color>";
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid Screen(), either 2 or 3 parameters are required. Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -831,8 +849,16 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.SPRITE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 3 && num != 5)
-        throw new Exception("Invalid Sprite(), wrong number of parameters. Line: " + (linenumber + 1));
+      if (num != 2 || num != 3) {
+        if (noFail) {
+          generatedException = "Invalid Sprite(), wrong number of parameters (either 2 or 3 parameters are required.) Line: " + (linenumber + 1) +
+            "\n<color=#44C6B0>Sprite(<i>number</i>, <i>address</i>, [<i>use filter</i>])</color>";
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid Sprite(), wrong number of parameters (either 2 or 3 parameters are required.) Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -843,8 +869,16 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.SPOS, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 3 && num != 4)
-        throw new Exception("Invalid SPos(), wrong number of parameters. Line: " + (linenumber + 1));
+      if (num != 3 || num != 4) {
+        if (noFail) {
+          generatedException = "Invalid SPos(), wrong number of parameters (either 3 or 4 parameters are required.) Line: " + (linenumber + 1) +
+            "\n<color=#44C6B0>SPos(<i>number</i>, <i>x</i>, <i>y</i>, [<i>enable</i>])</color>";
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid SPos(), wrong number of parameters (either 3 or 4 parameters are required.) Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -855,8 +889,16 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.SROT, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 3)
-        throw new Exception("Invalid SRot(), wrong number of parameters. Line: " + (linenumber + 1));
+      if (num != 3) {
+        if (noFail) {
+          generatedException = "Invalid SRot(), 3 parameters are expected. Line: " + (linenumber + 1) +
+            "\n<color=#44C6B0>SRot(<i>number</i>, <i>rotation</i>, <i>flip</i>)</color>";
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid SRot(), 3 parameters are expected. Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -867,8 +909,16 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.STINT, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 2)
-        throw new Exception("Invalid STint(), wrong number of parameters. Line: " + (linenumber + 1));
+      if (num != 2) {
+        if (noFail) {
+          generatedException = "Invalid STint(), 2 parameters are expected. Line: " + (linenumber + 1) +
+            "\n<color=#44C6B0>STint(<i>number</i>, <i>tintcolor</i>)</color>";
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid STint(), 2 parameters are expected. Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -879,8 +929,16 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.SSCALE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 3)
-        throw new Exception("Invalid SScale(), wrong number of parameters. Line: " + (linenumber + 1));
+      if (num != 3) {
+        if (noFail) {
+          generatedException = "Invalid SScale(), 3 parameters are expected. Line: " + (linenumber + 1) +
+            "\n<color=#44C6B0>SScale(<i>number</i>, <i>scalex</i>, <i>scaley</i>)</color>";
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid SScale(), 3 parameters are expected. Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -891,8 +949,16 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.SPRI, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 2)
-        throw new Exception("Invalid SPri(), wrong number of parameters. Line: " + (linenumber + 1));
+      if (num != 2) {
+        if (noFail) {
+          generatedException = "Invalid SPri(), 2 parameters are expected. Line: " + (linenumber + 1) +
+            "\n<color=#44C6B0>SPri(<i>number</i>, <i>priority</i>)</color>";
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid SPri(), 2 parameters are expected. Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -903,8 +969,16 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.SPEN, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 2)
-        throw new Exception("Invalid SPen(), wrong number of parameters. Line: " + (linenumber + 1));
+      if (num != 2) {
+        if (noFail) {
+          generatedException = "Invalid SPen(), 2 parameters are expected. Line: " + (linenumber + 1) +
+            "\n<color=#44C6B0>SPri(<i>number</i>, <i>enable</i>)</color>";
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid SPen(), 2 parameters are expected. Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -915,8 +989,15 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.TILEMAP, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 3)
-        throw new Exception("Invalid Tilemap(), wrong number of parameters. Line: " + (linenumber + 1));
+      if (num != 3) {
+        if (noFail) {
+          generatedException = "Invalid Tilemap(), 3 parameters are expected. Line: " + (linenumber + 1);
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid Tilemap(), 3 parameters are expected. Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -927,8 +1008,15 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.TILEPOS, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num < 3 && num > 5)
-        throw new Exception("Invalid TilePos(), wrong number of parameters. Line: " + (linenumber + 1));
+      if (num < 3 || num > 5) {
+        if (noFail) {
+          generatedException = "Invalid TilePos(), 3, 4, or 5 parameters are expected. Line: " + (linenumber + 1);
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid TilePos(), 3, 4, or 5 parameters are expected. Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -939,8 +1027,15 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.TILESET, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 4 && num != 5)
-        throw new Exception("Invalid TileSet(), wrong number of parameters. Line: " + (linenumber + 1));
+      if (num != 4 && num != 5) {
+        if (noFail) {
+          generatedException = "Invalid TileSet(), 4 or 5 parameters are expected. Line: " + (linenumber + 1);
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid TileSet(), 4 or 5 parameters are expected. Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -971,8 +1066,15 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.WAVE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 2 && num != 7)
-        throw new Exception("Invalid Wave(), wrong number of parameters. Line: " + (linenumber + 1));
+      if (num != 4 && num != 5) {
+        if (noFail) {
+          generatedException = "Invalid Wave(), 2 or 7 parameters are expected. Line: " + (linenumber + 1);
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid Wave(), 2 or 7 parameters are expected. Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -983,8 +1085,15 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.MUTE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 1)
-        throw new Exception("Invalid Mute(), channel is required as parameter. Line: " + (linenumber + 1));
+      if (num != 1) {
+        if (noFail) {
+          generatedException = "Invalid Mute(), channel is required as parameter. Line: " + (linenumber + 1);
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid Mute(), channel is required as parameter. Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -1109,9 +1218,6 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.MUSICVOICES, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num == 0) throw new Exception("Invalid MusicVoices(), specify the channel numbers to be used. Line: " + (linenumber + 1));
-      if (num > 8) throw new Exception("Invalid MusicVoices(), too many channel numbers specified. Line: " + (linenumber + 1));
-
       if (num == 0) {
         if (noFail) {
           generatedException = "Invalid MusicVoices(), specify at lest one channel to be used. Line: " + (linenumber + 1);
@@ -1161,8 +1267,17 @@ public class CodeParser {
     if (expected.IsGood(Expected.Val.Statement) && rgDestroy.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.DESTROY, line, linenumber);
       Match m = rgDestroy.Match(line);
-      string exp = m.Groups[1].Value;
-      node.Add(ParseExpression(exp));
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 1 & num != 2) {
+        if (noFail) {
+          generatedException = "Invalid Destroy(), one and only one parameter is required. Line: " + (linenumber + 1);
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid Destroy(), one and only one parameter is required. Line: " + (linenumber + 1), origExpression);
+      }
       parent.Add(node);
       return;
     }
@@ -1171,9 +1286,18 @@ public class CodeParser {
     if (expected.IsGood(Expected.Val.Statement) && rgWait.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.WAIT, line, linenumber);
       Match m = rgWait.Match(line);
-      string exp = m.Groups[1].Value;
-      node.Add(ParseExpression(exp));
-      if ((m.Groups[3].Value.Trim() + " ").ToLowerInvariant()[0] == 'f') node.sVal = "*";
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 1 & num != 2) {
+        if (noFail) {
+          generatedException = "Invalid Wait(), specify at lest the seconds to wait, and eventually a flag to complete the frame. Line: " + (linenumber + 1);
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new ParsingException("Invalid Wait(), specify at lest the seconds to wait, and eventually a flag to complete the frame. Line: " + (linenumber + 1), origExpression);
+      }
+      if (num == 2) node.sVal = "*";
       parent.Add(node);
       return;
     }
