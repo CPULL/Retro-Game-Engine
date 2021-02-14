@@ -624,8 +624,10 @@ public class CodeNode {
         break;
       case BNF.MUTE:
         break;
-      case BNF.VOLUME:
-        break;
+      case BNF.VOLUME: {
+        if (CN2 == null) return "<color=#569CD6>Volume(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+        else return "<color=#569CD6>Volume(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>"; 
+      }
       case BNF.PITCH:
         break;
       case BNF.PAN:
