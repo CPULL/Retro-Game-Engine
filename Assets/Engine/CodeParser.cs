@@ -528,6 +528,23 @@ public class CodeParser {
       return;
     }
 
+    
+    // [ELSE] [BLOCK]|[STATEMENT] <- only in case of single line parsing
+    if (lines == null && expected.IsGood(Expected.Val.Statement) && rgElse.IsMatch(line)) {
+      CodeNode node = new CodeNode(BNF.Else, line, linenumber);
+      Match m = rgElse.Match(line);
+      parent.Add(node);
+
+      // check if we have a block just after (same line or next non-empty line)
+      string after = m.Groups[1].Value.Trim();
+      if (!rgBlockOpen.IsMatch(after) && !string.IsNullOrEmpty(after)) { // [ELSE] [STATEMENT]
+        CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
+        node.Add(b);
+        ParseLine(b, after, lines);
+      }
+      return;
+    }
+
     // [FOR] {[BLOCK]}
     if (expected.IsGood(Expected.Val.Statement) && rgFor.IsMatch(line)) {
       Match m = rgFor.Match(line);
@@ -1493,8 +1510,10 @@ public class CodeParser {
 
   public bool RequiresBlock(string line, out bool hadOpenBlock) {
     Match m = null;
+    int afterGroup = 2;
     if (rgIf.IsMatch(line)) m = rgIf.Match(line);
-    else if (rgFor.IsMatch(line))  m = rgFor.Match(line);
+    else if (rgElse.IsMatch(line)) { m = rgElse.Match(line); afterGroup = 1; }
+    else if (rgFor.IsMatch(line)) m = rgFor.Match(line);
     else if (rgWhile.IsMatch(line)) m = rgWhile.Match(line);
 
     if (m == null) {
@@ -1502,7 +1521,7 @@ public class CodeParser {
       return false;
     }
 
-    string after = m.Groups[2].Value.Trim();
+    string after = m.Groups[afterGroup].Value.Trim();
     if (rgBlockOpen.IsMatch(after)) { // command {
       hadOpenBlock = true;
       return true;
