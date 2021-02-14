@@ -546,10 +546,8 @@ public class CodeNode {
         break;
       case BNF.IMAGE:
         break;
-      case BNF.FRAME:
-        break;
-      case BNF.DTIME:
-        break;
+      case BNF.FRAME: return "<color=#569CD6>Frame</color>";
+      case BNF.DTIME: return "<color=#569CD6>deltatime</color>";
       case BNF.LEN:  return CN1?.Format(variables) + "<color=#569CD6>.Len</color>";
       case BNF.PLEN: return CN1?.Format(variables) + "<color=#569CD6>.PLen</color>";
       case BNF.SUBSTRING: {

@@ -1341,7 +1341,21 @@ public class CodeParser {
         toReplace = toReplace.Substring(1).Trim();
         CodeNode n = new CodeNode(BNF.UOneg, GenId("US"), origForException, linenumber);
         CodeNode exp = ParseExpression(toReplace);
-        n.Add(exp);
+        if (exp.type == BNF.INT) {
+          n = exp;
+          if (n.iVal == 0) n.iVal = -1; else n.iVal = 0;
+        }
+        else if (exp.type == BNF.FLT) {
+          n = exp;
+          if (n.fVal == 0) n.fVal = -1; else n.fVal = 0;
+        }
+        else if (exp.type == BNF.STR) {
+          n = exp;
+          n.type = BNF.INT;
+          if (string.IsNullOrEmpty(n.sVal)) n.iVal = -1; else n.iVal = 0;
+        }
+        else
+          n.Add(exp);
         nodes[n.id] = n;
         return m.Groups[1].Value + n.id;
       });
@@ -1542,6 +1556,18 @@ public class CodeParser {
         string pars = m.Groups[1].Value.Trim();
         int num = ParsePars(n, pars);
         if (num != 1) throw new Exception("Invalid Sin(), one and only one parameter is required. Line: " + (linenumber + 1));
+        if (n.CN1.type == BNF.INT) {
+          n.type = BNF.FLT; n.fVal = Mathf.Sin(n.iVal);
+          n.children[0] = null;
+        }
+        else if (n.CN1.type == BNF.FLT) {
+          n.type = BNF.FLT; n.fVal = Mathf.Sin(n.fVal);
+          n.children[0] = null;
+        }
+        if (n.CN1.type == BNF.STR) {
+          float.TryParse(n.sVal, out float f); n.type = BNF.FLT; n.fVal = Mathf.Sin(f);
+          n.children[0] = null;
+        }
         nodes[n.id] = n;
         return n.id;
       });
@@ -1554,6 +1580,18 @@ public class CodeParser {
         string pars = m.Groups[1].Value.Trim();
         int num = ParsePars(n, pars);
         if (num != 1) throw new Exception("Invalid Cos(), one and only one parameter is required. Line: " + (linenumber + 1));
+        if (n.CN1.type == BNF.INT) {
+          n.type = BNF.FLT; n.fVal = Mathf.Cos(n.iVal);
+          n.children[0] = null;
+        }
+        else if (n.CN1.type == BNF.FLT) {
+          n.type = BNF.FLT; n.fVal = Mathf.Cos(n.fVal);
+          n.children[0] = null;
+        }
+        if (n.CN1.type == BNF.STR) {
+          float.TryParse(n.sVal, out float f); n.type = BNF.FLT; n.fVal = Mathf.Cos(f);
+          n.children[0] = null;
+        }
         nodes[n.id] = n;
         return n.id;
       });
@@ -1566,6 +1604,18 @@ public class CodeParser {
         string pars = m.Groups[1].Value.Trim();
         int num = ParsePars(n, pars);
         if (num != 1) throw new Exception("Invalid Tan(), one and only one parameter is required. Line: " + (linenumber + 1));
+        if (n.CN1.type == BNF.INT) {
+          n.type = BNF.FLT; n.fVal = Mathf.Tan(n.iVal);
+          n.children[0] = null;
+        }
+        else if (n.CN1.type == BNF.FLT) {
+          n.type = BNF.FLT; n.fVal = Mathf.Tan(n.fVal);
+          n.children[0] = null;
+        }
+        if (n.CN1.type == BNF.STR) {
+          float.TryParse(n.sVal, out float f); n.type = BNF.FLT; n.fVal = Mathf.Tan(f);
+          n.children[0] = null;
+        }
         nodes[n.id] = n;
         return n.id;
       });
@@ -1591,6 +1641,18 @@ public class CodeParser {
         string pars = m.Groups[1].Value.Trim();
         int num = ParsePars(n, pars);
         if (num != 1) throw new Exception("Invalid Sqrt(), one and only one parameter is required. Line: " + (linenumber + 1));
+        if (n.CN1.type == BNF.INT) {
+          n.type = BNF.FLT; n.fVal = Mathf.Sqrt(n.iVal);
+          n.children[0] = null;
+        }
+        else if (n.CN1.type == BNF.FLT) {
+          n.type = BNF.FLT; n.fVal = Mathf.Sqrt(n.fVal);
+          n.children[0] = null;
+        }
+        if (n.CN1.type == BNF.STR) {
+          float.TryParse(n.sVal, out float f); n.type = BNF.FLT; n.fVal = Mathf.Sqrt(f);
+          n.children[0] = null;
+        }
         nodes[n.id] = n;
         return n.id;
       });
@@ -1834,14 +1896,14 @@ public class CodeParser {
       // [<<] == => `LSx¶
       line = rgOPlsh.Replace(line, m => {
         atLeastOneReplacement = true;
-        return HandleOperand(BNF.COMPne, "SL", "<<", m);
+        return HandleOperand(BNF.OPlsh, "SL", "<<", m);
       });
       if (atLeastOneReplacement) continue;
 
       // [>>] == => `RSx¶
       line = rgOPrsh.Replace(line, m => {
         atLeastOneReplacement = true;
-        return HandleOperand(BNF.COMPne, "SR", ">>", m);
+        return HandleOperand(BNF.OPrsh, "SR", ">>", m);
       });
       if (atLeastOneReplacement) continue;
 
@@ -2122,7 +2184,20 @@ public class CodeParser {
         if (!lf && !rf) { l.type = BNF.INT; if (r.iVal == 0) l.fVal = float.MaxValue; else l.iVal %= r.iVal; }
       }
       break;
-
+      case BNF.OPlsh: {
+        if (lf && rf) { l.type = BNF.INT; l.iVal = (int)l.fVal << (int)r.fVal; }
+        if (!lf && rf) { l.type = BNF.INT; l.iVal <<= (int)r.fVal; }
+        if (lf && !rf) { l.type = BNF.INT; l.iVal = (int)l.fVal << r.iVal; }
+        if (!lf && !rf) { l.type = BNF.INT; l.iVal <<= r.iVal; }
+      }
+      break;
+      case BNF.OPrsh: {
+        if (lf && rf) { l.type = BNF.INT; l.iVal = (int)l.fVal >> (int)r.fVal; }
+        if (!lf && rf) { l.type = BNF.INT; l.iVal >>= (int)r.fVal; }
+        if (lf && !rf) { l.type = BNF.INT; l.iVal = (int)l.fVal >> r.iVal; }
+        if (!lf && !rf) { l.type = BNF.INT; l.iVal >>= r.iVal; }
+      }
+      break;
 
 
 
