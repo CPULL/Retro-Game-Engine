@@ -395,6 +395,8 @@ public class CodeNode {
 
         case BNF.MEMCPY: return "MemCpy(" + CN1?.ToString(indent) + ", " + CN2?.ToString(indent) + ", " + CN3?.ToString(indent) + ")";
 
+        case BNF.ERROR: return sVal;
+
         default:
           res += "[[Missing:" + type + "]]";
           break;
@@ -504,7 +506,9 @@ public class CodeNode {
       case BNF.Dec: return CN1?.Format(variables) + "--";
       case BNF.BLOCK:
         break;
-      case BNF.IF:
+      case BNF.IF: {
+        if (CN2 == null) return "<color=#569CD6>if (</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color> <color=#ff000><i>incomplete...</i></color>";
+      }
         break;
       case BNF.Else:
         break;
@@ -652,6 +656,7 @@ public class CodeNode {
         break;
       case BNF.SETPALETTECOLOR:
         break;
+      case BNF.ERROR: return "<color=#ff2010>" + sVal + "</color>";
     }
     throw new Exception(type + " NOT YET DONE!");
   }
@@ -819,6 +824,7 @@ public enum BNF {
   Ram,
   Rom, // This is used to store the data
   Label, // This is used to parse the Rom section (Data)
+  ERROR, // Used to show parsing errors
   REG,
   ARRAY,
   INT, 

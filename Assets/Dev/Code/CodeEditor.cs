@@ -367,29 +367,16 @@ public class CodeEditor : MonoBehaviour {
 
 
   }
-  readonly Regex rgColorOpen = new Regex("\\<color=#[0-9a-f]{6}\\>", RegexOptions.IgnoreCase);
-  readonly Regex rgColorClose = new Regex("\\</color\\>", RegexOptions.IgnoreCase);
-  readonly Regex rgMarkOpen = new Regex("\\<mark=#[0-9a-f]{8}\\>", RegexOptions.IgnoreCase);
-  readonly Regex rgMarkClose = new Regex("\\</mark\\>", RegexOptions.IgnoreCase);
-  readonly Regex rgBOpen = new Regex("\\<b\\>", RegexOptions.IgnoreCase);
-  readonly Regex rgBClose = new Regex("\\</b\\>", RegexOptions.IgnoreCase);
+  readonly Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)", RegexOptions.IgnoreCase);
   readonly Regex rgCommentML = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
   readonly Regex rgCommentSL = new Regex("(//.*)$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
 
   void SaveLine() {
+    // Save, parse, and do the syntax highlight
     if (currentLine < 0 || currentLine >= lines.Count || editLine < 0 || editLine >= EditLines.Length) return;
-    // Save the line if needed
+    string cleanline = rgSyntaxHighlight.Replace(EditLines[editLine].Line.text.Trim(), "");
 
-    string cleanline = EditLines[editLine].Line.text;
-    cleanline = rgColorOpen.Replace(cleanline, "");
-    cleanline = rgColorClose.Replace(cleanline, "");
-    cleanline = rgMarkOpen.Replace(cleanline, "");
-    cleanline = rgMarkClose.Replace(cleanline, "");
-    cleanline = rgBOpen.Replace(cleanline, "");
-    cleanline = rgBClose.Replace(cleanline, "");
-
-    if (lines[currentLine] != cleanline)
-      lines[currentLine] = cleanline;
+    if (lines[currentLine] != cleanline) lines[currentLine] = cleanline; // Save the line, if needed
     string var = lines[currentLine];
     if (string.IsNullOrEmpty(var)) {
       Result.text = "";
@@ -411,9 +398,16 @@ public class CodeEditor : MonoBehaviour {
         EditLines[editLine].SetLine(EditLines[editLine].linenum, Result.text);
         return;
       }
-      CodeNode res = cp.ParseLine(cleanline, variables, currentLine - 1);
-      Result.text = res.CN1?.Format(variables) + (comments.Length > 0 ? " <color=#70e688><mark=#30061880>" + comments + "</mark></color>" : "");
-      EditLines[editLine].SetLine(EditLines[editLine].linenum, Result.text);
+      CodeNode res = cp.ParseLine(cleanline, variables, currentLine - 1, out string except);
+      if (except != null) {
+        cleanline = res.CN1?.Format(variables) + (comments.Length > 0 ? " <color=#70e688><mark=#30061880>" + comments + "</mark></color>" : "");
+        EditLines[editLine].SetLine(EditLines[editLine].linenum, cleanline);
+        Result.text = "<color=#ff2e00>" + except + "</color>";
+      }
+      else {
+        Result.text = res.CN1?.Format(variables) + (comments.Length > 0 ? " <color=#70e688><mark=#30061880>" + comments + "</mark></color>" : "");
+        EditLines[editLine].SetLine(EditLines[editLine].linenum, Result.text);
+      }
       // FIXME alter also the line itself, but remove the <color> and <mark> tags
     } catch (System.Exception e) {
       Result.text = "ERROR:\n" + e.Message;

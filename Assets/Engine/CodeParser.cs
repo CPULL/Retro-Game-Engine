@@ -139,9 +139,9 @@ public class CodeParser {
   readonly Regex rgMemC = new Regex("\\[[\\s]*(`[a-z]{3,}¶)[\\s]*@c[\\s]*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMemUnparsed = new Regex("[\\s]*\\[.+\\][\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgUOneg = new Regex("(^|[^0-9\\)])?(\\![\\s]*([a-z0-9\\.]+)|(\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)))($|[\\+\\-\\*/&\\|^\\s:\\)\\=\\>\\<])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgUOinv = new Regex("(^|[^0-9\\)])?(\\~[\\s]*([a-z0-9\\.]+)|(\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)))($|[\\+\\-\\*/&\\|^\\s:\\)\\=\\>\\<])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgUOsub = new Regex("(^|[^0-9\\)])?(\\-[\\s]*([a-z0-9\\.]+)|(\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)))($|[\\+\\-\\*/&\\|^\\s:\\)\\=\\>\\<])", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOneg = new Regex("(^|(?<![0-9a-z\\)¶]\\s*))(\\!(([a-z0-9]*\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\))|[^(\\-\\+\\*%&\\|\\^]+))", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOinv = new Regex("(^|(?<![0-9a-z\\)¶]\\s*))(\\~(([a-z0-9]*\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\))|[^(\\-\\+\\*%&\\|\\^]+))", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOsub = new Regex("(^|(?<![0-9a-z\\)¶]\\s*))(\\-(([a-z0-9]*\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\))|[^(\\-\\+\\*%&\\|\\^]+))", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgMul = new Regex("(`[a-z]{3,}¶)([\\s]*\\*[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDiv = new Regex("(`[a-z]{3,}¶)([\\s]*/[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -263,6 +263,9 @@ public class CodeParser {
   string origForException = ""; // Used to keep the original text of the line to show erorrs
   string currentFunction = null; // Used to keep track of the current parsed functions to have the local variables
   CodeNode currentFunctionParameters = null; // Used to keep track of the current parsed functions to have the local variables
+  string origExpression;
+  string generatedException;
+  bool noFail = false;
 
   string pasersedSectionForException = "";
   public CodeNode Parse(string file, Variables variables, bool parseDataSection) {
@@ -1192,13 +1195,21 @@ public class CodeParser {
     throw new Exception("Invalid code at " + (linenumber + 1) + "\n" + origForException);
   }
 
-  public CodeNode ParseLine(string line, Variables vs, int origlinenum) {
+  public CodeNode ParseLine(string line, Variables vs, int origlinenum, out string exception) {
+    generatedException = null;
+    noFail = true;
     vars = vs;
     linenumber = origlinenum;
     nodes = new Dictionary<string, CodeNode>();
     CodeNode n = new CodeNode(BNF.BLOCK, line, 0);
     expected.Set(Expected.Val.Statement);
-    ParseLine(n, line, null);
+    try {
+      ParseLine(n, line, null);
+      exception = generatedException;
+    } catch (Exception e) {
+      exception = e.Message;
+    }
+    noFail = false;
     return n;
   }
 
@@ -1303,6 +1314,7 @@ public class CodeParser {
 
   // [EXP] [OP] [EXP] | [PAR] | [REG] | [INT] | [FLT] | [MEM] | [UO] | [LEN] | deltaTime
   CodeNode ParseExpression(string line) {
+    origExpression = line;
     line = line.Trim(' ', '\t', '\r', ';');
 
     bool atLeastOneReplacement = true;
@@ -1312,10 +1324,8 @@ public class CodeParser {
       // - (unary)
       line = rgUOsub.Replace(line, m => {
         atLeastOneReplacement = true;
-        string toReplace = m.Captures[0].Value.Trim();
-        toReplace.Trim();
-        if (toReplace[0] != '-') throw new Exception("Invalid negative value: " + toReplace);
-        toReplace = toReplace.Substring(1).Trim();
+        string toReplace = m.Value.Trim();
+        if (toReplace[0] == '-') toReplace = toReplace.Substring(1).Trim();
         CodeNode n = new CodeNode(BNF.UOsub, GenId("US"), origForException, linenumber);
         CodeNode exp = ParseExpression(toReplace);
         if (exp.type == BNF.INT) {
@@ -1763,10 +1773,16 @@ public class CodeParser {
       // Replace PAR => `PRx
       line = rgPars.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.OPpar, GenId("PR"), origForException, linenumber);
         string inner = m.Value.Trim();
         inner = inner.Substring(1, inner.Length - 2);
-        n.Add(ParseExpression(inner));
+        CodeNode inside = ParseExpression(inner);
+        if (inside.type == BNF.INT || inside.type == BNF.FLT || inside.type == BNF.STR || inside.type == BNF.MEM || inside.type == BNF.REG) {
+          nodes[inside.id] = inside;
+          return inside.id;
+        }
+
+        CodeNode n = new CodeNode(BNF.OPpar, GenId("PR"), origForException, linenumber);
+        n.Add(inside);
         nodes[n.id] = n;
         return n.id;
       });
@@ -2070,9 +2086,14 @@ public class CodeParser {
       foreach (char c in line)
         if (c == '"') numQ++;
       if (numQ % 2 == 1)
-        throw new Exception("Invalid expression at " + (linenumber + 1) + "\n" + origForException + "\nProbably a wrong string");
+        generatedException = "Invalid expression at " + (linenumber + 1) + "\nProbably a wrong string";
       else
-        throw new Exception("Invalid expression at " + (linenumber + 1) + "\n" + origForException + "\n" + line);
+        generatedException = "Invalid expression at " + (linenumber + 1);
+      if (noFail) {
+        return new CodeNode(BNF.ERROR, origForException, linenumber + 1) { sVal = origExpression };
+      }
+      else
+        throw new ParsingException(generatedException, origExpression);
     }
     return nodes[line];
   }

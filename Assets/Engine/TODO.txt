@@ -30,6 +30,9 @@ Bug: wait() should not block the framerate
 
 [DECIDE] Rom Editor: have a way to add some raw binary data (loading a file or using some sort of text or hex editor)
 
+Handle two returns for the parsing: one is the color coded result, one is some extra info (for example wrong parameters or incompleted statements or invalid expressions)
+
+
 Indentation of code
 color coding for: if else
 color coding for: for
