@@ -451,20 +451,13 @@ public class CodeNode {
       case BNF.CONTRAST:
         break;
       case BNF.STR: return "<color=#CA9581><mark=#1A151140>\"" + sVal + "\"</mark></color>";
-      case BNF.MEM:
-        break;
-      case BNF.MEMlong:
-        break;
-      case BNF.MEMlongb:
-        break;
-      case BNF.MEMlongi:
-        break;
-      case BNF.MEMlongf:
-        break;
-      case BNF.MEMlongs:
-        break;
-      case BNF.MEMchar:
-        break;
+      case BNF.MEM: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>]</color>";
+      case BNF.MEMlong:  return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@]</color>";
+      case BNF.MEMlongb: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@b]</color>";
+      case BNF.MEMlongi: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@i]</color>";
+      case BNF.MEMlongf: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@f]</color>";
+      case BNF.MEMlongs: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@s]</color>";
+      case BNF.MEMchar: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@c]</color>";
       case BNF.OPpar: return "<color=#66aCe6>(</color>" + CN1?.Format(variables) + "<color=#66aCe6>)</color>";
       case BNF.OPsum: return CN1?.Format(variables) + " <color=#66aCe6>+</color> " + CN2?.Format(variables);
       case BNF.OPsub: return CN1?.Format(variables) + " <color=#66aCe6>-</color> " + CN2?.Format(variables);
@@ -535,10 +528,13 @@ public class CodeNode {
             CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6.Format(variables) + "<color=#569CD6>)</color>";
       }
       case BNF.WAIT: return "<color=#569CD6>Wait(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.DESTROY:
-        break;
-      case BNF.SCREEN:
-        break;
+      case BNF.DESTROY: return "<color=#569CD6>Destroy(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.SCREEN: {
+        if (CN3 == null)
+          return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>)</color>";
+        else
+          return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3.Format(variables) + "<color=#569CD6>)</color>";
+      }
       case BNF.SPRITE:
         break;
       case BNF.SPEN:
@@ -558,46 +554,49 @@ public class CodeNode {
       case BNF.GETP:
         break;
       case BNF.LINE: {
-        if (children.Count != 5) throw new Exception("Line requires 5 parameters");
         return "<color=#569CD6>Line(</color>" +
-          CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
-          CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5.Format(variables) + "<color=#569CD6>)</color>";
+          CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
+          CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5?.Format(variables) + "<color=#569CD6>)</color>";
       }
       case BNF.BOX: {
-        if (children.Count < 5) throw new Exception("Box requires at least 5 parameters");
-        if (children.Count > 6) throw new Exception("Box requires max 6 parameters");
         if (children.Count == 5)
           return "<color=#569CD6>Box(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5?.Format(variables) + "<color=#569CD6>)</color>";
         else
           return "<color=#569CD6>Box(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4.Format(variables) + "<color=#569CD6>, </color>" +
-            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" +
+            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6?.Format(variables) + "<color=#569CD6>)</color>";
       }
       case BNF.CIRCLE: {
-        if (children.Count < 5) throw new Exception("Circle requires at least 5 parameters");
-        if (children.Count > 6) throw new Exception("Circle requires max 6 parameters");
         if (children.Count == 5)
           return "<color=#569CD6>Circle(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5?.Format(variables) + "<color=#569CD6>)</color>";
         else
           return "<color=#569CD6>Circle(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4.Format(variables) + "<color=#569CD6>, </color>" +
-            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" +
+            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6?.Format(variables) + "<color=#569CD6>)</color>";
       }
-      case BNF.IMAGE:
-        break;
+      case BNF.IMAGE: {
+        if (children.Count < 6)
+          return "<color=#569CD6>Image(</color>" +
+          CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
+          CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" +
+          CN5?.Format(variables) + "<color=#569CD6>)</color>";
+        else
+          return "<color=#569CD6>Image(</color>" +
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" +
+            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6?.Format(variables) + "<color=#569CD6>, </color>" + CN7?.Format(variables) + "<color=#569CD6>)</color>";
+      }
       case BNF.FRAME: return "<color=#569CD6>Frame</color>";
       case BNF.DTIME: return "<color=#569CD6>deltatime</color>";
       case BNF.LEN:  return CN1?.Format(variables) + "<color=#569CD6>.Len</color>";
       case BNF.PLEN: return CN1?.Format(variables) + "<color=#569CD6>.PLen</color>";
       case BNF.SUBSTRING: {
-        if (CN2 == null)
-          throw new Exception("Substring invalid, at lest one parameter is required");
         if (CN3 == null)
           return CN1?.Format(variables) + "<color=#569CD6>.Substring(</color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>";
         else
