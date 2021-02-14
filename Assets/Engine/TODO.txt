@@ -30,3 +30,17 @@ Bug: wait() should not block the framerate
 
 [DECIDE] Rom Editor: have a way to add some raw binary data (loading a file or using some sort of text or hex editor)
 
+Indentation of code
+color coding for: if else
+color coding for: for
+color coding for: while
+color coding for: sprites
+color coding for: tiles
+color coding for: sound
+color coding for: music
+color coding for: 
+color coding for: 
+color coding for: 
+color coding for: 
+color coding for: 
+color coding for: 

@@ -513,8 +513,23 @@ public class CodeNode {
       case BNF.FOR:
         break;
       case BNF.CLR: return "<color=#569CD6>Clr(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.WRITE:
-        break;
+      case BNF.WRITE: { // Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
+        if (children.Count < 4) throw new Exception("Write requires at least 4 parameters");
+        if (children.Count > 6) throw new Exception("Write requires max 6 parameters");
+        if (children.Count == 4)
+          return "<color=#569CD6>Write(</color>" +
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4.Format(variables) + "<color=#569CD6>)</color>";
+        else if (children.Count == 5)
+          return "<color=#569CD6>Write(</color>" +
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5.Format(variables) + "<color=#569CD6>)</color>";
+        else
+          return "<color=#569CD6>Write(</color>" +
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4.Format(variables) + "<color=#569CD6>, </color>" +
+            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6.Format(variables) + "<color=#569CD6>)</color>";
+      }
       case BNF.WAIT: return "<color=#569CD6>Wait(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.DESTROY:
         break;
@@ -538,12 +553,38 @@ public class CodeNode {
         break;
       case BNF.GETP:
         break;
-      case BNF.LINE:
-        break;
-      case BNF.BOX:
-        break;
-      case BNF.CIRCLE:
-        break;
+      case BNF.LINE: {
+        if (children.Count != 5) throw new Exception("Line requires 5 parameters");
+        return "<color=#569CD6>Line(</color>" +
+          CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
+          CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5.Format(variables) + "<color=#569CD6>)</color>";
+      }
+      case BNF.BOX: {
+        if (children.Count < 5) throw new Exception("Box requires at least 5 parameters");
+        if (children.Count > 6) throw new Exception("Box requires max 6 parameters");
+        if (children.Count == 5)
+          return "<color=#569CD6>Box(</color>" +
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5.Format(variables) + "<color=#569CD6>)</color>";
+        else
+          return "<color=#569CD6>Box(</color>" +
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4.Format(variables) + "<color=#569CD6>, </color>" +
+            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6.Format(variables) + "<color=#569CD6>)</color>";
+      }
+      case BNF.CIRCLE: {
+        if (children.Count < 5) throw new Exception("Circle requires at least 5 parameters");
+        if (children.Count > 6) throw new Exception("Circle requires max 6 parameters");
+        if (children.Count == 5)
+          return "<color=#569CD6>Circle(</color>" +
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5.Format(variables) + "<color=#569CD6>)</color>";
+        else
+          return "<color=#569CD6>Circle(</color>" +
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4.Format(variables) + "<color=#569CD6>, </color>" +
+            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6.Format(variables) + "<color=#569CD6>)</color>";
+      }
       case BNF.IMAGE:
         break;
       case BNF.FRAME: return "<color=#569CD6>Frame</color>";

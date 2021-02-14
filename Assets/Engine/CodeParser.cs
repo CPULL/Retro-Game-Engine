@@ -1192,8 +1192,9 @@ public class CodeParser {
     throw new Exception("Invalid code at " + (linenumber + 1) + "\n" + origForException);
   }
 
-  public CodeNode ParseLine(string line, Variables vs) {
+  public CodeNode ParseLine(string line, Variables vs, int origlinenum) {
     vars = vs;
+    linenumber = origlinenum;
     nodes = new Dictionary<string, CodeNode>();
     CodeNode n = new CodeNode(BNF.BLOCK, line, 0);
     expected.Set(Expected.Val.Statement);

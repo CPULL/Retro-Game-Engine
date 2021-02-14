@@ -373,6 +373,8 @@ public class CodeEditor : MonoBehaviour {
   readonly Regex rgMarkClose = new Regex("\\</mark\\>", RegexOptions.IgnoreCase);
   readonly Regex rgBOpen = new Regex("\\<b\\>", RegexOptions.IgnoreCase);
   readonly Regex rgBClose = new Regex("\\</b\\>", RegexOptions.IgnoreCase);
+  readonly Regex rgCommentML = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
+  readonly Regex rgCommentSL = new Regex("(//.*)$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
 
   void SaveLine() {
     if (currentLine < 0 || currentLine >= lines.Count || editLine < 0 || editLine >= EditLines.Length) return;
@@ -394,8 +396,23 @@ public class CodeEditor : MonoBehaviour {
       return;
     }
     try {
-      CodeNode res = cp.ParseLine(cleanline, variables);
-      Result.text = res.CN1?.Format(variables);
+      // Handle first comments
+      string comments = "";
+      Match m = rgCommentSL.Match(cleanline);
+      if (m.Success) {
+        comments = m.Value;
+        cleanline = rgCommentSL.Replace(cleanline, "").Trim();
+      }
+      if (string.IsNullOrEmpty(cleanline)) {
+        if (!string.IsNullOrEmpty(comments))
+          Result.text = "<color=#70e688><mark=#30061880>" + comments + "</mark></color>";
+        else
+          Result.text = "";
+        EditLines[editLine].SetLine(EditLines[editLine].linenum, Result.text);
+        return;
+      }
+      CodeNode res = cp.ParseLine(cleanline, variables, currentLine - 1);
+      Result.text = res.CN1?.Format(variables) + (comments.Length > 0 ? " <color=#70e688><mark=#30061880>" + comments + "</mark></color>" : "");
       EditLines[editLine].SetLine(EditLines[editLine].linenum, Result.text);
       // FIXME alter also the line itself, but remove the <color> and <mark> tags
     } catch (System.Exception e) {
