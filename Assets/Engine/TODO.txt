@@ -32,9 +32,7 @@ Bug: wait() should not block the framerate
 
 
 Indentation of code
-color coding for: if else
-color coding for: for
-color coding for: while
+color coding for: else
 color coding for: sprites
 color coding for: tiles
 color coding for: sound

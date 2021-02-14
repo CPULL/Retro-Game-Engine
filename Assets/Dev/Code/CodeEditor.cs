@@ -376,6 +376,7 @@ public class CodeEditor : MonoBehaviour {
   readonly Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)", RegexOptions.IgnoreCase);
   readonly Regex rgCommentML = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
   readonly Regex rgCommentSL = new Regex("(//.*)$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
+  readonly Regex rgBlockClose = new Regex("^[\\s]*\\}[\\s]*$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
 
   void SaveLine() {
     // Save, parse, and do the syntax highlight
@@ -388,6 +389,7 @@ public class CodeEditor : MonoBehaviour {
       Result.text = "";
       return;
     }
+
     try {
       // Handle first comments
       string comments = "";
@@ -404,17 +406,44 @@ public class CodeEditor : MonoBehaviour {
         EditLines[editLine].SetLine(EditLines[editLine].linenum, Result.text);
         return;
       }
+      if (rgBlockClose.IsMatch(cleanline)) {
+        Result.text = "";
+        EditLines[editLine].SetLine(EditLines[editLine].linenum, "}");
+        return;
+      }
+
+      // Check if we need multiple lines, we do only if we have an IF, FOR, WHILE (and they are not single command)
+      if (cp.RequiresBlock(cleanline, out bool hadOpenBlock)) {
+        Debug.Log("Block required");
+        List<string> parseLines = new List<string>();
+        int blockLevel = cleanline.IndexOf('{') == -1 ? 0 : 1;
+        dbg.text = "Block required!\n";
+        for (int i = currentLine + 1; i < lines.Count; i++) {
+          string s = rgSyntaxHighlight.Replace(rgCommentSL.Replace(lines[i], ""), "").Trim();
+          if (s.IndexOf('{') != -1) blockLevel++;
+          Debug.Log(s);
+          if (s.IndexOf('}') != -1) {
+            blockLevel--;
+            if (blockLevel == 0) break;
+          }
+          parseLines.Add(s);
+          dbg.text += s + "\n";
+        }
+      }
+      else
+        dbg.text = "";
+
       CodeNode res = cp.ParseLine(cleanline, variables, currentLine - 1, out string except);
       if (except != null) {
-        cleanline = res.CN1?.Format(variables) + (comments.Length > 0 ? " <color=#70e688><mark=#30061880>" + comments + "</mark></color>" : "");
+        cleanline = res.CN1?.Format(variables) + (hadOpenBlock ? "{" : "") + (comments.Length > 0 ? " <color=#70e688><mark=#30061880>" + comments + "</mark></color>" : "");
         EditLines[editLine].SetLine(EditLines[editLine].linenum, cleanline);
         Result.text = "<color=#ff2e00>" + except + "</color>";
       }
       else {
-        Result.text = res.CN1?.Format(variables) + (comments.Length > 0 ? " <color=#70e688><mark=#30061880>" + comments + "</mark></color>" : "");
+        Result.text = res.CN1?.Format(variables) + (hadOpenBlock ? "{" : "") + (comments.Length > 0 ? " <color=#70e688><mark=#30061880>" + comments + "</mark></color>" : "");
         EditLines[editLine].SetLine(EditLines[editLine].linenum, Result.text);
       }
-      // FIXME alter also the line itself, but remove the <color> and <mark> tags
+
     } catch (System.Exception e) {
       Result.text = "ERROR:\n" + e.Message;
     }

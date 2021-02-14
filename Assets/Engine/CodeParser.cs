@@ -183,8 +183,8 @@ public class CodeParser {
   readonly Regex rgSetP = new Regex("[\\s]*setp[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBox = new Regex("[\\s]*box[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCircle = new Regex("[\\s]*circle[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgInc = new Regex("(.*)\\+\\+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgDec = new Regex("(.*)\\-\\-", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgInc = new Regex("^([^\\s\\(\\)\\+\\-\\*/%&\\|\\^]*)\\+\\+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgDec = new Regex("^([^\\s\\(\\)\\+\\-\\*/%&\\|\\^]*)\\-\\-", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgIf = new Regex("[\\s]*if[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgElse = new Regex("[\\s]*else[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -479,8 +479,18 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.IF, line, linenumber);
       Match m = rgIf.Match(line);
       string exp = m.Groups[1].Value;
-      node.Add(ParseExpression(exp));
+      if (!string.IsNullOrWhiteSpace(exp)) node.Add(ParseExpression(exp));
       parent.Add(node);
+      if (node.CN1 == null) {
+        if (noFail) {
+          generatedException = "No conditional expression for the IF at line " + (linenumber + 1);
+          node.type = BNF.ERROR;
+          node.sVal = line;
+          return;
+        }
+        else
+          throw new ParsingException("No conditional expression for the IF at line " + (linenumber + 1), origExpression);
+      }
 
       // check if we have a block just after (same line or next non-empty line)
       int increment = 0;
@@ -531,7 +541,22 @@ public class CodeParser {
       if (!string.IsNullOrEmpty(m.Groups[2].Value.Trim())) {
         node.Add(ParseExpression(m.Groups[2].Value.Trim()));
       }
-      else throw new Exception("FOR need to have a condition to terminate: " + (linenumber + 1));
+      else {
+        if (noFail) {
+          generatedException = "Invalid FOR, it needs to have a condition to terminate. Line: " + (linenumber + 1);
+          node.type = BNF.ERROR;
+          node.sVal = line;
+        }
+        else
+          throw new Exception("Invalid FOR, it needs to have a condition to terminate: " + (linenumber + 1));
+      }
+
+      if (lines == null && noFail) {
+        if (!string.IsNullOrEmpty(m.Groups[3].Value.Trim())) { // The last part is added at the end of the block
+          ParseLine(node, m.Groups[3].Value.Trim(), lines);
+        }
+        return;
+      }
 
       CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
       int end = FindEndOfBlock(lines, linenumber);
@@ -539,7 +564,7 @@ public class CodeParser {
       ParseBlock(lines, linenumber + 1, end, b);
       node.Add(b);
 
-      if (!string.IsNullOrEmpty(m.Groups[3].Value.Trim())) { // The last parst is added at the end of the block
+      if (!string.IsNullOrEmpty(m.Groups[3].Value.Trim())) { // The last part is added at the end of the block
         ParseLine(b, m.Groups[3].Value.Trim(), lines);
       }
       return;
@@ -1313,6 +1338,7 @@ public class CodeParser {
       // check if we have a block just after (same line or next non-empty line)
       string after = m.Groups[2].Value.Trim();
       if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { //[WHILE] ([EXP]) [BLOCK]
+        if (lines == null && noFail) return; // No need to parse
         ParseWhileBlock(node, after, lines);
         return;
       }
@@ -1463,6 +1489,26 @@ public class CodeParser {
     }
     noFail = false;
     return n;
+  }
+
+  public bool RequiresBlock(string line, out bool hadOpenBlock) {
+    Match m = null;
+    if (rgIf.IsMatch(line)) m = rgIf.Match(line);
+    else if (rgFor.IsMatch(line))  m = rgFor.Match(line);
+    else if (rgWhile.IsMatch(line)) m = rgWhile.Match(line);
+
+    if (m == null) {
+      hadOpenBlock = false;
+      return false;
+    }
+
+    string after = m.Groups[2].Value.Trim();
+    if (rgBlockOpen.IsMatch(after)) { // command {
+      hadOpenBlock = true;
+      return true;
+    }
+    hadOpenBlock = false;
+    return string.IsNullOrEmpty(after); // command [statement]
   }
 
   void ParseIfBlock(CodeNode ifNode, string after, string[] lines) {

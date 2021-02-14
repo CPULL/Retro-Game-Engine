@@ -497,18 +497,16 @@ public class CodeNode {
       case BNF.ASSIGNxor: return CN1?.Format(variables) + " ^= " + CN2?.Format(variables);
       case BNF.Inc: return CN1?.Format(variables) + "++";
       case BNF.Dec: return CN1?.Format(variables) + "--";
-      case BNF.BLOCK:
-        break;
-      case BNF.IF: {
-        if (CN2 == null) return "<color=#569CD6>if (</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color> <color=#ff000><i>incomplete...</i></color>";
+      case BNF.BLOCK: {
+        if (CN1 == null) return "<color=#569CD6>{}</color>";
+        if (CN2 == null) return CN1.Format(variables);
+        return "<color=#569CD6>{</color>" + CN1?.Format(variables) + ", ...<color=#569CD6>}</color>"; // FIXME
       }
-        break;
-      case BNF.Else:
-        break;
-      case BNF.WHILE:
-        break;
-      case BNF.FOR:
-        break;
+      case BNF.IF: return "<color=#569CD6>if (</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color> " + CN2?.Format(variables); // FIXME there is an else here?
+      case BNF.Else: return "<color=#569CD6>else</color> " + CN1?.Format(variables);
+      case BNF.WHILE: return "<color=#569CD6>while (</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color> " + CN2?.Format(variables);
+      case BNF.FOR:  return "<color=#569CD6>for(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color> " + CN2?.Format(variables) + "<color=#569CD6>, </color> " + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+
       case BNF.CLR: return "<color=#569CD6>Clr(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.WRITE: { // Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
         if (children.Count < 4) throw new Exception("Write requires at least 4 parameters");
