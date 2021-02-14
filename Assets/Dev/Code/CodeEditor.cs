@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
@@ -321,13 +322,16 @@ public class CodeEditor : MonoBehaviour {
         SaveLine();
         if (editLine < 28) editLine++;
         currentLine++;
-        if (currentLine >= lines.Count) lines.Add("");
+        if (currentLine >= lines.Count) {
+          lines.Add("");
+          EditLines[editLine].SetLine(currentLine, "");
+        }
         else if (enter) {
           lines.Insert(currentLine, "");
+          EditLines[editLine].SetLine(currentLine, "");
           Redraw(true);
         }
         
-        EditLines[editLine].Line.Select();
         EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
         autorepeat = down ? .4f : .06f;
         if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
@@ -367,6 +371,8 @@ public class CodeEditor : MonoBehaviour {
 
 
   }
+  
+  
   readonly Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)", RegexOptions.IgnoreCase);
   readonly Regex rgCommentML = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
   readonly Regex rgCommentSL = new Regex("(//.*)$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
@@ -418,8 +424,21 @@ public class CodeEditor : MonoBehaviour {
   public void LineSelected(int num) {
     editLine = num;
     int line = EditLines[num].linenum;
-    if (line == -1) return;
-    currentLine = line;
+    if (line == -1) { // Go up until we will find the first valid line
+      int numlinestoadd = 0;
+      int numback = num;
+      while(line == -1 && numback > 0) {
+        numlinestoadd++;
+        numback--;
+        line = EditLines[numback].linenum;
+      }
+      if (line == -1) Debug.LogError("Huston we have a problem");
+      for (int i = 0; i < numlinestoadd; i++) {
+        lines.Add("");
+        EditLines[numback + 1 + i].SetLine(line + i + 1, "");
+      }
+    }
+    currentLine = EditLines[num].linenum;
   }
 
   public void LineDeselected(int num) {
@@ -435,6 +454,7 @@ public class CodeEditor : MonoBehaviour {
 
 /*
 
+If we scroll to the last line (arrow and enter) we may go to the second-last line
 Too many new lines if we hit enter
 
 Add a "format" call for the CodeNodes, producing some colored code (use Varaibles as input and ident level), add ident level to each Line
