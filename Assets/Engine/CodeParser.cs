@@ -188,7 +188,7 @@ public class CodeParser {
   readonly Regex rgIf = new Regex("[\\s]*if[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgElse = new Regex("[\\s]*else[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgFor = new Regex("[\\s]*for[\\s]*\\(([^,]*=[^,]*)?,([^,]*)?,([^,]*)?\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgFor = new Regex("[\\s]*for[\\s]*\\(([^,]*=[^,]*)?,([^,]*)?,([^,]*)?\\)[\\s]*(\\{)?", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgScreen = new Regex("[\\s]*screen[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWait = new Regex("[\\s]*wait[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDestroy = new Regex("[\\s]*destroy[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1515,26 +1515,32 @@ public class CodeParser {
     return n;
   }
 
-  public bool RequiresBlock(string line, out bool hadOpenBlock) {
+  public bool RequiresBlock(string line) {
     Match m = null;
     int afterGroup = 2;
     if (rgIf.IsMatch(line)) m = rgIf.Match(line);
     else if (rgElse.IsMatch(line)) { m = rgElse.Match(line); afterGroup = 1; }
-    else if (rgFor.IsMatch(line)) m = rgFor.Match(line);
+    else if (rgFor.IsMatch(line)) { m = rgFor.Match(line); afterGroup = 4; }
     else if (rgWhile.IsMatch(line)) m = rgWhile.Match(line);
 
-    if (m == null) {
-      hadOpenBlock = false;
-      return false;
-    }
+    if (m == null) return false;
 
     string after = m.Groups[afterGroup].Value.Trim();
-    if (rgBlockOpen.IsMatch(after)) { // command {
-      hadOpenBlock = true;
-      return true;
-    }
-    hadOpenBlock = false;
-    return string.IsNullOrEmpty(after); // command [statement]
+    return rgBlockOpen.IsMatch(after);
+  }
+
+  public bool RequiresBlockAfter(string line) {
+    Match m = null;
+    int afterGroup = 2;
+    if (rgIf.IsMatch(line)) m = rgIf.Match(line);
+    else if (rgElse.IsMatch(line)) { m = rgElse.Match(line); afterGroup = 1; }
+    else if (rgFor.IsMatch(line)) { m = rgFor.Match(line); afterGroup = 4; }
+    else if (rgWhile.IsMatch(line)) m = rgWhile.Match(line);
+
+    if (m == null) return false;
+
+    string after = m.Groups[afterGroup].Value.Trim();
+    return string.IsNullOrWhiteSpace(after);
   }
 
   void ParseIfBlock(CodeNode ifNode, string after, string[] lines) {

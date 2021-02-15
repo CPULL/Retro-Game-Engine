@@ -435,25 +435,7 @@ public class CodeEditor : MonoBehaviour {
       }
 
       // Check if we need multiple lines, we do only if we have an IF, FOR, WHILE (and they are not single command)
-      if (cp.RequiresBlock(cleanline, out bool hadOpenBlock)) { // FIXME
-        Debug.Log("Block required");
-        List<string> parseLines = new List<string>();
-        int blockLevel = cleanline.IndexOf('{') == -1 ? 0 : 1;
-        dbg.text = "Block required!\n";
-        for (int i = currentLine + 1; i < lines.Count; i++) {
-          string s = rgSyntaxHighlight.Replace(rgCommentSL.Replace(lines[i].line, ""), "").Trim();
-          if (s.IndexOf('{') != -1) blockLevel++;
-// FIXME          Debug.Log(s);
-          if (s.IndexOf('}') != -1) {
-            blockLevel--;
-            if (blockLevel == 0) break;
-          }
-          parseLines.Add(s);
-          dbg.text += s + "\n";
-        }
-      }
-      else
-        dbg.text = "";
+      bool hadOpenBlock = cp.RequiresBlock(cleanline);
 
       CodeNode res = cp.ParseLine(cleanline, variables, currentLine - 1, out string except);
       if (except != null) {
@@ -479,18 +461,76 @@ public class CodeEditor : MonoBehaviour {
 
   void FixIndentation() {
     int indent = 0;
+    int increaseone = 0;
     for (int i = 0; i < lines.Count; i++) {
-      string line = lines[i].line;
-      if (rgBlockClose.IsMatch(line)) indent--;
-      lines[i].indent = indent;
-      // Find if we are if/for/while and without an after, in this case the next item has to be idented (only one line)
-      if (rgBlockOpen.IsMatch(line)) indent++;
+      string line = rgCommentSL.Replace(lines[i].line.Trim(), "").Trim();
       if (indent < 0) indent = 0;
+      lines[i].indent = indent;
+      if (rgBlockOpen.IsMatch(line)) {
+        if (increaseone > 0) {
+          indent -= increaseone;
+          increaseone = 0;
+          lines[i].indent = indent;
+        }
+        indent++; // open { -> increase
+      }
+      if (rgBlockClose.IsMatch(line)) { // close } -< decrease (and set also current line)
+        indent--;
+        if (indent < 0) indent = 0;
+        lines[i].indent = indent;
+      }
+      if (cp.RequiresBlockAfter(line)) { // if/for/while without statement->increase just one
+        increaseone++;
+        indent++;
+      }
+      else if (!string.IsNullOrWhiteSpace(line)) {
+        indent -= increaseone;
+        increaseone = 0;
+        if (indent < 0) indent = 0;
+      }
     }
     for (int i = 0; i < EditLines.Length; i++) {
       int num = EditLines[i].linenum;
       if (num > -1 && num < lines.Count) EditLines[i].UpdateIndent(lines[num].indent);
     }
+
+
+    /* open { -> increase
+     * close } -< decrease (and set also current line)
+     * if/for/while without statement -> increase just one
+     * 
+     * if increased just one and normal statement -> collapse all increase by one
+     * if increased just one and if/for/wile no statemeddnt -> increase by one again
+     * 
+     * 
+     * 0   a++              | normal
+     * 0   if (a) a++       | normal because statement here
+     * 0   if (a)           | increases by just one line
+     * 1    a++             | does the one line and goes back
+     * 0   if (a) {         | indent++
+     * 1    a++             | normal
+     * 0   }                | indent--
+     * 0   if (a)           | normal
+     * 0   {                | indent++
+     * 1    a++             | normal
+     * 0   }                | indent--
+     * 0   if (a)           | increases by just one line
+     * 1    if (a)          | increases by just one line
+     * 2      if (a)        | increases by just one line
+     * 3        a++         | does the one line and goes back (3 times)
+     * 0   if (a) {         | indent++
+     * 1    if (a)          | increases by just one line
+     * 2      if (a)        | increases by just one line
+     * 3        a++         | does the one line and goes back (2 times)
+     * 1    b++             | normal
+     * 0   }                | indent--
+     * 
+     * 
+     * 
+     * 
+     */
+
+
   }
 
 

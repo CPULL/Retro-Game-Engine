@@ -512,7 +512,7 @@ public class CodeNode {
       case BNF.IF: return "<color=#569CD6>if (</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color> " + CN2?.Format(variables); // FIXME there is an else here?
       case BNF.Else: return "<color=#569CD6>else</color> " + CN1?.Format(variables);
       case BNF.WHILE: return "<color=#569CD6>while (</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color> " + CN2?.Format(variables);
-      case BNF.FOR:  return "<color=#569CD6>for(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color> " + CN2?.Format(variables) + "<color=#569CD6>, </color> " + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.FOR:  return "<color=#569CD6>for(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color> " + CN2?.Format(variables) + "<color=#569CD6>, </color> " + CN3?.Format(variables) + "<color=#569CD6>)</color> " + CN4?.Format(variables);
 
       case BNF.CLR: return "<color=#569CD6>Clr(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.WRITE: { // Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
