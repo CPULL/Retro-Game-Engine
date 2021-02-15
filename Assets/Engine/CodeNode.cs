@@ -513,40 +513,43 @@ public class CodeNode {
         if (children.Count > 6) throw new Exception("Write requires max 6 parameters");
         if (children.Count == 4)
           return "<color=#569CD6>Write(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>)</color>";
         else if (children.Count == 5)
           return "<color=#569CD6>Write(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
             CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5.Format(variables) + "<color=#569CD6>)</color>";
         else
           return "<color=#569CD6>Write(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4.Format(variables) + "<color=#569CD6>, </color>" +
-            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" +
+            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6?.Format(variables) + "<color=#569CD6>)</color>";
       }
       case BNF.WAIT: return "<color=#569CD6>Wait(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.DESTROY: return "<color=#569CD6>Destroy(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.SCREEN: {
         if (CN3 == null)
-          return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>)</color>";
+          return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>";
         else
-          return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3.Format(variables) + "<color=#569CD6>)</color>";
+          return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3.Format(variables) + "<color=#569CD6>)</color>";
       }
-      case BNF.SPRITE:
-        break;
-      case BNF.SPEN:
-        break;
-      case BNF.SPOS:
-        break;
-      case BNF.SROT:
-        break;
-      case BNF.SPRI:
-        break;
-      case BNF.STINT:
-        break;
-      case BNF.SSCALE:
-        break;
+      case BNF.SPRITE: {
+        if (CN3 == null)
+          return "<color=#569CD6>Sprite(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>";
+        else
+          return "<color=#569CD6>Sprite(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3.Format(variables) + "<color=#569CD6>)</color>";
+      }
+      case BNF.SPEN: return "<color=#569CD6>SpEn(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.SPOS: {
+        if (CN4 == null)
+          return "<color=#569CD6>SPos(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+        else
+          return "<color=#569CD6>SPos(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>)</color>";
+      }
+      case BNF.SROT:return "<color=#569CD6>SRot(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.SPRI: return "<color=#569CD6>SPri(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.STINT: return "<color=#569CD6>STint(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.SSCALE: return "<color=#569CD6>SScale(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.SETP:
         break;
       case BNF.GETP:
