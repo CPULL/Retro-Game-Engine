@@ -13,6 +13,9 @@ public class CodeNode {
   public string origLine;
   public int origLineNum;
   public CodeNode parent;
+  public NumFormat format = CodeNode.NumFormat.Dec;
+
+  public enum NumFormat {  Dec, Hex, Bin };
 
   internal CodeNode CN1 { get { return children?[0]; } }
   internal CodeNode CN2 { get { return children != null && children.Count > 1 ? children[1] : null; } }
@@ -438,7 +441,11 @@ public class CodeNode {
       case BNF.REG: return "<color=#f6fC06>" + variables.GetRegName(Reg) + "</color>";
       case BNF.ARRAY:
         break;
-      case BNF.INT: return "<color=#B5CEA8>" + iVal + "</color>";
+      case BNF.INT: {
+        if (format == NumFormat.Hex) return "<color=#B5CEA8>0x" + Convert.ToString(iVal, 16) + "</color>";
+        if (format == NumFormat.Bin) return "<color=#B5CEA8>0b" + Convert.ToString(iVal, 2) + "</color>";
+        return "<color=#B5CEA8>" + iVal + "</color>";
+      }
       case BNF.FLT: return "<color=#B5CEA8>" + fVal + "</color>";
       case BNF.COLOR: {
         UnityEngine.Color32 c = Col.GetColor((byte)iVal);

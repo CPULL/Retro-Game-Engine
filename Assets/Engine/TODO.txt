@@ -34,8 +34,8 @@ Bug: wait() should not block the framerate
 color coding for: tiles
 color coding for: sound
 color coding for: music
-color coding for: 
-color coding for: 
+color coding for: functions
+color coding for: data and config
 
 
 

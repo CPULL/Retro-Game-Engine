@@ -119,7 +119,7 @@ public class CodeParser {
 
   readonly Regex rgVar = new Regex("(?<=[^a-z0-9`@_]|^)([a-z][0-9a-z]{0,7})([^a-z0-9\\(¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgArray = new Regex("(?<=[^a-z0-9`@_]|^)([a-z][0-9a-z]{0,7})\\[((?>\\[(?<c>)|[^\\[\\]]+|\\](?<-c>))*(?(c)(?!)))\\]", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgHex = new Regex("([0-9a-f]{8}|[0-9a-f]{4}|[0-9a-f]{2})x", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgHex = new Regex("0x([0-9a-f]{1,8})|([0-9a-f]{1,8})x", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgCol = new Regex("([0-5])([0-5])([0-5])([0-4])?c", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgPal = new Regex("([0-9]{1,3})p", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgQString = new Regex("\\\\\"", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -127,7 +127,7 @@ public class CodeParser {
   readonly Regex rgDeltat = new Regex("deltatime", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFloat = new Regex("[0-9]*\\.[0-9]+[f]?", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgInt = new Regex("([^0-9]?\\s*)(\\d+)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgBin = new Regex("([0-1]{1,31})b", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgBin = new Regex("0b([0-1]{1,32})|([0-1]{1,32})b", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
 
   readonly Regex rgPars = new Regex("\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMem = new Regex("\\[[\\s]*`[a-z]{3,}¶[\\s]*]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1737,9 +1737,26 @@ public class CodeParser {
       // Replace HEX => `HXx
       line = rgHex.Replace(line, m => {
         atLeastOneReplacement = true;
+        string data = m.Groups[2].Value;
+        if (string.IsNullOrEmpty(data)) data = m.Groups[1].Value;
+        int val = 0;
         CodeNode n = new CodeNode(BNF.INT, GenId("HX"), origForException, linenumber) {
-          iVal = Convert.ToInt32("0" + m.Value, 16)
+          iVal = val, format=CodeNode.NumFormat.Hex
         };
+        try {
+          val = Convert.ToInt32(data, 16);
+        } catch (Exception) {
+          if (noFail) {
+            generatedException = "Invalid Hex number. Line: " + (linenumber + 1);
+            n.type = BNF.ERROR;
+            n.sVal = origExpression.Trim();
+            nodes[n.id] = n;
+            return n.id;
+          }
+          else
+            throw new ParsingException("Invalid Hex number. Line: " + (linenumber + 1), origExpression);
+        }
+        n.iVal = val;
         nodes[n.id] = n;
         return n.id;
       });
@@ -1748,9 +1765,26 @@ public class CodeParser {
       // Replace BIN => `BIx
       line = rgBin.Replace(line, m => {
         atLeastOneReplacement = true;
+        string data = m.Groups[2].Value;
+        if (string.IsNullOrEmpty(data)) data = m.Groups[1].Value;
+        int val = 0;
         CodeNode n = new CodeNode(BNF.INT, GenId("BI"), origForException, linenumber) {
-          iVal = Convert.ToInt32("0" + m.Value, 2)
+          iVal = val, format = CodeNode.NumFormat.Bin
         };
+        try {
+          val = Convert.ToInt32(data, 2);
+        } catch (Exception) {
+          if (noFail) {
+            generatedException = "Invalid Binary number. Line: " + (linenumber + 1);
+            n.type = BNF.ERROR;
+            n.sVal = origExpression.Trim();
+            nodes[n.id] = n;
+            return n.id;
+          }
+          else
+            throw new ParsingException("Invalid Binary number. Line: " + (linenumber + 1), origExpression);
+        }
+        n.iVal = val;
         nodes[n.id] = n;
         return n.id;
       });
