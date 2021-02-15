@@ -36,6 +36,7 @@ color coding for: sound
 color coding for: music
 color coding for: functions
 color coding for: data and config
+color coding for: main sections (Start, Update, Data, Config)
 
 
 

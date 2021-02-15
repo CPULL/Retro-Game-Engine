@@ -1491,12 +1491,19 @@ public class CodeParser {
   }
 
   public CodeNode ParseLine(string line, Variables vs, int origlinenum, out string exception) {
+    exception = null;
+    CodeNode n = new CodeNode(BNF.BLOCK, line, 0);
+    // Check for the block lines (Start, Update, Data, Config)
+    if (rgStart.IsMatch(line)) { n.Add(new CodeNode(BNF.Start, line, origlinenum)); return n; }
+    if (rgUpdate.IsMatch(line)) { n.Add(new CodeNode(BNF.Update, line, origlinenum)); return n; }
+    if (rgConfig.IsMatch(line)) { n.Add(new CodeNode(BNF.Config, line, origlinenum)); return n; }
+    if (rgData.IsMatch(line)) { n.Add(new CodeNode(BNF.Data, line, origlinenum)); return n; }
+
     generatedException = null;
     noFail = true;
     vars = vs;
     linenumber = origlinenum;
     nodes = new Dictionary<string, CodeNode>();
-    CodeNode n = new CodeNode(BNF.BLOCK, line, 0);
     expected.Set(Expected.Val.Statement);
     try {
       ParseLine(n, line, null);
