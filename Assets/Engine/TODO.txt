@@ -50,3 +50,6 @@ CodeEditor: Ctrl+H replace
 CodeEditor: Save code, text and binary
 CodeEditor: Load code, text and binary
 
+Looks like we lost some lines that were deleted and they reappeard
+for(aaa) { <-- loses the {
+

@@ -142,10 +142,16 @@ public class CodeEditor : MonoBehaviour {
     bool enter = Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
 
     if (ctrl) { // ******************************* Control *********************************************************************************************
-      // Clear and duplicate
+      // Clear, insert, and duplicate
       if (Input.GetKeyDown(KeyCode.D)) {
         SaveLine();
         lines.Insert(currentLine, lines[currentLine].Duplicate());
+        Redraw(true);
+      }
+      if (Input.GetKeyDown(KeyCode.Insert)) {
+        SaveLine();
+        LineData l = new LineData(lines[currentLine].indent);
+        lines.Insert(currentLine, l);
         Redraw(true);
       }
       if (Input.GetKeyDown(KeyCode.Delete) && lines.Count > 1) {
@@ -527,15 +533,6 @@ public class LineData {
     breakpoint = false;
     line = "";
     node = null;
-  }
-
-  public void Set(string text) {
-    line = text;
-    node = null;
-  }
-  public void Set(CodeNode n, Variables variables) {
-    node = n;
-    line = rgSyntaxHighlight.Replace(n.Format(variables), "");
   }
 
   internal LineData Duplicate() {
