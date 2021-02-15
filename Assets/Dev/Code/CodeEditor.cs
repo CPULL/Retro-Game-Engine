@@ -481,13 +481,3 @@ public class CodeEditor : MonoBehaviour {
 
 }
 
-/*
-
-
-Ctrl+F find
-Ctrl+H replace
-
-Compile a line as soon it is completed -> show errors on the side
-Save code, text and binary
-Load code, text and binary
- */ 

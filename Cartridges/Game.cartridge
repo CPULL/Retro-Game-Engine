@@ -11,3 +11,4 @@ Config {
 	screen(256,180)
 	ram(1k)
 }
+

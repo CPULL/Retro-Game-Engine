@@ -32,13 +32,21 @@ Bug: wait() should not block the framerate
 
 
 Indentation of code
-color coding for: else
 color coding for: tiles
 color coding for: sound
 color coding for: music
 color coding for: 
 color coding for: 
-color coding for: 
-color coding for: 
-color coding for: 
-color coding for: 
+
+
+
+CodeEditor: When pasting multiple lines, parse all of them
+CodeEditor: Add a parse check for blocks
+CodeEditor: Add indentation
+
+CodeEditor: Ctrl+F find
+CodeEditor: Ctrl+H replace
+
+CodeEditor: Save code, text and binary
+CodeEditor: Load code, text and binary
+
