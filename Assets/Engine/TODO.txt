@@ -31,7 +31,6 @@ Bug: wait() should not block the framerate
 [DECIDE] Rom Editor: have a way to add some raw binary data (loading a file or using some sort of text or hex editor)
 
 
-color coding for: functions
 color coding for: data and config
 
 

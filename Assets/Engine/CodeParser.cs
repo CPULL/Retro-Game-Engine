@@ -892,7 +892,7 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.SPRITE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 2 || num != 3) {
+      if (num != 2 && num != 3) {
         if (noFail) {
           generatedException = "Invalid Sprite(), wrong number of parameters (either 2 or 3 parameters are required.) Line: " + (linenumber + 1) +
             "\n<color=#44C6B0>Sprite(<i>number</i>, <i>address</i>, [<i>use filter</i>])</color>";
@@ -2240,8 +2240,8 @@ public class CodeParser {
       line = rgFunctionCall.Replace(line, m => {
         // Check that the function is defined and it is not a reserved keywork: m.Groups[1]
         string fname = m.Groups[1].Value.Trim().ToLowerInvariant();
-        if (!functions.ContainsKey(fname)) throw new Exception("A function named \"" + fname + "\"\nis not defined\n" + (linenumber + 1) + ": " + origForException);
-        if (reserverdKeywords.Contains(fname)) throw new Exception("A reserved keyword is used as function:\n\"" + fname + "\"\n" + (linenumber + 1) + ": " + origForException);
+        if (functions != null && !functions.ContainsKey(fname)) throw new Exception("A function named \"" + fname + "\"\nis not defined\n" + (linenumber + 1) + ": " + origForException);
+        if (reserverdKeywords.Contains(fname)) throw new ParsingException("A reserved keyword is used as function:\n\"" + fname + "\"\n" + (linenumber + 1), origForException);
         CodeNode n = new CodeNode(BNF.FunctionCall, GenId("FN"), origForException, linenumber) { sVal = fname };
 
         // Parse each parameter as expression: m.Groups[2]

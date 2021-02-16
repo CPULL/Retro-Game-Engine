@@ -438,12 +438,17 @@ public class CodeNode {
         break;
       case BNF.FunctionDef: // FIXME
         break;
-      case BNF.FunctionCall: // FIXME
-        break;
+      case BNF.FunctionCall: return "<color=#D65CA6>" + sVal + "</color>" + CN1?.Format(variables);
       case BNF.RETURN: // FIXME
         break;
-      case BNF.Params: // FIXME
-        break;
+      case BNF.Params: {
+        string res = "<color=#D65CA6>(</color>";
+        if (CN1 != null) res += CN1.Format(variables);
+        for (int i = 1; i < children.Count; i++) {
+          if (children[i] != null) res += "<color=#D65CA6>, </color>" + children[i].Format(variables);
+        }
+        return res + "<color=#D65CA6>)</color>";
+      }
       case BNF.PaletteConfig: return "<color=#569CD6>Palette(</color>" + (iVal == 0 ? "0" : "1") + "<color=#569CD6>)</color>";
       case BNF.Ram: return "<color=#569CD6>ram(</color>" + CN1?.Format(variables) +  "<color=#569CD6>)</color>";
       case BNF.Rom: // FIXME
