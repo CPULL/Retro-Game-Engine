@@ -673,18 +673,25 @@ public class CodeNode {
         if (CN8 != null) res += "<color=#569CD6>, </color>" + CN8?.Format(variables);
         return res + "<color=#569CD6>)</color>";
       }
-      case BNF.TILEMAP:
-        break;
-      case BNF.TILEPOS:
-        break;
-      case BNF.TILESET:
-        break;
-      case BNF.TILEGET:
-        break;
-      case BNF.TILEGETROT:
-        break;
+      case BNF.TILEMAP: return "<color=#569CD6>TileMap(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.TILEPOS: {
+        string res = "<color=#569CD6>TilePos(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables);
+        if (CN4 != null) res += "<color=#569CD6>, </color>" + CN4?.Format(variables);
+        if (CN5 != null) res += "<color=#569CD6>, </color>" + CN5?.Format(variables);
+        return res + "<color=#569CD6>)</color>";
+      }
+      case BNF.TILESET: {
+          string res = "<color=#569CD6>TileSet(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + 
+          "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables);
+          if (CN5 != null) res += "<color=#569CD6>, </color>" + CN5?.Format(variables);
+          return res + "<color=#569CD6>)</color>";
+      }
+      case BNF.TILEGET: return "<color=#569CD6>TileGet(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) +
+                                "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.TILEGETROT: return "<color=#569CD6>TileGetRot(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) +
+                               "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.NOP: return "";
-      case BNF.PALETTE:
+      case BNF.PALETTE: // FIXME
         break;
       case BNF.SETPALETTECOLOR:
         break;

@@ -2184,14 +2184,14 @@ public class CodeParser {
         CodeNode n = new CodeNode(BNF.TILEGETROT, GenId("TR"), origForException, linenumber);
         string pars = m.Groups[1].Value.Trim();
         int num = ParsePars(n, pars);
-        if (num != 2) {
+        if (num != 3) {
           if (noFail) {
-            generatedException = "Invalid TileGetRot(), 2 parameters are required. Line: " + (linenumber + 1);
+            generatedException = "Invalid TileGetRot(), 3 parameters are required. Line: " + (linenumber + 1);
             n.type = BNF.ERROR;
             n.sVal = origExpression;
           }
           else
-            throw new ParsingException("Invalid TileGetRot(), 2 parameters are required. Line: " + (linenumber + 1), origExpression);
+            throw new ParsingException("Invalid TileGetRot(), 3 parameters are required. Line: " + (linenumber + 1), origExpression);
         }
         nodes[n.id] = n;
         return n.id;
