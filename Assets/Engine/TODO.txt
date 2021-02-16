@@ -38,13 +38,9 @@ color coding for: functions
 color coding for: data and config
 
 
-
-CodeEditor: When pasting multiple lines, parse all of them
-
 CodeEditor: Ctrl+F find
 CodeEditor: Ctrl+H replace
 
 CodeEditor: Save code, text and binary
 CodeEditor: Load code, text and binary
 
-inc and dec (++ and --) should work also as expressions. When evaluating an expression they should just return the value, and the increment/decrement should be applied after the expression is completed

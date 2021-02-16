@@ -228,6 +228,7 @@ public class CodeParser {
   readonly Regex rgMusicPos = new Regex("[\\s]*musicpos[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMusicVoices = new Regex("[\\s]*musicvoices[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
+  readonly Regex rgPaletteCfg = new Regex("[\\s]*palette[\\s]*\\([\\s]*([\\-]?[0-9]{1})[\\s]*)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgPalette = new Regex("[\\s]*usepalette[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSetPalette = new Regex("[\\s]*setpalette[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
@@ -252,6 +253,7 @@ public class CodeParser {
   readonly Regex rgUpdate = new Regex("^update[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgConfig = new Regex("^config[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgData = new Regex("^data[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgProgramName = new Regex("^name:([\\sa-z0-9_]*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFunction = new Regex("^#([a-z][a-z0-9]{0,11})[\\s]*\\((.*)\\)[\\s]*{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgFunctionCall = new Regex("([a-z][a-z0-9]{0,11})[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgReturn = new Regex("[\\s]*return[\\s]*(.*)[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
@@ -1497,6 +1499,12 @@ public class CodeParser {
     if (rgUpdate.IsMatch(line)) { n.Add(new CodeNode(BNF.Update, line, origlinenum)); return n; }
     if (rgConfig.IsMatch(line)) { n.Add(new CodeNode(BNF.Config, line, origlinenum)); return n; }
     if (rgData.IsMatch(line)) { n.Add(new CodeNode(BNF.Data, line, origlinenum)); return n; }
+    if (rgProgramName.IsMatch(line)) { n.Add(new CodeNode(BNF.Program, line, origlinenum) { sVal = rgProgramName.Match(line).Groups[1].Value.Trim() }); return n; }
+    if (rgPaletteCfg.IsMatch(line)) {
+      int.TryParse(rgPaletteCfg.Match(line).Groups[1].Value, out int on);
+      n.Add(new CodeNode(BNF.PaletteConfig, line, origlinenum) { iVal = on }); 
+      return n; 
+    }
 
     generatedException = null;
     noFail = true;

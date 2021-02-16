@@ -421,41 +421,37 @@ public class CodeNode {
   }
 
   internal string Format(Variables variables, bool hadOpenBlock) {
-    if (comment != null && commentType == CommentType.MultiLineClose) return "<color=#70e688><mark=#30061880>" + comment + "</mark></color> " + Format(variables) + (hadOpenBlock ? "{" : "");
-    if (comment == null) return Format(variables) + (hadOpenBlock ? "{" : "");
+    if (string.IsNullOrEmpty(comment) && commentType == CommentType.MultiLineClose) return "<color=#70e688><mark=#30061880>" + comment + "</mark></color> " + Format(variables) + (hadOpenBlock ? "{" : "");
+    if (string.IsNullOrEmpty(comment) || commentType == CommentType.None) return Format(variables) + (hadOpenBlock ? "{" : "");
     if (commentType == CommentType.MultiLineInner || type == BNF.ERROR) return "<color=#70e688><mark=#30061880>" + comment + "</mark></color>";
     return Format(variables) + (hadOpenBlock ? "{" : "") + " <color=#70e688><mark=#30061880>" + comment + "</mark></color>";
   }
 
   internal string Format(Variables variables) {
     switch (type) {
-      case BNF.Program: return "<color=#8080ff>Program</color> (<color=#ff6060>INVALID</color>)";
+      case BNF.Program: return "<color=#8080ff>Name:</color> " + sVal;
       case BNF.Start: return "<color=#8080ff>Start</color> {";
       case BNF.Update: return "<color=#8080ff>Update</color> {";
       case BNF.Config: return "<color=#8080ff>Config</color> {";
       case BNF.Data: return "<color=#8080ff>Data</color> {";
-      case BNF.Functions:
+      case BNF.Functions: // FIXME
         break;
-      case BNF.FunctionDef:
+      case BNF.FunctionDef: // FIXME
         break;
-      case BNF.FunctionCall:
+      case BNF.FunctionCall: // FIXME
         break;
-      case BNF.RETURN:
+      case BNF.RETURN: // FIXME
         break;
-      case BNF.Params:
+      case BNF.Params: // FIXME
         break;
-      case BNF.ScrConfig:
+      case BNF.PaletteConfig: return "<color=#569CD6>Palette(</color>" + (iVal == 0 ? "0" : "1") + "<color=#569CD6>)</color>";
+      case BNF.Ram: return "<color=#569CD6>ram(</color>" + CN1?.Format(variables) +  "<color=#569CD6>)</color>";
+      case BNF.Rom: // FIXME
         break;
-      case BNF.PaletteConfig:
-        break;
-      case BNF.Ram:
-        break;
-      case BNF.Rom:
-        break;
-      case BNF.Label:
+      case BNF.Label: // FIXME
         break;
       case BNF.REG: return "<color=#f6fC06>" + variables.GetRegName(Reg) + "</color>";
-      case BNF.ARRAY:
+      case BNF.ARRAY: // FIXME
         break;
       case BNF.INT: {
         if (format == NumFormat.Hex) return "<color=#B5CEA8>0x" + System.Convert.ToString(iVal, 16) + "</color>";
@@ -467,12 +463,10 @@ public class CodeNode {
         UnityEngine.Color32 c = Col.GetColor((byte)iVal);
         return "<mark=#" + c.r.ToString("x2") + c.g.ToString("x2") + c.b.ToString("x2") + "80>" + Col.GetColorString(iVal) + "c</mark>";
       }
-      case BNF.PAL:
+      case BNF.PAL: // FIXME
         break;
-      case BNF.LUMA:
-        break;
-      case BNF.CONTRAST:
-        break;
+      case BNF.LUMA: return "<color=#569CD6>Luma(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.CONTRAST: return "<color=#569CD6>Contrast(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.STR: return "<color=#CA9581><mark=#1A151140>\"" + sVal + "\"</mark></color>";
       case BNF.MEM: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>]</color>";
       case BNF.MEMlong:  return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@]</color>";
@@ -492,9 +486,9 @@ public class CodeNode {
       case BNF.OPxor: return CN1?.Format(variables) + " <color=#66aCe6>^</color> " + CN2?.Format(variables);
       case BNF.OPlsh: return CN1?.Format(variables) + " <color=#66aCe6><<</color> " + CN2?.Format(variables);
       case BNF.OPrsh: return CN1?.Format(variables) + " <color=#66aCe6>>></color> " + CN2?.Format(variables);
-      case BNF.LAB:
+      case BNF.LAB: // FIXME
         break;
-      case BNF.LABG:
+      case BNF.LABG: // FIXME
         break;
       case BNF.CASTb: return CN1?.Format(variables) + "<color=#66aCe6>_b</color>";
       case BNF.CASTi: return CN1?.Format(variables) + "<color=#66aCe6>_i</color>";
@@ -518,10 +512,8 @@ public class CodeNode {
       case BNF.ASSIGNand: return CN1?.Format(variables) + " &= " + CN2?.Format(variables);
       case BNF.ASSIGNor:  return CN1?.Format(variables) + " |= " + CN2?.Format(variables);
       case BNF.ASSIGNxor: return CN1?.Format(variables) + " ^= " + CN2?.Format(variables);
-      case BNF.IncCmd: 
-        return CN1?.Format(variables) + "++";
-      case BNF.IncExp: 
-        return CN1?.Format(variables) + "++";
+      case BNF.IncCmd: return CN1?.Format(variables) + "++";
+      case BNF.IncExp: return CN1?.Format(variables) + "++";
       case BNF.DecCmd: return CN1?.Format(variables) + "--";
       case BNF.DecExp: return CN1?.Format(variables) + "--";
       case BNF.BLOCK: {
@@ -554,6 +546,7 @@ public class CodeNode {
       }
       case BNF.WAIT: return "<color=#569CD6>Wait(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.DESTROY: return "<color=#569CD6>Destroy(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.ScrConfig:
       case BNF.SCREEN: {
         if (CN3 == null)
           return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>";
@@ -577,10 +570,8 @@ public class CodeNode {
       case BNF.SPRI: return "<color=#569CD6>SPri(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.STINT: return "<color=#569CD6>STint(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.SSCALE: return "<color=#569CD6>SScale(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.SETP:
-        break;
-      case BNF.GETP:
-        break;
+      case BNF.SETP: return "<color=#569CD6>SetP(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.GETP: return "<color=#569CD6>GetP(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.LINE: {
         return "<color=#569CD6>Line(</color>" +
           CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
@@ -643,8 +634,7 @@ public class CodeNode {
       case BNF.ATAN2: return "<color=#569CD6>Atan2(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.SQR:   return "<color=#569CD6>Sqrt(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.POW: return "<color=#569CD6>Pow(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.MEMCPY:
-        break;
+      case BNF.MEMCPY: return "<color=#569CD6>MemCpy(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>"; 
       case BNF.SOUND:
         break;
       case BNF.WAVE:
@@ -655,10 +645,8 @@ public class CodeNode {
         if (CN2 == null) return "<color=#569CD6>Volume(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
         else return "<color=#569CD6>Volume(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>"; 
       }
-      case BNF.PITCH:
-        break;
-      case BNF.PAN:
-        break;
+      case BNF.PITCH: return "<color=#569CD6>Pitch(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>"; 
+      case BNF.PAN: return "<color=#569CD6>Pan(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>"; 
       case BNF.MUSICLOAD:
         break;
       case BNF.MUSICPLAY:

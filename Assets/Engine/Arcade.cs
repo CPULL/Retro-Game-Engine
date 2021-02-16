@@ -1477,9 +1477,9 @@ public class Arcade : MonoBehaviour {
     }
     return false;
   }
-  Value[] valsToPostIncrement = new Value[8];
+  readonly Value[] valsToPostIncrement = new Value[32];
   int numValsToPostIncrement = 0;
-  Value[] valsToPostDecrement = new Value[8];
+  readonly Value[] valsToPostDecrement = new Value[32];
   int numValsToPostDecrement = 0;
 
   void HandlePostIncrementDecrement() {
