@@ -228,7 +228,7 @@ public class CodeParser {
   readonly Regex rgMusicPos = new Regex("[\\s]*musicpos[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMusicVoices = new Regex("[\\s]*musicvoices[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgPaletteCfg = new Regex("[\\s]*palette[\\s]*\\([\\s]*([\\-]?[0-9]{1})[\\s]*)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgPaletteCfg = new Regex("[\\s]*palette[\\s]*\\([\\s]*([\\-]?[0-9]{1})[\\s]*\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgPalette = new Regex("[\\s]*usepalette[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSetPalette = new Regex("[\\s]*setpalette[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
@@ -1255,7 +1255,7 @@ public class CodeParser {
       return;
     }
 
-    // [MusicVoices] num[, num]{1-7}
+    // [MusicVoices] num[, num]{1-8}
     if (expected.IsGood(Expected.Val.Statement) && rgMusicVoices.IsMatch(line)) {
       Match m = rgMusicVoices.Match(line);
       CodeNode node = new CodeNode(BNF.MUSICVOICES, line, linenumber);

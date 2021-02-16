@@ -635,28 +635,44 @@ public class CodeNode {
       case BNF.SQR:   return "<color=#569CD6>Sqrt(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.POW: return "<color=#569CD6>Pow(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.MEMCPY: return "<color=#569CD6>MemCpy(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>"; 
-      case BNF.SOUND:
-        break;
-      case BNF.WAVE:
-        break;
-      case BNF.MUTE:
-        break;
+      case BNF.SOUND: {
+        if (CN3 == null)
+          return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>";
+        else
+          return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+      }
+      case BNF.WAVE: {
+        if (CN5 == null)
+          return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) +
+            "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) +
+            "<color=#569CD6>)</color>";
+        else
+          return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) +
+            "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5?.Format(variables) +
+            "<color=#569CD6>)</color>";
+      }
+      case BNF.MUTE: return "<color=#569CD6>Mute(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.VOLUME: {
         if (CN2 == null) return "<color=#569CD6>Volume(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
         else return "<color=#569CD6>Volume(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>"; 
       }
       case BNF.PITCH: return "<color=#569CD6>Pitch(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>"; 
       case BNF.PAN: return "<color=#569CD6>Pan(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>"; 
-      case BNF.MUSICLOAD:
-        break;
-      case BNF.MUSICPLAY:
-        break;
-      case BNF.MUSICSTOP:
-        break;
-      case BNF.MUSICPOS:
-        break;
-      case BNF.MUSICVOICES:
-        break;
+      case BNF.MUSICLOAD: return "<color=#569CD6>LoadMusic(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>"; 
+      case BNF.MUSICPLAY: return "<color=#569CD6>PlayMusic(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>"; 
+      case BNF.MUSICSTOP: return "<color=#569CD6>StopMusic()</color>"; 
+      case BNF.MUSICPOS: return "<color=#569CD6>MusicPos()</color>";
+      case BNF.MUSICVOICES: {
+        string res = "<color=#569CD6>MusicVoices(</color>" + CN1?.Format(variables);
+        if (CN2 != null) res += "<color=#569CD6>, </color>" + CN2?.Format(variables);
+        if (CN3 != null) res += "<color=#569CD6>, </color>" + CN3?.Format(variables);
+        if (CN4 != null) res += "<color=#569CD6>, </color>" + CN4?.Format(variables);
+        if (CN5 != null) res += "<color=#569CD6>, </color>" + CN5?.Format(variables);
+        if (CN6 != null) res += "<color=#569CD6>, </color>" + CN6?.Format(variables);
+        if (CN7 != null) res += "<color=#569CD6>, </color>" + CN7?.Format(variables);
+        if (CN8 != null) res += "<color=#569CD6>, </color>" + CN8?.Format(variables);
+        return res + "<color=#569CD6>)</color>";
+      }
       case BNF.TILEMAP:
         break;
       case BNF.TILEPOS:
@@ -667,8 +683,7 @@ public class CodeNode {
         break;
       case BNF.TILEGETROT:
         break;
-      case BNF.NOP:
-        break;
+      case BNF.NOP: return "";
       case BNF.PALETTE:
         break;
       case BNF.SETPALETTECOLOR:
