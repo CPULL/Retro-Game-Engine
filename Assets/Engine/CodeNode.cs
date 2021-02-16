@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 public class CodeNode {
   public BNF type;
@@ -14,8 +13,11 @@ public class CodeNode {
   public int origLineNum;
   public CodeNode parent;
   public NumFormat format = CodeNode.NumFormat.Dec;
+  public string comment;
+  public CommentType commentType = CommentType.None;
 
   public enum NumFormat {  Dec, Hex, Bin };
+  public enum CommentType {  None, SingleLine, MultiLineFull, MultiLineOpen, MultiLineInner, MultiLineClose };
 
   internal CodeNode CN1 { get { return children?[0]; } }
   internal CodeNode CN2 { get { return children != null && children.Count > 1 ? children[1] : null; } }
@@ -404,11 +406,23 @@ public class CodeNode {
           res += "[[Missing:" + type + "]]";
           break;
       }
-    } catch (Exception e) {
+    } catch (System.Exception e) {
       res += "[[INVALID!!]]" + e.Message;
     }
 
     return res.Replace("  ", " ");
+  }
+
+  internal void SetComments(string com, CommentType cType) {
+    comment = com;
+    commentType = cType;
+  }
+
+  internal string Format(Variables variables, bool hadOpenBlock) {
+    if (comment != null && commentType == CommentType.MultiLineClose) return "<color=#70e688><mark=#30061880>" + comment + "</mark></color> " + Format(variables) + (hadOpenBlock ? "{" : "");
+    if (comment == null) return Format(variables) + (hadOpenBlock ? "{" : "");
+    if (commentType == CommentType.MultiLineInner || type == BNF.ERROR) return "<color=#70e688><mark=#30061880>" + comment + "</mark></color>";
+    return Format(variables) + (hadOpenBlock ? "{" : "") + " <color=#70e688><mark=#30061880>" + comment + "</mark></color>";
   }
 
   internal string Format(Variables variables) {
@@ -442,8 +456,8 @@ public class CodeNode {
       case BNF.ARRAY:
         break;
       case BNF.INT: {
-        if (format == NumFormat.Hex) return "<color=#B5CEA8>0x" + Convert.ToString(iVal, 16) + "</color>";
-        if (format == NumFormat.Bin) return "<color=#B5CEA8>0b" + Convert.ToString(iVal, 2) + "</color>";
+        if (format == NumFormat.Hex) return "<color=#B5CEA8>0x" + System.Convert.ToString(iVal, 16) + "</color>";
+        if (format == NumFormat.Bin) return "<color=#B5CEA8>0b" + System.Convert.ToString(iVal, 2) + "</color>";
         return "<color=#B5CEA8>" + iVal + "</color>";
       }
       case BNF.FLT: return "<color=#B5CEA8>" + fVal + "</color>";
@@ -516,8 +530,8 @@ public class CodeNode {
 
       case BNF.CLR: return "<color=#569CD6>Clr(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
       case BNF.WRITE: { // Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
-        if (children.Count < 4) throw new Exception("Write requires at least 4 parameters");
-        if (children.Count > 6) throw new Exception("Write requires max 6 parameters");
+        if (children.Count < 4) throw new System.Exception("Write requires at least 4 parameters");
+        if (children.Count > 6) throw new System.Exception("Write requires max 6 parameters");
         if (children.Count == 4)
           return "<color=#569CD6>Write(</color>" +
             CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
@@ -667,7 +681,7 @@ public class CodeNode {
         break;
       case BNF.ERROR: return "<color=#ff2010>" + sVal + "</color>";
     }
-    throw new Exception(type + " NOT YET DONE!");
+    throw new System.Exception(type + " NOT YET DONE!");
   }
 
   internal bool Evaluable() {

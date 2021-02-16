@@ -10,6 +10,7 @@ public class CodeLine : MonoBehaviour {
   public int indent;
   public bool breakpoint = false;
   public string line;
+  public CodeNode.CommentType comment;
 
   public void SetLine(int num) {
     linenum = num;

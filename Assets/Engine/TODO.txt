@@ -47,4 +47,3 @@ CodeEditor: Ctrl+H replace
 CodeEditor: Save code, text and binary
 CodeEditor: Load code, text and binary
 
-Handle Multi line comments

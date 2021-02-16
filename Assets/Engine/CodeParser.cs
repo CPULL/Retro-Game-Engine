@@ -457,6 +457,7 @@ public class CodeParser {
   }
 
   void ParseLine(CodeNode parent, string line, string[] lines) {
+    if (string.IsNullOrWhiteSpace(line)) return;
     origForException = line;
 
     if (rgBlockClose.IsMatch(line)) return;
@@ -470,7 +471,6 @@ public class CodeParser {
       nodes[n.id] = n;
       return n.id;
     });
-
 
     // Check what we have. Pick something in line with what is expected
 
@@ -527,7 +527,6 @@ public class CodeParser {
       }
       return;
     }
-
     
     // [ELSE] [BLOCK]|[STATEMENT] <- only in case of single line parsing
     if (lines == null && expected.IsGood(Expected.Val.Statement) && rgElse.IsMatch(line)) {
@@ -2550,7 +2549,7 @@ public class CodeParser {
       else
         generatedException = "Invalid expression at " + (linenumber + 1);
       if (noFail) {
-        return new CodeNode(BNF.ERROR, origForException, linenumber + 1) { sVal = origExpression };
+        return new CodeNode(BNF.ERROR, origForException, linenumber + 1) { sVal = origForException };
       }
       else
         throw new ParsingException(generatedException, origExpression);
