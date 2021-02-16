@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
@@ -234,7 +233,7 @@ public class CodeEditor : MonoBehaviour {
         if (currentLine >= lines.Count) currentLine = lines.Count - 1;
         Redraw();
 
-        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 0";
+        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 1";
 
       }
       else if (up && (selectionS == -1 || selectionE == -1)) { // If nothing is selected, select current line and move up or down
@@ -535,6 +534,17 @@ public class CodeEditor : MonoBehaviour {
 
 
   public void LineSelected(int num) {
+    bool toredraw = false;
+    if (Input.GetMouseButton(0) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
+      Debug.Log("multiselect");
+      int one = editLine;
+      int two = num;
+      if (one > two) { int tmp = one; one = two; two = tmp; }
+      selectionS = EditLines[one].linenum;
+      selectionE = EditLines[two].linenum;
+      toredraw = true;
+    }
+
     editLine = num;
     int line = EditLines[num].linenum;
     if (line == -1) { // Go up until we will find the first valid line
@@ -553,6 +563,8 @@ public class CodeEditor : MonoBehaviour {
       }
     }
     currentLine = EditLines[num].linenum;
+
+    if (toredraw) Redraw();
   }
 
   public void AlterBreakPoint(int num) {
@@ -566,7 +578,6 @@ public class LineData {
   public bool breakpoint;
   public string line; // Clean text
   public CodeNode node;
-  readonly static Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)", RegexOptions.IgnoreCase);
 
   public LineData(int i) {
     indent = i;

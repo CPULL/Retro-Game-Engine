@@ -36,13 +36,10 @@ color coding for: sound
 color coding for: music
 color coding for: functions
 color coding for: data and config
-color coding for: main sections (Start, Update, Data, Config)
 
 
 
 CodeEditor: When pasting multiple lines, parse all of them
-CodeEditor: Add a parse check for blocks
-CodeEditor: Add indentation
 
 CodeEditor: Ctrl+F find
 CodeEditor: Ctrl+H replace
@@ -50,6 +47,4 @@ CodeEditor: Ctrl+H replace
 CodeEditor: Save code, text and binary
 CodeEditor: Load code, text and binary
 
-Looks like we lost some lines that were deleted and they reappeard
-for(aaa) { <-- loses the {
-
+Handle Multi line comments
