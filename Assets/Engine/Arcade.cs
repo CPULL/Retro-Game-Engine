@@ -880,6 +880,7 @@ public class Arcade : MonoBehaviour {
         case BNF.CLR: {
           Value tmp = Evaluate(n.CN1);
           Clear(tmp.ToByte(culture));
+          HandlePostIncrementDecrement();
         }
         break;
 
@@ -904,20 +905,23 @@ public class Arcade : MonoBehaviour {
           }
           else
             Write(a.ToStr(), b.ToInt(culture), c.ToInt(culture), d.ToByte(culture));
+          HandlePostIncrementDecrement();
         }
         break;
 
-        case BNF.Inc: {
+        case BNF.IncCmd: {
           Value a = Evaluate(n.CN1);
           if (a.IsReg()) variables.Incr(a.idx);
           if (a.IsMem()) mem[a.ToInt(culture)]++;
+          HandlePostIncrementDecrement();
         }
         break;
 
-        case BNF.Dec: {
+        case BNF.DecCmd: {
           Value a = Evaluate(n.CN1);
           if (a.IsReg()) variables.Decr(a.idx);
           if (a.IsMem()) mem[a.ToInt(culture)]--;
+          HandlePostIncrementDecrement();
         }
         break;
 
@@ -1085,6 +1089,8 @@ public class Arcade : MonoBehaviour {
             byte[] vals = System.Text.Encoding.UTF8.GetBytes(r.ToStr());
             mem[pos] = vals[0];
           }
+        
+          HandlePostIncrementDecrement();
         }
         break;
 
@@ -1093,6 +1099,7 @@ public class Arcade : MonoBehaviour {
           Value y = Evaluate(n.CN2);
           Value c = Evaluate(n.CN3);
           SetPixel(x.ToInt(culture), y.ToInt(culture), c.ToByte(culture));
+          HandlePostIncrementDecrement();
         }
         break;
 
@@ -1103,6 +1110,7 @@ public class Arcade : MonoBehaviour {
           Value y2 = Evaluate(n.CN4);
           Value col = Evaluate(n.CN5);
           Line(x1.ToInt(culture), y1.ToInt(culture), x2.ToInt(culture), y2.ToInt(culture), col.ToByte(culture));
+          HandlePostIncrementDecrement();
         }
         break;
 
@@ -1118,6 +1126,7 @@ public class Arcade : MonoBehaviour {
           }
           else
             Box(x1.ToInt(culture), y1.ToInt(culture), x2.ToInt(culture), y2.ToInt(culture), col.ToByte(culture));
+          HandlePostIncrementDecrement();
         }
         break;
 
@@ -1133,6 +1142,7 @@ public class Arcade : MonoBehaviour {
           }
           else
             Circle(cx.ToFlt(culture), cy.ToFlt(culture), rx.ToFlt(culture), ry.ToFlt(culture), col.ToByte(culture));
+          HandlePostIncrementDecrement();
         }
         break;
 
@@ -1149,6 +1159,7 @@ public class Arcade : MonoBehaviour {
           }
           else
             Image(addr.ToInt(culture), px.ToInt(culture), py.ToInt(culture), w.ToInt(culture), h.ToInt(culture));
+          HandlePostIncrementDecrement();
         }
         break;
 
@@ -1156,11 +1167,13 @@ public class Arcade : MonoBehaviour {
           if (Evaluate(n.CN1).ToBool(culture)) {
             if (n.CN2.type != BNF.BLOCK || (n.CN2.children != null && n.CN2.children.Count > 0))
               stacks.AddStack(n.CN2, null, n.origLine, n.origLineNum);
+            HandlePostIncrementDecrement();
             return false;
           }
           else if (n.children.Count > 2) {
             if (n.CN3.type != BNF.BLOCK || (n.CN3.children != null && n.CN3.children.Count > 0))
               stacks.AddStack(n.CN3, null, n.origLine, n.origLineNum);
+            HandlePostIncrementDecrement();
             return false;
           }
         }
@@ -1170,22 +1183,29 @@ public class Arcade : MonoBehaviour {
           Value cond = Evaluate(n.CN1);
           if (cond.ToInt(culture) != 0) {
             stacks.AddStack(n.CN2, n.CN1, n.origLine, n.origLineNum);
+            HandlePostIncrementDecrement();
             return false;
           }
+          HandlePostIncrementDecrement();
         }
         break;
 
         case BNF.FOR: {
           Execute(n.CN1);
           Value cond = Evaluate(n.CN2);
-          if (cond.ToInt(culture) == 0) return false;
+          if (cond.ToInt(culture) == 0) {
+            HandlePostIncrementDecrement();
+            return false;
+          }
           stacks.AddStack(n.CN3, n.CN2, n.origLine, n.origLineNum);
+          HandlePostIncrementDecrement();
           return false;
         }
 
         case BNF.WAIT: {
           toWait = Evaluate(n.CN1).ToFlt(culture);
           if (toWait > 0 && n.sVal == "*") CompleteFrame();
+          HandlePostIncrementDecrement();
           return toWait > 0;
         }
 
@@ -1206,31 +1226,34 @@ public class Arcade : MonoBehaviour {
           Screen.texture = texture;
           pixels = texture.GetPixels32();
           raw = new byte[sw * sh * 4];
+          HandlePostIncrementDecrement();
         }
         break;
 
         case BNF.SPRITE: {
           Sprite(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToBool(culture));
+          HandlePostIncrementDecrement();
           return false;
         }
 
         case BNF.DESTROY: {
           int pointer = Evaluate(n.CN1).ToInt(culture);
           if (labelTextures.ContainsKey(pointer)) labelTextures.Remove(pointer);
+          HandlePostIncrementDecrement();
           return false;
         }
 
-        case BNF.SPOS: SpritePos(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture), n.CN4 == null || Evaluate(n.CN4).ToBool(culture)); return false;
+        case BNF.SPOS: SpritePos(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture), n.CN4 == null || Evaluate(n.CN4).ToBool(culture)); HandlePostIncrementDecrement();  return false;
 
-        case BNF.SROT: SpriteRot(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToBool(culture)); return false;
+        case BNF.SROT: SpriteRot(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToBool(culture)); HandlePostIncrementDecrement(); return false;
 
-        case BNF.SPEN: SpriteEnable(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToBool(culture)); return false;
+        case BNF.SPEN: SpriteEnable(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToBool(culture)); HandlePostIncrementDecrement(); return false;
 
-        case BNF.SPRI: SpritePri(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToByte(culture)); return false;
+        case BNF.SPRI: SpritePri(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToByte(culture)); HandlePostIncrementDecrement(); return false;
 
-        case BNF.STINT: SpriteTint(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToByte(culture)); return false;
+        case BNF.STINT: SpriteTint(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToByte(culture)); HandlePostIncrementDecrement(); return false;
 
-        case BNF.SSCALE: SpriteScale(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture)); return false;
+        case BNF.SSCALE: SpriteScale(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture)); HandlePostIncrementDecrement(); return false;
 
         case BNF.RETURN: return stacks.PopUp(); // Return is not called as expression, just end the stack
 
@@ -1250,6 +1273,7 @@ public class Arcade : MonoBehaviour {
               variables.Set(par.Reg, v);
             }
           }
+          HandlePostIncrementDecrement(); 
           stacks.AddStack(n.CN2, null, n.origLine, n.origLineNum);
           return false;
         }
@@ -1259,6 +1283,7 @@ public class Arcade : MonoBehaviour {
             audioManager.Play(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture));
           else
             audioManager.Play(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToFlt(culture));
+          HandlePostIncrementDecrement();
           return false;
         }
 
@@ -1275,11 +1300,13 @@ public class Arcade : MonoBehaviour {
                                   Evaluate(n.CN5).ToByte(culture),
                                   Evaluate(n.CN6).ToByte(culture));
           }
+          HandlePostIncrementDecrement();
           return false;
         }
 
         case BNF.MUTE: {
           audioManager.Stop(Evaluate(n.CN1).ToInt(culture));
+          HandlePostIncrementDecrement();
           return false;
         }
 
@@ -1297,6 +1324,7 @@ public class Arcade : MonoBehaviour {
             if (vol > 1) vol = 1;
             audioManager.Volume(Evaluate(n.CN1).ToInt(culture), vol);
           }
+          HandlePostIncrementDecrement();
           return false;
         }
 
@@ -1305,6 +1333,7 @@ public class Arcade : MonoBehaviour {
           if (pitch < 0) pitch = 0;
           if (pitch > 100) pitch = 100;
           audioManager.Pitch(Evaluate(n.CN1).ToInt(culture), pitch);
+          HandlePostIncrementDecrement();
           return false;
         }
 
@@ -1313,11 +1342,13 @@ public class Arcade : MonoBehaviour {
           if (pan < -1) pan = -1;
           if (pan > 1) pan = 1;
           audioManager.Pan(Evaluate(n.CN1).ToInt(culture), pan);
+          HandlePostIncrementDecrement();
           return false;
         }
 
         case BNF.MUSICLOAD: {
           audioManager.LoadMusic(mem, Evaluate(n.CN1).ToInt(culture));
+          HandlePostIncrementDecrement();
           return false;
         }
         case BNF.MUSICVOICES: {
@@ -1343,12 +1374,14 @@ public class Arcade : MonoBehaviour {
           if (n.children.Count == 2) audioManager.MusicVoices(
             Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture));
           if (n.children.Count == 1) audioManager.MusicVoices(Evaluate(n.CN1).ToByte(culture));
+          HandlePostIncrementDecrement();
           return false;
         }
 
         case BNF.MUSICPLAY: {
           if (n.CN1 == null) audioManager.PlayMusic();
           else audioManager.PlayMusic(Evaluate(n.CN1).ToInt(culture));
+          HandlePostIncrementDecrement();
           return false;
         }
 
@@ -1359,6 +1392,7 @@ public class Arcade : MonoBehaviour {
 
         case BNF.TILEMAP: {
           Tilemap(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToInt(culture));
+          HandlePostIncrementDecrement();
           return false;
         }
 
@@ -1369,6 +1403,7 @@ public class Arcade : MonoBehaviour {
             TilePos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN4).ToByte(culture));
           else
             TilePos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToBool(culture));
+          HandlePostIncrementDecrement();
           return false;
         }
 
@@ -1377,22 +1412,24 @@ public class Arcade : MonoBehaviour {
             TileSet(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture));
           else
             TilePos(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToBool(culture));
+          HandlePostIncrementDecrement();
           return false;
         }
 
-        case BNF.PALETTE: { Col.UsePalette(Evaluate(n.CN1).ToBool(culture)); return false; }
+        case BNF.PALETTE: { Col.UsePalette(Evaluate(n.CN1).ToBool(culture)); HandlePostIncrementDecrement(); return false; }
         case BNF.SETPALETTECOLOR: {
           if (n.children.Count == 1) Col.SetPalette(mem, Evaluate(n.CN1).ToInt(culture), 0);
           if (n.children.Count == 2) Col.SetPalette(mem, Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture));
           else
            Col.SetPalette(Evaluate(n.CN1).ToByte(culture), 
                           Evaluate(n.CN1).ToByte(culture),  Evaluate(n.CN2).ToByte(culture), 
-                          Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture)); 
+                          Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture));
+          HandlePostIncrementDecrement();
           return false; 
         }
 
-        case BNF.LUMA: { Luma(Evaluate(n.CN1).ToFlt(culture)); return false; }
-        case BNF.CONTRAST: { Contrast(Evaluate(n.CN1).ToFlt(culture)); return false; }
+        case BNF.LUMA: { Luma(Evaluate(n.CN1).ToFlt(culture)); HandlePostIncrementDecrement(); return false; }
+        case BNF.CONTRAST: { Contrast(Evaluate(n.CN1).ToFlt(culture)); HandlePostIncrementDecrement(); return false; }
 
         case BNF.MEMCPY: {
           int dst = Evaluate(n.CN1).ToInt(culture);
@@ -1404,14 +1441,15 @@ public class Arcade : MonoBehaviour {
             if (sp < 0 || sp >= mem.Length || dp < 0 || dp >= mem.Length) continue;
             mem[dp] = mem[sp];
           }
+          HandlePostIncrementDecrement(); 
           return false;
         }
 
         case BNF.NOP: return false;
 
         default: {
-          Clear(0b010000);
-          Write("Not handled code:\n " + n.type + "\n" + n, 2, 2, 0b111100);
+          Clear(Col.C(1, 0, 0));
+          Write("Not handled code:\n " + n.type + "\n" + n, 2, 2, Col.C(5, 5, 0));
           updateDelay = -1;
           stacks.Destroy();
           CompleteFrame();
@@ -1438,6 +1476,25 @@ public class Arcade : MonoBehaviour {
       CompleteFrame();
     }
     return false;
+  }
+  Value[] valsToPostIncrement = new Value[8];
+  int numValsToPostIncrement = 0;
+  Value[] valsToPostDecrement = new Value[8];
+  int numValsToPostDecrement = 0;
+
+  void HandlePostIncrementDecrement() {
+    for (int i = 0; i < numValsToPostIncrement; i++) {
+      Value v = valsToPostIncrement[i];
+      if (v.IsReg()) variables.Incr(v.idx);
+      if (v.IsMem()) mem[v.ToInt(culture)]++;
+    }
+    numValsToPostIncrement = 0;
+    for (int i = 0; i < numValsToPostDecrement; i++) {
+      Value v = valsToPostDecrement[i];
+      if (v.IsReg()) variables.Incr(v.idx);
+      if (v.IsMem()) mem[v.ToInt(culture)]++;
+    }
+    numValsToPostDecrement = 0;
   }
 
   internal Value Evaluate(CodeNode n) {
@@ -1582,6 +1639,19 @@ public class Arcade : MonoBehaviour {
       case BNF.TILEGETROT: return TileGetRot(Evaluate(n.CN1).ToByte(culture), Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture));
 
       case BNF.TRIM: return new Value(Evaluate(n.CN1).ToStr().Trim());
+
+      case BNF.IncExp: {
+        Value v = new Value(Evaluate(n.CN1).ToStr().Trim());
+        valsToPostIncrement[numValsToPostIncrement] = v;
+        numValsToPostIncrement++;
+        return v;
+      }
+      case BNF.DecExp: {
+        Value v = new Value(Evaluate(n.CN1).ToStr().Trim());
+        valsToPostDecrement[numValsToPostDecrement] = v;
+        numValsToPostDecrement++;
+        return v;
+      }
 
       case BNF.FunctionCall: {
         // Evaluate all parameters, assign all values to the registers, run the statements like a stack, return the value from a "return" (or 0 if there is no return)

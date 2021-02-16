@@ -1290,7 +1290,7 @@ public class CodeParser {
 
     // [Inc]
     if (expected.IsGood(Expected.Val.Statement) && rgInc.IsMatch(line)) {
-      CodeNode node = new CodeNode(BNF.Inc, line, linenumber);
+      CodeNode node = new CodeNode(BNF.IncCmd, line, linenumber);
       node.Add(ParseExpression(rgInc.Match(line).Groups[1].Value));
       parent.Add(node);
       return;
@@ -1298,7 +1298,7 @@ public class CodeParser {
 
     // [Dec]
     if (expected.IsGood(Expected.Val.Statement) && rgDec.IsMatch(line)) {
-      CodeNode node = new CodeNode(BNF.Dec, line, linenumber);
+      CodeNode node = new CodeNode(BNF.DecCmd, line, linenumber);
       node.Add(ParseExpression(rgDec.Match(line).Groups[1].Value));
       parent.Add(node);
       return;
@@ -1649,6 +1649,26 @@ public class CodeParser {
     bool atLeastOneReplacement = true;
     while (atLeastOneReplacement) {
       atLeastOneReplacement = false;
+
+      // ++
+      line = rgInc.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.IncExp, GenId("PI"), origForException, linenumber);
+        n.Add(ParseExpression(rgInc.Match(line).Groups[1].Value));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // --
+      line = rgDec.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.DecExp, GenId("PD"), origForException, linenumber);
+        n.Add(ParseExpression(rgInc.Match(line).Groups[1].Value));
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
 
       // - (unary)
       line = rgUOsub.Replace(line, m => {

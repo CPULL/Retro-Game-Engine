@@ -227,8 +227,10 @@ public class CodeNode {
             res += ")";
           break;
 
-        case BNF.Inc: res += id + CN1.ToString(indent) + "++"; break;
-        case BNF.Dec: res += id + CN1.ToString(indent) + "--"; break;
+        case BNF.IncCmd: res += id + CN1.ToString(indent) + "++"; break;
+        case BNF.IncExp: res += id + CN1.ToString(indent) + "++"; break;
+        case BNF.DecCmd: res += id + CN1.ToString(indent) + "--"; break;
+        case BNF.DecExp: res += id + CN1.ToString(indent) + "--"; break;
 
         case BNF.COMPeq: res += "(" + CN1.ToString(indent + 1) + "==" + CN2.ToString(indent + 1) + ")"; break;
         case BNF.COMPne: res += "(" + CN1.ToString(indent + 1) + "!=" + CN2.ToString(indent + 1) + ")"; break;
@@ -516,8 +518,12 @@ public class CodeNode {
       case BNF.ASSIGNand: return CN1?.Format(variables) + " &= " + CN2?.Format(variables);
       case BNF.ASSIGNor:  return CN1?.Format(variables) + " |= " + CN2?.Format(variables);
       case BNF.ASSIGNxor: return CN1?.Format(variables) + " ^= " + CN2?.Format(variables);
-      case BNF.Inc: return CN1?.Format(variables) + "++";
-      case BNF.Dec: return CN1?.Format(variables) + "--";
+      case BNF.IncCmd: 
+        return CN1?.Format(variables) + "++";
+      case BNF.IncExp: 
+        return CN1?.Format(variables) + "++";
+      case BNF.DecCmd: return CN1?.Format(variables) + "--";
+      case BNF.DecExp: return CN1?.Format(variables) + "--";
       case BNF.BLOCK: {
         if (CN1 == null) return "<color=#569CD6>{}</color>";
         if (CN2 == null) return CN1.Format(variables);
@@ -716,8 +722,8 @@ public class CodeNode {
       case BNF.UOneg:
       case BNF.UOinv:
       case BNF.UOsub:
-      case BNF.Inc:
-      case BNF.Dec:
+      case BNF.IncExp:
+      case BNF.DecExp:
       case BNF.DTIME:
       case BNF.LEN:
       case BNF.PLEN:
@@ -862,7 +868,7 @@ public enum BNF {
   UOneg, UOinv, UOsub,
   COMPeq, COMPne, COMPlt, COMPle, COMPgt, COMPge,
   ASSIGN, ASSIGNsum, ASSIGNsub, ASSIGNmul, ASSIGNdiv, ASSIGNmod, ASSIGNand, ASSIGNor, ASSIGNxor,
-  Inc, Dec,
+  IncCmd, DecCmd, IncExp, DecExp,
   BLOCK,
   IF, Else, WHILE, FOR,
   CLR,
