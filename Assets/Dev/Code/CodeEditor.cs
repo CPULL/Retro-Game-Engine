@@ -126,10 +126,6 @@ public class CodeEditor : MonoBehaviour {
     Redraw();
   }
 
-
-
-
-
   private void Update() {
     if (autorepeat > 0) autorepeat -= Time.deltaTime;
     bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
@@ -212,6 +208,7 @@ public class CodeEditor : MonoBehaviour {
             lines.Insert(currentLine, l);
           }
           Redraw(true);
+          Parse();
         }
       }
 
@@ -232,9 +229,6 @@ public class CodeEditor : MonoBehaviour {
           currentLine++;
         if (currentLine >= lines.Count) currentLine = lines.Count - 1;
         Redraw();
-
-        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 1";
-
       }
       else if (up && (selectionS == -1 || selectionE == -1)) { // If nothing is selected, select current line and move up or down
         SaveLine();
@@ -244,9 +238,6 @@ public class CodeEditor : MonoBehaviour {
         if (editLine > 0) editLine--;
         Redraw();
         EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-
-        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 1";
-
       }
       else if (currentLine <= selectionS && up) { // Extend
         selectionS--;
@@ -255,9 +246,6 @@ public class CodeEditor : MonoBehaviour {
         if (editLine > 0) editLine--;
         Redraw();
         EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-
-        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 2";
-
       }
       else if (currentLine >= selectionE && down) { // Extend
         selectionE++;
@@ -270,8 +258,6 @@ public class CodeEditor : MonoBehaviour {
           currentLine++;
         if (currentLine >= lines.Count) currentLine = lines.Count - 1;
         Redraw();
-
-        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 3";
       }
       else if (currentLine <= selectionS && down) { // Reduce
         selectionS++;
@@ -288,9 +274,6 @@ public class CodeEditor : MonoBehaviour {
           currentLine++;
         if (currentLine >= lines.Count) currentLine = lines.Count - 1;
         Redraw();
-
-        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 4";
-
       }
       else if (currentLine >= selectionE && up) { // Reduce
         selectionE--;
@@ -303,9 +286,6 @@ public class CodeEditor : MonoBehaviour {
         if (editLine > 0) editLine--;
         EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
         Redraw();
-
-        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE + "\nCase 5";
-
       }
 
     }
@@ -395,6 +375,11 @@ public class CodeEditor : MonoBehaviour {
     if (lines[currentLine].line != cleanline) { // Save the line, if needed
       lines[currentLine].line = cleanline;
     }
+    SyntaxHighlight(cleanline, editLine);
+    FixIndentation(); // Update the indent
+  }
+
+  void SyntaxHighlight(string cleanline, int whichline) {
     string var = lines[currentLine].line;
     if (string.IsNullOrEmpty(var)) {
       Result.text = "";
@@ -415,21 +400,21 @@ public class CodeEditor : MonoBehaviour {
         else
           Result.text = "";
 
-        lines[EditLines[editLine].linenum].line = rgSyntaxHighlight.Replace(Result.text, "");
-        EditLines[editLine].SetLine(EditLines[editLine].linenum, lines[EditLines[editLine].linenum], Result.text);
+        lines[EditLines[whichline].linenum].line = rgSyntaxHighlight.Replace(Result.text, "");
+        EditLines[whichline].SetLine(EditLines[whichline].linenum, lines[EditLines[whichline].linenum], Result.text);
         return;
       }
       if (rgBlockClose.IsMatch(cleanline)) {
         Result.text = "";
-        lines[EditLines[editLine].linenum].line = "}";
-        EditLines[editLine].SetLine(EditLines[editLine].linenum, lines[EditLines[editLine].linenum]);
+        lines[EditLines[whichline].linenum].line = "}";
+        EditLines[whichline].SetLine(EditLines[whichline].linenum, lines[EditLines[whichline].linenum]);
         FixIndentation();
         return;
       }
       if (rgBlockOpenAlone.IsMatch(cleanline)) {
         Result.text = "";
-        lines[EditLines[editLine].linenum].line = "{";
-        EditLines[editLine].SetLine(EditLines[editLine].linenum, lines[EditLines[editLine].linenum]);
+        lines[EditLines[whichline].linenum].line = "{";
+        EditLines[whichline].SetLine(EditLines[whichline].linenum, lines[EditLines[whichline].linenum]);
         return;
       }
 
@@ -439,18 +424,15 @@ public class CodeEditor : MonoBehaviour {
       CodeNode res = cp.ParseLine(cleanline, variables, currentLine - 1, out string except);
       if (except != null) {
         cleanline = res.CN1?.Format(variables) + (hadOpenBlock ? "{" : "") + (comments.Length > 0 ? " <color=#70e688><mark=#30061880>" + comments + "</mark></color>" : "");
-        lines[EditLines[editLine].linenum].line = rgSyntaxHighlight.Replace(cleanline, ""); ;
-        EditLines[editLine].SetLine(EditLines[editLine].linenum, lines[EditLines[editLine].linenum], cleanline);
+        lines[EditLines[whichline].linenum].line = rgSyntaxHighlight.Replace(cleanline, ""); ;
+        EditLines[whichline].SetLine(EditLines[whichline].linenum, lines[EditLines[whichline].linenum], cleanline);
         Result.text = "<color=#ff2e00>" + except + "</color>";
       }
       else {
         Result.text = res.CN1?.Format(variables) + (hadOpenBlock ? "{" : "") + (comments.Length > 0 ? " <color=#70e688><mark=#30061880>" + comments + "</mark></color>" : "");
-        lines[EditLines[editLine].linenum].line = rgSyntaxHighlight.Replace(Result.text, "");
-        EditLines[editLine].SetLine(EditLines[editLine].linenum, lines[EditLines[editLine].linenum], Result.text);
+        lines[EditLines[whichline].linenum].line = rgSyntaxHighlight.Replace(Result.text, "");
+        EditLines[whichline].SetLine(EditLines[whichline].linenum, lines[EditLines[whichline].linenum], Result.text);
       }
-
-      // Update the indent
-      FixIndentation();
 
     } catch (System.Exception e) {
       Result.text = "ERROR:\n" + e.Message;
@@ -532,11 +514,19 @@ public class CodeEditor : MonoBehaviour {
 
   }
 
+  void Parse() {
+    for (int pos = 0; pos < EditLines.Length; pos++) {
+      CodeLine l = EditLines[pos];
+      if (l.linenum == -1) continue;
+      string cleanline = rgSyntaxHighlight.Replace(l.Line.text.Trim(), "");
+      SyntaxHighlight(cleanline, pos);
+    }
+    FixIndentation(); // Update the indent
+  }
 
   public void LineSelected(int num) {
     bool toredraw = false;
     if (Input.GetMouseButton(0) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
-      Debug.Log("multiselect");
       int one = editLine;
       int two = num;
       if (one > two) { int tmp = one; one = two; two = tmp; }
