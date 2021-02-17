@@ -428,10 +428,8 @@ public class CodeNode {
       case BNF.Update: return "<color=#8080ff>Update</color> {";
       case BNF.Config: return "<color=#8080ff>Config</color> {";
       case BNF.Data: return "<color=#8080ff>Data</color> {";
-      case BNF.Functions: // FIXME
-        break;
-      case BNF.FunctionDef: // FIXME
-        break;
+      case BNF.Functions: return "<color=#8080ff>Functions:</color> <i>(" + children.Count + ")</i>";
+      case BNF.FunctionDef: return "<color=#D65CA6>#" + sVal + "</color>" + CN1?.Format(variables);
       case BNF.FunctionCall: return "<color=#D65CA6>" + sVal + "</color>" + CN1?.Format(variables);
       case BNF.RETURN: {
         if (CN1 == null)
