@@ -40,3 +40,5 @@ CodeEditor: Ctrl+H replace
 CodeEditor: Save code, text and binary
 CodeEditor: Load code, text and binary
 
+Keep optimized and original code, and switch between one and another
+Implement the "Compile" button (compile the whole code)

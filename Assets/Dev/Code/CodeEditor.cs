@@ -12,6 +12,7 @@ public class CodeEditor : MonoBehaviour {
   public RectTransform SelectionRT;
   public TextMeshProUGUI Result;
   public TextMeshProUGUI dbg;
+  public Toggle OptimizeCodeTG;
 
   readonly CodeParser cp = new CodeParser();
   readonly Variables variables = new Variables();
@@ -462,7 +463,7 @@ public class CodeEditor : MonoBehaviour {
         EditLines[whichline].Line.SetTextWithoutNotify("<color=#70e688><mark=#30061880>" + line + "</mark></color>");
         return;
       }
-      CodeNode res = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, currentLine - 1, out string except);
+      CodeNode res = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, currentLine - 1, OptimizeCodeTG.isOn, out string except);
       if (res.CN1 != null) res.CN1.SetComments(comment, commentType);
       else {
         EditLines[whichline].SetLine(EditLines[whichline].linenum);

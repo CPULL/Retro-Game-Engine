@@ -670,7 +670,7 @@ public class CodeParser {
         pn = pn.parent;
       }
 
-      if (outsideFunctionDef) throw new Exception("RETURN can be used only inside functions\n" + (linenumber + 1) + ": " + origForException);
+      if (outsideFunctionDef && lines !=null) throw new Exception("RETURN can be used only inside functions\n" + (linenumber + 1) + ": " + origForException);
       parent.Add(node);
       return;
     }
@@ -827,7 +827,7 @@ public class CodeParser {
     // [Palette] = UsePalette([EXP])
     if (expected.IsGood(Expected.Val.Statement) && rgPalette.IsMatch(line)) {
       Match m = rgPalette.Match(line);
-      CodeNode node = new CodeNode(BNF.PALETTE, line, linenumber);
+      CodeNode node = new CodeNode(BNF.USEPALETTE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
       if (num != 1) {
@@ -1491,18 +1491,21 @@ public class CodeParser {
       throw new Exception("Invalid code at " + (linenumber + 1) + "\n" + origForException);
   }
 
-  public CodeNode ParseLine(string line, Variables vs, int origlinenum, out string exception) {
+  bool optimizeCode = true;
+  public CodeNode ParseLine(string line, Variables vs, int origlinenum, bool optimize, out string exception) {
     exception = null;
+    optimizeCode = optimize;
     CodeNode n = new CodeNode(BNF.BLOCK, line, 0);
     // Check for the block lines (Start, Update, Data, Config)
-    if (rgStart.IsMatch(line)) { n.Add(new CodeNode(BNF.Start, line, origlinenum)); return n; }
-    if (rgUpdate.IsMatch(line)) { n.Add(new CodeNode(BNF.Update, line, origlinenum)); return n; }
-    if (rgConfig.IsMatch(line)) { n.Add(new CodeNode(BNF.Config, line, origlinenum)); return n; }
-    if (rgData.IsMatch(line)) { n.Add(new CodeNode(BNF.Data, line, origlinenum)); return n; }
-    if (rgProgramName.IsMatch(line)) { n.Add(new CodeNode(BNF.Program, line, origlinenum) { sVal = rgProgramName.Match(line).Groups[1].Value.Trim() }); return n; }
+    if (rgStart.IsMatch(line)) { n.Add(new CodeNode(BNF.Start, line, origlinenum)); optimizeCode = true; return n; }
+    if (rgUpdate.IsMatch(line)) { n.Add(new CodeNode(BNF.Update, line, origlinenum)); optimizeCode = true; return n; }
+    if (rgConfig.IsMatch(line)) { n.Add(new CodeNode(BNF.Config, line, origlinenum)); optimizeCode = true; return n; }
+    if (rgData.IsMatch(line)) { n.Add(new CodeNode(BNF.Data, line, origlinenum)); optimizeCode = true; return n; }
+    if (rgProgramName.IsMatch(line)) { n.Add(new CodeNode(BNF.Program, line, origlinenum) { sVal = rgProgramName.Match(line).Groups[1].Value.Trim() }); optimizeCode = true; return n; }
     if (rgPaletteCfg.IsMatch(line)) {
       int.TryParse(rgPaletteCfg.Match(line).Groups[1].Value, out int on);
-      n.Add(new CodeNode(BNF.PaletteConfig, line, origlinenum) { iVal = on }); 
+      n.Add(new CodeNode(BNF.PaletteConfig, line, origlinenum) { iVal = on });
+      optimizeCode = true;
       return n; 
     }
 
@@ -1519,6 +1522,7 @@ public class CodeParser {
       exception = e.Message;
     }
     noFail = false;
+    optimizeCode = true; 
     return n;
   }
 
@@ -2132,7 +2136,6 @@ public class CodeParser {
       });
       if (atLeastOneReplacement) continue;
 
-
       // [LabelGet] = Label([EXPR])
       line = rgLabelGet.Replace(line, m => {
         atLeastOneReplacement = true;
@@ -2154,7 +2157,6 @@ public class CodeParser {
         return n.id;
       });
       if (atLeastOneReplacement) continue;
-
 
       // [TileGet] = TileGet([EXPR],[EXPR],[EXPR])
       line = rgTileget.Replace(line, m => {
@@ -2263,7 +2265,7 @@ public class CodeParser {
         string inner = m.Value.Trim();
         inner = inner.Substring(1, inner.Length - 2);
         CodeNode inside = ParseExpression(inner);
-        if (inside.type == BNF.INT || inside.type == BNF.FLT || inside.type == BNF.STR || inside.type == BNF.MEM || inside.type == BNF.REG) {
+        if (optimizeCode && (inside.type == BNF.INT || inside.type == BNF.FLT || inside.type == BNF.STR || inside.type == BNF.MEM || inside.type == BNF.REG || inside.type == BNF.OPpar)) {
           nodes[inside.id] = inside;
           return inside.id;
         }
@@ -2382,14 +2384,16 @@ public class CodeParser {
           case 'f': pos += 21; break;
           case 'e': pos += 24; break;
           case 'x':
+          case 'h':
             n = new CodeNode(BNF.KEYx, GenId("KX"), origForException, linenumber);
             nodes[n.id] = n;
             return n.id;
           case 'y':
+          case 'v':
             n = new CodeNode(BNF.KEYy, GenId("KY"), origForException, linenumber);
             nodes[n.id] = n;
             return n.id;
-          default: throw new Exception("Invalid Key at " + (linenumber + 1) + "\n" + line);
+          default: throw new ParsingException("Invalid Key at " + (linenumber + 1) + "\n" + line, origForException);
         }
         n = new CodeNode(BNF.KEY, GenId("KK"), origForException, linenumber) { iVal = pos };
         nodes[n.id] = n;
@@ -2638,7 +2642,7 @@ public class CodeParser {
     if (m.Groups.Count < 4) throw new Exception("Unhandled " + name + " case: " + m.Groups.Count + " Line:" + (linenumber + 1));
     CodeNode left = nodes[m.Groups[1].Value.Trim()];
     CodeNode right = nodes[m.Groups[3].Value.Trim()];
-    if ((left.type == BNF.INT || left.type == BNF.FLT || left.type == BNF.OPpar) && (right.type == BNF.INT || right.type == BNF.FLT || right.type == BNF.OPpar)) {
+    if (optimizeCode && (left.type == BNF.INT || left.type == BNF.FLT || left.type == BNF.OPpar) && (right.type == BNF.INT || right.type == BNF.FLT || right.type == BNF.OPpar)) {
       CodeNode s = SimplifyNode(left, right, bnf);
       if (s != null) return s.id;
     }
@@ -2707,8 +2711,6 @@ public class CodeParser {
         if (!lf && !rf) { l.type = BNF.INT; l.iVal >>= r.iVal; }
       }
       break;
-
-
 
       default: return null;
     }

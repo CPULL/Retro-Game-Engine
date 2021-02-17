@@ -1416,7 +1416,7 @@ public class Arcade : MonoBehaviour {
           return false;
         }
 
-        case BNF.PALETTE: { Col.UsePalette(Evaluate(n.CN1).ToBool(culture)); HandlePostIncrementDecrement(); return false; }
+        case BNF.USEPALETTE: { Col.UsePalette(Evaluate(n.CN1).ToBool(culture)); HandlePostIncrementDecrement(); return false; }
         case BNF.SETPALETTECOLOR: {
           if (n.children.Count == 1) Col.SetPalette(mem, Evaluate(n.CN1).ToInt(culture), 0);
           if (n.children.Count == 2) Col.SetPalette(mem, Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture));
@@ -1601,8 +1601,7 @@ public class Arcade : MonoBehaviour {
       case BNF.KEYx: return new Value(Input.GetAxis("Horixontal"));
       case BNF.KEYy: return new Value(Input.GetAxis("Vertical"));
 
-      case BNF.Label:
-      case BNF.LAB: {
+      case BNF.Label: {
         if (!labels.ContainsKey(n.sVal)) throw new Exception("Undefined Label: " + n.sVal);
         return new Value(labels[n.sVal]);
       }
