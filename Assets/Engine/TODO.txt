@@ -38,4 +38,6 @@ CodeEditor: Save code, text and binary
 CodeEditor: Load code, text and binary
 
 Keep optimized and original code, and switch between one and another
-Implement the "Compile" button (compile the whole code)
+
+Return the line of the error, so we can show it in the editor
+Replace all Exception with ParsingException in the Parser (error, code line, line number)

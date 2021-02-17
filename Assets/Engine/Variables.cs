@@ -324,7 +324,7 @@ public struct Value {
       }
       else if (int.TryParse(s.sVal, out int i)) {
         if (type == VT.Int) {
-          iVal = iVal * i;
+          iVal *= i;
         }
         else {
           fVal *= i;
@@ -371,7 +371,7 @@ public struct Value {
       }
       else if (int.TryParse(s.sVal, out int i)) {
         if (type == VT.Int) {
-          iVal = iVal / i;
+          iVal /= i;
         }
         else {
           fVal /= i;
@@ -418,7 +418,7 @@ public struct Value {
       }
       else if (int.TryParse(s.sVal, out int i)) {
         if (type == VT.Int) {
-          iVal = iVal % i;
+          iVal %= i;
         }
         else {
           fVal %= i;

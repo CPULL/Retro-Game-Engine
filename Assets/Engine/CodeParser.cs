@@ -183,8 +183,10 @@ public class CodeParser {
   readonly Regex rgSetP = new Regex("[\\s]*setp[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBox = new Regex("[\\s]*box[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCircle = new Regex("[\\s]*circle[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgInc = new Regex("^([^\\s\\(\\)\\+\\-\\*/%&\\|\\^]*)\\+\\+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgDec = new Regex("^([^\\s\\(\\)\\+\\-\\*/%&\\|\\^]*)\\-\\-", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgIncC = new Regex("^([^\\s\\(\\)\\+\\-\\*/%&\\|\\^]*)\\+\\+[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgDecC = new Regex("^([^\\s\\(\\)\\+\\-\\*/%&\\|\\^]*)\\-\\-[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgIncE = new Regex("^([^\\s\\(\\)\\+\\-\\*/%&\\|\\^]*)\\+\\+", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgDecE = new Regex("^([^\\s\\(\\)\\+\\-\\*/%&\\|\\^]*)\\-\\-", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgIf = new Regex("[\\s]*if[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgElse = new Regex("[\\s]*else[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1291,17 +1293,17 @@ public class CodeParser {
     }
 
     // [Inc]
-    if (expected.IsGood(Expected.Val.Statement) && rgInc.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgIncC.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.IncCmd, line, linenumber);
-      node.Add(ParseExpression(rgInc.Match(line).Groups[1].Value));
+      node.Add(ParseExpression(rgIncC.Match(line).Groups[1].Value));
       parent.Add(node);
       return;
     }
 
     // [Dec]
-    if (expected.IsGood(Expected.Val.Statement) && rgDec.IsMatch(line)) {
+    if (expected.IsGood(Expected.Val.Statement) && rgDecC.IsMatch(line)) {
       CodeNode node = new CodeNode(BNF.DecCmd, line, linenumber);
-      node.Add(ParseExpression(rgDec.Match(line).Groups[1].Value));
+      node.Add(ParseExpression(rgDecC.Match(line).Groups[1].Value));
       parent.Add(node);
       return;
     }
@@ -1663,20 +1665,20 @@ public class CodeParser {
       atLeastOneReplacement = false;
 
       // ++
-      line = rgInc.Replace(line, m => {
+      line = rgIncE.Replace(line, m => {
         atLeastOneReplacement = true;
         CodeNode n = new CodeNode(BNF.IncExp, GenId("PI"), origForException, linenumber);
-        n.Add(ParseExpression(rgInc.Match(line).Groups[1].Value));
+        n.Add(ParseExpression(rgIncE.Match(line).Groups[1].Value));
         nodes[n.id] = n;
         return n.id;
       });
       if (atLeastOneReplacement) continue;
 
       // --
-      line = rgDec.Replace(line, m => {
+      line = rgDecE.Replace(line, m => {
         atLeastOneReplacement = true;
         CodeNode n = new CodeNode(BNF.DecExp, GenId("PD"), origForException, linenumber);
-        n.Add(ParseExpression(rgInc.Match(line).Groups[1].Value));
+        n.Add(ParseExpression(rgDecE.Match(line).Groups[1].Value));
         nodes[n.id] = n;
         return n.id;
       });

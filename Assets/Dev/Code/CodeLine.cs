@@ -23,7 +23,7 @@ public class CodeLine : MonoBehaviour {
 
   internal void SetLine(int num, LineData data) {
     linenum = num;
-    Number.text = num.ToString();
+    Number.text = (num + 1).ToString();
     Breakpoint.enabled = breakpoint;
     indent = data.indent;
     string indentation = "";
@@ -37,7 +37,7 @@ public class CodeLine : MonoBehaviour {
 
   internal void SetLine(int num, LineData data, string formatted) {
     linenum = num;
-    Number.text = num.ToString();
+    Number.text = (num + 1).ToString();
     Breakpoint.enabled = breakpoint;
     indent = data.indent;
     string indentation = "";

@@ -463,7 +463,7 @@ public class CodeEditor : MonoBehaviour {
         EditLines[whichline].Line.SetTextWithoutNotify("<color=#70e688><mark=#30061880>" + line + "</mark></color>");
         return;
       }
-      CodeNode res = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, currentLine - 1, OptimizeCodeTG.isOn, out string except);
+      CodeNode res = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, currentLine, OptimizeCodeTG.isOn, out string except);
 
       if (res.CN1 == null) {
         if (except == null) {
@@ -636,7 +636,7 @@ public class CodeEditor : MonoBehaviour {
     } catch(ParsingException pe) {
       Result.text = pe.Message + "n" + pe.Code;
     } catch (System.Exception e) {
-      Result.text = "<color=red>" + e.Message + "</color>";
+      Result.text = "<color=red>" + e.Message + "</color>"; // Line numbers are wrong here
     }
   }
 }
