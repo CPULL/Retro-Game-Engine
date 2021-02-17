@@ -1642,7 +1642,7 @@ public class CodeParser {
     if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { // [WHILE] [BLOCK]
       CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
       int end = FindEndOfBlock(lines, linenumber);
-      if (end < 0) throw new ParsingException("\"WHILE\" section does not end", linenumber + 1););
+      if (end < 0) throw new ParsingException("\"WHILE\" section does not end", linenumber + 1);
       ParseBlock(lines, linenumber + 1, end, b);
       ifNode.Add(b);
       linenumber = end + 1;

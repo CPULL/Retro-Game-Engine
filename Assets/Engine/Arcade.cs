@@ -395,6 +395,21 @@ public class Arcade : MonoBehaviour {
         stacks.AddStack(startCode, null, startCode.origLine, startCode.origLineNum);
       else if (updateCode != null)
         stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
+    } catch (ParsingException e) {
+      string msg = "";
+      for (int i = 0, l = 0; i < e.Message.Length; i++) {
+        char c = e.Message[i];
+        if (c == '\n') l = 0;
+        msg += c;
+        l++;
+        if (l == sw / 8 - 1) {
+          msg += "\n";
+          l = 0;
+        }
+      }
+      Write("Error in loading!\n" + msg + "\n" + e.Code + "\nLine: " + e.LineNum, 4, 48, Col.C(5, 1, 0));
+      texture.Apply();
+      Debug.Log("Error in loading! " + e.Message + "\n" + e.Code + "\nLine: " + e.LineNum + "\n" + e.StackTrace);
     } catch (Exception e) {
       string msg = "";
       for (int i = 0, l = 0; i < e.Message.Length; i++) {

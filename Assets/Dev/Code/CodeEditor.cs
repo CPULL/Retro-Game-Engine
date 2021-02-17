@@ -633,10 +633,14 @@ public class CodeEditor : MonoBehaviour {
       else
         Result.text = "Parsing OK";
 
-    } catch(ParsingException pe) {
-      Result.text = pe.Message + "n" + pe.Code;
+    } catch(ParsingException e) {
+      Result.text = "<color=red>" + e.Message + "</color>\n" + e.Code + "\nLine: " + e.LineNum;
+      // Scroll to line number
+      if (e.LineNum > 0) currentLine = e.LineNum - 1;
+      Redraw(true);
+      SetScroll();
     } catch (System.Exception e) {
-      Result.text = "<color=red>" + e.Message + "</color>"; // Line numbers are wrong here
+      Result.text = "<color=red>" + e.Message + "</color>";
     }
   }
 }

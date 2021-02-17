@@ -39,4 +39,3 @@ CodeEditor: Load code, text and binary
 
 Keep optimized and original code, and switch between one and another
 
-Return the line of the error, so we can show it in the editor
