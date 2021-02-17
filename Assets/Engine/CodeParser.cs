@@ -692,8 +692,8 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num < 4) throw new Exception("Invalid Write(), not enough parameters. Line: " + (linenumber + 1));
-      if (num > 6) throw new Exception("Invalid Write(), too many parameters. Line: " + (linenumber + 1));
+      if (num < 4) throw new ParsingException("Invalid Write(), not enough parameters. Line: " + (linenumber + 1), origForException);
+      if (num > 6) throw new ParsingException("Invalid Write(), too many parameters. Line: " + (linenumber + 1), origForException);
       parent.Add(node);
       return;
     }
@@ -2581,7 +2581,7 @@ public class CodeParser {
       else
         generatedException = "Invalid expression at " + (linenumber + 1);
       if (noFail) {
-        return new CodeNode(BNF.ERROR, origForException, linenumber + 1) { sVal = origForException };
+        return new CodeNode(BNF.ERROR, origForException, linenumber + 1) { sVal = origExpression };
       }
       else
         throw new ParsingException(generatedException, origExpression);

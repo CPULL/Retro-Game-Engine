@@ -96,6 +96,11 @@ public class Variables {
     return res;
   }
 
+  public void Clear() {
+    vars = new Value[32];
+    count = 0;
+    pointers.Clear();
+  }
 }
 
 

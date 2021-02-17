@@ -464,12 +464,22 @@ public class CodeEditor : MonoBehaviour {
         return;
       }
       CodeNode res = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, currentLine - 1, OptimizeCodeTG.isOn, out string except);
-      if (res.CN1 != null) res.CN1.SetComments(comment, commentType);
-      else {
-        EditLines[whichline].SetLine(EditLines[whichline].linenum);
-        EditLines[whichline].Line.SetTextWithoutNotify("<color=#70e688><mark=#30061880>" + line + comment + "</mark></color>");
+
+      if (res.CN1 == null) {
+        if (except == null) {
+          EditLines[whichline].SetLine(EditLines[whichline].linenum);
+          EditLines[whichline].Line.SetTextWithoutNotify("<color=#70e688><mark=#30061880>" + line + comment + "</mark></color>");
+          return;
+        }
+        else {
+          line = "<color=#ff2e00>" + line + "</color>";
+          EditLines[whichline].SetLine(EditLines[whichline].linenum, lines[EditLines[whichline].linenum], line);
+          Result.text = "<color=#ff2e00>" + except + "</color>";
+        }
         return;
       }
+
+      res.CN1.SetComments(comment, commentType);
       if (except != null) {
         line = res.CN1?.Format(variables, hadOpenBlock);
         lines[EditLines[whichline].linenum].line = rgSyntaxHighlight.Replace(line, ""); ;
@@ -610,6 +620,25 @@ public class CodeEditor : MonoBehaviour {
     EditLines[num].ToggleBreakpoint();
   }
 
+  public void Compile() {
+    // Get all lines, produce an aggregated string, and do the full parsing.
+    string code = "";
+    foreach (LineData line in lines)
+      code += line.line + "\n";
+    variables.Clear();
+    try {
+      CodeNode result = cp.Parse(code, variables, true);
+      if (!result.HasNode(BNF.Config) && !result.HasNode(BNF.Data) && !result.HasNode(BNF.Start) && !result.HasNode(BNF.Update) && !result.HasNode(BNF.Functions))
+        Result.text = "No executable code found (Start, Update, Functions, Config, or Data)";
+      else
+        Result.text = "Parsing OK";
+
+    } catch(ParsingException pe) {
+      Result.text = pe.Message + "n" + pe.Code;
+    } catch (System.Exception e) {
+      Result.text = "<color=red>" + e.Message + "</color>";
+    }
+  }
 }
 
 public class LineData {
