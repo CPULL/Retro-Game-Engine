@@ -414,14 +414,28 @@ public class CodeNode {
     commentType = cType;
   }
 
-  internal string Format(Variables variables, bool hadOpenBlock) {
-    if (string.IsNullOrEmpty(comment) && commentType == CommentType.MultiLineClose) return "<color=#70e688><mark=#30061880>" + comment + "</mark></color> " + Format(variables) + (hadOpenBlock ? "{" : "");
-    if (string.IsNullOrEmpty(comment) || commentType == CommentType.None) return Format(variables) + (hadOpenBlock ? "{" : "");
-    if (commentType == CommentType.MultiLineInner || type == BNF.ERROR) return "<color=#70e688><mark=#30061880>" + comment + "</mark></color>";
-    return Format(variables) + (hadOpenBlock ? "{" : "") + " <color=#70e688><mark=#30061880>" + comment + "</mark></color>";
+  internal string Format(Variables variables, bool hadOpenBlock, bool coloring) {
+    if (string.IsNullOrEmpty(comment) && commentType == CommentType.MultiLineClose) {
+      if (coloring)
+        return "<color=#70e688><mark=#30061880>" + comment + "</mark></color> " + Format(variables, coloring) + (hadOpenBlock ? "{" : "");
+      else
+        return comment + Format(variables, coloring) + (hadOpenBlock ? "{" : "");
+    }
+    if (string.IsNullOrEmpty(comment) || commentType == CommentType.None) return Format(variables, coloring) + (hadOpenBlock ? "{" : "");
+    if (commentType == CommentType.MultiLineInner || type == BNF.ERROR) {
+      if (coloring)
+        return "<color=#70e688><mark=#30061880>" + comment + "</mark></color>";
+      else
+        return comment;
+    }
+    if (coloring)
+      return Format(variables, coloring) + (hadOpenBlock ? "{" : "") + " <color=#70e688><mark=#30061880>" + comment + "</mark></color>";
+    else
+      return Format(variables, coloring) + (hadOpenBlock ? "{" : "") + " " + comment;
   }
 
-  internal string Format(Variables variables) {
+  internal string Format(Variables variables, bool coloring) {
+    if (coloring)
     switch (type) {
       case BNF.Program: return "<color=#8080ff>Name:</color> " + sVal;
       case BNF.Start: return "<color=#8080ff>Start</color> {";
@@ -429,30 +443,28 @@ public class CodeNode {
       case BNF.Config: return "<color=#8080ff>Config</color> {";
       case BNF.Data: return "<color=#8080ff>Data</color> {";
       case BNF.Functions: return "<color=#8080ff>Functions:</color> <i>(" + children.Count + ")</i>";
-      case BNF.FunctionDef: return "<color=#D65CA6>#" + sVal + "</color>" + CN1?.Format(variables);
-      case BNF.FunctionCall: return "<color=#D65CA6>" + sVal + "</color>" + CN1?.Format(variables);
+      case BNF.FunctionDef: return "<color=#D65CA6>#" + sVal + "</color>" + CN1?.Format(variables, coloring);
+      case BNF.FunctionCall: return "<color=#D65CA6>" + sVal + "</color>" + CN1?.Format(variables, coloring);
       case BNF.RETURN: {
-        if (CN1 == null)
-          return "<color=#569CD6>return</color>";
-        else
-          return "<color=#569CD6>return</color> " + CN1?.Format(variables);
+        if (CN1 == null) return "<color=#569CD6>return</color>";
+        else return "<color=#569CD6>return</color> " + CN1?.Format(variables, coloring);
       }
       case BNF.Params: {
         string res = "<color=#D65CA6>(</color>";
-        if (CN1 != null) res += CN1.Format(variables);
+        if (CN1 != null) res += CN1.Format(variables, coloring);
         for (int i = 1; i < children.Count; i++) {
-          if (children[i] != null) res += "<color=#D65CA6>, </color>" + children[i].Format(variables);
+          if (children[i] != null) res += "<color=#D65CA6>, </color>" + children[i].Format(variables, coloring);
         }
         return res + "<color=#D65CA6>)</color>";
       }
       case BNF.PaletteConfig: return "<color=#569CD6>Palette(</color>" + (iVal == 0 ? "0" : "1") + "<color=#569CD6>)</color>";
-      case BNF.Ram: return "<color=#569CD6>ram(</color>" + CN1?.Format(variables) +  "<color=#569CD6>)</color>";
+      case BNF.Ram: return "<color=#569CD6>ram(</color>" + CN1?.Format(variables, coloring) +  "<color=#569CD6>)</color>";
       case BNF.Rom: // FIXME in Data block
         break;
       case BNF.Label: // FIXME in Data block
         break;
       case BNF.REG: return "<color=#f6fC06>" + variables.GetRegName(Reg) + "</color>";
-      case BNF.ARRAY: return "<color=#fce916>" + variables.GetRegName(Reg) + "[</color>" + CN1?.Format(variables) + "<color=#fce916>]</color>";
+      case BNF.ARRAY: return "<color=#fce916>" + variables.GetRegName(Reg) + "[</color>" + CN1?.Format(variables, coloring) + "<color=#fce916>]</color>";
       case BNF.INT: {
         if (format == NumFormat.Hex) return "<color=#B5CEA8>0x" + System.Convert.ToString(iVal, 16) + "</color>";
         if (format == NumFormat.Bin) return "<color=#B5CEA8>0b" + System.Convert.ToString(iVal, 2) + "</color>";
@@ -467,234 +479,503 @@ public class CodeNode {
         UnityEngine.Color32 c = Col.GetColor((byte)iVal);
         return "<mark=#" + c.r.ToString("x2") + c.g.ToString("x2") + c.b.ToString("x2") + "80>" + iVal + "p</mark>";
       }
-      case BNF.LUMA: return "<color=#569CD6>Luma(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.CONTRAST: return "<color=#569CD6>Contrast(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.LUMA: return "<color=#569CD6>Luma(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.CONTRAST: return "<color=#569CD6>Contrast(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       case BNF.STR: return "<color=#CA9581><mark=#1A151140>\"" + sVal + "\"</mark></color>";
-      case BNF.MEM: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>]</color>";
-      case BNF.MEMlong:  return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@]</color>";
-      case BNF.MEMlongb: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@b]</color>";
-      case BNF.MEMlongi: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@i]</color>";
-      case BNF.MEMlongf: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@f]</color>";
-      case BNF.MEMlongs: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@s]</color>";
-      case BNF.MEMchar: return "<color=#FCA626>[</color>" + CN1?.Format(variables) + "<color=#FCA626>@c]</color>";
-      case BNF.OPpar: return "<color=#66aCe6>(</color>" + CN1?.Format(variables) + "<color=#66aCe6>)</color>";
-      case BNF.OPsum: return CN1?.Format(variables) + " <color=#66aCe6>+</color> " + CN2?.Format(variables);
-      case BNF.OPsub: return CN1?.Format(variables) + " <color=#66aCe6>-</color> " + CN2?.Format(variables);
-      case BNF.OPmul: return CN1?.Format(variables) + " <color=#66aCe6>*</color> " + CN2?.Format(variables);
-      case BNF.OPdiv: return CN1?.Format(variables) + " <color=#66aCe6>/</color> " + CN2?.Format(variables);
-      case BNF.OPmod: return CN1?.Format(variables) + " <color=#66aCe6>%</color> " + CN2?.Format(variables);
-      case BNF.OPand: return CN1?.Format(variables) + " <color=#66aCe6>&</color> " + CN2?.Format(variables);
-      case BNF.OPor:  return CN1?.Format(variables) + " <color=#66aCe6>|</color> " + CN2?.Format(variables);
-      case BNF.OPxor: return CN1?.Format(variables) + " <color=#66aCe6>^</color> " + CN2?.Format(variables);
-      case BNF.OPlsh: return CN1?.Format(variables) + " <color=#66aCe6><<</color> " + CN2?.Format(variables);
-      case BNF.OPrsh: return CN1?.Format(variables) + " <color=#66aCe6>>></color> " + CN2?.Format(variables);
-      case BNF.LABG: return "<color=#569CD6>Label(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.CASTb: return CN1?.Format(variables) + "<color=#66aCe6>_b</color>";
-      case BNF.CASTi: return CN1?.Format(variables) + "<color=#66aCe6>_i</color>";
-      case BNF.CASTf: return CN1?.Format(variables) + "<color=#66aCe6>_f</color>";
-      case BNF.CASTs: return CN1?.Format(variables) + "<color=#66aCe6>_s</color>";
-      case BNF.UOneg: return "<color=#66aCe6>!</color>" + CN1?.Format(variables);
-      case BNF.UOinv: return "<color=#66aCe6>~</color>" + CN1?.Format(variables);
-      case BNF.UOsub: return "<color=#66aCe6>-</color>" + CN1?.Format(variables);
-      case BNF.COMPeq: return CN1?.Format(variables) + " <b><color=#66aCe6>==</color></b> " + CN2?.Format(variables);
-      case BNF.COMPne: return CN1?.Format(variables) + " <b><color=#66aCe6>!=</color></b> " + CN2?.Format(variables);
-      case BNF.COMPlt: return CN1?.Format(variables) + " <b><color=#66aCe6><</color></b> " + CN2?.Format(variables);
-      case BNF.COMPle: return CN1?.Format(variables) + " <b><color=#66aCe6><=</color></b> " + CN2?.Format(variables);
-      case BNF.COMPgt: return CN1?.Format(variables) + " <b><color=#66aCe6>></color></b> " + CN2?.Format(variables);
-      case BNF.COMPge: return CN1?.Format(variables) + " <b><color=#66aCe6>>=</color></b> " + CN2?.Format(variables);
-      case BNF.ASSIGN: return CN1?.Format(variables) + " = " + CN2?.Format(variables);
-      case BNF.ASSIGNsum: return CN1?.Format(variables) + " += " + CN2?.Format(variables);
-      case BNF.ASSIGNsub: return CN1?.Format(variables) + " -= " + CN2?.Format(variables);
-      case BNF.ASSIGNmul: return CN1?.Format(variables) + " *= " + CN2?.Format(variables);
-      case BNF.ASSIGNdiv: return CN1?.Format(variables) + " /= " + CN2?.Format(variables);
-      case BNF.ASSIGNmod: return CN1?.Format(variables) + " %= " + CN2?.Format(variables);
-      case BNF.ASSIGNand: return CN1?.Format(variables) + " &= " + CN2?.Format(variables);
-      case BNF.ASSIGNor:  return CN1?.Format(variables) + " |= " + CN2?.Format(variables);
-      case BNF.ASSIGNxor: return CN1?.Format(variables) + " ^= " + CN2?.Format(variables);
-      case BNF.IncCmd: return CN1?.Format(variables) + "++";
-      case BNF.IncExp: return CN1?.Format(variables) + "++";
-      case BNF.DecCmd: return CN1?.Format(variables) + "--";
-      case BNF.DecExp: return CN1?.Format(variables) + "--";
+      case BNF.MEM: return "<color=#FCA626>[</color>" + CN1?.Format(variables, coloring) + "<color=#FCA626>]</color>";
+      case BNF.MEMlong: return "<color=#FCA626>[</color>" + CN1?.Format(variables, coloring) + "<color=#FCA626>@]</color>";
+      case BNF.MEMlongb: return "<color=#FCA626>[</color>" + CN1?.Format(variables, coloring) + "<color=#FCA626>@b]</color>";
+      case BNF.MEMlongi: return "<color=#FCA626>[</color>" + CN1?.Format(variables, coloring) + "<color=#FCA626>@i]</color>";
+      case BNF.MEMlongf: return "<color=#FCA626>[</color>" + CN1?.Format(variables, coloring) + "<color=#FCA626>@f]</color>";
+      case BNF.MEMlongs: return "<color=#FCA626>[</color>" + CN1?.Format(variables, coloring) + "<color=#FCA626>@s]</color>";
+      case BNF.MEMchar: return "<color=#FCA626>[</color>" + CN1?.Format(variables, coloring) + "<color=#FCA626>@c]</color>";
+      case BNF.OPpar: return "<color=#66aCe6>(</color>" + CN1?.Format(variables, coloring) + "<color=#66aCe6>)";
+      case BNF.OPsum: return CN1?.Format(variables, coloring) + " <color=#66aCe6>+</color> " + CN2?.Format(variables, coloring);
+      case BNF.OPsub: return CN1?.Format(variables, coloring) + " <color=#66aCe6>-</color> " + CN2?.Format(variables, coloring);
+      case BNF.OPmul: return CN1?.Format(variables, coloring) + " <color=#66aCe6>*</color> " + CN2?.Format(variables, coloring);
+      case BNF.OPdiv: return CN1?.Format(variables, coloring) + " <color=#66aCe6>/</color> " + CN2?.Format(variables, coloring);
+      case BNF.OPmod: return CN1?.Format(variables, coloring) + " <color=#66aCe6>%</color> " + CN2?.Format(variables, coloring);
+      case BNF.OPand: return CN1?.Format(variables, coloring) + " <color=#66aCe6>&</color> " + CN2?.Format(variables, coloring);
+      case BNF.OPor:  return CN1?.Format(variables, coloring) + " <color=#66aCe6>|</color> " + CN2?.Format(variables, coloring);
+      case BNF.OPxor: return CN1?.Format(variables, coloring) + " <color=#66aCe6>^</color> " + CN2?.Format(variables, coloring);
+      case BNF.OPlsh: return CN1?.Format(variables, coloring) + " <color=#66aCe6><<</color> " + CN2?.Format(variables, coloring);
+      case BNF.OPrsh: return CN1?.Format(variables, coloring) + " <color=#66aCe6>>></color> " + CN2?.Format(variables, coloring);
+      case BNF.LABG: return "<color=#569CD6>Label(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.CASTb: return CN1?.Format(variables, coloring) + "<color=#66aCe6>_b</color>";
+      case BNF.CASTi: return CN1?.Format(variables, coloring) + "<color=#66aCe6>_i</color>";
+      case BNF.CASTf: return CN1?.Format(variables, coloring) + "<color=#66aCe6>_f</color>";
+      case BNF.CASTs: return CN1?.Format(variables, coloring) + "<color=#66aCe6>_s</color>";
+      case BNF.UOneg: return "<color=#66aCe6>!</color>" + CN1?.Format(variables, coloring);
+      case BNF.UOinv: return "<color=#66aCe6>~</color>" + CN1?.Format(variables, coloring);
+      case BNF.UOsub: return "<color=#66aCe6>-</color>" + CN1?.Format(variables, coloring);
+      case BNF.COMPeq: return CN1?.Format(variables, coloring) + " <b><color=#66aCe6>==</color></b> " + CN2?.Format(variables, coloring);
+      case BNF.COMPne: return CN1?.Format(variables, coloring) + " <b><color=#66aCe6>!=</color></b> " + CN2?.Format(variables, coloring);
+      case BNF.COMPlt: return CN1?.Format(variables, coloring) + " <b><color=#66aCe6><</color></b> " + CN2?.Format(variables, coloring);
+      case BNF.COMPle: return CN1?.Format(variables, coloring) + " <b><color=#66aCe6><=</color></b> " + CN2?.Format(variables, coloring);
+      case BNF.COMPgt: return CN1?.Format(variables, coloring) + " <b><color=#66aCe6>></color></b> " + CN2?.Format(variables, coloring);
+      case BNF.COMPge: return CN1?.Format(variables, coloring) + " <b><color=#66aCe6>>=</color></b> " + CN2?.Format(variables, coloring);
+      case BNF.ASSIGN: return CN1?.Format(variables, coloring) + " = " + CN2?.Format(variables, coloring);
+      case BNF.ASSIGNsum: return CN1?.Format(variables, coloring) + " += " + CN2?.Format(variables, coloring);
+      case BNF.ASSIGNsub: return CN1?.Format(variables, coloring) + " -= " + CN2?.Format(variables, coloring);
+      case BNF.ASSIGNmul: return CN1?.Format(variables, coloring) + " *= " + CN2?.Format(variables, coloring);
+      case BNF.ASSIGNdiv: return CN1?.Format(variables, coloring) + " /= " + CN2?.Format(variables, coloring);
+      case BNF.ASSIGNmod: return CN1?.Format(variables, coloring) + " %= " + CN2?.Format(variables, coloring);
+      case BNF.ASSIGNand: return CN1?.Format(variables, coloring) + " &= " + CN2?.Format(variables, coloring);
+      case BNF.ASSIGNor:  return CN1?.Format(variables, coloring) + " |= " + CN2?.Format(variables, coloring);
+      case BNF.ASSIGNxor: return CN1?.Format(variables, coloring) + " ^= " + CN2?.Format(variables, coloring);
+      case BNF.IncCmd: return CN1?.Format(variables, coloring) + "++";
+      case BNF.IncExp: return CN1?.Format(variables, coloring) + "++";
+      case BNF.DecCmd: return CN1?.Format(variables, coloring) + "--";
+      case BNF.DecExp: return CN1?.Format(variables, coloring) + "--";
       case BNF.BLOCK: {
         if (CN1 == null) return "<color=#569CD6>{}</color>";
-        if (CN2 == null) return CN1.Format(variables);
-        return "<color=#569CD6>{</color>" + CN1?.Format(variables) + ", ...<color=#569CD6>}</color>"; // FIXME
+        if (CN2 == null) return CN1.Format(variables, coloring);
+        return "<color=#569CD6>{</color>" + CN1?.Format(variables, coloring) + ", ...<color=#569CD6>}</color>"; // FIXME
       }
-      case BNF.IF: return "<color=#569CD6>if (</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color> " + CN2?.Format(variables); // FIXME there is an else here?
-      case BNF.Else: return "<color=#569CD6>else</color> " + CN1?.Format(variables);
-      case BNF.WHILE: return "<color=#569CD6>while (</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color> " + CN2?.Format(variables);
-      case BNF.FOR:  return "<color=#569CD6>for(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color> " + CN2?.Format(variables) + "<color=#569CD6>, </color> " + CN3?.Format(variables) + "<color=#569CD6>)</color> " + CN4?.Format(variables);
+      case BNF.IF: return "<color=#569CD6>if (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color> " + CN2?.Format(variables, coloring); // FIXME there is an else here?
+      case BNF.Else: return "<color=#569CD6>else</color> " + CN1?.Format(variables, coloring);
+      case BNF.WHILE: return "<color=#569CD6>while (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color> " + CN2?.Format(variables, coloring);
+      case BNF.FOR:  return "<color=#569CD6>for(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color> " + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color> " + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color> " + CN4?.Format(variables, coloring);
 
-      case BNF.CLR: return "<color=#569CD6>Clr(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.CLR: return "<color=#569CD6>Clr(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       case BNF.WRITE: { // Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
-        if (children.Count < 4) throw new System.Exception("Write requires at least 4 parameters");
-        if (children.Count > 6) throw new System.Exception("Write requires max 6 parameters");
-        if (children.Count == 4)
+        if (children.Count <= 4)
           return "<color=#569CD6>Write(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         else if (children.Count == 5)
           return "<color=#569CD6>Write(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5.Format(variables, coloring) + "<color=#569CD6>)</color>";
         else
           return "<color=#569CD6>Write(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" +
-            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6?.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       }
-      case BNF.WAIT: return "<color=#569CD6>Wait(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.DESTROY: return "<color=#569CD6>Destroy(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.WAIT: return "<color=#569CD6>Wait(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.DESTROY: return "<color=#569CD6>Destroy(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       case BNF.ScrConfig:
       case BNF.SCREEN: {
         if (CN3 == null)
-          return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>";
+          return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         else
-          return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3.Format(variables) + "<color=#569CD6>)</color>";
+          return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3.Format(variables, coloring) + "<color=#569CD6>)</color>";
       }
       case BNF.SPRITE: {
         if (CN3 == null)
-          return "<color=#569CD6>Sprite(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>";
+          return "<color=#569CD6>Sprite(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         else
-          return "<color=#569CD6>Sprite(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3.Format(variables) + "<color=#569CD6>)</color>";
+          return "<color=#569CD6>Sprite(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3.Format(variables, coloring) + "<color=#569CD6>)</color>";
       }
-      case BNF.SPEN: return "<color=#569CD6>SpEn(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.SPEN: return "<color=#569CD6>SpEn(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2.Format(variables, coloring) + "<color=#569CD6>)</color>";
       case BNF.SPOS: {
         if (CN4 == null)
-          return "<color=#569CD6>SPos(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+          return "<color=#569CD6>SPos(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         else
-          return "<color=#569CD6>SPos(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>)</color>";
+          return "<color=#569CD6>SPos(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       }
-      case BNF.SROT:return "<color=#569CD6>SRot(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.SPRI: return "<color=#569CD6>SPri(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.STINT: return "<color=#569CD6>STint(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.SSCALE: return "<color=#569CD6>SScale(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.SETP: return "<color=#569CD6>SetP(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>, </color>" + CN3.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.GETP: return "<color=#569CD6>GetP(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.SROT:return "<color=#569CD6>SRot(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.SPRI: return "<color=#569CD6>SPri(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.STINT: return "<color=#569CD6>STint(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.SSCALE: return "<color=#569CD6>SScale(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.SETP: return "<color=#569CD6>SetP(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.GETP: return "<color=#569CD6>GetP(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2.Format(variables, coloring) + "<color=#569CD6>)</color>";
       case BNF.LINE: {
         return "<color=#569CD6>Line(</color>" +
-          CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
-          CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5?.Format(variables) + "<color=#569CD6>)</color>";
+          CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+          CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       }
       case BNF.BOX: {
         if (children.Count == 5)
           return "<color=#569CD6>Box(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5?.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         else
           return "<color=#569CD6>Box(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" +
-            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6?.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       }
       case BNF.CIRCLE: {
         if (children.Count == 5)
           return "<color=#569CD6>Circle(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5?.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         else
           return "<color=#569CD6>Circle(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" +
-            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6?.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       }
       case BNF.IMAGE: {
         if (children.Count < 6)
           return "<color=#569CD6>Image(</color>" +
-          CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
-          CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" +
-          CN5?.Format(variables) + "<color=#569CD6>)</color>";
+          CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+          CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+          CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         else
           return "<color=#569CD6>Image(</color>" +
-            CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" +
-            CN5?.Format(variables) + "<color=#569CD6>, </color>" + CN6?.Format(variables) + "<color=#569CD6>, </color>" + CN7?.Format(variables) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN7?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       }
       case BNF.FRAME: return "<color=#569CD6>Frame</color>";
       case BNF.DTIME: return "<color=#569CD6>deltatime</color>";
-      case BNF.LEN:  return CN1?.Format(variables) + "<color=#569CD6>.Len</color>";
-      case BNF.PLEN: return CN1?.Format(variables) + "<color=#569CD6>.PLen</color>";
+      case BNF.LEN:  return CN1?.Format(variables, coloring) + "<color=#569CD6>.Len</color>";
+      case BNF.PLEN: return CN1?.Format(variables, coloring) + "<color=#569CD6>.PLen</color>";
       case BNF.SUBSTRING: {
         if (CN3 == null)
-          return CN1?.Format(variables) + "<color=#569CD6>.Substring(</color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>";
+          return CN1?.Format(variables, coloring) + "<color=#569CD6>.Substring(</color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         else
-          return CN1?.Format(variables) + "<color=#569CD6>.Substring(</color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+          return CN1?.Format(variables, coloring) + "<color=#569CD6>.Substring(</color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       }
-      case BNF.TRIM: return CN1?.Format(variables) + "<color=#569CD6>.Trim</color>";
+      case BNF.TRIM: return CN1?.Format(variables, coloring) + "<color=#569CD6>.Trim</color>";
 
       case BNF.KEY: return "<color=#569CD6>key" + "LLLRRRUUUDDDAAABBBCCCFFFEEE"[iVal] + (iVal % 3 == 1 ? "u" : (iVal % 3 == 2 ? "d" : "")) + "</color>";
       case BNF.KEYx: return "<color=#569CD6>keyX</color>";
       case BNF.KEYy: return "<color=#569CD6>keyY</color>";
 
-      case BNF.SIN: return "<color=#569CD6>Sin(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.COS: return "<color=#569CD6>Cos(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.TAN: return "<color=#569CD6>Tan(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.ATAN2: return "<color=#569CD6>Atan2(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.SQR:   return "<color=#569CD6>Sqrt(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.POW: return "<color=#569CD6>Pow(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.MEMCPY: return "<color=#569CD6>MemCpy(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>"; 
+      case BNF.SIN: return "<color=#569CD6>Sin(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.COS: return "<color=#569CD6>Cos(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.TAN: return "<color=#569CD6>Tan(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.ATAN2: return "<color=#569CD6>Atan2(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.SQR:   return "<color=#569CD6>Sqrt(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.POW: return "<color=#569CD6>Pow(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.MEMCPY: return "<color=#569CD6>MemCpy(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>"; 
       case BNF.SOUND: {
         if (CN3 == null)
-          return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>";
+          return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         else
-          return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+          return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       }
       case BNF.WAVE: {
         if (CN5 == null)
-          return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) +
-            "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) +
+          return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) +
+            "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) +
             "<color=#569CD6>)</color>";
         else
-          return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) +
-            "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5?.Format(variables) +
+          return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) +
+            "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) +
             "<color=#569CD6>)</color>";
       }
-      case BNF.MUTE: return "<color=#569CD6>Mute(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.MUTE: return "<color=#569CD6>Mute(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       case BNF.VOLUME: {
-        if (CN2 == null) return "<color=#569CD6>Volume(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-        else return "<color=#569CD6>Volume(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>"; 
+        if (CN2 == null) return "<color=#569CD6>Volume(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        else return "<color=#569CD6>Volume(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>"; 
       }
-      case BNF.PITCH: return "<color=#569CD6>Pitch(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>"; 
-      case BNF.PAN: return "<color=#569CD6>Pan(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>)</color>"; 
-      case BNF.MUSICLOAD: return "<color=#569CD6>LoadMusic(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>"; 
-      case BNF.MUSICPLAY: return "<color=#569CD6>PlayMusic(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>"; 
+      case BNF.PITCH: return "<color=#569CD6>Pitch(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>"; 
+      case BNF.PAN: return "<color=#569CD6>Pan(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>"; 
+      case BNF.MUSICLOAD: return "<color=#569CD6>LoadMusic(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>"; 
+      case BNF.MUSICPLAY: return "<color=#569CD6>PlayMusic(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>"; 
       case BNF.MUSICSTOP: return "<color=#569CD6>StopMusic()</color>"; 
       case BNF.MUSICPOS: return "<color=#569CD6>MusicPos()</color>";
       case BNF.MUSICVOICES: {
-        string res = "<color=#569CD6>MusicVoices(</color>" + CN1?.Format(variables);
-        if (CN2 != null) res += "<color=#569CD6>, </color>" + CN2?.Format(variables);
-        if (CN3 != null) res += "<color=#569CD6>, </color>" + CN3?.Format(variables);
-        if (CN4 != null) res += "<color=#569CD6>, </color>" + CN4?.Format(variables);
-        if (CN5 != null) res += "<color=#569CD6>, </color>" + CN5?.Format(variables);
-        if (CN6 != null) res += "<color=#569CD6>, </color>" + CN6?.Format(variables);
-        if (CN7 != null) res += "<color=#569CD6>, </color>" + CN7?.Format(variables);
-        if (CN8 != null) res += "<color=#569CD6>, </color>" + CN8?.Format(variables);
+        string res = "<color=#569CD6>MusicVoices(</color>" + CN1?.Format(variables, coloring);
+        if (CN2 != null) res += "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring);
+        if (CN3 != null) res += "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring);
+        if (CN4 != null) res += "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring);
+        if (CN5 != null) res += "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring);
+        if (CN6 != null) res += "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring);
+        if (CN7 != null) res += "<color=#569CD6>, </color>" + CN7?.Format(variables, coloring);
+        if (CN8 != null) res += "<color=#569CD6>, </color>" + CN8?.Format(variables, coloring);
         return res + "<color=#569CD6>)</color>";
       }
-      case BNF.TILEMAP: return "<color=#569CD6>TileMap(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.TILEMAP: return "<color=#569CD6>TileMap(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       case BNF.TILEPOS: {
-        string res = "<color=#569CD6>TilePos(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables);
-        if (CN4 != null) res += "<color=#569CD6>, </color>" + CN4?.Format(variables);
-        if (CN5 != null) res += "<color=#569CD6>, </color>" + CN5?.Format(variables);
+        string res = "<color=#569CD6>TilePos(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring);
+        if (CN4 != null) res += "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring);
+        if (CN5 != null) res += "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring);
         return res + "<color=#569CD6>)</color>";
       }
       case BNF.TILESET: {
-          string res = "<color=#569CD6>TileSet(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) + 
-          "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>, </color>" + CN4?.Format(variables);
-          if (CN5 != null) res += "<color=#569CD6>, </color>" + CN5?.Format(variables);
+          string res = "<color=#569CD6>TileSet(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + 
+          "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring);
+          if (CN5 != null) res += "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring);
           return res + "<color=#569CD6>)</color>";
       }
-      case BNF.TILEGET: return "<color=#569CD6>TileGet(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) +
-                                "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.TILEGETROT: return "<color=#569CD6>TileGetRot(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + CN2?.Format(variables) +
-                               "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.TILEGET: return "<color=#569CD6>TileGet(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) +
+                                "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.TILEGETROT: return "<color=#569CD6>TileGetRot(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) +
+                               "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       case BNF.NOP: return "";
-      case BNF.USEPALETTE: return "<color=#569CD6>UsePalette(</color>" + CN1?.Format(variables) + "<color=#569CD6>)</color>";
-      case BNF.SETPALETTECOLOR: return "<color=#569CD6>UsePalette(</color>" + CN1?.Format(variables) + "<color=#569CD6>, </color>" + 
-          CN2?.Format(variables) + "<color=#569CD6>, </color>" + CN3?.Format(variables) + "<color=#569CD6>, </color>" +
-          CN4?.Format(variables) + "<color=#569CD6>, </color>" + CN5?.Format(variables) + "<color=#569CD6>)</color>";
+      case BNF.USEPALETTE: return "<color=#569CD6>UsePalette(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+      case BNF.SETPALETTECOLOR: return "<color=#569CD6>UsePalette(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + 
+          CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+          CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       case BNF.ERROR: return "<color=#ff2010>" + sVal + "</color>";
     }
+
+    else
+      switch (type) {
+        case BNF.Program: return sVal;
+        case BNF.Start: return "Start {";
+        case BNF.Update: return "Update {";
+        case BNF.Config: return "Cofig {";
+        case BNF.Data: return "Data {";
+        case BNF.Functions: return "Functions: (" + children.Count + ")";
+        case BNF.FunctionDef: return "#" + sVal + CN1?.Format(variables, coloring);
+        case BNF.FunctionCall: return sVal + CN1?.Format(variables, coloring);
+        case BNF.RETURN: {
+          if (CN1 == null) return "return";
+          else return "return " + CN1?.Format(variables, coloring);
+        }
+        case BNF.Params: {
+          string res = "(";
+          if (CN1 != null) res += CN1.Format(variables, coloring);
+          for (int i = 1; i < children.Count; i++) {
+            if (children[i] != null) res += ", " + children[i].Format(variables, coloring);
+          }
+          return res + ")";
+        }
+        case BNF.PaletteConfig: return "Palette(" + (iVal == 0 ? "0" : "1") + ")";
+        case BNF.Ram: return "ram(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.Rom: // FIXME in Data block
+          break;
+        case BNF.Label: // FIXME in Data block
+          break;
+        case BNF.REG: return variables.GetRegName(Reg);
+        case BNF.ARRAY: return variables.GetRegName(Reg) + "[" + CN1?.Format(variables, coloring) + "]";
+        case BNF.INT: {
+          if (format == NumFormat.Hex) return "0x" + System.Convert.ToString(iVal, 16);
+          if (format == NumFormat.Bin) return "0b" + System.Convert.ToString(iVal, 2);
+          return iVal.ToString();
+        }
+        case BNF.FLT: return fVal.ToString();
+        case BNF.COLOR: return Col.GetColorString(iVal) + "c";
+        case BNF.PAL: return iVal + "p";
+        case BNF.LUMA: return "Luma(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.CONTRAST: return "Contrast(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.STR: return "\"" + sVal + "\"";
+        case BNF.MEM: return "[" + CN1?.Format(variables, coloring) + "]";
+        case BNF.MEMlong: return "[" + CN1?.Format(variables, coloring) + "]@";
+        case BNF.MEMlongb: return "[" + CN1?.Format(variables, coloring) + "]b";
+        case BNF.MEMlongi: return "[" + CN1?.Format(variables, coloring) + "]i";
+        case BNF.MEMlongf: return "[" + CN1?.Format(variables, coloring) + "]f";
+        case BNF.MEMlongs: return "[" + CN1?.Format(variables, coloring) + "]s";
+        case BNF.MEMchar: return "[" + CN1?.Format(variables, coloring) + "]c";
+
+        case BNF.OPpar: return "(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.OPsum: return CN1?.Format(variables, coloring) + " + " + CN2?.Format(variables, coloring);
+        case BNF.OPsub: return CN1?.Format(variables, coloring) + " - " + CN2?.Format(variables, coloring);
+        case BNF.OPmul: return CN1?.Format(variables, coloring) + " * " + CN2?.Format(variables, coloring);
+        case BNF.OPdiv: return CN1?.Format(variables, coloring) + " / " + CN2?.Format(variables, coloring);
+        case BNF.OPmod: return CN1?.Format(variables, coloring) + " % " + CN2?.Format(variables, coloring);
+        case BNF.OPand: return CN1?.Format(variables, coloring) + " & " + CN2?.Format(variables, coloring);
+        case BNF.OPor: return CN1?.Format(variables, coloring) + " | " + CN2?.Format(variables, coloring);
+        case BNF.OPxor: return CN1?.Format(variables, coloring) + " ^ " + CN2?.Format(variables, coloring);
+        case BNF.OPlsh: return CN1?.Format(variables, coloring) + " << " + CN2?.Format(variables, coloring);
+        case BNF.OPrsh: return CN1?.Format(variables, coloring) + " >> " + CN2?.Format(variables, coloring);
+        case BNF.LABG: return "Label(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.CASTb: return CN1?.Format(variables, coloring) + "_b";
+        case BNF.CASTi: return CN1?.Format(variables, coloring) + "_i";
+        case BNF.CASTf: return CN1?.Format(variables, coloring) + "_f";
+        case BNF.CASTs: return CN1?.Format(variables, coloring) + "_s";
+        case BNF.UOneg: return "!" + CN1?.Format(variables, coloring);
+        case BNF.UOinv: return "~" + CN1?.Format(variables, coloring);
+        case BNF.UOsub: return "-" + CN1?.Format(variables, coloring);
+        case BNF.COMPeq: return CN1?.Format(variables, coloring) + " == " + CN2?.Format(variables, coloring);
+        case BNF.COMPne: return CN1?.Format(variables, coloring) + " != " + CN2?.Format(variables, coloring);
+        case BNF.COMPlt: return CN1?.Format(variables, coloring) + " < " + CN2?.Format(variables, coloring);
+        case BNF.COMPle: return CN1?.Format(variables, coloring) + " <= " + CN2?.Format(variables, coloring);
+        case BNF.COMPgt: return CN1?.Format(variables, coloring) + " > " + CN2?.Format(variables, coloring);
+        case BNF.COMPge: return CN1?.Format(variables, coloring) + " >= " + CN2?.Format(variables, coloring);
+        case BNF.ASSIGN: return CN1?.Format(variables, coloring) + " = " + CN2?.Format(variables, coloring);
+        case BNF.ASSIGNsum: return CN1?.Format(variables, coloring) + " += " + CN2?.Format(variables, coloring);
+        case BNF.ASSIGNsub: return CN1?.Format(variables, coloring) + " -= " + CN2?.Format(variables, coloring);
+        case BNF.ASSIGNmul: return CN1?.Format(variables, coloring) + " *= " + CN2?.Format(variables, coloring);
+        case BNF.ASSIGNdiv: return CN1?.Format(variables, coloring) + " /= " + CN2?.Format(variables, coloring);
+        case BNF.ASSIGNmod: return CN1?.Format(variables, coloring) + " %= " + CN2?.Format(variables, coloring);
+        case BNF.ASSIGNand: return CN1?.Format(variables, coloring) + " &= " + CN2?.Format(variables, coloring);
+        case BNF.ASSIGNor: return CN1?.Format(variables, coloring) + " |= " + CN2?.Format(variables, coloring);
+        case BNF.ASSIGNxor: return CN1?.Format(variables, coloring) + " ^= " + CN2?.Format(variables, coloring);
+        case BNF.IncCmd: return CN1?.Format(variables, coloring) + "++";
+        case BNF.IncExp: return CN1?.Format(variables, coloring) + "++";
+        case BNF.DecCmd: return CN1?.Format(variables, coloring) + "--";
+        case BNF.DecExp: return CN1?.Format(variables, coloring) + "--";
+        case BNF.BLOCK: {
+          if (CN1 == null) return "{}";
+          if (CN2 == null) return CN1.Format(variables, coloring);
+          return "{" + CN1?.Format(variables, coloring) + ", ...}"; // FIXME
+        }
+        case BNF.IF: return "if (" + CN1?.Format(variables, coloring) + ") " + CN2?.Format(variables, coloring); // FIXME there is an else here?
+        case BNF.Else: return "else " + CN1?.Format(variables, coloring);
+        case BNF.WHILE: return "while (" + CN1?.Format(variables, coloring) + ") " + CN2?.Format(variables, coloring);
+        case BNF.FOR: return "for(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ") " + CN4?.Format(variables, coloring);
+
+        case BNF.CLR: return "Clr(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.WRITE: { // Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
+          if (children.Count == 4)
+            return "Write(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ")";
+          else if (children.Count == 5)
+            return "Write(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5.Format(variables, coloring) + ")";
+          else
+            return "Write(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " +
+              CN5?.Format(variables, coloring) + ", " + CN6?.Format(variables, coloring) + ")";
+        }
+        case BNF.WAIT: return "Wait(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.DESTROY: return "Destroy(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.ScrConfig:
+        case BNF.SCREEN: {
+          if (CN3 == null)
+            return "Screen(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
+          else
+            return "Screen(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3.Format(variables, coloring) + ")";
+        }
+        case BNF.SPRITE: {
+          if (CN3 == null)
+            return "Sprite(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
+          else
+            return "Sprite(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3.Format(variables, coloring) + ")";
+        }
+        case BNF.SPEN: return "SpEn(" + CN1?.Format(variables, coloring) + ", " + CN2.Format(variables, coloring) + ")";
+        case BNF.SPOS: {
+          if (CN4 == null)
+            return "SPos(" + CN1?.Format(variables, coloring) + ", " + CN2.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+          else
+            return "SPos(" + CN1?.Format(variables, coloring) + ", " + CN2.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ")";
+        }
+        case BNF.SROT: return "SRot(" + CN1?.Format(variables, coloring) + ", " + CN2.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+        case BNF.SPRI: return "SPri(" + CN1?.Format(variables, coloring) + ", " + CN2.Format(variables, coloring) + ")";
+        case BNF.STINT: return "STint(" + CN1?.Format(variables, coloring) + ", " + CN2.Format(variables, coloring) + ")";
+        case BNF.SSCALE: return "SScale(" + CN1?.Format(variables, coloring) + ", " + CN2.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+        case BNF.SETP: return "SetP(" + CN1?.Format(variables, coloring) + ", " + CN2.Format(variables, coloring) + ", " + CN3.Format(variables, coloring) + ")";
+        case BNF.GETP: return "GetP(" + CN1?.Format(variables, coloring) + ", " + CN2.Format(variables, coloring) + ")";
+        case BNF.LINE: {
+          return "Line(" +
+            CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+            CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
+        }
+        case BNF.BOX: {
+          if (children.Count == 5)
+            return "Box(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
+          else
+            return "Box(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " +
+              CN5?.Format(variables, coloring) + ", " + CN6?.Format(variables, coloring) + ")";
+        }
+        case BNF.CIRCLE: {
+          if (children.Count == 5)
+            return "Circle(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
+          else
+            return "Circle(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " +
+              CN5?.Format(variables, coloring) + ", " + CN6?.Format(variables, coloring) + ")";
+        }
+        case BNF.IMAGE: {
+          if (children.Count < 6)
+            return "Image(" +
+            CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+            CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " +
+            CN5?.Format(variables, coloring) + ")";
+          else
+            return "Image(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " +
+              CN5?.Format(variables, coloring) + ", " + CN6?.Format(variables, coloring) + ", " + CN7?.Format(variables, coloring) + ")";
+        }
+        case BNF.FRAME: return "Frame";
+        case BNF.DTIME: return "deltatime";
+        case BNF.LEN: return CN1?.Format(variables, coloring) + ".Len";
+        case BNF.PLEN: return CN1?.Format(variables, coloring) + ".PLen";
+        case BNF.SUBSTRING: {
+          if (CN3 == null)
+            return CN1?.Format(variables, coloring) + ".Substring(" + CN2?.Format(variables, coloring) + ")";
+          else
+            return CN1?.Format(variables, coloring) + ".Substring(" + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+        }
+        case BNF.TRIM: return CN1?.Format(variables, coloring) + ".Trim";
+
+        case BNF.KEY: return "key" + "LLLRRRUUUDDDAAABBBCCCFFFEEE"[iVal] + (iVal % 3 == 1 ? "u" : (iVal % 3 == 2 ? "d" : "")) + "";
+        case BNF.KEYx: return "keyX";
+        case BNF.KEYy: return "keyY";
+
+        case BNF.SIN: return "Sin(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.COS: return "Cos(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.TAN: return "Tan(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.ATAN2: return "Atan2(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.SQR: return "Sqrt(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.POW: return "Pow(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.MEMCPY: return "MemCpy(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+        case BNF.SOUND: {
+          if (CN3 == null)
+            return "Sound(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
+          else
+            return "Sound(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+        }
+        case BNF.WAVE: {
+          if (CN5 == null)
+            return "Sound(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) +
+              ", " + CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) +
+              ")";
+          else
+            return "Sound(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) +
+              ", " + CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) +
+              ")";
+        }
+        case BNF.MUTE: return "Mute(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.VOLUME: {
+          if (CN2 == null) return "Volume(" + CN1?.Format(variables, coloring) + ")";
+          else return "Volume(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
+        }
+        case BNF.PITCH: return "Pitch(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
+        case BNF.PAN: return "Pan(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
+        case BNF.MUSICLOAD: return "LoadMusic(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.MUSICPLAY: return "PlayMusic(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.MUSICSTOP: return "StopMusic()";
+        case BNF.MUSICPOS: return "MusicPos()";
+        case BNF.MUSICVOICES: {
+          string res = "MusicVoices(" + CN1?.Format(variables, coloring);
+          if (CN2 != null) res += ", " + CN2?.Format(variables, coloring);
+          if (CN3 != null) res += ", " + CN3?.Format(variables, coloring);
+          if (CN4 != null) res += ", " + CN4?.Format(variables, coloring);
+          if (CN5 != null) res += ", " + CN5?.Format(variables, coloring);
+          if (CN6 != null) res += ", " + CN6?.Format(variables, coloring);
+          if (CN7 != null) res += ", " + CN7?.Format(variables, coloring);
+          if (CN8 != null) res += ", " + CN8?.Format(variables, coloring);
+          return res + ")";
+        }
+        case BNF.TILEMAP: return "TileMap(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+        case BNF.TILEPOS: {
+          string res = "TilePos(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring);
+          if (CN4 != null) res += ", " + CN4?.Format(variables, coloring);
+          if (CN5 != null) res += ", " + CN5?.Format(variables, coloring);
+          return res + ")";
+        }
+        case BNF.TILESET: {
+          string res = "TileSet(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) +
+          ", " + CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring);
+          if (CN5 != null) res += ", " + CN5?.Format(variables, coloring);
+          return res + ")";
+        }
+        case BNF.TILEGET:
+          return "TileGet(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) +
+                  ", " + CN3?.Format(variables, coloring) + ")";
+        case BNF.TILEGETROT:
+          return "TileGetRot(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) +
+              ", " + CN3?.Format(variables, coloring) + ")";
+        case BNF.NOP: return "";
+        case BNF.USEPALETTE: return "UsePalette(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.SETPALETTECOLOR:
+          return "UsePalette(" + CN1?.Format(variables, coloring) + ", " +
+            CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ", " +
+            CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
+        case BNF.ERROR: return sVal;
+      }
+
+
     throw new System.Exception(type + " NOT YET DONE!");
   }
 

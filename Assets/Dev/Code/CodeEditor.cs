@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
@@ -49,8 +50,9 @@ public class CodeEditor : MonoBehaviour {
       for (int i = 0; i < EditLines.Length; i++) {
         int pos = EditLines[i].linenum;
         if (pos >= 0 && pos < lines.Count) {
-          if (lines[pos].line != EditLines[i].line) {
-            lines[pos].line = EditLines[i].line;
+          string line = rgSyntaxHighlight.Replace(EditLines[i].Line.text, "").Trim();
+          if (!lines[pos].Same(line)) {
+            lines[pos].Set(line, line, EditLines[i].Line.text, EditLines[i].Line.text);
           }
         }
       }
@@ -61,7 +63,7 @@ public class CodeEditor : MonoBehaviour {
     if (topLine < 0) topLine = 0;
     for (int i = 0; i < EditLines.Length; i++) {
       int pos = i + topLine;
-      if (pos < lines.Count) EditLines[i].SetLine(pos, lines[pos]);
+      if (pos < lines.Count) EditLines[i].SetLine(pos, lines[pos], OptimizeCodeTG.isOn);
       else EditLines[i].Clean();
     }
     if (EditLines[editLine].linenum == -1) {
@@ -105,7 +107,6 @@ public class CodeEditor : MonoBehaviour {
     }
     else
       SelectionRT.sizeDelta = new Vector2(1280, 0);
-
   }
 
   bool settingScroll = false;
@@ -203,9 +204,8 @@ public class CodeEditor : MonoBehaviour {
           }
           string[] rows = copied.Split('\n');
           for (int i = rows.Length - 1; i >= 0; i--) {
-            LineData l = new LineData(lines[currentLine].indent) {
-              line = rows[i].Trim(' ', '\t', '\n', '\r')
-            };
+            LineData l = new LineData(lines[currentLine].indent);
+            l.Set(rows[i].Trim(' ', '\t', '\n', '\r'));
             lines.Insert(currentLine, l);
           }
           Redraw(true);
@@ -311,12 +311,12 @@ public class CodeEditor : MonoBehaviour {
         if (currentLine >= lines.Count) {
           LineData l = new LineData(0);
           lines.Add(l);
-          EditLines[editLine].SetLine(currentLine, l);
+          EditLines[editLine].SetLine(currentLine, l, OptimizeCodeTG.isOn);
         }
         else if (enter) {
           LineData l = new LineData(0);
           lines.Add(l);
-          EditLines[editLine].SetLine(currentLine, l);
+          EditLines[editLine].SetLine(currentLine, l, OptimizeCodeTG.isOn);
           Redraw(true);
         }
         
@@ -372,21 +372,21 @@ public class CodeEditor : MonoBehaviour {
     if (currentLine < 0 || currentLine >= lines.Count || editLine < 0 || editLine >= EditLines.Length) return;
     string cleanline = rgSyntaxHighlight.Replace(EditLines[editLine].Line.text.Trim(), "");
 
-    if (lines[currentLine].line != cleanline) { // Save the line, if needed
-      lines[currentLine].line = cleanline;
+    if (!lines[currentLine].Same(cleanline)) { // Save the line, if needed
+      lines[currentLine].Set(cleanline);
     }
-    SyntaxHighlight(cleanline, editLine, editLine > 0 && (EditLines[editLine - 1].comment == CodeNode.CommentType.MultiLineOpen || EditLines[editLine - 1].comment == CodeNode.CommentType.MultiLineInner));
+    SyntaxHighlight(cleanline, editLine, currentLine > 0 && (lines[currentLine - 1].commentT == CodeNode.CommentType.MultiLineOpen || lines[currentLine - 1].commentT == CodeNode.CommentType.MultiLineInner));
     FixIndentation(); // Update the indent
   }
 
-  void SyntaxHighlight(string line, int whichline, bool willBeComment) {
-    string var = lines[currentLine].line;
+  void SyntaxHighlight(string line, int whichline, bool multiLineComment) {
+    string var = lines[currentLine].Line(false);
     if (string.IsNullOrEmpty(var)) {
       Result.text = "";
       return;
     }
     CodeNode.CommentType commentType = CodeNode.CommentType.None;
-    if (willBeComment) commentType = CodeNode.CommentType.MultiLineInner;
+    if (multiLineComment) commentType = CodeNode.CommentType.MultiLineInner;
     try {
       // Handle first comments
       string comment = "";
@@ -401,7 +401,7 @@ public class CodeEditor : MonoBehaviour {
         }
         if (inquotes) cleaned += c;
         else {
-          if (c == '/' && i < len - 1 && line[i + 1] == '*' && !willBeComment) {
+          if (c == '/' && i < len - 1 && line[i + 1] == '*' && !multiLineComment) {
             incomment = true;
             commentType = CodeNode.CommentType.MultiLineOpen;
           }
@@ -430,79 +430,97 @@ public class CodeEditor : MonoBehaviour {
         commentType = CodeNode.CommentType.SingleLine;
         line = rgCommentSL.Replace(line, "").Trim();
       }
-      if (string.IsNullOrEmpty(line) && false) {
+
+      LineData theLine = lines[EditLines[whichline].linenum];
+      CodeLine codeLine = EditLines[whichline];
+      theLine.SetComments(comment, commentType);
+
+      if (commentType == CodeNode.CommentType.MultiLineInner) {
+        codeLine.SetLine(EditLines[whichline].linenum);
+        codeLine.Line.SetTextWithoutNotify("<color=#70e688><mark=#30061880>" + line + "</mark></color>");
+        return;
+      }
+
+
+      if (string.IsNullOrEmpty(line)) {
         if (!string.IsNullOrEmpty(comment))
           Result.text = "<color=#70e688><mark=#30061880>" + comment + "</mark></color>";
         else
           Result.text = "";
-
-        lines[EditLines[whichline].linenum].line = rgSyntaxHighlight.Replace(Result.text, "");
-        EditLines[whichline].SetLine(EditLines[whichline].linenum, lines[EditLines[whichline].linenum], Result.text);
-        EditLines[whichline].comment = CodeNode.CommentType.SingleLine;
+        theLine.SetComments(comment, CodeNode.CommentType.SingleLine);
+        theLine.Set(comment, Result.text);
+        codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
+        FixIndentation();
         return;
       }
       if (rgBlockClose.IsMatch(line)) {
         Result.text = "";
-        lines[EditLines[whichline].linenum].line = "}";
-        EditLines[whichline].SetLine(EditLines[whichline].linenum, lines[EditLines[whichline].linenum]);
+        theLine.Set("}");
+        codeLine.SetLine(codeLine.linenum, theLine, OptimizeCodeTG.isOn);
         FixIndentation();
         return;
       }
       if (rgBlockOpenAlone.IsMatch(line)) {
         Result.text = "";
-        lines[EditLines[whichline].linenum].line = "{";
-        EditLines[whichline].SetLine(EditLines[whichline].linenum, lines[EditLines[whichline].linenum]);
+        theLine.Set("}");
+        codeLine.SetLine(codeLine.linenum, theLine, OptimizeCodeTG.isOn);
+        FixIndentation();
         return;
       }
 
       // Check if we need multiple lines, we do only if we have an IF, FOR, WHILE (and they are not single command)
       bool hadOpenBlock = cp.RequiresBlock(line);
-      EditLines[whichline].comment = commentType;
-      if (commentType == CodeNode.CommentType.MultiLineInner) {
-        EditLines[whichline].SetLine(EditLines[whichline].linenum);
-        EditLines[whichline].Line.SetTextWithoutNotify("<color=#70e688><mark=#30061880>" + line + "</mark></color>");
-        return;
+      CodeNode res = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, currentLine, false, out string except);
+      CodeNode resOpt = null;
+      if (except == null) { // Parse also optimized
+        resOpt = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, currentLine, true, out _);
       }
-      CodeNode res = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, currentLine, OptimizeCodeTG.isOn, out string except);
 
-      if (res.CN1 == null) {
+      if (res.CN1 == null) { // Not parsed
         if (except == null) {
-          EditLines[whichline].SetLine(EditLines[whichline].linenum);
-          EditLines[whichline].Line.SetTextWithoutNotify("<color=#70e688><mark=#30061880>" + line + comment + "</mark></color>");
-          return;
+          theLine.Set(line + comment, "<color=#70e688><mark=#30061880>" + line + comment + "</mark></color>");
+          codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
         }
         else {
-          line = "<color=#ff2e00>" + line + "</color>";
-          EditLines[whichline].SetLine(EditLines[whichline].linenum, lines[EditLines[whichline].linenum], line);
+          theLine.Set(line + comment, "<color=#ff2e00>" + line + comment + "</color>");
+          codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
           Result.text = "<color=#ff2e00>" + except + "</color>";
         }
+        FixIndentation();
         return;
       }
 
       res.CN1.SetComments(comment, commentType);
-      if (except != null) {
-        line = res.CN1?.Format(variables, hadOpenBlock);
-        lines[EditLines[whichline].linenum].line = rgSyntaxHighlight.Replace(line, ""); ;
-        EditLines[whichline].SetLine(EditLines[whichline].linenum, lines[EditLines[whichline].linenum], line);
+      theLine.SetComments(comment, commentType);
+      if (except != null) { // Parsed with exception
+        string linec = res.CN1.Format(variables, hadOpenBlock);
+        string lineo = resOpt.CN1.Format(variables, hadOpenBlock, true);
+        theLine.Set(res.CN1.Format(variables, hadOpenBlock, false), resOpt.CN1.Format(variables, hadOpenBlock, false), res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
+        codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
         Result.text = "<color=#ff2e00>" + except + "</color>";
       }
-      else {
-        Result.text = res.CN1?.Format(variables, hadOpenBlock);
-        lines[EditLines[whichline].linenum].line = rgSyntaxHighlight.Replace(Result.text, "");
-        EditLines[whichline].SetLine(EditLines[whichline].linenum, lines[EditLines[whichline].linenum], Result.text);
+      else { // Parsed correctly
+        string linec = res.CN1.Format(variables, hadOpenBlock);
+        string lineo = resOpt.CN1.Format(variables, hadOpenBlock, true);
+        Result.text = OptimizeCodeTG.isOn ? resOpt.CN1.Format(variables, hadOpenBlock, true) : res.CN1.Format(variables, hadOpenBlock, true);
+        theLine.Set(res.CN1.Format(variables, hadOpenBlock, false), resOpt.CN1.Format(variables, hadOpenBlock, false), res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
+        codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
       }
 
-    } catch (System.Exception e) {
-      Result.text = "ERROR:\n" + e.Message;
+    } catch (Exception e) {
+      Result.text = "<color=#ff2e00>ERROR:</color>\n" + e.Message;
     }
+  }
 
+  public void ChangeViewOptimizedCode() {
+    Redraw(false);
   }
 
   void FixIndentation() {
     int indent = 0;
     int increaseone = 0;
     for (int i = 0; i < lines.Count; i++) {
-      string line = rgCommentSL.Replace(lines[i].line.Trim(), "").Trim();
+      string line = rgCommentSL.Replace(lines[i].Line(false).Trim(), "").Trim();
       if (indent < 0) indent = 0;
       lines[i].indent = indent;
       if (rgBlockOpen.IsMatch(line)) {
@@ -577,7 +595,7 @@ public class CodeEditor : MonoBehaviour {
       CodeLine l = EditLines[pos];
       if (l.linenum == -1) continue;
       string cleanline = rgSyntaxHighlight.Replace(l.Line.text.Trim(), "");
-      bool inComment = pos > 0 && (EditLines[pos - 1].comment == CodeNode.CommentType.MultiLineOpen || EditLines[pos - 1].comment == CodeNode.CommentType.MultiLineInner);
+      bool inComment = EditLines[pos].linenum > 0 && (lines[EditLines[pos].linenum - 1].commentT == CodeNode.CommentType.MultiLineOpen || lines[EditLines[pos].linenum - 1].commentT == CodeNode.CommentType.MultiLineInner);
       SyntaxHighlight(cleanline, pos, inComment);
     }
     FixIndentation(); // Update the indent
@@ -608,7 +626,7 @@ public class CodeEditor : MonoBehaviour {
       for (int i = 0; i < numlinestoadd; i++) {
         LineData l = new LineData(0);
         lines.Add(l);
-        EditLines[numback + 1 + i].SetLine(line + i + 1, l);
+        EditLines[numback + 1 + i].SetLine(line + i + 1, l, OptimizeCodeTG.isOn);
       }
     }
     currentLine = EditLines[num].linenum;
@@ -624,7 +642,7 @@ public class CodeEditor : MonoBehaviour {
     // Get all lines, produce an aggregated string, and do the full parsing.
     string code = "";
     foreach (LineData line in lines)
-      code += line.line + "\n";
+      code += line.Line(false) + "\n";
     variables.Clear();
     try {
       CodeNode result = cp.Parse(code, variables, true);
@@ -645,22 +663,5 @@ public class CodeEditor : MonoBehaviour {
   }
 }
 
-public class LineData {
-  public int indent;
-  public bool breakpoint;
-  public bool insidecomment;
-  public string line; // Clean text
-  public CodeNode node;
 
-  public LineData(int i) {
-    indent = i;
-    breakpoint = false;
-    line = "";
-    node = null;
-  }
-
-  internal LineData Duplicate() {
-    return new LineData(indent) { breakpoint = this.breakpoint, line = this.line, node = this.node };
-  }
-}
 
