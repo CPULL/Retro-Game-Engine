@@ -119,7 +119,7 @@ public class CodeParser {
 
   readonly Regex rgVar = new Regex("(?<=[^a-z0-9`@_]|^)([a-z][0-9a-z]{0,7})([^a-z0-9\\(¶]|$)", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgArray = new Regex("(?<=[^a-z0-9`@_]|^)([a-z][0-9a-z]{0,7})\\[((?>\\[(?<c>)|[^\\[\\]]+|\\](?<-c>))*(?(c)(?!)))\\]", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
-  readonly Regex rgHex = new Regex("0x([0-9a-f]{1,8})|([0-9a-f]{1,8})x", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgHex = new Regex("(?:^|[^a-z0-9])0x([0-9a-f]{1,8})|([0-9a-f]{1,8})x(?:$|[^a-z0-9])", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgCol = new Regex("([0-5])([0-5])([0-5])([0-4])?c", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgPal = new Regex("([0-9]{1,3})p", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgQString = new Regex("\\\\\"", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1669,6 +1669,7 @@ public class CodeParser {
 
   // [EXP] [OP] [EXP] | [PAR] | [REG] | [INT] | [FLT] | [MEM] | [UO] | [LEN] | deltaTime
   CodeNode ParseExpression(string line) {
+    string dddd = line;
     origExpression = line;
     line = line.Trim(' ', '\t', '\r', ';');
 
@@ -1886,7 +1887,7 @@ public class CodeParser {
         atLeastOneReplacement = true;
         string lab = m.Value.Trim().ToLowerInvariant();
         lab = lab.Substring(0, lab.Length - 1);
-        CodeNode n = new CodeNode(BNF.Label, GenId("LB"), origForException, linenumber) {
+        CodeNode n = new CodeNode(BNF.Label, GenId("LBLBLB"), origForException, linenumber) {
           sVal = lab
         };
         nodes[n.id] = n;
@@ -2585,6 +2586,7 @@ public class CodeParser {
 
     line = line.Trim(' ', '\t', '\r');
     if (!nodes.ContainsKey(line)) {
+      Debug.Log("Error on, Error on, Error on, Error on: |" + dddd + "|" + line);
       line = rgTag.Replace(line, "").Trim();
 
       int numQ = 0;

@@ -361,6 +361,7 @@ public class CodeEditor : MonoBehaviour {
 
   private void LateUpdate() {
     if (Input.mouseScrollDelta.y == 0) return;
+    if (Input.mousePosition.x < 0 || Input.mousePosition.y < 0 || Input.mousePosition.x >= Screen.width || Input.mousePosition.y >= Screen.height) return;
 
     int val = (int)(-15 * Input.mouseScrollDelta.y);
     currentLine += val;
@@ -391,6 +392,7 @@ public class CodeEditor : MonoBehaviour {
   }
 
   void SyntaxHighlight(string line, int whichline, bool multiLineComment) {
+    if (currentLine < 0 || currentLine >= lines.Count) return;
     string var = lines[currentLine].Line(false);
     if (string.IsNullOrEmpty(var)) {
       Result.text = "";
@@ -452,27 +454,24 @@ public class CodeEditor : MonoBehaviour {
         return;
       }
 
-
+      Result.text = "";
       if (string.IsNullOrEmpty(line)) {
-        if (!string.IsNullOrEmpty(comment))
-          Result.text = "<color=#70e688><mark=#30061880>" + comment + "</mark></color>";
-        else
-          Result.text = "";
         theLine.SetComments(comment, commentType == CodeNode.CommentType.None ? CodeNode.CommentType.SingleLine : commentType);
-        theLine.Set(comment, Result.text);
+        if (!string.IsNullOrEmpty(comment))
+          theLine.Set(comment, "<color=#70e688><mark=#30061880>" + comment + "</mark></color>");
+        else
+          theLine.Set(comment, Result.text);
         codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
         FixIndentation();
         return;
       }
       if (rgBlockClose.IsMatch(line)) {
-        Result.text = "";
         theLine.Set("}");
         codeLine.SetLine(codeLine.linenum, theLine, OptimizeCodeTG.isOn);
         FixIndentation();
         return;
       }
       if (rgBlockOpenAlone.IsMatch(line)) {
-        Result.text = "";
         theLine.Set("}");
         codeLine.SetLine(codeLine.linenum, theLine, OptimizeCodeTG.isOn);
         FixIndentation();
@@ -504,8 +503,8 @@ public class CodeEditor : MonoBehaviour {
       res.CN1.SetComments(comment, commentType);
       theLine.SetComments(comment, commentType);
       if (except != null) { // Parsed with exception
-        string linec = res.CN1.Format(variables, hadOpenBlock, false);
-        string lineo = resOpt.CN1.Format(variables, hadOpenBlock, false);
+        string linec = line + comment;
+        string lineo = line + comment;
         theLine.Set(linec, lineo, res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
         codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
         Result.text = "<color=#ff2e00>" + except + "</color>";
@@ -513,7 +512,6 @@ public class CodeEditor : MonoBehaviour {
       else { // Parsed correctly
         string linec = res.CN1.Format(variables, hadOpenBlock, false);
         string lineo = resOpt.CN1.Format(variables, hadOpenBlock, false);
-        Result.text = OptimizeCodeTG.isOn ? resOpt.CN1.Format(variables, hadOpenBlock, true) : res.CN1.Format(variables, hadOpenBlock, true);
         theLine.Set(linec, lineo, res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
         codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
       }
