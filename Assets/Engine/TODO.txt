@@ -37,3 +37,5 @@ CodeEditor: Save code, text and binary
 CodeEditor: Load code, text and binary
 
 Scrolled codelines are not parsed
+
+Do not remove the original code/line in case of errors

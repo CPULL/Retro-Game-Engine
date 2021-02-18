@@ -31,13 +31,22 @@ public class CodeLine : MonoBehaviour {
     linenum = num;
     Number.text = (num + 1).ToString();
     Breakpoint.enabled = data.breakpoint;
-    Line.SetTextWithoutNotify(data.LineCol(opt));
+    string formatted = data.LineCol(opt).Trim();
+    string indentation = "";
+    for (int i = 0; i < data.indent; i++)
+      indentation += "  ";
+    Line.SetTextWithoutNotify(indentation + formatted);
   }
 
   internal void SetLine(int num, LineData data, string formatted) {
     linenum = num;
     Number.text = (num + 1).ToString();
     Breakpoint.enabled = data.breakpoint;
+    formatted = formatted.Trim();
+    string indentation = "";
+    for (int i = 0; i < data.indent; i++)
+      indentation += "  ";
+    Line.SetTextWithoutNotify(indentation + formatted);
     Line.SetTextWithoutNotify(formatted);
   }
 

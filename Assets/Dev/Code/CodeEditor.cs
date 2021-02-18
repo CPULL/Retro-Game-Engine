@@ -125,6 +125,7 @@ public class CodeEditor : MonoBehaviour {
   public void ScrollByBar() {
     if (settingScroll) return;
     currentLine = Mathf.RoundToInt(VerticalCodeBar.value * lines.Count);
+    Parse();
     Redraw();
   }
 
