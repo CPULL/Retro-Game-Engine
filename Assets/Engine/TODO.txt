@@ -36,9 +36,4 @@ CodeEditor: Ctrl+H replace
 CodeEditor: Save code, text and binary
 CodeEditor: Load code, text and binary
 
-
-failing lines:
-image(moon:+2, 220, 8, 48, 48)
-Label is missing from Node.Format
-Arrays look fucked up
-inline comment is wrong
+Scrolled codelines are not parsed

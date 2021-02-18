@@ -272,7 +272,7 @@ public class CodeNode {
         case BNF.Rom: res += id + "rom(" + iVal + ")"; break;
         case BNF.PaletteConfig: res += id + "Palette(" + iVal + ")"; break;
 
-        case BNF.Label:
+        case BNF.Label: res += id + sVal + ":"; break;
         case BNF.LABG: res += id + "Label(" + CN1.ToString() + ")"; break;
 
         case BNF.FRAME: res += id + "frame"; break;

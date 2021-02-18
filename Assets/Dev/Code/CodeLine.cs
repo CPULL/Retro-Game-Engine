@@ -24,30 +24,21 @@ public class CodeLine : MonoBehaviour {
 
   internal void SetLine(LineData data, bool opt) {
     Breakpoint.enabled = data.breakpoint;
-    string indentation = "";
-    for (int i = 0; i < data.indent; i++)
-      indentation += "  ";
-    Line.SetTextWithoutNotify(indentation + data.LineCol(opt));
+    Line.SetTextWithoutNotify(data.LineCol(opt));
   }
 
   internal void SetLine(int num, LineData data, bool opt) {
     linenum = num;
     Number.text = (num + 1).ToString();
     Breakpoint.enabled = data.breakpoint;
-    string indentation = "";
-    for (int i = 0; i < data.indent; i++)
-      indentation += "  ";
-    Line.SetTextWithoutNotify(indentation + data.LineCol(opt));
+    Line.SetTextWithoutNotify(data.LineCol(opt));
   }
 
   internal void SetLine(int num, LineData data, string formatted) {
     linenum = num;
     Number.text = (num + 1).ToString();
     Breakpoint.enabled = data.breakpoint;
-    string indentation = "";
-    for (int i = 0; i < data.indent; i++)
-      indentation += "  ";
-    Line.SetTextWithoutNotify(indentation + formatted);
+    Line.SetTextWithoutNotify(formatted);
   }
 
   public void Clean() {
@@ -67,7 +58,6 @@ public class CodeLine : MonoBehaviour {
     for (int i = 0; i < ind; i++)
       indentation += "  ";
     Line.SetTextWithoutNotify(indentation + formatted);
-
   }
 }
 
@@ -91,8 +81,8 @@ public class LineData {
     return opt ? lineOC : lineNC;
   }
 
-  public LineData(int i) {
-    indent = i;
+  public LineData() {
+    indent = 0;
     breakpoint = false;
     lineNN = "";
     lineON = "";
@@ -101,7 +91,7 @@ public class LineData {
   }
 
   internal LineData Duplicate() {
-    return new LineData(indent) {
+    return new LineData() {
       breakpoint = breakpoint,
       lineNN = lineNN,
       lineON = lineON,

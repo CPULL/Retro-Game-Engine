@@ -1388,7 +1388,7 @@ public class CodeParser {
             }
           }
         }
-        CodeNode node = new CodeNode(BNF.ARRAY, line, linenumber) { Reg = vars.Add(var+"[]") };
+        CodeNode node = new CodeNode(BNF.ARRAY, line, linenumber) { Reg = vars.Add(var) };
         string par = m.Groups[2].Value.Trim();
         if (!string.IsNullOrEmpty(par)) node.Add(ParseExpression(par));
         parent.Add(node);

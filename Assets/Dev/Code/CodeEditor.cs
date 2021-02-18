@@ -31,7 +31,7 @@ public class CodeEditor : MonoBehaviour {
       cl.Line.onFocusSelectAll = false;
       cl.Line.restoreOriginalTextOnEscape = true;
     }
-    LineData l = new LineData(0);
+    LineData l = new LineData();
     EditLines[0].SetLine(0);
     lines.Add(l);
 
@@ -148,8 +148,7 @@ public class CodeEditor : MonoBehaviour {
       }
       if (Input.GetKeyDown(KeyCode.Insert)) {
         SaveLine();
-        LineData l = new LineData(lines[currentLine].indent);
-        lines.Insert(currentLine, l);
+        lines.Insert(currentLine, new LineData());
         Redraw(true);
       }
       if (Input.GetKeyDown(KeyCode.Delete) && lines.Count > 1) {
@@ -205,7 +204,7 @@ public class CodeEditor : MonoBehaviour {
           }
           string[] rows = copied.Split('\n');
           for (int i = rows.Length - 1; i >= 0; i--) {
-            LineData l = new LineData(lines[currentLine].indent);
+            LineData l = new LineData();
             l.Set(rows[i].Trim(' ', '\t', '\n', '\r'));
             lines.Insert(currentLine, l);
           }
@@ -307,12 +306,12 @@ public class CodeEditor : MonoBehaviour {
         if (editLine < 28) editLine++;
         currentLine++;
         if (currentLine >= lines.Count) {
-          LineData l = new LineData(0);
+          LineData l = new LineData();
           lines.Add(l);
           EditLines[editLine].SetLine(currentLine, l, OptimizeCodeTG.isOn);
         }
         else if (enter) {
-          LineData l = new LineData(0);
+          LineData l = new LineData();
           lines.Add(l);
           EditLines[editLine].SetLine(currentLine, l, OptimizeCodeTG.isOn);
           Redraw(true);
@@ -357,8 +356,21 @@ public class CodeEditor : MonoBehaviour {
 
 
   }
-  
-  
+
+
+  private void LateUpdate() {
+    if (Input.mouseScrollDelta.y == 0) return;
+
+    int val = (int)(-15 * Input.mouseScrollDelta.y);
+    currentLine += val;
+    if (currentLine < 0) currentLine = 0;
+    if (currentLine >= lines.Count) currentLine = lines.Count - 1;
+    SetScroll();
+    ScrollByBar();
+  }
+
+
+
   readonly Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)", RegexOptions.IgnoreCase);
   readonly Regex rgCommentSL = new Regex("(//.*)$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
   readonly Regex rgBlockOpen = new Regex("(?<!//.*?)\\{", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
@@ -434,8 +446,8 @@ public class CodeEditor : MonoBehaviour {
       theLine.SetComments(comment, commentType);
 
       if (commentType == CodeNode.CommentType.MultiLineInner) {
-        codeLine.SetLine(EditLines[whichline].linenum);
-        codeLine.Line.SetTextWithoutNotify("<color=#70e688><mark=#30061880>" + line + "</mark></color>");
+        theLine.Set(line, "<color=#70e688><mark=#30061880>" + line + "</mark></color>");
+        codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
         return;
       }
 
@@ -445,7 +457,7 @@ public class CodeEditor : MonoBehaviour {
           Result.text = "<color=#70e688><mark=#30061880>" + comment + "</mark></color>";
         else
           Result.text = "";
-        theLine.SetComments(comment, CodeNode.CommentType.SingleLine);
+        theLine.SetComments(comment, commentType == CodeNode.CommentType.None ? CodeNode.CommentType.SingleLine : commentType);
         theLine.Set(comment, Result.text);
         codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
         FixIndentation();
@@ -529,12 +541,12 @@ public class CodeEditor : MonoBehaviour {
         }
         indent++; // open { -> increase
       }
-      if (rgBlockClose.IsMatch(line)) { // close } -< decrease (and set also current line)
+      else if (rgBlockClose.IsMatch(line)) { // close } -< decrease (and set also current line)
         indent--;
         if (indent < 0) indent = 0;
         lines[i].indent = indent;
       }
-      if (cp.RequiresBlockAfter(line)) { // if/for/while without statement->increase just one
+      else if (cp.RequiresBlockAfter(line)) { // if/for/while without statement->increase just one
         increaseone++;
         indent++;
       }
@@ -546,7 +558,9 @@ public class CodeEditor : MonoBehaviour {
     }
     for (int i = 0; i < EditLines.Length; i++) {
       int num = EditLines[i].linenum;
-      if (num > -1 && num < lines.Count) EditLines[i].UpdateIndent(lines[num].indent);
+      if (num > -1 && num < lines.Count) {
+        EditLines[i].UpdateIndent(lines[num].indent);
+      }
     }
 
 
@@ -622,7 +636,7 @@ public class CodeEditor : MonoBehaviour {
       }
       if (line == -1) Debug.LogError("Huston we have a problem");
       for (int i = 0; i < numlinestoadd; i++) {
-        LineData l = new LineData(0);
+        LineData l = new LineData();
         lines.Add(l);
         EditLines[numback + 1 + i].SetLine(line + i + 1, l, OptimizeCodeTG.isOn);
       }
@@ -689,7 +703,7 @@ public class CodeEditor : MonoBehaviour {
     }
     string[] rows = code.Split('\n');
     for (int i = rows.Length - 1; i >= 0; i--) {
-      LineData l = new LineData(0);
+      LineData l = new LineData();
       l.Set(rows[i].Trim(' ', '\t', '\n', '\r'));
       lines.Insert(currentLine, l);
     }
