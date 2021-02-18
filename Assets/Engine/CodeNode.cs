@@ -465,8 +465,7 @@ public class CodeNode {
             "<color=#569CD6>)</color>";
       case BNF.Rom: // FIXME in Data block
         break;
-      case BNF.Label: // FIXME in Data block
-        break;
+      case BNF.Label: return "<color=#56DC96>" + sVal + ":</color>";
       case BNF.REG: {
           if (variables.Get(Reg).type == VT.Array) {
             return "<color=#fce916>" + variables.GetRegName(Reg) + "[</color>" +
@@ -751,8 +750,7 @@ public class CodeNode {
             ")";
         case BNF.Rom: // FIXME in Data block
           break;
-        case BNF.Label: // FIXME in Data block
-          break;
+        case BNF.Label: return sVal + ":";
         case BNF.REG: return variables.GetRegName(Reg);
         case BNF.ARRAY:
           return variables.GetRegName(Reg) + "[" + CN1?.Format(variables, coloring) + "]";
