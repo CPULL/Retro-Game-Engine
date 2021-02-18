@@ -458,13 +458,27 @@ public class CodeNode {
         return res + "<color=#D65CA6>)</color>";
       }
       case BNF.PaletteConfig: return "<color=#569CD6>Palette(</color>" + (iVal == 0 ? "0" : "1") + "<color=#569CD6>)</color>";
-      case BNF.Ram: return "<color=#569CD6>ram(</color>" + CN1?.Format(variables, coloring) +  "<color=#569CD6>)</color>";
+      case BNF.Ram: return "<color=#569CD6>ram(</color>" +
+            (iVal < 1024 ? iVal.ToString() : (
+            iVal < 1024 * 1024 ? (((int)(10 * iVal / 1024f)) / 10f) + "k" :
+            (((int)(10 * iVal / (1024 * 1024f))) / 10f) + "m")) +
+            "<color=#569CD6>)</color>";
       case BNF.Rom: // FIXME in Data block
         break;
       case BNF.Label: // FIXME in Data block
         break;
-      case BNF.REG: return "<color=#f6fC06>" + variables.GetRegName(Reg) + "</color>";
-      case BNF.ARRAY: return "<color=#fce916>" + variables.GetRegName(Reg) + "[</color>" + CN1?.Format(variables, coloring) + "<color=#fce916>]</color>";
+      case BNF.REG: {
+          if (variables.Get(Reg).type == VT.Array) {
+            return "<color=#fce916>" + variables.GetRegName(Reg) + "[</color>" +
+              CN1?.Format(variables, coloring) +
+              "<color=#fce916>]</color>";
+          }
+          return "<color=#f6fC06>" + variables.GetRegName(Reg) + "</color>";
+        }
+      case BNF.ARRAY: 
+          return "<color=#fce916>" + variables.GetRegName(Reg) + "[</color>" + 
+            CN1?.Format(variables, coloring) + 
+            "<color=#fce916>]</color>";
       case BNF.INT: {
         if (format == NumFormat.Hex) return "<color=#B5CEA8>0x" + System.Convert.ToString(iVal, 16) + "</color>";
         if (format == NumFormat.Bin) return "<color=#B5CEA8>0b" + System.Convert.ToString(iVal, 2) + "</color>";
@@ -729,13 +743,19 @@ public class CodeNode {
           return res + ")";
         }
         case BNF.PaletteConfig: return "Palette(" + (iVal == 0 ? "0" : "1") + ")";
-        case BNF.Ram: return "ram(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.Ram:
+          return "ram" +
+            (iVal < 1024 ? iVal.ToString() : (
+            iVal < 1024 * 1024 ? (((int)(10 * iVal / 1024f)) / 10f) + "k" :
+            (((int)(10 * iVal / (1024 * 1024f))) / 10f) + "m")) +
+            ")";
         case BNF.Rom: // FIXME in Data block
           break;
         case BNF.Label: // FIXME in Data block
           break;
         case BNF.REG: return variables.GetRegName(Reg);
-        case BNF.ARRAY: return variables.GetRegName(Reg) + "[" + CN1?.Format(variables, coloring) + "]";
+        case BNF.ARRAY:
+          return variables.GetRegName(Reg) + "[" + CN1?.Format(variables, coloring) + "]";
         case BNF.INT: {
           if (format == NumFormat.Hex) return "0x" + System.Convert.ToString(iVal, 16);
           if (format == NumFormat.Bin) return "0b" + System.Convert.ToString(iVal, 2);

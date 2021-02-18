@@ -914,7 +914,7 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.SPOS, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 3 || num != 4) {
+      if (num != 3 && num != 4) {
         if (noFail) {
           generatedException = "Invalid SPos(), wrong number of parameters (either 3 or 4 parameters are required.)" +
             "\n<color=#44C6B0>SPos(<i>number</i>, <i>x</i>, <i>y</i>, [<i>enable</i>])</color>";
@@ -1485,6 +1485,18 @@ public class CodeParser {
       }
     }
 
+    if (expected.IsGood(Expected.Val.Statement) && rgConfRam.IsMatch(line)) {
+      Match m = rgConfRam.Match(line);
+      int.TryParse(m.Groups[1].Value.Trim(), out int size);
+      char unit = (m.Groups[2].Value.Trim().ToLowerInvariant() + " ")[0];
+      if (unit == 'k') size *= 1024;
+      if (unit == 'm') size *= 1024 * 1024;
+      CodeNode node = new CodeNode(BNF.Ram, line, linenumber) { iVal = size };
+      parent.Add(node);
+      return;
+    }
+
+
     if (noFail) {
       generatedException = "Invalid code at " + (linenumber + 1) + "\n" + origForException;
       parent.Add(new CodeNode(BNF.ERROR, origForException, linenumber + 1) { sVal = origForException });
@@ -1910,7 +1922,7 @@ public class CodeParser {
       // [ARRAY] Replace REG[[EXPR]] => `ARx
       line = rgArray.Replace(line, m => {
         atLeastOneReplacement = true;
-        string var = m.Groups[1].Value.ToLowerInvariant() + "[]";
+        string var = m.Groups[1].Value.ToLowerInvariant();
         // Are we parsing a function?
         if (currentFunction != null && currentFunctionParameters.children != null) {
           // Is it a parameter variable?
@@ -1922,7 +1934,7 @@ public class CodeParser {
             }
           }
         }
-        CodeNode n = new CodeNode(BNF.REG, GenId("AR"), origForException, linenumber) {
+        CodeNode n = new CodeNode(BNF.ARRAY, GenId("AR"), origForException, linenumber) {
           Reg = vars.Add(var)
         };
         n.Add(ParseExpression(m.Groups[2].Value));

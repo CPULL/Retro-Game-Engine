@@ -130,6 +130,7 @@ public class CodeEditor : MonoBehaviour {
 
   private void Update() {
     if (autorepeat > 0) autorepeat -= Time.deltaTime;
+    if (Values.gameObject.activeSelf) return;
     bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
     bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
     bool up = Input.GetKeyDown(KeyCode.UpArrow);
@@ -212,9 +213,6 @@ public class CodeEditor : MonoBehaviour {
           Parse();
         }
       }
-
-
-      
     }
     else if (shift) { // ******************************* Shift *********************************************************************************************
       // Selection
@@ -471,7 +469,7 @@ public class CodeEditor : MonoBehaviour {
       // Check if we need multiple lines, we do only if we have an IF, FOR, WHILE (and they are not single command)
       bool hadOpenBlock = cp.RequiresBlock(line);
       CodeNode res = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, currentLine, false, out string except);
-      CodeNode resOpt = null;
+      CodeNode resOpt = res;
       if (except == null) { // Parse also optimized
         resOpt = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, currentLine, true, out _);
       }
@@ -493,17 +491,17 @@ public class CodeEditor : MonoBehaviour {
       res.CN1.SetComments(comment, commentType);
       theLine.SetComments(comment, commentType);
       if (except != null) { // Parsed with exception
-        string linec = res.CN1.Format(variables, hadOpenBlock);
-        string lineo = resOpt.CN1.Format(variables, hadOpenBlock, true);
-        theLine.Set(res.CN1.Format(variables, hadOpenBlock, false), resOpt.CN1.Format(variables, hadOpenBlock, false), res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
+        string linec = res.CN1.Format(variables, hadOpenBlock, false);
+        string lineo = resOpt.CN1.Format(variables, hadOpenBlock, false);
+        theLine.Set(linec, lineo, res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
         codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
         Result.text = "<color=#ff2e00>" + except + "</color>";
       }
       else { // Parsed correctly
-        string linec = res.CN1.Format(variables, hadOpenBlock);
-        string lineo = resOpt.CN1.Format(variables, hadOpenBlock, true);
+        string linec = res.CN1.Format(variables, hadOpenBlock, false);
+        string lineo = resOpt.CN1.Format(variables, hadOpenBlock, false);
         Result.text = OptimizeCodeTG.isOn ? resOpt.CN1.Format(variables, hadOpenBlock, true) : res.CN1.Format(variables, hadOpenBlock, true);
-        theLine.Set(res.CN1.Format(variables, hadOpenBlock, false), resOpt.CN1.Format(variables, hadOpenBlock, false), res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
+        theLine.Set(linec, lineo, res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
         codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
       }
 
@@ -661,6 +659,49 @@ public class CodeEditor : MonoBehaviour {
       Result.text = "<color=red>" + e.Message + "</color>";
     }
   }
+
+  #region Load / Save ***********************************************************************************************************************************************
+  public GameObject LoadSaveButton;
+  public Confirm Confirm;
+  public TMP_InputField Values;
+  public Button LoadSubButton;
+
+  public void LoadSave() {
+    LoadSaveButton.SetActive(!LoadSaveButton.activeSelf);
+  }
+
+  public void LoadTextPre() {
+    Values.gameObject.SetActive(true);
+    LoadSubButton.enabled = true;
+  }
+  public void LoadTextPost() {
+    if (!gameObject.activeSelf) return;
+    Values.gameObject.SetActive(false);
+    LoadSaveButton.SetActive(false);
+
+    lines.Clear();
+    currentLine = 0;
+    editLine = 0;
+    int num = 1;
+    string code = Values.text;
+    foreach (char c in code) {
+      if (c == '\n') num++;
+    }
+    string[] rows = code.Split('\n');
+    for (int i = rows.Length - 1; i >= 0; i--) {
+      LineData l = new LineData(0);
+      l.Set(rows[i].Trim(' ', '\t', '\n', '\r'));
+      lines.Insert(currentLine, l);
+    }
+    Redraw(true);
+    Parse();
+  }
+
+  public void SaveText() {
+
+  }
+
+  #endregion Load / Save ***********************************************************************************************************************************************
 }
 
 

@@ -4,7 +4,6 @@ Documentation on the Wiki of Github
 Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks" when the sample is regenerated
 
 
-FUTURE: Code editor
 FUTURE: step by step debugger
 FUTURE: precompile Nodes
 FUTURE: Font editor
@@ -38,3 +37,8 @@ CodeEditor: Save code, text and binary
 CodeEditor: Load code, text and binary
 
 
+failing lines:
+image(moon:+2, 220, 8, 48, 48)
+Label is missing from Node.Format
+Arrays look fucked up
+inline comment is wrong
