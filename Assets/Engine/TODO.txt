@@ -43,6 +43,5 @@ CodeEditor: Start/Stop
 CodeEditor: Show errors in a better place
 CodeEditor: Add "rom" to current developed project
 
-We need to scale and position sprites and tiles in a different way if we are in Dev mode
-
+Run, Pause, Run step, Restart, Stop, View Variables, View memory
 

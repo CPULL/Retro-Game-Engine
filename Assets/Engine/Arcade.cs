@@ -472,6 +472,10 @@ public class Arcade : MonoBehaviour {
     }
   }
 
+  public void InsertCode(CodeNode st, CodeNode up, CodeNode cf, byte[] rom) { // Labels too
+
+  }
+
   private string MemSize(int size) {
     string m;
     if (size < 1024)
