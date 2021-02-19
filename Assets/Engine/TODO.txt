@@ -36,6 +36,13 @@ CodeEditor: Ctrl+H replace
 CodeEditor: Save code, text and binary
 CodeEditor: Load code, text and binary
 
-Scrolled codelines are not parsed
+CodeEditor: add Arcade
+CodeEditor: add variables and values
+CodeEditor: add working breakpoints
+CodeEditor: Start/Stop
+CodeEditor: Show errors in a better place
+CodeEditor: Add "rom" to current developed project
 
-Do not remove the original code/line in case of errors
+Arcade: Do not limit the number of sprites (max 256)
+
+
