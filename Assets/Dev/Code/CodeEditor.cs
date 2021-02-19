@@ -44,20 +44,7 @@ public class CodeEditor : MonoBehaviour {
     EventSystem.current.SetSelectedGameObject(EditLines[0].Line.gameObject);
   }
 
-  void Redraw(bool doNotUpdate = false) {
-    if (!doNotUpdate) {
-      // Save if we need
-      for (int i = 0; i < EditLines.Length; i++) {
-        int pos = EditLines[i].linenum;
-        if (pos >= 0 && pos < lines.Count) {
-          string line = rgSyntaxHighlight.Replace(EditLines[i].Line.text, "").Trim();
-          if (!lines[pos].Same(line)) {
-            lines[pos].Set(line, line, EditLines[i].Line.text, EditLines[i].Line.text);
-          }
-        }
-      }
-    }
-
+  void Redraw() {
     // What is the first visible line?
     int topLine = currentLine - editLine;
     if (topLine < 0) topLine = 0;
@@ -145,17 +132,17 @@ public class CodeEditor : MonoBehaviour {
       if (Input.GetKeyDown(KeyCode.D)) {
         SaveLine();
         lines.Insert(currentLine, lines[currentLine].Duplicate());
-        Redraw(true);
+        Redraw();
       }
       if (Input.GetKeyDown(KeyCode.Insert)) {
         SaveLine();
         lines.Insert(currentLine, new LineData());
-        Redraw(true);
+        Redraw();
       }
       if (Input.GetKeyDown(KeyCode.Delete) && lines.Count > 1) {
         lines.RemoveAt(currentLine);
         if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-        Redraw(true);
+        Redraw();
       }
 
       // Ctrl+C
@@ -185,7 +172,7 @@ public class CodeEditor : MonoBehaviour {
         selectionS = -1;
         selectionE = -1;
         SelectionRT.sizeDelta = new Vector2(1280, 0);
-        Redraw(true);
+        Redraw();
       }
 
       // Ctrl+V
@@ -209,7 +196,7 @@ public class CodeEditor : MonoBehaviour {
             l.Set(rows[i].Trim(' ', '\t', '\n', '\r'));
             lines.Insert(currentLine, l);
           }
-          Redraw(true);
+          Redraw();
           Parse();
         }
       }
@@ -315,7 +302,7 @@ public class CodeEditor : MonoBehaviour {
           LineData l = new LineData();
           lines.Add(l);
           EditLines[editLine].SetLine(currentLine, l, OptimizeCodeTG.isOn);
-          Redraw(true);
+          Redraw();
         }
         
         EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
@@ -393,11 +380,14 @@ public class CodeEditor : MonoBehaviour {
 
   void SyntaxHighlight(string line, int whichline, bool multiLineComment) {
     if (currentLine < 0 || currentLine >= lines.Count) return;
-    string var = lines[currentLine].Line(false);
-    if (string.IsNullOrEmpty(var)) {
+    LineData theLine = lines[EditLines[whichline].linenum];
+    CodeLine codeLine = EditLines[whichline];
+
+    if (theLine.IsEmpty() || codeLine.linenum < 0 || codeLine.linenum >= lines.Count) {
       Result.text = "";
       return;
     }
+
     CodeNode.CommentType commentType = CodeNode.CommentType.None;
     if (multiLineComment) commentType = CodeNode.CommentType.MultiLineInner;
     try {
@@ -444,8 +434,6 @@ public class CodeEditor : MonoBehaviour {
         line = rgCommentSL.Replace(line, "").Trim();
       }
 
-      LineData theLine = lines[EditLines[whichline].linenum];
-      CodeLine codeLine = EditLines[whichline];
       theLine.SetComments(comment, commentType);
 
       if (commentType == CodeNode.CommentType.MultiLineInner) {
@@ -478,12 +466,14 @@ public class CodeEditor : MonoBehaviour {
         return;
       }
 
+      if (!theLine.toParse) return;
+
       // Check if we need multiple lines, we do only if we have an IF, FOR, WHILE (and they are not single command)
       bool hadOpenBlock = cp.RequiresBlock(line);
-      CodeNode res = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, currentLine, false, out string except);
+      CodeNode res = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, codeLine.linenum, false, out string except);
       CodeNode resOpt = res;
       if (except == null) { // Parse also optimized
-        resOpt = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, currentLine, true, out _);
+        resOpt = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, codeLine.linenum, true, out _);
       }
 
       if (res.CN1 == null) { // Not parsed
@@ -492,7 +482,7 @@ public class CodeEditor : MonoBehaviour {
           codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
         }
         else {
-          theLine.Set(line + comment, "<color=#ff2e00>" + line + comment + "</color>");
+          theLine.SetParsed(line + comment, "<color=#ff2e00>" + line + comment + "</color>");
           codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
           Result.text = "<color=#ff2e00>" + except + "</color>";
         }
@@ -505,14 +495,14 @@ public class CodeEditor : MonoBehaviour {
       if (except != null) { // Parsed with exception
         string linec = line + comment;
         string lineo = line + comment;
-        theLine.Set(linec, lineo, res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
+        theLine.SetParsed(linec, lineo, res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
         codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
         Result.text = "<color=#ff2e00>" + except + "</color>";
       }
       else { // Parsed correctly
         string linec = res.CN1.Format(variables, hadOpenBlock, false);
         string lineo = resOpt.CN1.Format(variables, hadOpenBlock, false);
-        theLine.Set(linec, lineo, res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
+        theLine.SetParsed(linec, lineo, res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
         codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
       }
 
@@ -522,7 +512,7 @@ public class CodeEditor : MonoBehaviour {
   }
 
   public void ChangeViewOptimizedCode() {
-    Redraw(false);
+    Redraw();
   }
 
   void FixIndentation() {
@@ -666,7 +656,7 @@ public class CodeEditor : MonoBehaviour {
       Result.text = "<color=red>" + e.Message + "</color>\n" + e.Code + "\nLine: " + e.LineNum;
       // Scroll to line number
       if (e.LineNum > 0) currentLine = e.LineNum - 1;
-      Redraw(true);
+      Redraw();
       SetScroll();
     } catch (System.Exception e) {
       Result.text = "<color=red>" + e.Message + "</color>";
@@ -706,7 +696,7 @@ public class CodeEditor : MonoBehaviour {
       l.Set(rows[i].Trim(' ', '\t', '\n', '\r'));
       lines.Insert(currentLine, l);
     }
-    Redraw(true);
+    Redraw();
     Parse();
   }
 
