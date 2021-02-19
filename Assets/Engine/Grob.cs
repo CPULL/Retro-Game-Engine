@@ -1,9 +1,9 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-public class Grob {
-  readonly RawImage sprite;
-  readonly RectTransform rt;
+public class Grob : MonoBehaviour {
+  [SerializeField] private RawImage sprite;
+  [SerializeField] private RectTransform rt;
   Texture2D texture;
   byte[] raw;
   public bool notDefined = true;

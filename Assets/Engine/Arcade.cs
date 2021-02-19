@@ -28,8 +28,7 @@ public class Arcade : MonoBehaviour {
   readonly Variables variables = new Variables();
   readonly Dictionary<string, int> labels = new Dictionary<string, int>();
   readonly Dictionary<int, Texture2D> labelTextures = new Dictionary<int, Texture2D>();
-  public RawImage[] spriteImgs;
-  Grob[] sprites;
+  readonly Grob[] sprites = new Grob[256];
 
   float updateDelay = -1;
   float toWait = 0;
@@ -192,17 +191,13 @@ public class Arcade : MonoBehaviour {
     Write("--- MMM Arcade RGE ---", 35, 8, Col.C(5, 5, 0));
     Write(" virtual machine", 55, 14 + 4, Col.C(1, 3, 4));
     Write(" Retro Game Engine", 45, 14 + 9, Col.C(1, 5, 4));
-    sprites = new Grob[spriteImgs.Length];
-    for (int i = 0; i < spriteImgs.Length; i++) {
-      sprites[i] = new Grob(spriteImgs[i], sw, sh);
-      spriteImgs[i].enabled = false;
-    }
 
     lastScreenW = UnityEngine.Screen.width;
     lastScreenH = UnityEngine.Screen.height;
     scaleW = lastScreenW / 256f;
     scaleH = lastScreenW / 160f;
 
+    sprites[0] = Instantiate(SpriteTemplate, Layers[0]).GetComponent<Grob>();
     sprites[0].Init(0, 6, sw, sh);
     audioManager.Init();
 
@@ -770,10 +765,13 @@ public class Arcade : MonoBehaviour {
 
   #region Sprites ****************************************************************************************************************************************************************************************************
 
+  public GameObject SpriteTemplate;
+
   void Sprite(int num, int pointer, bool filter = false) {
-    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
+    if (num < 0 || num > 255) throw new Exception("Invalid sprite number: " + num);
     int sx = (mem[pointer] << 8) + mem[pointer + 1];
     int sy = (mem[pointer + 2] << 8) + mem[pointer + 3];
+    if (sprites[num] == null) sprites[num] = Instantiate(SpriteTemplate, Layers[0]).GetComponent<Grob>();
     if (labelTextures.ContainsKey(pointer)) {
       sprites[num].Set(sx, sy, labelTextures[pointer], scaleW, scaleH, filter);
     }
@@ -783,41 +781,41 @@ public class Arcade : MonoBehaviour {
   }
   
   void SpritePos(int num, int x, int y, bool enable = true) {
-    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
-    if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined"); 
+    if (num < 0 || num > 255) throw new Exception("Invalid sprite number: " + num);
+    if (sprites[num] == null || sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined"); 
     sprites[num].Pos(x, y, scaleW, scaleH, enable);
   }
   
   void SpriteRot(int num, int rot, bool flip) {
-    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
-    if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined"); 
+    if (num < 0 || num > 255) throw new Exception("Invalid sprite number: " + num);
+    if (sprites[num] == null || sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined"); 
     rot &= 3;
     sprites[num].Rot(rot, flip);
   }
   
   void SpriteEnable(int num, bool enable) {
-    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
-    if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined");
+    if (num < 0 || num > 255) throw new Exception("Invalid sprite number: " + num);
+    if (sprites[num] == null || sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined");
     sprites[num].Enable(enable);
   }
 
   void SpriteTint(int num, byte color) {
-    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
-    if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined");
+    if (num < 0 || num > 255) throw new Exception("Invalid sprite number: " + num);
+    if (sprites[num] == null || sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined");
     sprites[num].Tint(color);
   }
 
   void SpriteScale(int num, byte sx, byte sy) {
-    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
-    if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined");
+    if (num < 0 || num > 255) throw new Exception("Invalid sprite number: " + num);
+    if (sprites[num] == null || sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined");
     sprites[num].Scale(sx, sy);
   }
 
   void SpritePri(int num, int order) {
     if (order < -1) order = -1;
     if (order > 10) order = 10;
-    if (num < 0 || num > sprites.Length) throw new Exception("Invalid sprite number: " + num);
-    if (sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined");
+    if (num < 0 || num > 255) throw new Exception("Invalid sprite number: " + num);
+    if (sprites[num] == null || sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined");
 
     if (order == -1)
       sprites[num].Parent(SpritesFrontLayer);
