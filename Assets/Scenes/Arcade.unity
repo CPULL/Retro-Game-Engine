@@ -458,7 +458,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_AdditionalShaderChannelsFlag: 1
+  m_AdditionalShaderChannelsFlag: 25
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
@@ -3838,6 +3838,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1094849867}
+  - component: {fileID: 1094849869}
+  - component: {fileID: 1094849868}
   m_Layer: 5
   m_Name: Sprites and Tilemaps
   m_TagString: Untagged
@@ -3876,6 +3878,28 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1094849868
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1094849866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3312d7739989d2b4e91e6319e9a96d76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Padding: {x: 0, y: 0, z: 0, w: 0}
+  m_Softness: {x: 0, y: 0}
+--- !u!222 &1094849869
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1094849866}
+  m_CullTransparentMesh: 0
 --- !u!1 &1113452422
 GameObject:
   m_ObjectHideFlags: 0
@@ -3953,7 +3977,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: -960, y: -540}
-  m_SizeDelta: {x: 1920, y: 1080}
+  m_SizeDelta: {x: 960, y: 540}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1114100339
 MonoBehaviour:
@@ -6763,6 +6787,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2039556198}
+  - component: {fileID: 2039556199}
   m_Layer: 5
   m_Name: LayerFrontSprites
   m_TagString: Untagged
@@ -6789,6 +6814,14 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
+--- !u!222 &2039556199
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2039556197}
+  m_CullTransparentMesh: 0
 --- !u!1 &2040885975
 GameObject:
   m_ObjectHideFlags: 0
