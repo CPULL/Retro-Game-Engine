@@ -8,6 +8,7 @@ using UnityEngine.UI;
 
 public class Arcade : MonoBehaviour {
   const float updateTime = .5f;
+  public bool DevMode = false;
   public RawImage Screen;
   public RectTransform rt;
   public TextMeshProUGUI FPS;
@@ -210,6 +211,15 @@ public class Arcade : MonoBehaviour {
     sprites[0].Pos(0, 8, scaleW, scaleH, true);
     audioManager.Init();
 
+    if (DevMode) {
+      DevStart();
+    }
+    else {
+      RealStart();
+    }
+  }
+
+  private void RealStart() {
     if (SceneManager.GetActiveScene().name == "ArcadePlus") {
       FileBrowser.SetLocation(Application.dataPath + "\\..\\Cartridges\\");
       FileBrowser.Load(SelectCartridge, FileBrowser.FileType.Cartridges);
@@ -218,6 +228,36 @@ public class Arcade : MonoBehaviour {
       // Load Game.Cartridge
       SelectCartridge(Application.dataPath + "/../Cartridges/Game.cartridge");
     }
+    texture.Apply();
+    for (int i = 0; i < 256; i++)
+      palette[i] = Col.GetColor((byte)i);
+    RGEPalette.SetColorArray("_Colors", palette);
+    Col.UsePalette(false);
+    RGEPalette.SetInt("_UsePalette", 0);
+    RGEPalette.SetFloat("_Luma", 0);
+    RGEPalette.SetFloat("_Contrast", 0);
+  }
+
+  private void DevStart() {
+    sw = 320;
+    sh = 180;
+    wm1 = sw - 1;
+    hm1 = sh - 1;
+    scaleW = rt.sizeDelta.x / sw;
+    scaleH = rt.sizeDelta.y / sh;
+    useFilter = false;
+    texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
+      filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
+    };
+    Screen.texture = texture;
+    pixels = texture.GetPixels32();
+    raw = new byte[sw * sh * 4];
+    sprites[0].Pos(0, 8, scaleW, scaleH, true);
+    Clear(0);
+    Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
+    Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
+    Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9, Col.C(1, 5, 2));
+    Write("Run your code or Debug", 8, 48, Col.C(5, 4, 0));
     texture.Apply();
     for (int i = 0; i < 256; i++)
       palette[i] = Col.GetColor((byte)i);
