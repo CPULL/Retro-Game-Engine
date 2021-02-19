@@ -5,6 +5,7 @@
         [HideInInspector] _MainTex("Texture", 2D) = "white" {}
         [HideInInspector] _UVCenter("_UVCenter", Vector) = (0,0,0,0)
         [MaterialToggle] _UsePalette("_UsePalette", Float) = 0
+        _MaskTex("Lighting Mask (RGB)", 2D) = "black" {}
         _Luma("_Luma", Range(-1, 1)) = 0
         _Contrast("_Contrast", Range(-1, 1)) = 0
     }
@@ -21,6 +22,7 @@
         ZWrite off
         Cull off
 
+
         Pass
         {
             CGPROGRAM
@@ -29,8 +31,9 @@
             #pragma multi_compile _ PIXELSNAP_ON
 
             #include "UnityCG.cginc"
+            #include "UnityUI.cginc"
 
-
+            float4 _ClipRect;
             fixed4 _Colors[256];
             float _Contrast, _Luma;
 
@@ -38,6 +41,7 @@
             {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
+                float2 texcoord : TEXCOORD0;
             };
 
             struct v2f
@@ -45,6 +49,7 @@
                 float2 uv : TEXCOORD0;
                 UNITY_FOG_COORDS(1)
                 float4 vertex : SV_POSITION;
+                float4 worldPosition : TEXCOORD1;
             };
 
             sampler2D _MainTex;
@@ -56,8 +61,9 @@
             v2f vert (appdata v)
             {
                 v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.vertex = UnityPixelSnap(UnityObjectToClipPos(v.vertex));
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                o.worldPosition = v.vertex;
                 return o;
             }
 
@@ -65,6 +71,7 @@
             {
               float2 uv = IN.uv;
               fixed4 col = tex2D(_MainTex, uv);
+              col.a *= UnityGet2DClipping(IN.worldPosition.xy, _ClipRect);
               if (col.a == 0 || _UsePalette == 0) return col;
 
               uint h = ((uint)(col.r * 256) - 4) / 8;

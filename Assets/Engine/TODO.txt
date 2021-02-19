@@ -43,6 +43,6 @@ CodeEditor: Start/Stop
 CodeEditor: Show errors in a better place
 CodeEditor: Add "rom" to current developed project
 
-Arcade: Do not limit the number of sprites (max 256)
+We need to scale and position sprites and tiles in a different way if we are in Dev mode
 
 

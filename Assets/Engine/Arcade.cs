@@ -9,8 +9,10 @@ using UnityEngine.UI;
 public class Arcade : MonoBehaviour {
   const float updateTime = .5f;
   public RawImage Screen;
+  public RectTransform rt;
   public TextMeshProUGUI FPS;
   public Audio audioManager;
+  public Texture2D LogoTexture;
   Texture2D texture;
   Color32[] pixels;
   byte[] raw;
@@ -82,24 +84,28 @@ public class Arcade : MonoBehaviour {
       RGEPalette.SetInt("_UsePalette", Col.UsePalette() ? 1 : 0);
     }
 
-    int nowScreenW = UnityEngine.Screen.width;
-    int nowScreenH = UnityEngine.Screen.height;
+    int nowScreenW = (int)rt.sizeDelta.x;
+    int nowScreenH = (int)rt.sizeDelta.y;
     if (nowScreenW != lastScreenW || nowScreenH != lastScreenH) {
-      lastScreenW = nowScreenW;
-      lastScreenH = nowScreenH;
+      lastScreenW = (int)(nowScreenW * (Minimized ? .333333f : 1));
+      lastScreenH = (int)(nowScreenH * (Minimized ? .333333f : 1));
       scaleW = lastScreenW / (float)sw;
       scaleH = lastScreenH / (float)sh;
 
       // update the height according to the aspect ratio
       float heightAccordingToWidth = nowScreenW / 16.0f * 9.0f;
       UnityEngine.Screen.SetResolution(nowScreenW, Mathf.RoundToInt(heightAccordingToWidth), false, 0);
+
+      foreach (Grob s in sprites) {
+        if (s != null && !s.notDefined) s.ResetScale(scaleW, scaleH);
+      }
     }
 
 
     FpsTime += Time.deltaTime;
     if (FpsTime > 1f) {
       FpsTime -= 1f;
-      FPS.text = FpsFrames.ToString();
+      if (FPS != null) FPS.text = FpsFrames.ToString();
       FpsFrames = 0;
     }
 
@@ -188,17 +194,20 @@ public class Arcade : MonoBehaviour {
     pixels = texture.GetPixels32();
     raw = new byte[sw * sh * 4];
     Clear(0);
-    Write("--- MMM Arcade RGE ---", 35, 8, Col.C(5, 5, 0));
-    Write(" virtual machine", 55, 14 + 4, Col.C(1, 3, 4));
-    Write(" Retro Game Engine", 45, 14 + 9, Col.C(1, 5, 4));
+    Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
+    Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
+    Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9, Col.C(1, 5, 2));
 
-    lastScreenW = UnityEngine.Screen.width;
-    lastScreenH = UnityEngine.Screen.height;
+    lastScreenW = (int)rt.sizeDelta.x;
+    lastScreenH = (int)rt.sizeDelta.y;
     scaleW = lastScreenW / 256f;
     scaleH = lastScreenW / 160f;
 
     sprites[0] = Instantiate(SpriteTemplate, Layers[0]).GetComponent<Grob>();
-    sprites[0].Init(0, 6, sw, sh);
+    sprites[0].gameObject.name = "Sprite 0";
+    sprites[0].gameObject.SetActive(true);
+    sprites[0].Set(16, 16, LogoTexture, false);
+    sprites[0].Pos(0, 8, scaleW, scaleH, true);
     audioManager.Init();
 
     if (SceneManager.GetActiveScene().name == "ArcadePlus") {
@@ -207,7 +216,7 @@ public class Arcade : MonoBehaviour {
     }
     else {
       // Load Game.Cartridge
-      SelectCartridge(Application.dataPath + "\\..\\Cartridges\\GameX.cartridge");
+      SelectCartridge(Application.dataPath + "/../Cartridges/Game.cartridge");
     }
     texture.Apply();
     for (int i = 0; i < 256; i++)
@@ -271,8 +280,8 @@ public class Arcade : MonoBehaviour {
           if (sh > 256) sh = 256;
           wm1 = sw - 1;
           hm1 = sh - 1;
-          scaleW = 1920f / sw;
-          scaleH = 1080f / sh;
+          scaleW = rt.sizeDelta.x / sw;
+          scaleH = rt.sizeDelta.y / sh;
           useFilter = scrconf.sVal == "*";
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
             filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
@@ -281,7 +290,7 @@ public class Arcade : MonoBehaviour {
           pixels = texture.GetPixels32();
           raw = new byte[sw * sh * 4];
         }
-        sprites[0].Init(0, 6, sw, sh);
+        sprites[0].Pos(0, 8, scaleW, scaleH, true);
 
         // Memory ************************************************************************************************************** Memory
         CodeNode memdef = config.Get(BNF.Ram);
@@ -297,9 +306,9 @@ public class Arcade : MonoBehaviour {
 
       // Redraw
       Clear(0);
-      Write("--- MMM Arcade RGE ---", (sw - 23 * 8) / 2, 8, 60);
-      Write("virtual machine", (sw - 16 * 8) / 2, 14 + 4, 0b011010);
-      Write("Retro Game Engine", (sw - 18 * 8) / 2, 14 + 9, 0b011110);
+      Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
+      Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
+      Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9, Col.C(1, 5, 2));
       Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
       if (res.sVal == null)
         Write("<no name>", 88, 39, Col.C(5, 3, 1));
@@ -766,20 +775,28 @@ public class Arcade : MonoBehaviour {
   #region Sprites ****************************************************************************************************************************************************************************************************
 
   public GameObject SpriteTemplate;
+  public GameObject TilemapTemplate;
+  public Transform SpritesFrontLayer;
+  public Transform[] Layers;
 
   void Sprite(int num, int pointer, bool filter = false) {
     if (num < 0 || num > 255) throw new Exception("Invalid sprite number: " + num);
     int sx = (mem[pointer] << 8) + mem[pointer + 1];
     int sy = (mem[pointer + 2] << 8) + mem[pointer + 3];
-    if (sprites[num] == null) sprites[num] = Instantiate(SpriteTemplate, Layers[0]).GetComponent<Grob>();
+    if (sprites[num] == null) {
+      sprites[num] = Instantiate(SpriteTemplate, Layers[0]).GetComponent<Grob>();
+      sprites[num].gameObject.SetActive(true);
+      sprites[num].GetComponent<RectTransform>().sizeDelta = Minimized ? new Vector2(.3333333f, .3333333f) : new Vector2(1, 1);
+      sprites[num].gameObject.name = "Sprite " + num;
+    }
     if (labelTextures.ContainsKey(pointer)) {
-      sprites[num].Set(sx, sy, labelTextures[pointer], scaleW, scaleH, filter);
+      sprites[num].Set(sx, sy, labelTextures[pointer], filter);
     }
     else {
-      labelTextures.Add(pointer, sprites[num].Set(sx, sy, mem, pointer + 4, scaleW, scaleH, filter));
+      labelTextures.Add(pointer, sprites[num].Set(sx, sy, mem, pointer + 4, filter));
     }
   }
-  
+
   void SpritePos(int num, int x, int y, bool enable = true) {
     if (num < 0 || num > 255) throw new Exception("Invalid sprite number: " + num);
     if (sprites[num] == null || sprites[num].notDefined) throw new Exception("Sprite #" + num + " is not defined"); 
@@ -827,9 +844,6 @@ public class Arcade : MonoBehaviour {
 
   #region Tilemap ****************************************************************************************************************************************************************************************************
   readonly Dictionary<byte, TMap> tilemaps = new Dictionary<byte, TMap>();
-  public Transform SpritesFrontLayer;
-  public Transform[] Layers;
-  public GameObject TilemapTemplate;
 
   void Tilemap(byte id, byte order, int start) {
     if (order < 0) order = 0;
@@ -887,7 +901,7 @@ public class Arcade : MonoBehaviour {
   #endregion Tilemap
 
   bool Execute(CodeNode n) {
-    Debug.Log(n);
+//Debug.Log(n);
     try {
       switch (n.type) {
         case BNF.CLR: {
@@ -1231,8 +1245,8 @@ public class Arcade : MonoBehaviour {
           if (sh > 256) sh = 256;
           wm1 = sw - 1;
           hm1 = sh - 1;
-          scaleW = 1920f / sw;
-          scaleH = 1080f / sh;
+          scaleW = rt.sizeDelta.x / sw;
+          scaleH = rt.sizeDelta.y / sh;
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
             filterMode = n.CN3 == null || Evaluate(n.CN3).ToInt(culture) == 0 ? FilterMode.Point : FilterMode.Bilinear
           };
@@ -1971,6 +1985,7 @@ public class Arcade : MonoBehaviour {
 {'¡', new byte[]{0x00,0x18,0x00,0x00,0x18,0x18,0x18,0x18} }
   };
 
+  public bool Minimized = false;
 }
 
 
