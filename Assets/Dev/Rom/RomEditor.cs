@@ -279,6 +279,16 @@ public class RomEditor : MonoBehaviour {
   }
 
   public void SelectLine(RomLine line, bool check) {
+    bool one = false;
+    for (int i = 0; i < lines.Count; i++) 
+      if (lines[i].Check.isOn) {
+        if (!one) one = true;
+        else {
+          one = false;
+          break;
+        }
+    }
+    EditButton.enabled = one;
     if (!check || !Input.GetKey(KeyCode.LeftShift)) return;
 
     int start = -1;
@@ -396,15 +406,15 @@ public class RomEditor : MonoBehaviour {
     }
   }
 
-  internal void UpdateLine(byte[] data, LabelType lt) {
+  internal void UpdateLine(byte[] data, LabelType lt, LabelType lt2) {
     Dev.inst.RomEditor();
     foreach (RomLine line in lines) {
-      if (line.Check.isOn && line.ltype == lt) {
+      if (line.Check.isOn && (line.ltype == lt || line.ltype == lt2)) {
         line.Data = data;
         line.size = data.Length;
         line.Size.text = data.Length.ToString();
+        break;
       }
-      break;
     }
   }
 

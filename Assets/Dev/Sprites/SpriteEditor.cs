@@ -986,10 +986,21 @@ public class SpriteEditor : MonoBehaviour {
   }
 
   public void ImportFrom(byte[] data) {
+    int sw = (data[0] << 8) + data[1]; // Try new mode
+    int sh = (data[2] << 8) + data[3];
+    if (data.Length != 4 + sw * sh) { // Try old mode
+      sw = data[0];
+      sh = data[1];
+      if (data.Length != 2 + sw * sh) { // Not valid
+        Dev.inst.HandleError("Invalid Sprite/Image");
+        return;
+      }
+    }
+
+    w = sw;
+    h = sh;
     if (pixels == null) {
-      pixels = new Pixel[data[0]/*tw*/ * data[1]/*th*/];
-      w = data[0];
-      h = data[1];
+      pixels = new Pixel[w * h];
       selected = new bool[w * h];
     }
     for (int i = 0; i < sizes.Length; i++) {
@@ -1016,13 +1027,15 @@ public class SpriteEditor : MonoBehaviour {
       Dev.inst.TilemapEditor();
     }
     else if (editFrom == EditComponent.RomEditor) {
-      byte[] data = new byte[2 + pixels.Length];
-      data[0] = (byte)w;
-      data[1] = (byte)h;
+      byte[] data = new byte[4 + pixels.Length];
+      data[0] = (byte)((w & 0xff00) >> 8);
+      data[1] = (byte)(w & 0xff);
+      data[2] = (byte)((h & 0xff00) >> 8);
+      data[3] = (byte)(h & 0xff);
       for (int i = 0; i < pixels.Length; i++) {
-        data[2 + i] = pixels[i].Get();
+        data[4 + i] = pixels[i].Get();
       }
-      romeditor.UpdateLine(data, LabelType.Sprite);
+      romeditor.UpdateLine(data, LabelType.Sprite, LabelType.Image);
     }
     gameObject.SetActive(false);
   }

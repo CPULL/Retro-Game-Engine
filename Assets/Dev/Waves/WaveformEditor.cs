@@ -727,7 +727,7 @@ public class WaveformEditor : MonoBehaviour {
           data[11 + i] = rawPCM[i];
         }
       }
-      romeditor.UpdateLine(data, LabelType.Wave);
+      romeditor.UpdateLine(data, LabelType.Wave, LabelType.Wave);
     }
 
     gameObject.SetActive(false);

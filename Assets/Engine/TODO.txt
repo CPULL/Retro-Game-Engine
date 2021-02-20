@@ -47,4 +47,5 @@ Run, Pause, Run step, Restart, Stop, View Variables, View memory
 
 
 Fix the shadow player sprites (sizes are wrong)
-
+On editing a rom line, be sure that only one line is selected (disable the button if it is not)
+Add a button to remove all selected lines
