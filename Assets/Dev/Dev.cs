@@ -15,6 +15,7 @@ public class Dev : MonoBehaviour {
   public CodeEditor codeEditor;
   public RomEditor romEditor;
   public Image[] Selection;
+  public Material RGEPalette;
 
   private void Awake() {
     inst = this;
@@ -33,6 +34,7 @@ public class Dev : MonoBehaviour {
     codeEditor.gameObject.SetActive(true);
     romEditor.gameObject.SetActive(false);
     paletteEditor.gameObject.SetActive(false);
+    RGEPalette.SetInt("_UsePalette", 1);
   }
 
   public void RomEditor() {
@@ -75,6 +77,7 @@ public class Dev : MonoBehaviour {
     codeEditor.gameObject.SetActive(false);
     romEditor.gameObject.SetActive(false);
     paletteEditor.gameObject.SetActive(false);
+    RGEPalette.SetInt("_UsePalette", 1);
   }
 
   public void TilemapEditor() {
@@ -89,6 +92,7 @@ public class Dev : MonoBehaviour {
     codeEditor.gameObject.SetActive(false);
     romEditor.gameObject.SetActive(false);
     paletteEditor.gameObject.SetActive(false);
+    RGEPalette.SetInt("_UsePalette", 1);
   }
 
   public void PaletteEditor() {

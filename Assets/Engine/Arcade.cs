@@ -473,7 +473,11 @@ public class Arcade : MonoBehaviour {
   }
 
   public void LoadCode(CodeNode code, Variables vars, ByteChunk romdata) { // Labels too
+    updateDelay = -1;
+    Clear(0);
+    CompleteFrame();
     variables = vars;
+    labels.Clear();
     try {
       Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
       if (code.sVal == null)
@@ -1114,7 +1118,7 @@ public class Arcade : MonoBehaviour {
   #endregion Tilemap
 
   bool Execute(CodeNode n) {
-Debug.Log(n);
+//Debug.Log(n.Format(variables, false);
     try {
       switch (n.type) {
         case BNF.CLR: {

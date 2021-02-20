@@ -20,7 +20,7 @@ Start {
 	write("RGE demo by CPU", 76,60,c350)
 	write("Use left and right to walk", 54,100, 134c, 0, 1)
 	frame
-	wait(4)
+	wait(1)
 	clr(133c)
 	for(i=0,i<12,i++) {
 		sp[i] = Label("PlayerSprite"+i)
@@ -66,9 +66,9 @@ Start {
 	size45 = 45*64-320
 
 	for(i=0,i<320,i+=8) {
-		image(background:+2, i, 68, 8, 64)
+		image(background:, i, 68, 8, 64)
 	}
-	image(moon:+2, 220, 8, 48, 48)
+	image(moon:, 220, 8, 48, 48)
 }
 
 update {
@@ -157,4 +157,5 @@ update {
 Config {
 	screen(320,180)
 	ram(1k)
+	palette(0)
 }
