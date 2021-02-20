@@ -37,6 +37,15 @@ public class Col {
     return Palette[pos];
   }
 
+  public static void SetDefaultPalette() {
+    UsingPalette = true;
+    Palette[0] = new Color32(0, 0, 0, 255);
+    Palette[255] = new Color32(0, 0, 0, 0);
+    for (int col = 0; col < 256; col++) {
+      PaletteIndex[col] = GetColor((byte)col);
+    }
+  }
+
   public static void UsePalette(bool use) {
     UsingPalette = use;
     if (use) {
@@ -222,7 +231,26 @@ public class Col {
   }
 
   public static byte C(byte r, byte g, byte b) {
-    return GetColorByte(new Color32((byte)(r * 51), (byte)(g * 51), (byte)(b * 51), 255));
+    if (UsingPalette) {
+      // Find the closest color to the ones defined
+      Color32 color = new Color32(r, g, b, 255);
+      byte colorIndex = 0;
+      int minError = int.MaxValue;
+      for (int i = 0, n = Palette.Length; i < n; i++) {
+        int dr = color.r - Palette[i].r;
+        int dg = color.g - Palette[i].g;
+        int db = color.b - Palette[i].b;
+        int da = color.a - Palette[i].a;
+        int error = dr * dr + dg * dg + db * db + da * da;
+        if (error < minError) {
+          minError = error;
+          colorIndex = (byte)i;
+        }
+      }
+      return colorIndex;
+    }
+    else
+      return GetColorByte(new Color32((byte)(r * 51), (byte)(g * 51), (byte)(b * 51), 255));
   }
 
   public static Color32 GetColorForPalette(byte pos) {

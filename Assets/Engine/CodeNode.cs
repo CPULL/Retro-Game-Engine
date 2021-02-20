@@ -457,7 +457,7 @@ public class CodeNode {
         }
         return res + "<color=#D65CA6>)</color>";
       }
-      case BNF.PaletteConfig: return "<color=#569CD6>Palette(</color>" + (iVal == 0 ? "0" : "1") + "<color=#569CD6>)</color>";
+      case BNF.PaletteConfig: return "<color=#569CD6>UsePalette(</color>" + (iVal == 0 ? "0" : "1") + "<color=#569CD6>)</color>";
       case BNF.Ram: return "<color=#569CD6>ram(</color>" +
             (iVal < 1024 ? iVal.ToString() : (
             iVal < 1024 * 1024 ? (((int)(10 * iVal / 1024f)) / 10f) + "k" :
@@ -713,7 +713,7 @@ public class CodeNode {
                                "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       case BNF.NOP: return "";
       case BNF.USEPALETTE: return "<color=#569CD6>UsePalette(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
-      case BNF.SETPALETTECOLOR: return "<color=#569CD6>UsePalette(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + 
+      case BNF.SETPALETTECOLOR: return "<color=#569CD6>SetPalette(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + 
           CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
           CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
       case BNF.ERROR: return "<color=#ff2010>" + sVal + "</color>";
@@ -741,7 +741,7 @@ public class CodeNode {
           }
           return res + ")";
         }
-        case BNF.PaletteConfig: return "Palette(" + (iVal == 0 ? "0" : "1") + ")";
+        case BNF.PaletteConfig: return "UsePalette(" + (iVal == 0 ? "0" : "1") + ")";
         case BNF.Ram:
           return "ram" +
             (iVal < 1024 ? iVal.ToString() : (
@@ -987,7 +987,7 @@ public class CodeNode {
         case BNF.NOP: return "";
         case BNF.USEPALETTE: return "UsePalette(" + CN1?.Format(variables, coloring) + ")";
         case BNF.SETPALETTECOLOR:
-          return "UsePalette(" + CN1?.Format(variables, coloring) + ", " +
+          return "SetPalette(" + CN1?.Format(variables, coloring) + ", " +
             CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ", " +
             CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
         case BNF.ERROR: return sVal;

@@ -96,6 +96,7 @@ public class RomEditor : MonoBehaviour {
       line.Label.onEndEdit.AddListener((name) => { UpdateName(line, name); });
       line.Check.onValueChanged.AddListener((check) => { SelectLine(line, check); });
     }
+    EditButton.interactable = false;
     step = 0;
     for (int i = 0; i < labels.Count - 1; i++) {
       step++;
@@ -164,6 +165,7 @@ public class RomEditor : MonoBehaviour {
       line.Label.onEndEdit.AddListener((name) => { UpdateName(line, name); });
       line.Check.onValueChanged.AddListener((check) => { SelectLine(line, check); });
     }
+    EditButton.interactable = false;
     step = 0;
     for (int i = 0; i < res.labels.Count - 1; i++) {
       step++;
@@ -288,7 +290,7 @@ public class RomEditor : MonoBehaviour {
           break;
         }
     }
-    EditButton.enabled = one;
+    EditButton.interactable = one;
     if (!check || !Input.GetKey(KeyCode.LeftShift)) return;
 
     int start = -1;
@@ -461,6 +463,7 @@ public class RomEditor : MonoBehaviour {
     line.Data = data;
     line.size = data.Length;
     line.Size.text = data.Length.ToString();
+    EditButton.interactable = false;
   }
 
   public void AddRawDataCreate() {
@@ -496,6 +499,7 @@ public class RomEditor : MonoBehaviour {
     line.size = size;
     line.Size.text = size.ToString();
     AddRawDataBlock.SetActive(false);
+    EditButton.interactable = false;
   }
 
   public void SaveBlock() {

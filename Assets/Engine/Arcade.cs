@@ -478,6 +478,9 @@ public class Arcade : MonoBehaviour {
     CompleteFrame();
     variables = vars;
     labels.Clear();
+
+    Col.SetDefaultPalette();
+
     try {
       Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
       if (code.sVal == null)
