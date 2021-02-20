@@ -45,3 +45,5 @@ CodeEditor: Add "rom" to current developed project
 
 Run, Pause, Run step, Restart, Stop, View Variables, View memory
 
+
+The variable of the cycle is set to Direct and not to Reg

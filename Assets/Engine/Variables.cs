@@ -24,6 +24,7 @@ public class Variables {
   }
 
   internal Value Get(int reg) {
+    if (reg >= pointers.Count) return new Value();
     return vars[reg];
   }
 

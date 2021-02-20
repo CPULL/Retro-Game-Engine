@@ -15,18 +15,18 @@ Name: Shadow of the Beast
 
 
 Start {
-	clr(c000)
-	write("Shadow of the Beast", 60,50,c401)
+	clr(000c)
+	write("Shadow of the Beast", 60,50, 401c)
 	write("RGE demo by CPU", 76,60,c350)
-	write("Use left and right to walk", 54,100,c134, 0, 1)
+	write("Use left and right to walk", 54,100, 134c, 0, 1)
 	frame
 	wait(4)
-	clr(c133)
+	clr(133c)
 	for(i=0,i<12,i++) {
 		sp[i] = Label("PlayerSprite"+i)
 		sprite(0, sp[i], 0)
 	}
-	box(0,128,320,180,c152, c152)
+	box(0,128,320,180,152c, 152c)
 	spos(0, 150-16, 120)
 	spen(0,1)
 	t=0

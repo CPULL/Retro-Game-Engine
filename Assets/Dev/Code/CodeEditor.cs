@@ -149,7 +149,7 @@ public class CodeEditor : MonoBehaviour {
         copied = "";
         SaveLine();
         for (int line = selectionS; line <= selectionE; line++) {
-          copied += lines[line];
+          copied += lines[line].Line(false);
           if (line != selectionE) copied += "\n";
         }
         selectionS = -1;
@@ -162,7 +162,7 @@ public class CodeEditor : MonoBehaviour {
         copied = "";
         SaveLine();
         for (int line = selectionS; line <= selectionE; line++) {
-          copied += lines[line];
+          copied += lines[line].Line(false);
           if (line != selectionE) copied += "\n";
         }
         // Remove the copied lines
@@ -700,7 +700,7 @@ public class CodeEditor : MonoBehaviour {
     if (code == null) return;
 
     // Reset the Arcade, and pass the parsed parts
-    arcade.LoadCode(code, rom);
+    arcade.LoadCode(code, variables, rom);
   }
 
   #endregion Run / Debug ***********************************************************************************************************************************************

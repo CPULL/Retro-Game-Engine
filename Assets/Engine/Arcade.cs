@@ -28,7 +28,7 @@ public class Arcade : MonoBehaviour {
   int memsize = 256 * 1024;
   int romsize = 0;
   byte[] mem;
-  readonly Variables variables = new Variables();
+  Variables variables = new Variables();
   readonly Dictionary<string, int> labels = new Dictionary<string, int>();
   readonly Dictionary<int, Texture2D> labelTextures = new Dictionary<int, Texture2D>();
   readonly Grob[] sprites = new Grob[256];
@@ -472,7 +472,8 @@ public class Arcade : MonoBehaviour {
     }
   }
 
-  public void LoadCode(CodeNode code, ByteChunk romdata) { // Labels too
+  public void LoadCode(CodeNode code, Variables vars, ByteChunk romdata) { // Labels too
+    variables = vars;
     try {
       Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
       if (code.sVal == null)
@@ -1113,7 +1114,7 @@ public class Arcade : MonoBehaviour {
   #endregion Tilemap
 
   bool Execute(CodeNode n) {
-//Debug.Log(n);
+Debug.Log(n);
     try {
       switch (n.type) {
         case BNF.CLR: {
