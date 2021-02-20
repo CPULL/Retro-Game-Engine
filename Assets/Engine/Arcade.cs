@@ -472,8 +472,176 @@ public class Arcade : MonoBehaviour {
     }
   }
 
-  public void InsertCode(CodeNode st, CodeNode up, CodeNode cf, byte[] rom) { // Labels too
+  public void LoadCode(CodeNode code, ByteChunk romdata) { // Labels too
+    try {
+      Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
+      if (code.sVal == null)
+        Write("<no name>", 88, 39, Col.C(5, 3, 1));
+      else
+        Write(code.sVal, 88, 39, Col.C(5, 3, 1));
 
+      // Config ************************************************************************************************************** Config
+      CodeNode config = code.Get(BNF.Config);
+      if (config != null) {
+        // Screen ************************************************************************************************************** Screen
+        CodeNode scrconf = config.Get(BNF.ScrConfig);
+        if (scrconf != null) {
+          sw = (int)scrconf.fVal;
+          sh = scrconf.iVal;
+          if (sw < 160) sw = 160;
+          if (sw > 320) sw = 320;
+          if (sh < 100) sh = 100;
+          if (sh > 256) sh = 256;
+          wm1 = sw - 1;
+          hm1 = sh - 1;
+          scaleW = rt.sizeDelta.x / sw;
+          scaleH = rt.sizeDelta.y / sh;
+          useFilter = scrconf.sVal == "*";
+          texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
+            filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
+          };
+          Screen.texture = texture;
+          pixels = texture.GetPixels32();
+          raw = new byte[sw * sh * 4];
+        }
+        sprites[0].Pos(0, 8, scaleW, scaleH, true);
+
+        // Memory ************************************************************************************************************** Memory
+        CodeNode memdef = config.Get(BNF.Ram);
+        if (memdef != null) {
+          if (memdef.iVal < 1024) memdef.iVal = 1024;
+          if (memdef.iVal > 4096 * 1024) memdef.iVal = 4096 * 1024;
+          memsize = memdef.iVal;
+        }
+        else {
+          memsize = 256 * 1024;
+        }
+      }
+
+      // Redraw
+      Clear(0);
+      Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
+      Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
+      Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9, Col.C(1, 5, 2));
+      Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
+      if (code.sVal == null)
+        Write("<no name>", 88, 39, Col.C(5, 3, 1));
+      else
+        Write(code.sVal, 88, 39, Col.C(5, 3, 1));
+
+      if (romdata != null) {
+        romsize = romdata.block.Length;
+        Write("Data:   ROM " + MemSize(romsize), 4, 48 + 18, Col.C(1, 3, 4));
+        mem = new byte[memsize + romsize];
+        int pos = memsize;
+        for (int i = 0; i < romsize; i++)
+          mem[pos++] = romdata.block[i];
+        foreach (CodeLabel l in romdata.labels) {
+          labels.Add(l.name.Trim().ToLowerInvariant(), memsize + l.start);
+        }
+      }
+      else if (code.HasNode(BNF.Data)) {
+        CodeNode data = code.Get(BNF.Data);
+        Write("Data:   Yes, source", 4, 48 + 18, Col.C(1, 3, 4));
+
+        // ROM ****************************************************************************************************************** ROM
+        CodeNode romdef = data.Get(BNF.Rom);
+        if (romdef != null) {
+          romsize = romdef.bVal.Length;
+          mem = new byte[memsize + romsize];
+          int pos = memsize;
+          for (int i = 0; i < romsize; i++)
+            mem[pos++] = romdef.bVal[i];
+        }
+
+        // PALETTE ****************************************************************************************************************** PALETTE
+        CodeNode paldef = data.Get(BNF.PaletteConfig);
+        if (paldef != null) {
+          Col.UsePalette(paldef.iVal != 0);
+        }
+
+        // LABELS *************************************************************************************************************** LABELS
+        foreach (CodeNode n in data.children) {
+          if (n.type == BNF.Label) {
+            labels.Add(n.sVal, memsize + n.iVal);
+          }
+        }
+      }
+      else {
+        Write("Data:   ", 4, 48 + 18, Col.C(1, 3, 4));
+        Write("<missing>", 68, 48 + 18, Col.C(5, 3, 1));
+        mem = new byte[256 * 1024];
+      }
+
+      startCode = code.Get(BNF.Start);
+      Write("Start:  ", 4, 48, Col.C(1, 3, 4));
+      if (startCode != null && startCode.children != null && startCode.children.Count > 0) {
+        Write("Yes", 68, 48, Col.C(1, 3, 4));
+      }
+      else {
+        Write("<missing>", 68, 48, Col.C(5, 3, 1));
+        startCode = null;
+      }
+
+      Write("Update: ", 4, 48 + 9, Col.C(1, 3, 4));
+      updateCode = code.Get(BNF.Update);
+      if (updateCode != null && updateCode.children != null && updateCode.children.Count > 0) {
+        Write("Yes", 68, 48 + 9, Col.C(1, 3, 4));
+      }
+      else {
+        Write("<missing>", 68, 48 + 9, Col.C(5, 3, 1));
+        updateCode = null;
+      }
+
+      Write("Screen: " + sw + " x " + sh, 10, 100, Col.C(1, 3, 4));
+      Write("Memory: " + MemSize(memsize), 10, 110, Col.C(1, 3, 4));
+
+      updateDelay = updateTime;
+
+      CodeNode funcs = code.Get(BNF.Functions);
+      if (funcs != null && funcs.children != null) {
+        foreach (CodeNode f in funcs.children) {
+          functions[f.sVal] = f;
+        }
+      }
+
+      texture.Apply();
+
+      if (startCode != null)
+        stacks.AddStack(startCode, null, startCode.origLine, startCode.origLineNum);
+      else if (updateCode != null)
+        stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
+    } catch (ParsingException e) {
+      string msg = "";
+      for (int i = 0, l = 0; i < e.Message.Length; i++) {
+        char c = e.Message[i];
+        if (c == '\n') l = 0;
+        msg += c;
+        l++;
+        if (l == sw / 8 - 1) {
+          msg += "\n";
+          l = 0;
+        }
+      }
+      Write("Error in loading!\n" + msg + "\n" + e.Code + "\nLine: " + e.LineNum, 4, 48, Col.C(5, 1, 0));
+      texture.Apply();
+      Debug.Log("Error in loading! " + e.Message + "\n" + e.Code + "\nLine: " + e.LineNum + "\n" + e.StackTrace);
+    } catch (Exception e) {
+      string msg = "";
+      for (int i = 0, l = 0; i < e.Message.Length; i++) {
+        char c = e.Message[i];
+        if (c == '\n') l = 0;
+        msg += c;
+        l++;
+        if (l == sw / 8 - 1) {
+          msg += "\n";
+          l = 0;
+        }
+      }
+      Write("Error in loading!\n" + msg, 4, 48, Col.C(5, 1, 0));
+      texture.Apply();
+      Debug.Log("Error in loading! " + e.Message + "\n" + e.StackTrace);
+    }
   }
 
   private string MemSize(int size) {

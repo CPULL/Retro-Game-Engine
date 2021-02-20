@@ -4,10 +4,11 @@
     {
         [HideInInspector] _MainTex("Texture", 2D) = "white" {}
         [HideInInspector] _UVCenter("_UVCenter", Vector) = (0,0,0,0)
-        [MaterialToggle] _UsePalette("_UsePalette", Float) = 0
+        [MaterialToggle] _UsePalette("Use Palette", Float) = 0
         _MaskTex("Lighting Mask (RGB)", 2D) = "black" {}
-        _Luma("_Luma", Range(-1, 1)) = 0
-        _Contrast("_Contrast", Range(-1, 1)) = 0
+        _Luma("Luma", Range(-1, 1)) = 0
+        _Contrast("Contrast", Range(-1, 1)) = 0
+        [MaterialToggle] _PixelPerfect("Pixel Perfect", float) = 0
     }
 
 
@@ -35,7 +36,7 @@
 
             float4 _ClipRect;
             fixed4 _Colors[256];
-            float _Contrast, _Luma;
+            float _Contrast, _Luma, _PixelPerfect;
 
             struct appdata
             {
@@ -61,7 +62,10 @@
             v2f vert (appdata v)
             {
                 v2f o;
-                o.vertex = UnityPixelSnap(UnityObjectToClipPos(v.vertex));
+                if (_PixelPerfect == 0)
+                  o.vertex = UnityObjectToClipPos(v.vertex);
+                else
+                  o.vertex = UnityPixelSnap(UnityObjectToClipPos(v.vertex));
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 o.worldPosition = v.vertex;
                 return o;

@@ -12,7 +12,6 @@ public class CodeEditor : MonoBehaviour {
   public Scrollbar VerticalCodeBar;
   public RectTransform SelectionRT;
   public TextMeshProUGUI Result;
-  public TextMeshProUGUI dbg;
   public Toggle OptimizeCodeTG;
 
   readonly CodeParser cp = new CodeParser();
@@ -640,6 +639,10 @@ public class CodeEditor : MonoBehaviour {
   }
 
   public void Compile() {
+    CompileCode();
+  }
+
+  public CodeNode CompileCode() {
     // Get all lines, produce an aggregated string, and do the full parsing.
     string code = "";
     foreach (LineData line in lines)
@@ -647,10 +650,14 @@ public class CodeEditor : MonoBehaviour {
     variables.Clear();
     try {
       CodeNode result = cp.Parse(code, variables, true);
-      if (!result.HasNode(BNF.Config) && !result.HasNode(BNF.Data) && !result.HasNode(BNF.Start) && !result.HasNode(BNF.Update) && !result.HasNode(BNF.Functions))
+      if (!result.HasNode(BNF.Config) && !result.HasNode(BNF.Data) && !result.HasNode(BNF.Start) && !result.HasNode(BNF.Update) && !result.HasNode(BNF.Functions)) {
         Result.text = "No executable code found (Start, Update, Functions, Config, or Data)";
-      else
+        return null;
+      }
+      else {
         Result.text = "Parsing OK";
+        return result;
+      }
 
     } catch(ParsingException e) {
       Result.text = "<color=red>" + e.Message + "</color>\n" + e.Code + "\nLine: " + e.LineNum;
@@ -661,7 +668,42 @@ public class CodeEditor : MonoBehaviour {
     } catch (System.Exception e) {
       Result.text = "<color=red>" + e.Message + "</color>";
     }
+    return null;
   }
+
+
+  #region Run / Debug ***********************************************************************************************************************************************
+
+  public Arcade arcade;
+  ByteChunk rom = null;
+
+  public void AttachRom() {
+    // Filebrowser with roms
+    FileBrowser.Load(AttachRomPost, FileBrowser.FileType.Rom);
+  }
+
+  public void AttachRomPost(string path) {
+    // Once selected read and generate the ByteChunk
+    try {
+      rom = new ByteChunk();
+      ByteReader.ReadBinBlock(path, rom);
+      Result.text = "Rom loaded";
+    } catch (Exception e) {
+      Result.text = "<color=#ff2e00>Error in loading rom:\n" + e.Message + "</color>";
+      rom = null;
+    }
+  }
+
+  public void Run() {
+    // Compile the code, if errors show them and stop
+    CodeNode code = CompileCode();
+    if (code == null) return;
+
+    // Reset the Arcade, and pass the parsed parts
+    arcade.LoadCode(code, rom);
+  }
+
+  #endregion Run / Debug ***********************************************************************************************************************************************
 
   #region Load / Save ***********************************************************************************************************************************************
   public GameObject LoadSaveButton;
