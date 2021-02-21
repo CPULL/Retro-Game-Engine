@@ -503,6 +503,10 @@ public class CodeParser {
       if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { //[IF] ([EXP]) [BLOCK]
         ParseIfBlock(node, after, lines);
         increment = 1;
+        if (rgBlockOpen.IsMatch(after))
+          node.iVal = 1;
+        else
+          node.iVal = 2;
       }
       else if (!string.IsNullOrEmpty(after)) { // [IF] ([EXP]) [STATEMENT]
         CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);

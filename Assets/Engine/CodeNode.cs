@@ -562,9 +562,9 @@ public class CodeNode {
           string increment = "";
           if (CN3!=null && CN3.children.Count > 1) increment = CN3.children[CN3.children.Count - 1].Format(variables, coloring);
           if (iVal == 1) // ******************* 1 block open same line *********************************************************
-            return "<color=#569CD6>for (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color> " + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color> " + increment + "<color=#569CD6>)</color> {";
+            return "<color=#569CD6>for (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>,</color> " + CN2?.Format(variables, coloring) + "<color=#569CD6>,</color> " + increment + "<color=#569CD6>)</color> {";
           if (iVal == 2) // ****************** 2 single statement same line ****************************************************
-            return "<color=#569CD6>for (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color> " + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color> " + increment + "<color=#569CD6>)</color> " + CN3?.CN1?.Format(variables, coloring);
+            return "<color=#569CD6>for (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>,</color> " + CN2?.Format(variables, coloring) + "<color=#569CD6>,</color> " + increment + "<color=#569CD6>)</color> " + CN3?.CN1?.Format(variables, coloring);
           // ****************** 3 block open next line **********************************************************
           // ****************** 4 single statement next line ****************************************************
           return "<color=#569CD6>for (</color>" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + increment + "<color=#569CD6>)</color>";
@@ -851,13 +851,15 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
           return "while (" + CN1?.Format(variables, coloring) + ")";
         }
         case BNF.FOR: {
+          string increment = "";
+          if (CN3 != null && CN3.children.Count > 1) increment = CN3.children[CN3.children.Count - 1].Format(variables, coloring);
           if (iVal == 1) // ******************* 1 block open same line *********************************************************
-            return "for (" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.children[CN3.children.Count - 1].Format(variables, coloring) + ") {";
+            return "for (" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + increment + ") {";
           if (iVal == 2) // ****************** 2 single statement same line ****************************************************
-            return "for (" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.children[CN3.children.Count - 1].Format(variables, coloring) + ") " + CN3?.CN1?.Format(variables, coloring);
+            return "for (" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + increment + ") " + CN3?.CN1?.Format(variables, coloring);
           // ****************** 3 block open next line **********************************************************
           // ****************** 4 single statement next line ****************************************************
-          return "for (" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.children[CN3.children.Count - 1].Format(variables, coloring) + ")";
+          return "for (" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + increment + ")";
         }
 
         case BNF.CLR: return "Clr(" + CN1?.Format(variables, coloring) + ")";
