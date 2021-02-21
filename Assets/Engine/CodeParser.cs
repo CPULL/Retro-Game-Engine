@@ -190,7 +190,8 @@ public class CodeParser {
   readonly Regex rgIf = new Regex("[\\s]*if[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgElse = new Regex("[\\s]*else[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWhile = new Regex("[\\s]*while[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgFor = new Regex("[\\s]*for[\\s]*\\(([^,]*=[^,]*)?,([^,]*)?,([^,]*)?\\)[\\s]*(\\{)?", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgFor = new Regex("[\\s]*for[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*(.*)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgForPars = new Regex("([^,]*=[^,]*)?,([^,]*)?,([^,]*)?", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgScreen = new Regex("[\\s]*screen[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWait = new Regex("[\\s]*wait[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDestroy = new Regex("[\\s]*destroy[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -290,7 +291,7 @@ public class CodeParser {
       });
 
       idcount = 0;
-      CodeNode res = new CodeNode(BNF.Program, null, 0);
+      CodeNode res = new CodeNode(BNF.Program, null, -1);
       nodes = new Dictionary<string, CodeNode>();
       functions = new Dictionary<string, CodeNode>();
       vars = variables;
@@ -553,13 +554,18 @@ public class CodeParser {
       Match m = rgFor.Match(line);
       CodeNode node = new CodeNode(BNF.FOR, line, linenumber);
       parent.Add(node);
-      if (!string.IsNullOrEmpty(m.Groups[1].Value.Trim())) {
-        ParseLine(node, m.Groups[1].Value.Trim(), lines);
+      Match pm = rgForPars.Match(m.Groups[1].Value);
+      string after = m.Groups[2].Value.Trim();
+
+      // return "for( CN1 , CN2 , CN3) " + CN4
+
+      if (!string.IsNullOrEmpty(pm.Groups[1].Value.Trim())) {
+        ParseLine(node, pm.Groups[1].Value.Trim(), lines);
       }
       else node.Add(new CodeNode(BNF.NOP, line, linenumber));
 
-      if (!string.IsNullOrEmpty(m.Groups[2].Value.Trim())) {
-        node.Add(ParseExpression(m.Groups[2].Value.Trim()));
+      if (!string.IsNullOrEmpty(pm.Groups[2].Value.Trim())) {
+        node.Add(ParseExpression(pm.Groups[2].Value.Trim()));
       }
       else {
         if (noFail) {
@@ -571,23 +577,65 @@ public class CodeParser {
           throw new ParsingException("Invalid FOR, it needs to have a condition to terminate", line, linenumber + 1);
       }
 
+      CodeNode increment = new CodeNode(BNF.BLOCK, line, linenumber);
+      if (!string.IsNullOrEmpty(pm.Groups[3].Value.Trim())) {
+        ParseLine(increment, pm.Groups[3].Value.Trim(), lines);
+      }
+
       if (lines == null && noFail) {
-        if (!string.IsNullOrEmpty(m.Groups[3].Value.Trim())) { // The last part is added at the end of the block
-          ParseLine(node, m.Groups[3].Value.Trim(), lines);
-        }
+        node.Add(new CodeNode(BNF.NOP, line, linenumber));
         return;
       }
 
-      CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
-      int end = FindEndOfBlock(lines, linenumber);
-      if (end < 0) throw new ParsingException("\"FOR\" section does not end", line, linenumber + 1);
-      ParseBlock(lines, linenumber + 1, end, b);
-      node.Add(b);
-
-      if (!string.IsNullOrEmpty(m.Groups[3].Value.Trim())) { // The last part is added at the end of the block
-        ParseLine(b, m.Groups[3].Value.Trim(), lines);
+      // Check what of the 4 cases we are in
+      if (!string.IsNullOrWhiteSpace(after)) {
+        if (rgBlockOpen.IsMatch(after)) { // ************************************* 1 block open same line ***********************************************************
+          node.iVal = 1;
+          CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
+          int end = FindEndOfBlock(lines, linenumber);
+          if (end < 0) throw new ParsingException("\"FOR\" section does not end", linenumber + 1);
+          ParseBlock(lines, linenumber + 1, end, b);
+          if (increment.CN1 != null) b.Add(increment.CN1);
+          node.Add(b);
+          linenumber = end;
+          return;
+        }
+        else { // **************************************************************** 2 single statement same line ******************************************************
+          node.iVal = 2;
+          CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
+          node.Add(b);
+          ParseLine(b, after, lines);
+          if (increment.CN1 != null) b.Add(increment.CN1);
+          return;
+        }
       }
-      return;
+      else { // after is empty, we need to check the next lines
+        for (int i = linenumber + 1; i < lines.Length; i++) {
+          string candidate = lines[i].Trim(' ', '\t', '\r', '\n');
+          if (rgBlockOpen.IsMatch(candidate)) { // ******************************* 3 block open next line ***********************************************************
+            node.iVal = 3;
+            CodeNode b = new CodeNode(BNF.BLOCK, candidate, i);
+            int end = FindEndOfBlock(lines, i);
+            if (end < 0) throw new ParsingException("\"FOR\" section does not end", linenumber + 1);
+            ParseBlock(lines, i, end, b);
+            if (increment.CN1 != null) b.Add(increment.CN1);
+            node.Add(b);
+            linenumber = end + 1;
+            return;
+          }
+          else if (!string.IsNullOrWhiteSpace(candidate)) {  // ****************** 4 single statement next line ******************************************************
+            node.iVal = 4;
+            CodeNode b = new CodeNode(BNF.BLOCK, line, i);
+            node.Add(b);
+            ParseLine(b, candidate, lines);
+            if (increment.CN1 != null) b.Add(increment.CN1);
+            linenumber = i;
+            return;
+          }
+        }
+      }
+
+      throw new ParsingException("Invalid block after FOR statement", origForException, linenumber + 1);
     }
 
 
@@ -1357,16 +1405,49 @@ public class CodeParser {
 
       // check if we have a block just after (same line or next non-empty line)
       string after = m.Groups[2].Value.Trim();
-      if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { //[WHILE] ([EXP]) [BLOCK]
-        if (lines == null && noFail) return; // No need to parse
-        ParseWhileBlock(node, after, lines);
-        return;
+
+      // Check what of the 4 cases we are in
+      if (!string.IsNullOrWhiteSpace(after)) {
+        if (rgBlockOpen.IsMatch(after)) { // ************************************* 1 block open same line ***********************************************************
+          node.iVal = 1;
+          CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
+          int end = FindEndOfBlock(lines, linenumber);
+          if (end < 0) throw new ParsingException("\"WHILE\" section does not end", linenumber + 1);
+          ParseBlock(lines, linenumber + 1, end, b);
+          node.Add(b);
+          linenumber = end;
+          return;
+        }
+        else { // **************************************************************** 2 single statement same line ******************************************************
+          node.iVal = 2;
+          CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
+          node.Add(b);
+          ParseLine(b, after, lines);
+          return;
+        }
       }
-      else if (!string.IsNullOrEmpty(after)) { // [WHILE] ([EXP]) [STATEMENT]
-        CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
-        node.Add(b);
-        ParseLine(b, after, lines);
-        return;
+      else { // after is empty, we need to check the next lines
+        for (int i = linenumber + 1; i < lines.Length; i++) {
+          string candidate = lines[i].Trim(' ', '\t', '\r', '\n');
+          if (rgBlockOpen.IsMatch(candidate)) { // ******************************* 3 block open next line ***********************************************************
+            node.iVal = 3;
+            CodeNode b = new CodeNode(BNF.BLOCK, candidate, i);
+            int end = FindEndOfBlock(lines, i);
+            if (end < 0) throw new ParsingException("\"WHILE\" section does not end", linenumber + 1);
+            ParseBlock(lines, i, end, b);
+            node.Add(b);
+            linenumber = end + 1;
+            return;
+          }
+          else if (!string.IsNullOrWhiteSpace(candidate)) {  // ****************** 4 single statement next line ******************************************************
+            node.iVal = 4;
+            CodeNode b = new CodeNode(BNF.BLOCK, line, i);
+            node.Add(b);
+            ParseLine(b, candidate, lines);
+            linenumber = i;
+            return;
+          }
+        }
       }
 
       throw new ParsingException("Invalid block after WHILE statement", origForException, linenumber + 1);
@@ -1598,7 +1679,6 @@ public class CodeParser {
     }
   }
 
-
   void ParseElseBlock(CodeNode ifNode, string[] lines) {
     // Is the next non-empty line an "else"?
     for (int pos = linenumber; pos < lines.Length; pos++) {
@@ -1648,24 +1728,6 @@ public class CodeParser {
     }
   }
 
-
-  void ParseWhileBlock(CodeNode ifNode, string after, string[] lines) {
-    // Block or single line?
-    if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { // [WHILE] [BLOCK]
-      CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
-      int end = FindEndOfBlock(lines, linenumber);
-      if (end < 0) throw new ParsingException("\"WHILE\" section does not end", linenumber + 1);
-      ParseBlock(lines, linenumber + 1, end, b);
-      ifNode.Add(b);
-      linenumber = end + 1;
-    }
-    else { // [WHILE] [STATEMENT]
-      CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
-      ifNode.Add(b);
-      ParseLine(b, after, lines);
-      linenumber++;
-    }
-  }
 
   // [EXP] [OP] [EXP] | [PAR] | [REG] | [INT] | [FLT] | [MEM] | [UO] | [LEN] | deltaTime
   CodeNode ParseExpression(string line) {

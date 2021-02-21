@@ -5275,7 +5275,7 @@ MonoBehaviour:
   boldStyle: 0.75
   boldSpacing: 7
   italicStyle: 35
-  tabSize: 10
+  tabSize: 8
 --- !u!28 &628858437322861412
 Texture2D:
   m_ObjectHideFlags: 0
