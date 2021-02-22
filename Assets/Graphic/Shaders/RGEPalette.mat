@@ -30,10 +30,10 @@ Material:
     m_Floats:
     - _Contrast: 0
     - _DoIt: 0
-    - _Luma: 0.011639636
+    - _Luma: 0
     - _PixelPerfect: 0
     - _Sturation: 0
-    - _UsePalette: 1
+    - _UsePalette: 0
     m_Colors:
     - _Color: {r: 0, g: 0, b: 0, a: 1}
     - _Color01: {r: 0, g: 0, b: 0.2, a: 1}

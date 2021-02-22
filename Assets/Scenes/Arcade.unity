@@ -3974,10 +3974,10 @@ RectTransform:
   m_Father: {fileID: 39576364}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 1}
+  m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -960, y: -540}
-  m_SizeDelta: {x: 960, y: 540}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1114100339
 MonoBehaviour:
@@ -3991,6 +3991,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5ed81e0cf053854ca32d0b50c47bff5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  DevMode: 0
   Screen: {fileID: 2132631027}
   rt: {fileID: 1114100338}
   FPS: {fileID: 294898448}

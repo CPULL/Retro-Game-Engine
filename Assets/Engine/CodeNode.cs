@@ -554,7 +554,6 @@ public class CodeNode {
           if (CN2 == null) return CN1.Format(variables, coloring);
           return "<color=#569CD6>{</color>" + CN1?.Format(variables, coloring) + ", ...<color=#569CD6>}</color>"; // FIXME
         }
-        case BNF.IF: return "<color=#569CD6>if (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color> " + CN2?.Format(variables, coloring); // FIXME there is an else here?
         case BNF.Else: return "<color=#569CD6>else</color> " + CN1?.Format(variables, coloring);
         case BNF.WHILE: {
           if (iVal == 1) // ******************* 1 block open same line *********************************************************
@@ -573,7 +572,16 @@ public class CodeNode {
             return "<color=#569CD6>for (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>,</color> " + CN2?.Format(variables, coloring) + "<color=#569CD6>,</color> " + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color> " + CN4?.CN1?.Format(variables, coloring);
           // ****************** 3 block open next line **********************************************************
           // ****************** 4 single statement next line ****************************************************
-          return "<color=#569CD6>for (</color>" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          return "<color=#569CD6>for (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>,</color> " + CN2?.Format(variables, coloring) + "<color=#569CD6>,</color> " + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
+        case BNF.IF: {
+          if (iVal == 1) // ******************* 1 block open same line *********************************************************
+            return "<color=#569CD6>if (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color> {";
+          if (iVal == 2) // ****************** 2 single statement same line ****************************************************
+            return "<color=#569CD6>if (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color> " + CN2?.CN1?.Format(variables, coloring);
+          // ****************** 3 block open next line **********************************************************
+          // ****************** 4 single statement next line ****************************************************
+          return "<color=#569CD6>if (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         }
 
         case BNF.CLR: return "<color=#569CD6>Clr(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
@@ -845,7 +853,6 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
           if (CN2 == null) return CN1.Format(variables, coloring);
           return "{" + CN1?.Format(variables, coloring) + ", ...}"; // FIXME
         }
-        case BNF.IF: return "if (" + CN1?.Format(variables, coloring) + ") " + CN2?.Format(variables, coloring); // FIXME there is an else here?
         case BNF.Else: return "else " + CN1?.Format(variables, coloring);
         case BNF.WHILE: {
           if (iVal == 1) // ******************* 1 block open same line *********************************************************
@@ -864,6 +871,15 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
           // ****************** 3 block open next line **********************************************************
           // ****************** 4 single statement next line ****************************************************
           return "for (" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+        }
+        case BNF.IF: {
+          if (iVal == 1) // ******************* 1 block open same line *********************************************************
+            return "if (" + CN1?.Format(variables, coloring) + ") {";
+          if (iVal == 2) // ****************** 2 single statement same line ****************************************************
+            return "if (" + CN1?.Format(variables, coloring) + ") " + CN2?.CN1?.Format(variables, coloring);
+          // ****************** 3 block open next line **********************************************************
+          // ****************** 4 single statement next line ****************************************************
+          return "if (" + CN1?.Format(variables, coloring) + ")";
         }
 
         case BNF.CLR: return "Clr(" + CN1?.Format(variables, coloring) + ")";

@@ -497,9 +497,11 @@ public class CodeParser {
           throw new ParsingException("No conditional expression for the IF", origExpression, linenumber + 1);
       }
 
-      // check if we have a block just after (same line or next non-empty line)
+
+
+
+      /*/ check if we have a block just after (same line or next non-empty line)
       int increment = 0;
-      string after = m.Groups[2].Value.Trim();
       if (rgBlockOpen.IsMatch(after) || string.IsNullOrEmpty(after)) { //[IF] ([EXP]) [BLOCK]
         ParseIfBlock(node, after, lines);
         increment = 1;
@@ -535,17 +537,18 @@ public class CodeParser {
           break; // No else
       }
       return;
+      */
 
-      /*
+      string after = m.Groups[2].Value.Trim();
+
       // Check what of the 4 cases we are in
       if (!string.IsNullOrWhiteSpace(after)) {
         if (rgBlockOpen.IsMatch(after)) { // ************************************* 1 block open same line ***********************************************************
           node.iVal = 1;
           CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
           int end = FindEndOfBlock(lines, linenumber);
-          if (end < 0) throw new ParsingException("\"FOR\" section does not end", linenumber + 1);
+          if (end < 0) throw new ParsingException("\"IF\" section does not end", linenumber + 1);
           ParseBlock(lines, linenumber + 1, end, b);
-          if (increment.CN1 != null) b.Add(increment.CN1);
           node.Add(b);
           linenumber = end;
           return;
@@ -555,7 +558,6 @@ public class CodeParser {
           CodeNode b = new CodeNode(BNF.BLOCK, line, linenumber);
           node.Add(b);
           ParseLine(b, after, lines);
-          if (increment.CN1 != null) b.Add(increment.CN1);
           return;
         }
       }
@@ -566,9 +568,8 @@ public class CodeParser {
             node.iVal = 3;
             CodeNode b = new CodeNode(BNF.BLOCK, candidate, i);
             int end = FindEndOfBlock(lines, i);
-            if (end < 0) throw new ParsingException("\"FOR\" section does not end", linenumber + 1);
+            if (end < 0) throw new ParsingException("\"IF\" section does not end", linenumber + 1);
             ParseBlock(lines, i, end, b);
-            if (increment.CN1 != null) b.Add(increment.CN1);
             node.Add(b);
             linenumber = end + 1;
             return;
@@ -577,17 +578,15 @@ public class CodeParser {
             node.iVal = 4;
             CodeNode b = new CodeNode(BNF.BLOCK, line, i);
             node.Add(b);
-            ParseLine(b, candidate, lines);
-            if (increment.CN1 != null) b.Add(increment.CN1);
             linenumber = i;
+            ParseLine(b, candidate, lines);
             return;
           }
         }
       }
 
-      throw new ParsingException("Invalid block after FOR statement", origForException, linenumber + 1);
+      throw new ParsingException("Invalid block after IF statement", origForException, linenumber + 1);
 
-      */
     }
 
     // [ELSE] [BLOCK]|[STATEMENT] <- only in case of single line parsing

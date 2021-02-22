@@ -164,7 +164,7 @@ public class NE : MonoBehaviour {
         code += PrintLine(indent, lines[i], i < lines.Length - 1);
         indent++;
       }
-      // FIXME do the same for IF, ELSE, FOR
+      // FIXME do the same for IF, ELSE
       else if (!string.IsNullOrWhiteSpace(l)) {
         code += PrintLine(indent, lines[i], i < lines.Length - 1);
         indent -= increaseone;
