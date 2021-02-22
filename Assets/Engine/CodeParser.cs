@@ -1768,7 +1768,6 @@ public class CodeParser {
 
   // [EXP] [OP] [EXP] | [PAR] | [REG] | [INT] | [FLT] | [MEM] | [UO] | [LEN] | deltaTime
   CodeNode ParseExpression(string line) {
-    string dddd = line;
     origExpression = line;
     line = line.Trim(' ', '\t', '\r', ';');
 
@@ -2685,7 +2684,6 @@ public class CodeParser {
 
     line = line.Trim(' ', '\t', '\r');
     if (!nodes.ContainsKey(line)) {
-      Debug.Log("Error on, Error on, Error on, Error on: |" + dddd + "|" + line);
       line = rgTag.Replace(line, "").Trim();
 
       int numQ = 0;
