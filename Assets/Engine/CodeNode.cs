@@ -45,8 +45,9 @@ public class CodeNode {
     type = BNF.BLOCK;
     origLine = block.origLine;
     origLineNum = block.origLineNum;
-    children = new List<CodeNode>(block.children);
-    children.Add(increment);
+    children = new List<CodeNode>(block.children) {
+      increment
+    };
   }
 
   internal void Add(CodeNode node) {
@@ -440,6 +441,46 @@ public class CodeNode {
       return Format(variables, coloring) + (hadOpenBlock ? "{" : "") + " <color=#70e688><mark=#30061880>" + comment + "</mark></color>";
     else
       return Format(variables, coloring) + (hadOpenBlock ? "{" : "") + " " + comment;
+  }
+
+  internal string Format(Variables variables, bool coloring, string comment, CommentType ct, bool hadOpenBlock) {
+    string line = Format(variables, coloring);
+    if (string.IsNullOrEmpty(comment)) return line;
+    if (coloring) {
+      switch (ct) {
+        case CommentType.None:
+        case CommentType.MultiLineInner:
+          return line;
+
+        case CommentType.MultiLineOpen:
+          return line + " <color=#70e688><mark=#30061880>" + comment;
+
+        case CommentType.SingleLine:
+        case CommentType.MultiLineFull:
+          return line + " <color=#70e688><mark=#30061880>" + comment + "</mark></color>";
+
+        case CommentType.MultiLineClose:
+          return comment + "</mark></color> " + line;
+      }
+    }
+    else {
+      switch (ct) {
+        case CommentType.None:
+        case CommentType.MultiLineInner:
+          return line;
+
+        case CommentType.MultiLineOpen:
+          return line + " " + comment;
+
+        case CommentType.SingleLine:
+        case CommentType.MultiLineFull:
+          return line + " " + comment;
+
+        case CommentType.MultiLineClose:
+          return comment + " " + line;
+      }
+    }
+    return line;
   }
 
   internal string Format(Variables variables, bool coloring) {

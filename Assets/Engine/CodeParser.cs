@@ -280,7 +280,13 @@ public class CodeParser {
       // [QuotedStrings]
       file = rgQString.Replace(file, "ˠ");
       // Replace single line comments
-      file = rgCommentSL.Replace(file, "");
+      file = rgCommentSL.Replace(file, m => {
+        string inside = m.Value;
+        string nls = "";
+        foreach (char c in inside)
+          if (c == '\n') nls += "\n";
+        return nls;
+      });
       // Remove multiline-comments, but keep the newlines
       file = rgCommentML.Replace(file, m => {
         string inside = m.Value;

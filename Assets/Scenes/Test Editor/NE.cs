@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -13,6 +14,9 @@ public class NE : MonoBehaviour {
   public TextMeshProUGUI Result;
   public TextMeshProUGUI dbg;
   public TMP_FontAsset MonoFont;
+  readonly List<Comment> comments = new List<Comment>();
+  readonly List<string> undos = new List<string> { "" };
+  int undopos = 0;
 
   private void Start() {
     MonoFont.tabSize = 2;
@@ -32,11 +36,17 @@ public class NE : MonoBehaviour {
     dbg.text = curline + "/" + numlines;
 
     if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.Return)) {
+      SetUndo();
       UpdateLinePos();
     }
     if (Input.GetKeyUp(KeyCode.LeftControl) || Input.GetKeyUp(KeyCode.RightControl)) UpdateLinePos();
-    if (Input.GetKeyUp(KeyCode.RightCurlyBracket) || (Input.GetKeyUp(KeyCode.RightBracket) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))))
+    if (Input.GetKeyUp(KeyCode.RightCurlyBracket) || (Input.GetKeyUp(KeyCode.RightBracket) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))) {
+      SetUndo();
       ParseBlock();
+    }
+
+    if (Input.GetKeyUp(KeyCode.Z) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) Undo();
+    if (Input.GetKeyUp(KeyCode.Y) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) Redo();
 
     delay -= Time.deltaTime;
     if (delay < 0 && edit.text.Length != prevSize) {
@@ -46,6 +56,22 @@ public class NE : MonoBehaviour {
     }
   }
 
+  void SetUndo() {
+    string value = rgSyntaxHighlight.Replace(edit.text, "").Trim();
+    if (undos[undos.Count - 1] == value) return;
+    undos.Add(value);
+    undopos = undos.Count - 1;
+  }
+  void Undo() {
+    undopos--;
+    if (undopos < 0) undopos = 0;
+    edit.SetTextWithoutNotify(undos[undopos]);
+  }
+  void Redo() {
+    undopos++;
+    if (undopos >= undos.Count) undopos = undos.Count - 1;
+    edit.SetTextWithoutNotify(undos[undopos]);
+  }
 
   void UpdateLinePos() {
     int num = 1;
@@ -119,6 +145,8 @@ public class NE : MonoBehaviour {
   readonly Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)", RegexOptions.IgnoreCase);
   readonly Regex rgCommentSL = new Regex("(//.*)$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
   readonly Regex rgCommentML = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
+  readonly Regex rgCommentMLs = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
+  readonly Regex rgCommentMLe = new Regex("(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
   readonly Regex rgBlockOpen = new Regex("(?<!//.*?)\\{", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
   readonly Regex rgBlockClose = new Regex("(?<!//.*?)\\}", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
   readonly Regex rgString = new Regex("(\")([^\"]*)(\")", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
@@ -134,25 +162,94 @@ public class NE : MonoBehaviour {
     // For each grab the line number and get the Format (only if it is a command)
     // reconstruct the lines and update the input field
     string code = rgSyntaxHighlight.Replace(edit.text, "").Trim();
-    string[] lines = code.Split('\n');
+    string[] clines = code.Split('\n');
     code = "";
     int indent = 0;
     int increaseone = 0;
     if (start < 0) start = 0;
-    if (end > lines.Length) end = lines.Length;
-    for (int i = 0; i < start; i++)
-      code += lines[i] + "\n";
+    if (end > clines.Length) end = clines.Length;
+
+    // For each line, be sure we have a corresponding LineData, add if required.
+    while (comments.Count < clines.Length) comments.Add(new Comment());
+    while (comments.Count > clines.Length) comments.RemoveRange(clines.Length, comments.Count - clines.Length);
+
+    // If the line is not similar to the current line of code, update it (in all range)
+    // If the line has to be parsed, replace the line value with the compiled one
+    // Be sure to save the comments before stripping them out and parsing
+    // When completed, recalculate indentation based on the LineData and reconstruct the final edit.text string
+
+    for (int i = 0; i < start; i++) {
+      string line = clines[i];
+      comments[i].Zero();
+      line = rgCommentSL.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.SingleLine);
+        return "";
+      });
+      line = rgCommentML.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineFull);
+        return "";
+      });
+      line = rgCommentMLs.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineOpen);
+        return "";
+      });
+      line = rgCommentMLe.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineClose);
+        return "";
+      });
+      code += line + "\n";
+    }
+
     for (int i = start; i < end; i++) {
       CodeNode compiledLine = FindLine(compiled, i + 1);
-      string line = lines[i].Trim(' ', '\t', '\r', '\n');
+      string line = clines[i].Trim(' ', '\t', '\r', '\n');
+      comments[i].Zero();
+      line = rgCommentSL.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.SingleLine);
+        return "";
+      });
+      line = rgCommentML.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineFull);
+        return "";
+      });
+      line = rgCommentMLs.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineOpen);
+        return "";
+      });
+      line = rgCommentMLe.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineClose);
+        return "";
+      });
+
       if (compiledLine == null) {
         if (rgBlockClose.IsMatch(line)) indent--;
-        code += PrintLine(indent, line, i < lines.Length - 1);
+
+        switch (comments[i].type) {
+          case CodeNode.CommentType.MultiLineOpen:
+            code += PrintLine(indent, line, i < clines.Length - 1) + " <color=#70e688><mark=#30061880>" + comments[i].comment;
+            break;
+
+          case CodeNode.CommentType.SingleLine:
+          case CodeNode.CommentType.MultiLineFull:
+            code += PrintLine(indent, line, i < clines.Length - 1) + " <color=#70e688><mark=#30061880>" + comments[i].comment + "</mark></color>";
+            break;
+
+          case CodeNode.CommentType.MultiLineClose:
+            code += comments[i].comment + "</mark></color>" + PrintLine(indent, line, i < clines.Length - 1);
+            break;
+
+          case CodeNode.CommentType.None:
+          case CodeNode.CommentType.MultiLineInner:
+          default:
+            code += PrintLine(indent, line, i < clines.Length - 1);
+            break;
+        }
+
         if (rgBlockOpen.IsMatch(line)) indent++;
         continue;
       }
       
-      lines[i] = compiledLine.Format(variables, true);
+      clines[i] = compiledLine.Format(variables, true, comments[i].comment, comments[i].type, false);
 
       // Understand the required indent
       string l = rgCommentSL.Replace(compiledLine.Format(variables, false), "").Trim();
@@ -162,29 +259,47 @@ public class NE : MonoBehaviour {
           indent -= increaseone;
           increaseone = 0;
         }
-        code += PrintLine(indent, lines[i], i < lines.Length - 1);
+        code += PrintLine(indent, clines[i], i < clines.Length - 1);
         indent++;
       }
       else if (rgBlockClose.IsMatch(l)) { // close } -< decrease (and set also current line)
         indent--;
         if (indent < 0) indent = 0;
-        code += PrintLine(indent, lines[i], i < lines.Length - 1);
+        code += PrintLine(indent, clines[i], i < clines.Length - 1);
       }
       else if ((compiledLine.type == BNF.WHILE || compiledLine.type == BNF.FOR || compiledLine.type == BNF.IF || compiledLine.type == BNF.ELSE) && compiledLine.iVal == 4) { // while with single statement on next line -> increase just one
         increaseone++;
-        code += PrintLine(indent, lines[i], i < lines.Length - 1);
+        code += PrintLine(indent, clines[i], i < clines.Length - 1);
         indent++;
       }
       else if (!string.IsNullOrWhiteSpace(l)) {
-        code += PrintLine(indent, lines[i], i < lines.Length - 1);
+        code += PrintLine(indent, clines[i], i < clines.Length - 1);
         indent -= increaseone;
         increaseone = 0;
         if (indent < 0) indent = 0;
       }
     }
-    for (int i = end; i < lines.Length; i++) {
-      code += lines[i];
-      if (i < lines.Length - 1) code += "\n";
+    for (int i = end; i < clines.Length; i++) {
+      string line = clines[i];
+      comments[i].Zero();
+      line = rgCommentSL.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.SingleLine);
+        return "";
+      });
+      line = rgCommentML.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineFull);
+        return "";
+      });
+      line = rgCommentMLs.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineOpen);
+        return "";
+      });
+      line = rgCommentMLe.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineClose);
+        return "";
+      });
+      code += line;
+      if (i < clines.Length - 1) code += "\n";
     }
 
     edit.SetTextWithoutNotify(code);
@@ -305,6 +420,31 @@ public class NE : MonoBehaviour {
 
 }
 
+public class Comment {
+  public string comment;
+  public CodeNode.CommentType type;
+  public int indent;
+  public Comment() {
+    comment = null;
+    type = CodeNode.CommentType.None;
+    indent = 0;
+  }
+  public Comment(string c, CodeNode.CommentType t) {
+    comment = c;
+    type = t;
+    indent = 0;
+  }
+
+  internal void Set(string value, CodeNode.CommentType t) {
+    comment = value;
+    type = t;
+  }
+  public void Zero() {
+    comment = null;
+    type = CodeNode.CommentType.None;
+    indent = 0;
+  }
+}
 
 
 /*
