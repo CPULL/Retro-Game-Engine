@@ -213,7 +213,7 @@ public class NE : MonoBehaviour {
         comments[i].Set(m.Value, CodeNode.CommentType.MultiLineClose);
         return "";
       });
-      code += line + "\n";
+      code += clines[i] + "\n";
     }
 
     for (int i = start; i < end; i++) {
@@ -242,12 +242,12 @@ public class NE : MonoBehaviour {
 
         switch (comments[i].type) {
           case CodeNode.CommentType.MultiLineOpen:
-            code += PrintLine(indent, line, i < clines.Length - 1) + " <color=#70e688><mark=#30061880>" + comments[i].comment;
+            code += PrintLine(indent, line, false) + " <color=#70e688><mark=#30061880>" + comments[i].comment + (i < clines.Length - 1 ? "\n" : "");
             break;
 
           case CodeNode.CommentType.SingleLine:
           case CodeNode.CommentType.MultiLineFull:
-            code += PrintLine(indent, line, i < clines.Length - 1) + " <color=#70e688><mark=#30061880>" + comments[i].comment + "</mark></color>";
+            code += PrintLine(indent, line, false) + " <color=#70e688><mark=#30061880>" + comments[i].comment + "</mark></color>" + (i < clines.Length - 1 ? "\n" : "");
             break;
 
           case CodeNode.CommentType.MultiLineClose:
@@ -265,7 +265,7 @@ public class NE : MonoBehaviour {
         continue;
       }
       
-      clines[i] = compiledLine.Format(variables, true, comments[i].comment, comments[i].type, false);
+      clines[i] = compiledLine.Format(variables, true, comments[i].comment, comments[i].type);
 
       // Understand the required indent
       string l = rgCommentSL.Replace(compiledLine.Format(variables, false), "").Trim();
@@ -314,7 +314,7 @@ public class NE : MonoBehaviour {
         comments[i].Set(m.Value, CodeNode.CommentType.MultiLineClose);
         return "";
       });
-      code += line;
+      code += clines[i];
       if (i < clines.Length - 1) code += "\n";
     }
 

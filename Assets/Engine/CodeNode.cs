@@ -443,7 +443,7 @@ public class CodeNode {
       return Format(variables, coloring) + (hadOpenBlock ? "{" : "") + " " + comment;
   }
 
-  internal string Format(Variables variables, bool coloring, string comment, CommentType ct, bool hadOpenBlock) {
+  internal string Format(Variables variables, bool coloring, string comment, CommentType ct) {
     string line = Format(variables, coloring);
     if (string.IsNullOrEmpty(comment)) return line;
     if (coloring) {
