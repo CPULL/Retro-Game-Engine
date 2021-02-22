@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -36,6 +35,8 @@ public class NE : MonoBehaviour {
       UpdateLinePos();
     }
     if (Input.GetKeyUp(KeyCode.LeftControl) || Input.GetKeyUp(KeyCode.RightControl)) UpdateLinePos();
+    if (Input.GetKeyUp(KeyCode.RightCurlyBracket) || (Input.GetKeyUp(KeyCode.RightBracket) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))))
+      ParseBlock();
 
     delay -= Time.deltaTime;
     if (delay < 0 && edit.text.Length != prevSize) {
@@ -45,15 +46,17 @@ public class NE : MonoBehaviour {
     }
   }
 
+
   void UpdateLinePos() {
     int num = 1;
     int pos = 0;
+    edit.SetTextWithoutNotify(edit.text.Replace("\r\n", "\n").Replace("\r", "\n"));
     foreach (char c in edit.text) {
       pos++;
       if (c == '\n') {
         num++;
       }
-      if (pos == edit.caretPosition) {
+      if (pos == edit.stringPosition) {
         curline = num;
       }
     }
@@ -115,14 +118,18 @@ public class NE : MonoBehaviour {
   readonly Variables variables = new Variables();
   readonly Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)", RegexOptions.IgnoreCase);
   readonly Regex rgCommentSL = new Regex("(//.*)$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
+  readonly Regex rgCommentML = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
   readonly Regex rgBlockOpen = new Regex("(?<!//.*?)\\{", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
-  readonly Regex rgBlockOpenAlone = new Regex("^[\\s]*\\{[\\s]*", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
   readonly Regex rgBlockClose = new Regex("(?<!//.*?)\\}", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
+  readonly Regex rgString = new Regex("(\")([^\"]*)(\")", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
 
   public void Parse() {
-    CodeNode compiled = CompileCode();
+    CodeNode compiled = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
     if (compiled == null) return;
+    ParseBlock(compiled, 0, int.MaxValue);
+  }
 
+  void ParseBlock(CodeNode compiled, int start, int end) { 
     // We need to find all nodes, one by one
     // For each grab the line number and get the Format (only if it is a command)
     // reconstruct the lines and update the input field
@@ -131,7 +138,11 @@ public class NE : MonoBehaviour {
     code = "";
     int indent = 0;
     int increaseone = 0;
-    for (int i = 0; i < lines.Length; i++) {
+    if (start < 0) start = 0;
+    if (end > lines.Length) end = lines.Length;
+    for (int i = 0; i < start; i++)
+      code += lines[i] + "\n";
+    for (int i = start; i < end; i++) {
       CodeNode compiledLine = FindLine(compiled, i + 1);
       string line = lines[i].Trim(' ', '\t', '\r', '\n');
       if (compiledLine == null) {
@@ -164,16 +175,50 @@ public class NE : MonoBehaviour {
         code += PrintLine(indent, lines[i], i < lines.Length - 1);
         indent++;
       }
-      // FIXME do the same for IF, ELSE
       else if (!string.IsNullOrWhiteSpace(l)) {
         code += PrintLine(indent, lines[i], i < lines.Length - 1);
         indent -= increaseone;
         increaseone = 0;
         if (indent < 0) indent = 0;
       }
-
     }
+    for (int i = end; i < lines.Length; i++) {
+      code += lines[i];
+      if (i < lines.Length - 1) code += "\n";
+    }
+
     edit.SetTextWithoutNotify(code);
+  }
+
+  void ParseBlock() {
+    // Find the lines to be parsed
+
+    string[] lines = rgSyntaxHighlight.Replace(edit.text, "").Trim().Split('\n');
+    if (curline < 0 || curline >= lines.Length) UpdateLinePos();
+    int end = curline - 1;
+    int start = curline - 1;
+    int num = 0;
+    for (int i = end; i >= 0; i--) {
+      string line = rgCommentML.Replace(rgCommentSL.Replace(rgString.Replace(lines[i], ""), ""), "");
+      if (rgBlockClose.IsMatch(line)) {
+        num++;
+      }
+      if (rgBlockOpen.IsMatch(line)) {
+        num--;
+        if (num==0) {
+          start = i;
+          break;
+        }
+      }
+    }
+    string code = "";
+    for (int i = start; i <= end; i++) {
+      code += lines[i] + "\n";
+    }
+
+    CodeNode res = CompileCode(code, false);
+    UpdateLineNumbers(res, start);
+    ParseBlock(res, start, end + 1);
   }
 
   string PrintLine(int tabs, string line, bool addNL) { // 
@@ -194,55 +239,56 @@ public class NE : MonoBehaviour {
     return null;
   }
 
- 
+  void UpdateLineNumbers(CodeNode n, int incr) {
+    if (n == null) return;
+    n.origLineNum += incr;
+    if (n.children == null) return;
+    foreach (CodeNode c in n.children)
+      UpdateLineNumbers(c, incr);
+  }
 
 
-    /* open { -> increase
-     * close } -< decrease (and set also current line)
-     * if/for/while without statement -> increase just one
-     * 
-     * if increased just one and normal statement -> collapse all increase by one
-     * if increased just one and if/for/wile no statemeddnt -> increase by one again
-     * 
-     * 
-     * 0   a++              | normal
-     * 0   if (a) a++       | normal because statement here
-     * 0   if (a)           | increases by just one line
-     * 1    a++             | does the one line and goes back
-     * 0   if (a) {         | indent++
-     * 1    a++             | normal
-     * 0   }                | indent--
-     * 0   if (a)           | normal
-     * 0   {                | indent++
-     * 1    a++             | normal
-     * 0   }                | indent--
-     * 0   if (a)           | increases by just one line
-     * 1    if (a)          | increases by just one line
-     * 2      if (a)        | increases by just one line
-     * 3        a++         | does the one line and goes back (3 times)
-     * 0   if (a) {         | indent++
-     * 1    if (a)          | increases by just one line
-     * 2      if (a)        | increases by just one line
-     * 3        a++         | does the one line and goes back (2 times)
-     * 1    b++             | normal
-     * 0   }                | indent--
-     * 
-     * 
-     * 
-     * 
-     */
+  /* open { -> increase
+   * close } -< decrease (and set also current line)
+   * if/for/while without statement -> increase just one
+   * 
+   * if increased just one and normal statement -> collapse all increase by one
+   * if increased just one and if/for/wile no statemeddnt -> increase by one again
+   * 
+   * 0   a++              | normal
+   * 0   if (a) a++       | normal because statement here
+   * 0   if (a)           | increases by just one line
+   * 1    a++             | does the one line and goes back
+   * 0   if (a) {         | indent++
+   * 1    a++             | normal
+   * 0   }                | indent--
+   * 0   if (a)           | normal
+   * 0   {                | indent++
+   * 1    a++             | normal
+   * 0   }                | indent--
+   * 0   if (a)           | increases by just one line
+   * 1    if (a)          | increases by just one line
+   * 2      if (a)        | increases by just one line
+   * 3        a++         | does the one line and goes back (3 times)
+   * 0   if (a) {         | indent++
+   * 1    if (a)          | increases by just one line
+   * 2      if (a)        | increases by just one line
+   * 3        a++         | does the one line and goes back (2 times)
+   * 1    b++             | normal
+   * 0   }                | indent--
+   * 
+   */
 
 
-  
 
-  public CodeNode CompileCode() {
+
+  public CodeNode CompileCode(string code, bool checkCompleteness) {
     // Get all lines, produce an aggregated string, and do the full parsing.
-    string code = rgSyntaxHighlight.Replace(edit.text, "").Trim();
     variables.Clear();
     CodeNode result = null;
     try {
-      result = cp.Parse(code, variables, true);
-      if (!result.HasNode(BNF.Config) && !result.HasNode(BNF.Data) && !result.HasNode(BNF.Start) && !result.HasNode(BNF.Update) && !result.HasNode(BNF.Functions)) {
+      result = cp.Parse(code, variables, true, !checkCompleteness);
+      if (checkCompleteness && !result.HasNode(BNF.Config) && !result.HasNode(BNF.Data) && !result.HasNode(BNF.Start) && !result.HasNode(BNF.Update) && !result.HasNode(BNF.Functions)) {
         Result.text = "No executable code found (Start, Update, Functions, Config, or Data)";
         return null;
       }

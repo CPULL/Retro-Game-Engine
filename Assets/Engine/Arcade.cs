@@ -299,7 +299,7 @@ public class Arcade : MonoBehaviour {
       return;
     }
     try {
-      CodeNode res = cp.Parse(codefile, variables, rompath == null);
+      CodeNode res = cp.Parse(codefile, variables, rompath == null, false);
       Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
       if (res.sVal == null)
         Write("<no name>", 88, 39, Col.C(5, 3, 1));

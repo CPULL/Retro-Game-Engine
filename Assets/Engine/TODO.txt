@@ -46,17 +46,10 @@ CodeEditor: Add "rom" to current developed project
 Run, Pause, Run step, Restart, Stop, View Variables, View memory
 
 
-Fix the shadow player sprites (sizes are wrong)
-On editing a rom line, be sure that only one line is selected (disable the button if it is not)
 Add a button to remove all selected lines
 
 
-Re-write the parsing of IF
-In `for` have the increment part as CN3 and the block as CN4, change the execution of `for` to handle it
 Have a way to parse just the current line, and edit it in real time
 Re-implement optimize/unoptimized code, and also original code
 
-Check to parse an IF with an else next that is a string
-
-if (a) a++
-a="else"
+Comments are not correctly parsed and kept

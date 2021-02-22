@@ -273,7 +273,7 @@ public class CodeParser {
   bool noFail = false;
 
   string pasersedSectionForException = "";
-  public CodeNode Parse(string file, Variables variables, bool parseDataSection) {
+  public CodeNode Parse(string file, Variables variables, bool parseDataSection, bool parseSingleBlock) {
     try {
       // Start by replacing all the problematic stuff
       file = file.Trim().Replace("\r", "").Replace("\t", " ");
@@ -326,6 +326,7 @@ public class CodeParser {
       if (functions.Count > 0) res.Add(funcs);
 
       // Then the sections
+      bool atLeastOne = false;
       for (int linenumber = 0; linenumber < lines.Length; linenumber++) {
         string line = lines[linenumber];
 
@@ -337,6 +338,7 @@ public class CodeParser {
 
         m = rgStart.Match(line);
         if (m.Success) {
+          atLeastOne = true;
           pasersedSectionForException = "Start";
           // find the end of the block, and parse the result
           int end = FindEndOfBlock(lines, linenumber);
@@ -350,6 +352,7 @@ public class CodeParser {
 
         m = rgUpdate.Match(line);
         if (m.Success) {
+          atLeastOne = true;
           pasersedSectionForException = "Update";
           // find the end of the block, and parse the result
           int end = FindEndOfBlock(lines, linenumber);
@@ -363,6 +366,7 @@ public class CodeParser {
 
         m = rgConfig.Match(line);
         if (m.Success) {
+          atLeastOne = true;
           pasersedSectionForException = "Config";
           // find the end of the block, and parse the result
           int end = FindEndOfBlock(lines, linenumber);
@@ -377,6 +381,7 @@ public class CodeParser {
         if (parseDataSection) {
           m = rgData.Match(line);
           if (m.Success) {
+            atLeastOne = true;
             pasersedSectionForException = "Data";
             // find the end of the block, and parse the result
             int end = FindEndOfBlock(lines, linenumber);
@@ -409,6 +414,13 @@ public class CodeParser {
           continue;
         }
       }
+
+      if (!atLeastOne && parseSingleBlock) {
+        int end = FindEndOfBlock(lines, 0);
+        if (end == -1) throw new ParsingException("\"BLOCK\" section does not end", linenumber + 1);
+        ParseBlock(lines, 0, end, res);
+      }
+
       return res;
     } catch (Exception e) {
       string error = "Parse error in " + pasersedSectionForException;;
