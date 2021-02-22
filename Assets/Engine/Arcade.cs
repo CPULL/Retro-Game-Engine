@@ -1444,7 +1444,8 @@ public class Arcade : MonoBehaviour {
             HandlePostIncrementDecrement();
             return false;
           }
-          stacks.AddStack(n.CN3, n.CN2, n.origLine, n.origLineNum);
+          CodeNode forBlock = new CodeNode(n.CN4, n.CN3);
+          stacks.AddStack(forBlock, n.CN2, n.origLine, n.origLineNum);
           HandlePostIncrementDecrement();
           return false;
         }

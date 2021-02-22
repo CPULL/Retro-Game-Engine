@@ -14,6 +14,12 @@ update {
 	spos(0,pos,0,1)
 	if (keyld) pos-= 8
 	if (keyru) pos+= 8
+
+	for(i=0,i<20,i++) {
+		write("* ", i, 8*i, i*5)
+	}
+	frame
+	clr(0)
 	
 }
 
