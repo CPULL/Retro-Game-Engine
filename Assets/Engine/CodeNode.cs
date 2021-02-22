@@ -492,7 +492,7 @@ public class CodeNode {
         case BNF.Config: return "<color=#8080ff>Config</color> {";
         case BNF.Data: return "<color=#8080ff>Data</color> {";
         case BNF.Functions: return "<color=#8080ff>Functions:</color> <i>(" + children.Count + ")</i>";
-        case BNF.FunctionDef: return "<color=#D65CA6>#" + sVal + "</color>" + CN1?.Format(variables, coloring);
+        case BNF.FunctionDef: return "<color=#D65CA6>#" + sVal + "</color>" + CN1?.Format(variables, coloring) + " {";
         case BNF.FunctionCall: return "<color=#D65CA6>" + sVal + "</color>" + CN1?.Format(variables, coloring);
         case BNF.RETURN: {
           if (CN1 == null) return "<color=#569CD6>return</color>";
@@ -501,7 +501,7 @@ public class CodeNode {
         case BNF.Params: {
           string res = "<color=#D65CA6>(</color>";
           if (CN1 != null) res += CN1.Format(variables, coloring);
-          for (int i = 1; i < children.Count; i++) {
+          if (children != null) for (int i = 1; i < children.Count; i++) {
             if (children[i] != null) res += "<color=#D65CA6>, </color>" + children[i].Format(variables, coloring);
           }
           return res + "<color=#D65CA6>)</color>";
@@ -509,10 +509,10 @@ public class CodeNode {
         case BNF.PaletteConfig: return "<color=#569CD6>UsePalette(</color>" + (iVal == 0 ? "0" : "1") + "<color=#569CD6>)</color>";
         case BNF.Ram:
           return "<color=#569CD6>ram(</color>" +
-  (iVal < 1024 ? iVal.ToString() : (
-  iVal < 1024 * 1024 ? (((int)(10 * iVal / 1024f)) / 10f) + "k" :
-  (((int)(10 * iVal / (1024 * 1024f))) / 10f) + "m")) +
-  "<color=#569CD6>)</color>";
+                  (iVal < 1024 ? iVal.ToString() : (
+                  iVal < 1024 * 1024 ? (((int)(10 * iVal / 1024f)) / 10f) + "k" :
+                  (((int)(10 * iVal / (1024 * 1024f))) / 10f) + "m")) +
+                  "<color=#569CD6>)</color>";
         case BNF.Rom: // FIXME in Data block
           break;
         case BNF.Label: return "<color=#56DC96>" + sVal + ":</color>";
@@ -813,7 +813,7 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
         case BNF.Config: return "Cofig {";
         case BNF.Data: return "Data {";
         case BNF.Functions: return "Functions: (" + children.Count + ")";
-        case BNF.FunctionDef: return "#" + sVal + CN1?.Format(variables, coloring);
+        case BNF.FunctionDef: return "#" + sVal + CN1?.Format(variables, coloring) + " {";
         case BNF.FunctionCall: return sVal + CN1?.Format(variables, coloring);
         case BNF.RETURN: {
           if (CN1 == null) return "return";
@@ -822,7 +822,7 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
         case BNF.Params: {
           string res = "(";
           if (CN1 != null) res += CN1.Format(variables, coloring);
-          for (int i = 1; i < children.Count; i++) {
+          if (children != null) for (int i = 1; i < children.Count; i++) {
             if (children[i] != null) res += ", " + children[i].Format(variables, coloring);
           }
           return res + ")";

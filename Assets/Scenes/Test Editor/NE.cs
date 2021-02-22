@@ -96,6 +96,22 @@ public class NE : MonoBehaviour {
 
     numlines = num;
   }
+  void SetLinePos() {
+    int num = 1;
+    int pos = 0;
+    edit.SetTextWithoutNotify(edit.text.Replace("\r\n", "\n").Replace("\r", "\n"));
+    foreach (char c in edit.text) {
+      pos++;
+      if (c == '\n') {
+        num++;
+        if (num == curline) {
+          edit.stringPosition = pos;
+          return;
+        }
+      }
+    }
+  }
+
 
   void FixFormatting() {
     float s = Scroll.value;
@@ -334,6 +350,7 @@ public class NE : MonoBehaviour {
     CodeNode res = CompileCode(code, false);
     UpdateLineNumbers(res, start);
     ParseBlock(res, start, end + 1);
+    SetLinePos();
   }
 
   string PrintLine(int tabs, string line, bool addNL) { // 
@@ -345,6 +362,7 @@ public class NE : MonoBehaviour {
   }
 
   private CodeNode FindLine(CodeNode code, int line) {
+    if (code == null) return null;
     if (code.origLineNum == line && code.type != BNF.BLOCK) return code;
     if (code.children == null) return null;
     foreach (CodeNode cn in code.children) {

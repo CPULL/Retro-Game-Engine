@@ -305,7 +305,7 @@ public class CodeParser {
       string[] lines = file.Split('\n');
 
       // Find first all function definitions
-      CodeNode funcs = new CodeNode(BNF.Functions, "", 0);
+      CodeNode funcs = new CodeNode(BNF.Functions, "", -1);
       for (int linenumber = 0; linenumber < lines.Length; linenumber++) {
         string line = lines[linenumber].Trim();
         Match m = rgFunction.Match(line);

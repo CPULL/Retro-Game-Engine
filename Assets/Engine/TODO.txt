@@ -49,10 +49,9 @@ Run, Pause, Run step, Restart, Stop, View Variables, View memory
 Add a button to remove all selected lines
 
 
-Have a way to parse just the current line, and edit it in real time
 Re-implement optimize/unoptimized code, and also original code
 
-Comments are not correctly parsed and kept
-Ctrl+Z, Ctrl+Y to undo/redo in code editor (save when changing line or saving the text)
+Don't Compile blocks / Compile and Optimize / Compile and Don't Optimize
+Parse / Parse and Optimize
 
 
