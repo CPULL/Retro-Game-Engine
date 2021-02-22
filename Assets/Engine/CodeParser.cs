@@ -565,6 +565,7 @@ public class CodeParser {
         else if (elseline.Trim().Length > 0)
           break; // No else
       }
+      return;
     }
 
     // [ELSE] [BLOCK]|[STATEMENT] <- only in case of single line parsing
@@ -1678,36 +1679,6 @@ public class CodeParser {
 
     string after = m.Groups[afterGroup].Value.Trim();
     return string.IsNullOrWhiteSpace(after);
-  }
-
-  void ParseIfBlock(CodeNode ifNode, string after, string[] lines) {
-    if (string.IsNullOrEmpty(after) || lines == null) return;
-    CodeNode b = new CodeNode(BNF.BLOCK, after, linenumber);
-    ifNode.Add(b);
-    if (rgBlockOpen.IsMatch(after)) {  // [IF] {
-      int end = FindEndOfBlock(lines, linenumber);
-      if (end < 0) throw new ParsingException("\"IF\" section does not end");
-      ParseBlock(lines, linenumber + 1, end, b);
-      linenumber = end;
-    }
-    else if (string.IsNullOrEmpty(after)) { // [IF] \n* ({ | [^{ ])
-      for (int i = linenumber + 1; i < lines.Length; i++) {
-        string l = lines[i].Trim();
-        if (string.IsNullOrEmpty(l)) continue;
-        if (rgOpenBracket.IsMatch(l)) { // [IF] \n* {
-          int end = FindEndOfBlock(lines, i);
-          if (end < 0) throw new ParsingException("\"IF\" section does not end");
-          ParseBlock(lines, linenumber + 1, end, b);
-          linenumber = end;
-          break;
-        }
-        else { // [IF] \n* [^{ ]
-          linenumber = i;
-          ParseLine(b, lines);
-          break;
-        }
-      }
-    }
   }
 
   void ParseElseBlock(CodeNode ifNode, string[] lines) {
