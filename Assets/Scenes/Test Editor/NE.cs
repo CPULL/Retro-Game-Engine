@@ -159,7 +159,7 @@ public class NE : MonoBehaviour {
         if (indent < 0) indent = 0;
         code += PrintLine(indent, lines[i], i < lines.Length - 1);
       }
-      else if ((compiledLine.type == BNF.WHILE || compiledLine.type == BNF.FOR || compiledLine.type == BNF.IF || compiledLine.type == BNF.Else) && compiledLine.iVal == 4) { // while with single statement on next line -> increase just one
+      else if ((compiledLine.type == BNF.WHILE || compiledLine.type == BNF.FOR || compiledLine.type == BNF.IF || compiledLine.type == BNF.ELSE) && compiledLine.iVal == 4) { // while with single statement on next line -> increase just one
         increaseone++;
         code += PrintLine(indent, lines[i], i < lines.Length - 1);
         indent++;

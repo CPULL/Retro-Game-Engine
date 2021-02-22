@@ -247,7 +247,7 @@ public class CodeNode {
           if (CN3 != null) res += id + " else { ..." + CN3.ToString() + "... }";
           break;
         }
-        case BNF.Else: res += id + "else { ..." + (children.Count - 1) + "... }"; break;
+        case BNF.ELSE: res += id + "else { ..." + (children.Count - 1) + "... }"; break;
         case BNF.WHILE: res += id + "while (" + CN1.ToString() + ") { ..." + (children.Count - 1) + "... }"; break;
 
         case BNF.SCREEN: {
@@ -554,7 +554,6 @@ public class CodeNode {
           if (CN2 == null) return CN1.Format(variables, coloring);
           return "<color=#569CD6>{</color>" + CN1?.Format(variables, coloring) + ", ...<color=#569CD6>}</color>"; // FIXME
         }
-        case BNF.Else: return "<color=#569CD6>else</color> " + CN1?.Format(variables, coloring);
         case BNF.WHILE: {
           if (iVal == 1) // ******************* 1 block open same line *********************************************************
             return "<color=#569CD6>while (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color> {";
@@ -582,6 +581,15 @@ public class CodeNode {
           // ****************** 3 block open next line **********************************************************
           // ****************** 4 single statement next line ****************************************************
           return "<color=#569CD6>if (</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
+        case BNF.ELSE: {
+          if (iVal == 1) // ******************* 1 block open same line *********************************************************
+            return "<color=#569CD6>else</color> {";
+          if (iVal == 2) // ****************** 2 single statement same line ****************************************************
+            return "<color=#569CD6>else</color> " + CN1?.CN1?.Format(variables, coloring);
+          // ****************** 3 block open next line **********************************************************
+          // ****************** 4 single statement next line ****************************************************
+          return "<color=#569CD6>else</color>";
         }
 
         case BNF.CLR: return "<color=#569CD6>Clr(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
@@ -853,7 +861,7 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
           if (CN2 == null) return CN1.Format(variables, coloring);
           return "{" + CN1?.Format(variables, coloring) + ", ...}"; // FIXME
         }
-        case BNF.Else: return "else " + CN1?.Format(variables, coloring);
+
         case BNF.WHILE: {
           if (iVal == 1) // ******************* 1 block open same line *********************************************************
             return "while (" + CN1?.Format(variables, coloring) + ") {";
@@ -880,6 +888,15 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
           // ****************** 3 block open next line **********************************************************
           // ****************** 4 single statement next line ****************************************************
           return "if (" + CN1?.Format(variables, coloring) + ")";
+        }
+        case BNF.ELSE: {
+          if (iVal == 1) // ******************* 1 block open same line *********************************************************
+            return "else {";
+          if (iVal == 2) // ****************** 2 single statement same line ****************************************************
+            return "else " + CN1?.CN1?.Format(variables, coloring);
+          // ****************** 3 block open next line **********************************************************
+          // ****************** 4 single statement next line ****************************************************
+          return "else";
         }
 
         case BNF.CLR: return "Clr(" + CN1?.Format(variables, coloring) + ")";
@@ -1236,7 +1253,7 @@ public enum BNF {
   ASSIGN, ASSIGNsum, ASSIGNsub, ASSIGNmul, ASSIGNdiv, ASSIGNmod, ASSIGNand, ASSIGNor, ASSIGNxor,
   IncCmd, DecCmd, IncExp, DecExp,
   BLOCK,
-  IF, Else, WHILE, FOR,
+  IF, ELSE, WHILE, FOR,
   CLR,
   WRITE, WAIT, DESTROY, SCREEN,
   SPRITE, SPEN, SPOS, SROT, SPRI, STINT, SSCALE,
