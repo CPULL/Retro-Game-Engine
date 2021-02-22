@@ -234,7 +234,6 @@ public class NE : MonoBehaviour {
       });
       code += clines[i] + "\n";
     }
-
     for (int i = start; i < end; i++) {
       CodeNode compiledLine = FindLine(compiled, i + 1);
       string line = clines[i].Trim(' ', '\t', '\r', '\n');
@@ -345,7 +344,7 @@ public class NE : MonoBehaviour {
 
     // Find the lines to be parsed
     string[] lines = rgSyntaxHighlight.Replace(edit.text, "").Trim().Split('\n');
-    if (curline < 0 || curline >= lines.Length) UpdateLinePos();
+    UpdateLinePos();
     int end = curline - 1;
     int start = curline - 1;
     int num = 0;
@@ -368,10 +367,10 @@ public class NE : MonoBehaviour {
     }
 
     SetUndo();
-    CodeNode res = CompileCode(code, false);
-    UpdateLineNumbers(res, start);
+    CodeNode res = CompileCode(code, false, start);
     cp.SetOptimize(blockCompile == 2);
     ParseBlock(res, start, end + 1);
+    UpdateLineNumbers(res, start);
     SetLinePos();
   }
 
@@ -437,12 +436,12 @@ public class NE : MonoBehaviour {
 
 
 
-  public CodeNode CompileCode(string code, bool checkCompleteness) {
+  public CodeNode CompileCode(string code, bool checkCompleteness, int startOffset = 0) {
     // Get all lines, produce an aggregated string, and do the full parsing.
     variables.Clear();
     CodeNode result = null;
     try {
-      result = cp.Parse(code, variables, true, !checkCompleteness);
+      result = cp.Parse(code, variables, true, !checkCompleteness, startOffset);
       if (checkCompleteness && !result.HasNode(BNF.Config) && !result.HasNode(BNF.Data) && !result.HasNode(BNF.Start) && !result.HasNode(BNF.Update) && !result.HasNode(BNF.Functions)) {
         Result.text = "No executable code found (Start, Update, Functions, Config, or Data)";
         return null;
@@ -450,7 +449,7 @@ public class NE : MonoBehaviour {
       Result.text = "Parsing OK";
 
     } catch (ParsingException e) {
-      Result.text = "<color=red>" + e.Message + "</color>\n" + e.Code + "\nLine: " + e.LineNum;
+      Result.text = "<color=red>" + e.Message + "</color>\n" + e.Code + "\nLine: " + (e.LineNum);
       // FIXME Scroll to line number
     } catch (System.Exception e) {
       Result.text = "<color=red>" + e.Message + "</color>";
