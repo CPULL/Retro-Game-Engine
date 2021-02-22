@@ -49,8 +49,3 @@ Run, Pause, Run step, Restart, Stop, View Variables, View memory
 Add a button to remove all selected lines
 
 
-Re-implement optimize/unoptimized code, and also original code
-
-Don't Compile blocks / Compile and Optimize / Compile and Don't Optimize
-Parse / Parse and Optimize
-

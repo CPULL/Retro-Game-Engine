@@ -167,7 +167,26 @@ public class NE : MonoBehaviour {
   readonly Regex rgBlockClose = new Regex("(?<!//.*?)\\}", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
   readonly Regex rgString = new Regex("(\")([^\"]*)(\")", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
 
-  public void Parse() {
+  int blockCompile = 1; // 0 do not compile, 1 compile, 2 compile and optimize
+  public TextMeshProUGUI BlockCompileText;
+  readonly string[] blockCompileTxt = { "Don't Compile blocks", "Compile blocks", "Compile and Optimize" };
+  public GameObject CompileContainer;
+
+  public void BlockCompile() {
+    blockCompile++;
+    if (blockCompile >= 3) blockCompile = 0;
+    BlockCompileText.text = blockCompileTxt[blockCompile];
+  }
+
+  public void Compile() {
+    CompileContainer.SetActive(!CompileContainer.activeSelf);
+  }
+
+
+  public void Parse(bool optimize) {
+    SetUndo();
+    cp.SetOptimize(optimize);
+    CompileContainer.SetActive(false);
     CodeNode compiled = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
     if (compiled == null) return;
     ParseBlock(compiled, 0, int.MaxValue);
@@ -322,8 +341,9 @@ public class NE : MonoBehaviour {
   }
 
   void ParseBlock() {
-    // Find the lines to be parsed
+    if (blockCompile == 0) return;
 
+    // Find the lines to be parsed
     string[] lines = rgSyntaxHighlight.Replace(edit.text, "").Trim().Split('\n');
     if (curline < 0 || curline >= lines.Length) UpdateLinePos();
     int end = curline - 1;
@@ -336,7 +356,7 @@ public class NE : MonoBehaviour {
       }
       if (rgBlockOpen.IsMatch(line)) {
         num--;
-        if (num==0) {
+        if (num == 0) {
           start = i;
           break;
         }
@@ -347,8 +367,10 @@ public class NE : MonoBehaviour {
       code += lines[i] + "\n";
     }
 
+    SetUndo();
     CodeNode res = CompileCode(code, false);
     UpdateLineNumbers(res, start);
+    cp.SetOptimize(blockCompile == 2);
     ParseBlock(res, start, end + 1);
     SetLinePos();
   }

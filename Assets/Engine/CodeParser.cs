@@ -1637,6 +1637,11 @@ public class CodeParser {
   }
 
   bool optimizeCode = true;
+
+  public void SetOptimize(bool opt) {
+    optimizeCode = opt;
+  }
+
   public CodeNode ParseLine(string line, Variables vs, int origlinenum, bool optimize, out string exception) {
     exception = null;
     optimizeCode = optimize;
