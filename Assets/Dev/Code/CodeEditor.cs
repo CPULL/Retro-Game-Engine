@@ -7,669 +7,494 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class CodeEditor : MonoBehaviour {
-  readonly List<LineData> lines = new List<LineData>();
-  public CodeLine[] EditLines;
-  public Scrollbar VerticalCodeBar;
-  public RectTransform SelectionRT;
+  public TMP_InputField edit;
+  public Scrollbar Scroll;
+  public TextMeshProUGUI EditText;
+  public TextMeshProUGUI LineNumbers;
   public TextMeshProUGUI Result;
-  public Toggle OptimizeCodeTG;
+  public TextMeshProUGUI CurrentLineText;
+  public TMP_FontAsset MonoFont;
+  readonly List<Comment> comments = new List<Comment>();
+  readonly List<string> undos = new List<string> { "" };
+  int undopos = 0;
+
+  private void Start() {
+    MonoFont.tabSize = 2;
+    edit.resetOnDeActivation = false;
+    edit.onFocusSelectAll = false;
+    edit.restoreOriginalTextOnEscape = false;
+
+    UpdateLinePos();
+    EventSystem.current.SetSelectedGameObject(edit.gameObject);
+  }
+
+
+  float delay = 1;
+  int prevSize = 0;
+  private void Update() {
+    CurrentLineText.text = curline + "/" + numlines; // FIXME show it somewhere
+
+    if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.Return)) {
+      SetUndo();
+      UpdateLinePos();
+    }
+    if (Input.GetKeyUp(KeyCode.LeftControl) || Input.GetKeyUp(KeyCode.RightControl)) UpdateLinePos();
+    if (Input.GetKeyUp(KeyCode.RightCurlyBracket) || (Input.GetKeyUp(KeyCode.RightBracket) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))) {
+      SetUndo();
+      ParseBlock();
+    }
+
+    if (Input.GetKeyUp(KeyCode.Z) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) Undo();
+    if (Input.GetKeyUp(KeyCode.Y) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) Redo();
+
+    // FIXME ctrl+d
+    // FIXME ctrl+del
+
+
+    delay -= Time.deltaTime;
+    if (delay < 0 && edit.text.Length != prevSize) {
+      delay = 1;
+      prevSize = edit.text.Length;
+      FixFormatting();
+    }
+  }
+
+  void SetUndo() {
+    string value = rgSyntaxHighlight.Replace(edit.text, "").Trim();
+    if (undos[undos.Count - 1] == value) return;
+    undos.Add(value);
+    undopos = undos.Count - 1;
+  }
+  void Undo() {
+    undopos--;
+    if (undopos < 0) undopos = 0;
+    edit.SetTextWithoutNotify(undos[undopos]);
+  }
+  void Redo() {
+    undopos++;
+    if (undopos >= undos.Count) undopos = undos.Count - 1;
+    edit.SetTextWithoutNotify(undos[undopos]);
+  }
+
+  void UpdateLinePos() {
+    int num = 1;
+    int pos = 0;
+    edit.SetTextWithoutNotify(edit.text.Replace("\r\n", "\n").Replace("\r", "\n"));
+    foreach (char c in edit.text) {
+      pos++;
+      if (c == '\n') num++;
+      if (pos == edit.stringPosition) curline = num;
+    }
+
+    if (numlines != num) {
+      string nums = "";
+      for (int i = 1; i <= num; i++)
+        nums += i + "\n";
+      LineNumbers.text = nums.Substring(0, nums.Length - 1);
+    }
+    numlines = num;
+  }
+  void SetLinePos() {
+    int num = 1;
+    int pos = 0;
+    edit.SetTextWithoutNotify(edit.text.Replace("\r\n", "\n").Replace("\r", "\n"));
+    foreach (char c in edit.text) {
+      pos++;
+      if (c == '\n') {
+        num++;
+        if (num == curline) {
+          edit.stringPosition = pos;
+          return;
+        }
+      }
+    }
+  }
+
+
+  void FixFormatting() {
+    float s = Scroll.value;
+    string text = edit.text;
+    string tab = "";
+    for (int i = 0; i < tabSize; i++) tab += " ";
+    string clean = text.Replace("\r\n", "\n").Replace('\r', '\n');
+    if (clean.Length == text.Length) return;
+    edit.SetTextWithoutNotify(clean);
+    Scroll.value = s;
+    UpdateLinePos();
+  }
+
+  int numlines = 1;
+  int curline = 1;
+
+  int fontSize = 28;
+  public TMP_Dropdown FontSizeDD;
+  public void ChangeFontSize() {
+    int.TryParse(FontSizeDD.options[FontSizeDD.value].text.Substring(11), out int newSize);
+    if (newSize == 0) newSize = 28;
+    edit.pointSize = newSize;
+    LineNumbers.fontSize = EditText.fontSize;
+    fontSize = newSize;
+
+    foreach (RectTransform rt in BackgroundLines) {
+      rt.sizeDelta = new Vector2(1248, 1.1625f * fontSize);
+    }
+  }
+
+  public RectTransform[] BackgroundLines;
+
+  int tabSize = 2;
+  public TMP_Dropdown TabSizeDD;
+  public void ChangeTabSize() {
+    int.TryParse(TabSizeDD.options[TabSizeDD.value].text.Substring(10), out int newSize);
+    if (newSize == 0) newSize = 2;
+    MonoFont.tabSize = (byte)newSize;
+    edit.text = EditText.text;
+    tabSize = newSize;
+    EventSystem.current.SetSelectedGameObject(gameObject);
+  }
 
   readonly CodeParser cp = new CodeParser();
   readonly Variables variables = new Variables();
-  int currentLine = 0;
-  int editLine = 0;
-  float autorepeat = 0;
-  int selectionS = -1;
-  int selectionE = -1;
-  string copied = "";
+  readonly Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)|(\\<color=red\\>)|", RegexOptions.IgnoreCase);
+  readonly Regex rgCommentSL = new Regex("(//.*)$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
+  readonly Regex rgCommentML = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
+  readonly Regex rgCommentMLs = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
+  readonly Regex rgCommentMLe = new Regex("(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
+  readonly Regex rgBlockOpen = new Regex("(?<!//.*?)\\{", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
+  readonly Regex rgBlockClose = new Regex("(?<!//.*?)\\}", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
+  readonly Regex rgString = new Regex("(\")([^\"]*)(\")", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
 
-  private void Start() {
-    foreach(CodeLine cl in EditLines) {
-      cl.Number.text = "";
-      cl.Line.SetTextWithoutNotify("");
-      cl.Line.onFocusSelectAll = false;
-      cl.Line.restoreOriginalTextOnEscape = true;
-    }
-    LineData l = new LineData();
-    EditLines[0].SetLine(0);
-    lines.Add(l);
+  int blockCompile = 1; // 0 do not compile, 1 compile, 2 compile and optimize
+  public TextMeshProUGUI BlockCompileText;
+  readonly string[] blockCompileTxt = { "Don't Compile blocks", "Compile blocks", "Compile and Optimize" };
+  public GameObject CompileContainer;
 
-    for (int i = 0; i < EditLines.Length; i++) {
-      if (i < lines.Count) EditLines[i].SetLine(i);
-      else EditLines[i].Clean();
-    }
-
-    Redraw();
-    EventSystem.current.SetSelectedGameObject(EditLines[0].Line.gameObject);
+  public void BlockCompile() {
+    blockCompile++;
+    if (blockCompile >= 3) blockCompile = 0;
+    BlockCompileText.text = blockCompileTxt[blockCompile];
   }
 
-  void Redraw() {
-    // What is the first visible line?
-    int topLine = currentLine - editLine;
-    if (topLine < 0) topLine = 0;
-    for (int i = 0; i < EditLines.Length; i++) {
-      int pos = i + topLine;
-      if (pos < lines.Count) EditLines[i].SetLine(pos, lines[pos], OptimizeCodeTG.isOn);
-      else EditLines[i].Clean();
+  public void Compile() {
+    CompileContainer.SetActive(!CompileContainer.activeSelf);
+  }
+
+
+  public void Parse(bool optimize) {
+    SetUndo();
+    cp.SetOptimize(optimize);
+    CompileContainer.SetActive(false);
+    CodeNode compiled = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
+    if (compiled == null) return;
+    ParseBlock(compiled, 0, int.MaxValue);
+  }
+
+  void ParseBlock(CodeNode compiled, int start, int end) {
+    // We need to find all nodes, one by one
+    // For each grab the line number and get the Format (only if it is a command)
+    // reconstruct the lines and update the input field
+    string[] olines = edit.text.Split('\n');
+    string code = rgSyntaxHighlight.Replace(edit.text, "").Trim();
+    string[] clines = code.Split('\n');
+    code = "";
+    int indent = 0;
+    int increaseone = 0;
+    if (start < 0) start = 0;
+    if (end > clines.Length) end = clines.Length;
+
+    // For each line, be sure we have a corresponding LineData, add if required.
+    while (comments.Count < clines.Length) comments.Add(new Comment());
+    while (comments.Count > clines.Length) comments.RemoveRange(clines.Length, comments.Count - clines.Length);
+
+    // If the line is not similar to the current line of code, update it (in all range)
+    // If the line has to be parsed, replace the line value with the compiled one
+    // Be sure to save the comments before stripping them out and parsing
+    // When completed, recalculate indentation based on the LineData and reconstruct the final edit.text string
+
+    for (int i = 0; i < start; i++) {
+      code += olines[i] + "\n";
     }
-    if (EditLines[editLine].linenum == -1) {
-      for (int i = editLine - 1; i >= 0; i--)
-        if (EditLines[i].linenum != -1) {
-          editLine = i;
-          EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
+    for (int i = start; i < end; i++) {
+      CodeNode compiledLine = FindLine(compiled, i - start + 1);
+      string line = clines[i].Trim(' ', '\t', '\r', '\n');
+      comments[i].Zero();
+      line = rgCommentSL.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.SingleLine);
+        return "";
+      });
+      line = rgCommentML.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineFull);
+        return "";
+      });
+      line = rgCommentMLs.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineOpen);
+        return "";
+      });
+      line = rgCommentMLe.Replace(line, m => {
+        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineClose);
+        return "";
+      });
+
+      if (compiledLine == null) {
+        if (rgBlockClose.IsMatch(line)) indent--;
+
+        switch (comments[i].type) {
+          case CodeNode.CommentType.MultiLineOpen:
+            code += PrintLine(indent, line, false) + " <color=#70e688><mark=#30061880>" + comments[i].comment + (i < clines.Length - 1 ? "\n" : "");
+            break;
+
+          case CodeNode.CommentType.SingleLine:
+          case CodeNode.CommentType.MultiLineFull:
+            string cl = PrintLine(indent, line, false);
+            code += cl + (string.IsNullOrEmpty(cl) ? "" : " ") + "<color=#70e688><mark=#30061880>" + comments[i].comment + "</mark></color>" + (i < clines.Length - 1 ? "\n" : "");
+            break;
+
+          case CodeNode.CommentType.MultiLineClose:
+            code += comments[i].comment + "</mark></color>" + PrintLine(indent, line, i < clines.Length - 1);
+            break;
+
+          case CodeNode.CommentType.None:
+          case CodeNode.CommentType.MultiLineInner:
+          default:
+            code += PrintLine(indent, line, i < clines.Length - 1);
+            break;
+        }
+
+        if (rgBlockOpen.IsMatch(line)) indent++;
+        continue;
+      }
+
+      clines[i] = compiledLine.Format(variables, true, comments[i].comment, comments[i].type);
+
+      // Understand the required indent
+      string l = rgCommentSL.Replace(compiledLine.Format(variables, false), "").Trim();
+      if (indent < 0) indent = 0;
+      if (rgBlockOpen.IsMatch(l)) {
+        if (increaseone > 0) {
+          indent -= increaseone;
+          increaseone = 0;
+        }
+        code += PrintLine(indent, clines[i], i < clines.Length - 1);
+        indent++;
+      }
+      else if (rgBlockClose.IsMatch(l)) { // close } -< decrease (and set also current line)
+        indent--;
+        if (indent < 0) indent = 0;
+        code += PrintLine(indent, clines[i], i < clines.Length - 1);
+      }
+      else if ((compiledLine.type == BNF.WHILE || compiledLine.type == BNF.FOR || compiledLine.type == BNF.IF || compiledLine.type == BNF.ELSE) && compiledLine.iVal == 4) { // while with single statement on next line -> increase just one
+        increaseone++;
+        code += PrintLine(indent, clines[i], i < clines.Length - 1);
+        indent++;
+      }
+      else if (!string.IsNullOrWhiteSpace(l)) {
+        code += PrintLine(indent, clines[i], i < clines.Length - 1);
+        indent -= increaseone;
+        increaseone = 0;
+        if (indent < 0) indent = 0;
+      }
+    }
+    for (int i = end; i < clines.Length; i++) {
+      code += olines[i];
+      if (i < olines.Length - 1) code += "\n";
+    }
+
+    edit.SetTextWithoutNotify(code);
+  }
+
+  void ParseBlock() {
+    if (blockCompile == 0) return;
+
+    // Find the lines to be parsed
+    string[] lines = rgSyntaxHighlight.Replace(edit.text, "").Trim().Split('\n');
+    UpdateLinePos();
+    int end = curline - 1;
+    int start = curline - 1;
+    int num = 0;
+    for (int i = end; i >= 0; i--) {
+      string line = rgCommentML.Replace(rgCommentSL.Replace(rgString.Replace(lines[i], ""), ""), "");
+      if (rgBlockClose.IsMatch(line)) {
+        num++;
+      }
+      if (rgBlockOpen.IsMatch(line)) {
+        num--;
+        if (num == 0) {
+          start = i;
           break;
         }
+      }
     }
-    SetScroll();
-
-    // Selection
-    if (selectionS != -1 && selectionE != -1) {
-      // Find the editrow with the startid, if less than 0 set it at 0, if more than 30 set it as 30
-      // Find the editrow with the endid, if less than 0 set it at 0, if more than 30 set it as 30
-      int rowStart = -1, rowEnd = -1;
-      for (int i = 0; i < 31; i++) {
-        if (EditLines[i].linenum == selectionS) rowStart = i;
-        if (EditLines[i].linenum == selectionE) rowEnd = i;
-      }
-
-      if (rowStart == -1 && rowEnd == -1) SelectionRT.sizeDelta = new Vector2(1280, 0);
-      else if (rowStart == -1 && rowEnd != -1) {
-        SelectionRT.sizeDelta = new Vector2(1280, 33 * (rowEnd + 1));
-        SelectionRT.anchoredPosition = new Vector2(0, 0);
-      }
-      else if (rowStart != -1 && rowEnd == -1) {
-        SelectionRT.sizeDelta = new Vector2(1280, 33 * (30 - rowStart));
-        SelectionRT.anchoredPosition = new Vector2(0, -33 * rowStart);
-      }
-      else {
-        SelectionRT.sizeDelta = new Vector2(1280, 33 * (1 + rowEnd - rowStart));
-        SelectionRT.anchoredPosition = new Vector2(0, -33 * rowStart);
-      }
-
-      foreach (CodeLine cl in EditLines)
-        if (cl.Line.isFocused) {
-          cl.Line.ReleaseSelection();
-        }
+    string code = "";
+    for (int i = start; i <= end; i++) {
+      code += lines[i] + "\n";
     }
-    else
-      SelectionRT.sizeDelta = new Vector2(1280, 0);
+
+    cp.SetOptimize(blockCompile == 2);
+    CodeNode res = CompileCode(code, false, start);
+    if (res == null) return;
+    SetUndo();
+    ParseBlock(res, start, end + 1);
+    UpdateLineNumbers(res, start);
+    SetLinePos();
   }
 
-  bool settingScroll = false;
-  void SetScroll() {
-    settingScroll = true;
-    float size = 30f / lines.Count;
-    if (size > 1) size = 1;
-    VerticalCodeBar.size = size;
-    VerticalCodeBar.SetValueWithoutNotify((float)currentLine / lines.Count);
-    int steps = lines.Count - 30;
-    if (steps < 0) steps = 0;
-    VerticalCodeBar.numberOfSteps = steps;
-    settingScroll = false;
+  string PrintLine(int tabs, string line, bool addNL) { // 
+    string tab = "";
+    for (int t = 0; t < tabs; t++) tab += '\t';
+    string code = tab + line;
+    if (addNL) return code + "\n";
+    return code;
   }
 
-  public void ScrollByBar() {
-    if (settingScroll) return;
-    currentLine = Mathf.RoundToInt(VerticalCodeBar.value * lines.Count);
-    Parse();
-    Redraw();
+  private CodeNode FindLine(CodeNode code, int line) {
+    if (code == null) return null;
+    if (code.origLineNum == line && code.type != BNF.BLOCK) return code;
+    if (code.children == null) return null;
+    foreach (CodeNode cn in code.children) {
+      CodeNode res = FindLine(cn, line);
+      if (res != null) return res;
+    }
+    return null;
   }
 
-  private void Update() {
-    if (autorepeat > 0) autorepeat -= Time.deltaTime;
-    if (Values.gameObject.activeSelf) return;
-    bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-    bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
-    bool up = Input.GetKeyDown(KeyCode.UpArrow);
-    bool down = Input.GetKeyDown(KeyCode.DownArrow);
-    bool pup = Input.GetKey(KeyCode.UpArrow);
-    bool pdown = Input.GetKey(KeyCode.DownArrow);
-    bool enter = Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
-
-    if (ctrl) { // ******************************* Control *********************************************************************************************
-      // Clear, insert, and duplicate
-      if (Input.GetKeyDown(KeyCode.D)) {
-        SaveLine();
-        lines.Insert(currentLine, lines[currentLine].Duplicate());
-        Redraw();
-      }
-      if (Input.GetKeyDown(KeyCode.Insert)) {
-        SaveLine();
-        lines.Insert(currentLine, new LineData());
-        Redraw();
-      }
-      if (Input.GetKeyDown(KeyCode.Delete) && lines.Count > 1) {
-        lines.RemoveAt(currentLine);
-        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-        Redraw();
-      }
-
-      // Ctrl+C
-      if (Input.GetKeyDown(KeyCode.C) && selectionS != -1 && selectionE != -1) {
-        copied = "";
-        SaveLine();
-        for (int line = selectionS; line <= selectionE; line++) {
-          copied += lines[line].Line(false);
-          if (line != selectionE) copied += "\n";
-        }
-        selectionS = -1;
-        selectionE = -1;
-        SelectionRT.sizeDelta = new Vector2(1280, 0);
-      }
-
-      // Ctrl+X
-      if (Input.GetKeyDown(KeyCode.X) && selectionS != -1 && selectionE != -1) {
-        copied = "";
-        SaveLine();
-        for (int line = selectionS; line <= selectionE; line++) {
-          copied += lines[line].Line(false);
-          if (line != selectionE) copied += "\n";
-        }
-        // Remove the copied lines
-        for (int i = 0; i < selectionE - selectionS + 1; i++)
-          lines.RemoveAt(selectionS);
-        selectionS = -1;
-        selectionE = -1;
-        SelectionRT.sizeDelta = new Vector2(1280, 0);
-        Redraw();
-      }
-
-      // Ctrl+V
-      if (Input.GetKeyDown(KeyCode.V)) {
-        // If we have copied lines, paste them as lines
-        // If we have something in clipboard that has at least one newline, treat it as pasting lines (and do not save the currentEditLine because it will contain invalid data
-        if (string.IsNullOrEmpty(copied)) {
-          string clip = GUIUtility.systemCopyBuffer;
-          if (clip.IndexOf('\n') != -1) copied = clip;
-        }
-        copied = copied.Trim(' ', '\t', '\n', '\r');
-        if (!string.IsNullOrEmpty(copied)) {
-          // How many lines?
-          int num = 1;
-          foreach(char c in copied) {
-            if (c == '\n') num++;
-          }
-          string[] rows = copied.Split('\n');
-          for (int i = rows.Length - 1; i >= 0; i--) {
-            LineData l = new LineData();
-            l.Set(rows[i].Trim(' ', '\t', '\n', '\r'));
-            lines.Insert(currentLine, l);
-          }
-          Redraw();
-          Parse();
-        }
-      }
-    }
-    else if (shift) { // ******************************* Shift *********************************************************************************************
-      // Selection
-      if (down && (selectionS == -1 || selectionE == -1)) { // If nothing is selected, select current line and move up or down
-        SaveLine();
-        selectionS = currentLine;
-        selectionE = currentLine;
-        if (editLine < 28) {
-          editLine++;
-          EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject); // This will update currentline
-        }
-        else
-          currentLine++;
-        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-        Redraw();
-      }
-      else if (up && (selectionS == -1 || selectionE == -1)) { // If nothing is selected, select current line and move up or down
-        SaveLine();
-        selectionS = currentLine;
-        selectionE = currentLine;
-        if (currentLine > 0) currentLine--;
-        if (editLine > 0) editLine--;
-        Redraw();
-        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-      }
-      else if (currentLine <= selectionS && up) { // Extend
-        selectionS--;
-        if (selectionS < 0) selectionS = 0;
-        if (currentLine > 0) currentLine--;
-        if (editLine > 0) editLine--;
-        Redraw();
-        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-      }
-      else if (currentLine >= selectionE && down) { // Extend
-        selectionE++;
-        if (selectionE >= lines.Count) selectionE = lines.Count - 1;
-        if (editLine < 28) {
-          editLine++;
-          EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-        }
-        else
-          currentLine++;
-        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-        Redraw();
-      }
-      else if (currentLine <= selectionS && down) { // Reduce
-        selectionS++;
-        if (selectionS > selectionE) {
-          int tmp = selectionS;
-          selectionS = selectionE;
-          selectionE = tmp;
-        }
-        if (editLine < 28) {
-          editLine++;
-          EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-        }
-        else
-          currentLine++;
-        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-        Redraw();
-      }
-      else if (currentLine >= selectionE && up) { // Reduce
-        selectionE--;
-        if (selectionS > selectionE) {
-          int tmp = selectionS;
-          selectionS = selectionE;
-          selectionE = tmp;
-        }
-        if (currentLine > 0) currentLine--;
-        if (editLine > 0) editLine--;
-        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-        Redraw();
-      }
-
-    }
-    else { // ******************************* Normal *********************************************************************************************
-      if ((up || (pup && autorepeat <= 0)) && !shift && currentLine > 0) {
-        SaveLine();
-        currentLine--;
-        if (editLine > 0) editLine--;
-        EditLines[editLine].Line.Select();
-        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-        autorepeat = up ? .4f : .06f;
-        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
-          selectionS = -1;
-          selectionE = -1;
-        }
-        Redraw();
-      }
-      else if ((down || (pdown && autorepeat <= 0) || enter) && !shift) {
-        SaveLine();
-        if (editLine < 28) editLine++;
-        currentLine++;
-        if (currentLine >= lines.Count) {
-          LineData l = new LineData();
-          lines.Add(l);
-          EditLines[editLine].SetLine(currentLine, l, OptimizeCodeTG.isOn);
-        }
-        else if (enter) {
-          LineData l = new LineData();
-          lines.Add(l);
-          EditLines[editLine].SetLine(currentLine, l, OptimizeCodeTG.isOn);
-          Redraw();
-        }
-        
-        EventSystem.current.SetSelectedGameObject(EditLines[editLine].Line.gameObject);
-        autorepeat = down ? .4f : .06f;
-        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
-          selectionS = -1;
-          selectionE = -1;
-        }
-        Redraw();
-      }
-      else if (Input.GetKeyDown(KeyCode.PageUp)) {
-        SaveLine();
-        currentLine -= 31;
-        if (currentLine < 0) currentLine = 0;
-        // We may need to recalculate the currentLine from the editLine
-        if (EditLines[editLine].linenum != -1) currentLine = EditLines[editLine].linenum;
-        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
-          selectionS = -1;
-          selectionE = -1;
-        }
-        Redraw();
-      }
-      else if (Input.GetKeyDown(KeyCode.PageDown)) {
-        SaveLine();
-        currentLine += 31;
-        if (currentLine >= lines.Count) currentLine = lines.Count - 1;
-        if (EditLines[editLine].linenum != -1) currentLine = EditLines[editLine].linenum;
-        if (currentLine < selectionS - 1 || currentLine > selectionE + 1) {
-          selectionS = -1;
-          selectionE = -1;
-        }
-        Redraw();
-      }
-
-//      if (Input.anyKeyDown) //FIXME debug
-//        dbg.text = "CL: " + currentLine + " / EL: " + editLine + "\nSS:" + selectionS + " -> SE:" + selectionE;
-      
-    }
-
-
+  void UpdateLineNumbers(CodeNode n, int incr) {
+    if (n == null) return;
+    n.origLineNum += incr;
+    if (n.children == null) return;
+    foreach (CodeNode c in n.children)
+      UpdateLineNumbers(c, incr);
   }
+
+
+  /* open { -> increase
+   * close } -< decrease (and set also current line)
+   * if/for/while without statement -> increase just one
+   * 
+   * if increased just one and normal statement -> collapse all increase by one
+   * if increased just one and if/for/wile no statemeddnt -> increase by one again
+   * 
+   * 0   a++              | normal
+   * 0   if (a) a++       | normal because statement here
+   * 0   if (a)           | increases by just one line
+   * 1    a++             | does the one line and goes back
+   * 0   if (a) {         | indent++
+   * 1    a++             | normal
+   * 0   }                | indent--
+   * 0   if (a)           | normal
+   * 0   {                | indent++
+   * 1    a++             | normal
+   * 0   }                | indent--
+   * 0   if (a)           | increases by just one line
+   * 1    if (a)          | increases by just one line
+   * 2      if (a)        | increases by just one line
+   * 3        a++         | does the one line and goes back (3 times)
+   * 0   if (a) {         | indent++
+   * 1    if (a)          | increases by just one line
+   * 2      if (a)        | increases by just one line
+   * 3        a++         | does the one line and goes back (2 times)
+   * 1    b++             | normal
+   * 0   }                | indent--
+   * 
+   */
+
+
+
+
+  public CodeNode CompileCode(string code, bool checkCompleteness, int startOffset = 0) {
+    // Get all lines, produce an aggregated string, and do the full parsing.
+    variables.Clear();
+    CodeNode result = null;
+    try {
+      result = cp.Parse(code, variables, true, !checkCompleteness, startOffset);
+      if (checkCompleteness && !result.HasNode(BNF.Config) && !result.HasNode(BNF.Data) && !result.HasNode(BNF.Start) && !result.HasNode(BNF.Update) && !result.HasNode(BNF.Functions)) {
+        Result.text = "No executable code found (Start, Update, Functions, Config, or Data)";
+        return null;
+      }
+      Result.text = "Parsing OK";
+
+    } catch (ParsingException e) {
+      Result.text = "<color=red>" + e.Message + "</color>\n" + e.Code + "\nLine: " + (e.LineNum);
+      string[] olines = edit.text.Split('\n');
+      int el = e.LineNum - 1;
+      string tabs = "";
+      if (el > 0) {
+        string prev = rgSyntaxHighlight.Replace(olines[el - 1], "");
+        foreach (char c in prev) {
+          if (c == '\t') tabs += "\t";
+          else break;
+        }
+      }
+      if (el >= 0 && el < olines.Length) {
+        olines[el] = tabs + "<color=red>" + rgSyntaxHighlight.Replace(olines[el], "").Trim() + " </color>";
+        string coderes = "";
+        for (int i = 0; i < olines.Length - 1; i++)
+          coderes += olines[i] + "\n";
+        coderes += olines[olines.Length - 1];
+        edit.SetTextWithoutNotify(coderes);
+      }
+      curline = e.LineNum;
+      SetLinePos();
+    } catch (System.Exception e) {
+      Result.text = "<color=red>" + e.Message + "</color>";
+    }
+    return result;
+  }
+
+
+
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+
+
+
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+  // ************************************************************************************************************************************************************************************************
+
+
+  public void AlterBreakPoint(int num) {
+    Debug.Log(num);
+  }
+
+
+
+
+
+
+
 
 
   private void LateUpdate() {
     if (Input.mouseScrollDelta.y == 0) return;
     if (Input.mousePosition.x < 0 || Input.mousePosition.y < 0 || Input.mousePosition.x >= Screen.width || Input.mousePosition.y >= Screen.height) return;
 
-    int val = (int)(-15 * Input.mouseScrollDelta.y);
+//    int val = (int)(-15 * Input.mouseScrollDelta.y);
+    /* FIXME
     currentLine += val;
     if (currentLine < 0) currentLine = 0;
     if (currentLine >= lines.Count) currentLine = lines.Count - 1;
     SetScroll();
     ScrollByBar();
+    */
   }
 
-
-
-  readonly Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)", RegexOptions.IgnoreCase);
-  readonly Regex rgCommentSL = new Regex("(//.*)$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
-  readonly Regex rgBlockOpen = new Regex("(?<!//.*?)\\{", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
-  readonly Regex rgBlockOpenAlone = new Regex("^[\\s]*\\{[\\s]*", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
-  readonly Regex rgBlockClose = new Regex("(?<!//.*?)\\}", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
-
-  void SaveLine() {
-    // Save, parse, and do the syntax highlight
-    if (currentLine < 0 || currentLine >= lines.Count || editLine < 0 || editLine >= EditLines.Length) return;
-    string cleanline = rgSyntaxHighlight.Replace(EditLines[editLine].Line.text.Trim(), "");
-
-    if (!lines[currentLine].Same(cleanline)) { // Save the line, if needed
-      lines[currentLine].Set(cleanline);
-    }
-    SyntaxHighlight(cleanline, editLine, currentLine > 0 && (lines[currentLine - 1].commentT == CodeNode.CommentType.MultiLineOpen || lines[currentLine - 1].commentT == CodeNode.CommentType.MultiLineInner));
-    FixIndentation(); // Update the indent
-  }
-
-  void SyntaxHighlight(string line, int whichline, bool multiLineComment) {
-    if (currentLine < 0 || currentLine >= lines.Count) return;
-    LineData theLine = lines[EditLines[whichline].linenum];
-    CodeLine codeLine = EditLines[whichline];
-
-    if (theLine.IsEmpty() || codeLine.linenum < 0 || codeLine.linenum >= lines.Count) {
-      Result.text = "";
-      return;
-    }
-
-    CodeNode.CommentType commentType = CodeNode.CommentType.None;
-    if (multiLineComment) commentType = CodeNode.CommentType.MultiLineInner;
-    try {
-      // Handle first comments
-      string comment = "";
-      string cleaned = "";
-      bool inquotes = false;
-      bool incomment = false;
-      int len = line.Length;
-      for (int i = 0; i < len; i++) {
-        char c = line[i];
-        if (c == '"' && !incomment) {
-          inquotes = !inquotes;
-        }
-        if (inquotes) cleaned += c;
-        else {
-          if (c == '/' && i < len - 1 && line[i + 1] == '*' && !multiLineComment) {
-            incomment = true;
-            commentType = CodeNode.CommentType.MultiLineOpen;
-          }
-          if (incomment) comment += c;
-          else cleaned += c;
-          if (c == '*' && i < len - 1 && line[i + 1] == '/') {
-            if (incomment) {
-              commentType = CodeNode.CommentType.MultiLineFull;
-              comment += "/";
-            }
-            else {
-              commentType = CodeNode.CommentType.MultiLineClose;
-              comment = line.Substring(0, i + 2);
-              cleaned = "";
-            }
-            incomment = false;
-            i++;
-          }
-        }
-      }
-      line = cleaned;
-
-      Match m = rgCommentSL.Match(line);
-      if (m.Success) {
-        comment += m.Value;
-        commentType = CodeNode.CommentType.SingleLine;
-        line = rgCommentSL.Replace(line, "").Trim();
-      }
-
-      theLine.SetComments(comment, commentType);
-
-      if (commentType == CodeNode.CommentType.MultiLineInner) {
-        theLine.Set(line, "<color=#70e688><mark=#30061880>" + line + "</mark></color>");
-        codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
-        return;
-      }
-
-      Result.text = "";
-      if (string.IsNullOrEmpty(line)) {
-        theLine.SetComments(comment, commentType == CodeNode.CommentType.None ? CodeNode.CommentType.SingleLine : commentType);
-        if (!string.IsNullOrEmpty(comment))
-          theLine.Set(comment, "<color=#70e688><mark=#30061880>" + comment + "</mark></color>");
-        else
-          theLine.Set(comment, Result.text);
-        codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
-        FixIndentation();
-        return;
-      }
-      if (rgBlockClose.IsMatch(line)) {
-        theLine.Set("}");
-        codeLine.SetLine(codeLine.linenum, theLine, OptimizeCodeTG.isOn);
-        FixIndentation();
-        return;
-      }
-      if (rgBlockOpenAlone.IsMatch(line)) {
-        theLine.Set("}");
-        codeLine.SetLine(codeLine.linenum, theLine, OptimizeCodeTG.isOn);
-        FixIndentation();
-        return;
-      }
-
-      if (!theLine.toParse) return;
-
-      // Check if we need multiple lines, we do only if we have an IF, FOR, WHILE (and they are not single command)
-      bool hadOpenBlock = cp.RequiresBlock(line);
-      CodeNode res = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, codeLine.linenum, false, out string except);
-      CodeNode resOpt = res;
-      if (except == null) { // Parse also optimized
-        resOpt = cp.ParseLine(line.Trim(' ', '\r', '\n', '\t'), variables, codeLine.linenum, true, out _);
-      }
-
-      if (res.CN1 == null) { // Not parsed
-        if (except == null) {
-          theLine.Set(line + comment, "<color=#70e688><mark=#30061880>" + line + comment + "</mark></color>");
-          codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
-        }
-        else {
-          theLine.SetParsed(line + comment, "<color=#ff2e00>" + line + comment + "</color>");
-          codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
-          Result.text = "<color=#ff2e00>" + except + "</color>";
-        }
-        FixIndentation();
-        return;
-      }
-
-      res.CN1.SetComments(comment, commentType);
-      theLine.SetComments(comment, commentType);
-      if (except != null) { // Parsed with exception
-        string linec = line + comment;
-        string lineo = line + comment;
-        theLine.SetParsed(linec, lineo, res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
-        codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
-        Result.text = "<color=#ff2e00>" + except + "</color>";
-      }
-      else { // Parsed correctly
-        string linec = res.CN1.Format(variables, hadOpenBlock, false);
-        string lineo = resOpt.CN1.Format(variables, hadOpenBlock, false);
-        theLine.SetParsed(linec, lineo, res.CN1.Format(variables, hadOpenBlock, true), resOpt.CN1.Format(variables, hadOpenBlock, true));
-        codeLine.SetLine(theLine, OptimizeCodeTG.isOn);
-      }
-
-    } catch (Exception e) {
-      Result.text = "<color=#ff2e00>ERROR:</color>\n" + e.Message;
-    }
-  }
-
-  public void ChangeViewOptimizedCode() {
-    Redraw();
-  }
-
-  void FixIndentation() {
-    int indent = 0;
-    int increaseone = 0;
-    for (int i = 0; i < lines.Count; i++) {
-      string line = rgCommentSL.Replace(lines[i].Line(false).Trim(), "").Trim();
-      if (indent < 0) indent = 0;
-      lines[i].indent = indent;
-      if (rgBlockOpen.IsMatch(line)) {
-        if (increaseone > 0) {
-          indent -= increaseone;
-          increaseone = 0;
-          lines[i].indent = indent;
-        }
-        indent++; // open { -> increase
-      }
-      else if (rgBlockClose.IsMatch(line)) { // close } -< decrease (and set also current line)
-        indent--;
-        if (indent < 0) indent = 0;
-        lines[i].indent = indent;
-      }
-      else if (cp.RequiresBlockAfter(line)) { // if/for/while without statement->increase just one
-        increaseone++;
-        indent++;
-      }
-      else if (!string.IsNullOrWhiteSpace(line)) {
-        indent -= increaseone;
-        increaseone = 0;
-        if (indent < 0) indent = 0;
-      }
-    }
-    for (int i = 0; i < EditLines.Length; i++) {
-      int num = EditLines[i].linenum;
-      if (num > -1 && num < lines.Count) {
-        EditLines[i].UpdateIndent(lines[num].indent);
-      }
-    }
-
-
-    /* open { -> increase
-     * close } -< decrease (and set also current line)
-     * if/for/while without statement -> increase just one
-     * 
-     * if increased just one and normal statement -> collapse all increase by one
-     * if increased just one and if/for/wile no statemeddnt -> increase by one again
-     * 
-     * 
-     * 0   a++              | normal
-     * 0   if (a) a++       | normal because statement here
-     * 0   if (a)           | increases by just one line
-     * 1    a++             | does the one line and goes back
-     * 0   if (a) {         | indent++
-     * 1    a++             | normal
-     * 0   }                | indent--
-     * 0   if (a)           | normal
-     * 0   {                | indent++
-     * 1    a++             | normal
-     * 0   }                | indent--
-     * 0   if (a)           | increases by just one line
-     * 1    if (a)          | increases by just one line
-     * 2      if (a)        | increases by just one line
-     * 3        a++         | does the one line and goes back (3 times)
-     * 0   if (a) {         | indent++
-     * 1    if (a)          | increases by just one line
-     * 2      if (a)        | increases by just one line
-     * 3        a++         | does the one line and goes back (2 times)
-     * 1    b++             | normal
-     * 0   }                | indent--
-     * 
-     * 
-     * 
-     * 
-     */
-
-
-  }
-
-  void Parse() {
-    for (int pos = 0; pos < EditLines.Length; pos++) {
-      CodeLine l = EditLines[pos];
-      if (l.linenum == -1) continue;
-      string cleanline = rgSyntaxHighlight.Replace(l.Line.text.Trim(), "");
-      bool inComment = EditLines[pos].linenum > 0 && (lines[EditLines[pos].linenum - 1].commentT == CodeNode.CommentType.MultiLineOpen || lines[EditLines[pos].linenum - 1].commentT == CodeNode.CommentType.MultiLineInner);
-      SyntaxHighlight(cleanline, pos, inComment);
-    }
-    FixIndentation(); // Update the indent
-  }
-
-  public void LineSelected(int num) {
-    bool toredraw = false;
-    if (Input.GetMouseButton(0) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
-      int one = editLine;
-      int two = num;
-      if (one > two) { int tmp = one; one = two; two = tmp; }
-      selectionS = EditLines[one].linenum;
-      selectionE = EditLines[two].linenum;
-      toredraw = true;
-    }
-
-    editLine = num;
-    int line = EditLines[num].linenum;
-    if (line == -1) { // Go up until we will find the first valid line
-      int numlinestoadd = 0;
-      int numback = num;
-      while(line == -1 && numback > 0) {
-        numlinestoadd++;
-        numback--;
-        line = EditLines[numback].linenum;
-      }
-      if (line == -1) Debug.LogError("Huston we have a problem");
-      for (int i = 0; i < numlinestoadd; i++) {
-        LineData l = new LineData();
-        lines.Add(l);
-        EditLines[numback + 1 + i].SetLine(line + i + 1, l, OptimizeCodeTG.isOn);
-      }
-    }
-    currentLine = EditLines[num].linenum;
-
-    if (toredraw) Redraw();
-  }
-
-  public void AlterBreakPoint(int num) {
-    EditLines[num].ToggleBreakpoint();
-  }
-
-  public void Compile() {
-    CompileCode();
-  }
-
-  public CodeNode CompileCode() {
-    // Get all lines, produce an aggregated string, and do the full parsing.
-    string code = "";
-    foreach (LineData line in lines)
-      code += line.Line(false) + "\n";
-    variables.Clear();
-    try {
-      CodeNode result = cp.Parse(code, variables, true, false);
-      if (!result.HasNode(BNF.Config) && !result.HasNode(BNF.Data) && !result.HasNode(BNF.Start) && !result.HasNode(BNF.Update) && !result.HasNode(BNF.Functions)) {
-        Result.text = "No executable code found (Start, Update, Functions, Config, or Data)";
-        return null;
-      }
-      else {
-        Result.text = "Parsing OK";
-        return result;
-      }
-
-    } catch(ParsingException e) {
-      Result.text = "<color=red>" + e.Message + "</color>\n" + e.Code + "\nLine: " + e.LineNum;
-      // Scroll to line number
-      if (e.LineNum > 0) currentLine = e.LineNum - 1;
-      Redraw();
-      SetScroll();
-    } catch (System.Exception e) {
-      Result.text = "<color=red>" + e.Message + "</color>";
-    }
-    return null;
-  }
 
 
   #region Run / Debug ***********************************************************************************************************************************************
@@ -696,7 +521,7 @@ public class CodeEditor : MonoBehaviour {
 
   public void Run() {
     // Compile the code, if errors show them and stop
-    CodeNode code = CompileCode();
+    CodeNode code = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true); 
     if (code == null) return;
 
     // Reset the Arcade, and pass the parsed parts
@@ -706,13 +531,13 @@ public class CodeEditor : MonoBehaviour {
   #endregion Run / Debug ***********************************************************************************************************************************************
 
   #region Load / Save ***********************************************************************************************************************************************
-  public GameObject LoadSaveButton;
+  public GameObject LoadSaveButtons;
   public Confirm Confirm;
   public TMP_InputField Values;
   public Button LoadSubButton;
 
   public void LoadSave() {
-    LoadSaveButton.SetActive(!LoadSaveButton.activeSelf);
+    LoadSaveButtons.SetActive(!LoadSaveButtons.activeSelf);
   }
 
   public void LoadTextPre() {
@@ -722,24 +547,11 @@ public class CodeEditor : MonoBehaviour {
   public void LoadTextPost() {
     if (!gameObject.activeSelf) return;
     Values.gameObject.SetActive(false);
-    LoadSaveButton.SetActive(false);
+    LoadSaveButtons.SetActive(false);
 
-    lines.Clear();
-    currentLine = 0;
-    editLine = 0;
-    int num = 1;
-    string code = Values.text;
-    foreach (char c in code) {
-      if (c == '\n') num++;
-    }
-    string[] rows = code.Split('\n');
-    for (int i = rows.Length - 1; i >= 0; i--) {
-      LineData l = new LineData();
-      l.Set(rows[i].Trim(' ', '\t', '\n', '\r'));
-      lines.Insert(currentLine, l);
-    }
-    Redraw();
-    Parse();
+    edit.SetTextWithoutNotify(Values.text.Trim());
+    curline = 0;
+    UpdateLinePos();
   }
 
   public void SaveText() {
