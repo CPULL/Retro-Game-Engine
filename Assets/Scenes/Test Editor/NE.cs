@@ -79,12 +79,8 @@ public class NE : MonoBehaviour {
     edit.SetTextWithoutNotify(edit.text.Replace("\r\n", "\n").Replace("\r", "\n"));
     foreach (char c in edit.text) {
       pos++;
-      if (c == '\n') {
-        num++;
-      }
-      if (pos == edit.stringPosition) {
-        curline = num;
-      }
+      if (c == '\n')  num++;
+      if (pos == edit.stringPosition) curline = num;
     }
 
     if (numlines != num) {
@@ -416,7 +412,18 @@ public class NE : MonoBehaviour {
 
     } catch (ParsingException e) {
       Result.text = "<color=red>" + e.Message + "</color>\n" + e.Code + "\nLine: " + (e.LineNum);
-      // FIXME Scroll to line number
+      string[] olines = edit.text.Split('\n');
+      int el = e.LineNum - 1;
+      if (el >= 0 && el < olines.Length) {
+        olines[el] = "<color=red>" + rgSyntaxHighlight.Replace(olines[el], "").Trim() + " </color>";
+        string coderes = "";
+        for (int i = 0; i < olines.Length - 1; i++)
+          coderes += olines[i] + "\n";
+        coderes += olines[olines.Length - 1];
+        edit.SetTextWithoutNotify(coderes);
+      }
+      curline = e.LineNum;
+      SetLinePos();
     } catch (System.Exception e) {
       Result.text = "<color=red>" + e.Message + "</color>";
     }
