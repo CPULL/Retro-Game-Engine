@@ -299,7 +299,7 @@ public class CodeParser {
       });
 
       idcount = 0;
-      CodeNode res = new CodeNode(BNF.Program, null, -1);
+      CodeNode res = new CodeNode(BNF.Program, null, int.MinValue);
       nodes = new Dictionary<string, CodeNode>();
       functions = new Dictionary<string, CodeNode>();
       vars = variables;

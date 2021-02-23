@@ -48,5 +48,3 @@ Run, Pause, Run step, Restart, Stop, View Variables, View memory
 
 Add a button to remove all selected lines
 
-Line number is wrong if there are single line comments
-

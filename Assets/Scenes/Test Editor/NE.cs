@@ -192,10 +192,11 @@ public class NE : MonoBehaviour {
     ParseBlock(compiled, 0, int.MaxValue);
   }
 
-  void ParseBlock(CodeNode compiled, int start, int end) { 
+  void ParseBlock(CodeNode compiled, int start, int end) {
     // We need to find all nodes, one by one
     // For each grab the line number and get the Format (only if it is a command)
     // reconstruct the lines and update the input field
+    string[] olines = edit.text.Split('\n');
     string code = rgSyntaxHighlight.Replace(edit.text, "").Trim();
     string[] clines = code.Split('\n');
     code = "";
@@ -214,28 +215,10 @@ public class NE : MonoBehaviour {
     // When completed, recalculate indentation based on the LineData and reconstruct the final edit.text string
 
     for (int i = 0; i < start; i++) {
-      string line = clines[i];
-      comments[i].Zero();
-      line = rgCommentSL.Replace(line, m => {
-        comments[i].Set(m.Value, CodeNode.CommentType.SingleLine);
-        return "";
-      });
-      line = rgCommentML.Replace(line, m => {
-        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineFull);
-        return "";
-      });
-      line = rgCommentMLs.Replace(line, m => {
-        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineOpen);
-        return "";
-      });
-      line = rgCommentMLe.Replace(line, m => {
-        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineClose);
-        return "";
-      });
-      code += clines[i] + "\n";
+      code += olines[i] + "\n";
     }
     for (int i = start; i < end; i++) {
-      CodeNode compiledLine = FindLine(compiled, i + 1);
+      CodeNode compiledLine = FindLine(compiled, i - start + 1);
       string line = clines[i].Trim(' ', '\t', '\r', '\n');
       comments[i].Zero();
       line = rgCommentSL.Replace(line, m => {
@@ -265,7 +248,8 @@ public class NE : MonoBehaviour {
 
           case CodeNode.CommentType.SingleLine:
           case CodeNode.CommentType.MultiLineFull:
-            code += PrintLine(indent, line, false) + " <color=#70e688><mark=#30061880>" + comments[i].comment + "</mark></color>" + (i < clines.Length - 1 ? "\n" : "");
+            string cl = PrintLine(indent, line, false);
+            code += cl + (string.IsNullOrEmpty(cl) ? "" : " ") + "<color=#70e688><mark=#30061880>" + comments[i].comment + "</mark></color>" + (i < clines.Length - 1 ? "\n" : "");
             break;
 
           case CodeNode.CommentType.MultiLineClose:
@@ -314,26 +298,8 @@ public class NE : MonoBehaviour {
       }
     }
     for (int i = end; i < clines.Length; i++) {
-      string line = clines[i];
-      comments[i].Zero();
-      line = rgCommentSL.Replace(line, m => {
-        comments[i].Set(m.Value, CodeNode.CommentType.SingleLine);
-        return "";
-      });
-      line = rgCommentML.Replace(line, m => {
-        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineFull);
-        return "";
-      });
-      line = rgCommentMLs.Replace(line, m => {
-        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineOpen);
-        return "";
-      });
-      line = rgCommentMLe.Replace(line, m => {
-        comments[i].Set(m.Value, CodeNode.CommentType.MultiLineClose);
-        return "";
-      });
-      code += clines[i];
-      if (i < clines.Length - 1) code += "\n";
+      code += olines[i];
+      if (i < olines.Length - 1) code += "\n";
     }
 
     edit.SetTextWithoutNotify(code);
