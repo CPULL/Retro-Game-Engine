@@ -154,7 +154,7 @@ public class NE : MonoBehaviour {
 
   readonly CodeParser cp = new CodeParser();
   readonly Variables variables = new Variables();
-  readonly Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)", RegexOptions.IgnoreCase);
+  readonly Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)|(\\<color=red\\>)|", RegexOptions.IgnoreCase);
   readonly Regex rgCommentSL = new Regex("(//.*)$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
   readonly Regex rgCommentML = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
   readonly Regex rgCommentMLs = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
@@ -328,9 +328,10 @@ public class NE : MonoBehaviour {
       code += lines[i] + "\n";
     }
 
-    SetUndo();
-    CodeNode res = CompileCode(code, false, start);
     cp.SetOptimize(blockCompile == 2);
+    CodeNode res = CompileCode(code, false, start);
+    if (res == null) return;
+    SetUndo();
     ParseBlock(res, start, end + 1);
     UpdateLineNumbers(res, start);
     SetLinePos();

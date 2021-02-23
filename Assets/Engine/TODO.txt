@@ -43,8 +43,15 @@ CodeEditor: Start/Stop
 CodeEditor: Show errors in a better place
 CodeEditor: Add "rom" to current developed project
 
+
+Rom editor: Add a button to remove all selected lines
+
+
+Do the video showing the new code editor
+Replace old code editor with the new one
+
 Run, Pause, Run step, Restart, Stop, View Variables, View memory
 
 
-Add a button to remove all selected lines
 
+We need a way to remove the spourious color tags after editing
