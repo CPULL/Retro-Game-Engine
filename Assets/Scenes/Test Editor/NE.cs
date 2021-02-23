@@ -415,8 +415,16 @@ public class NE : MonoBehaviour {
       Result.text = "<color=red>" + e.Message + "</color>\n" + e.Code + "\nLine: " + (e.LineNum);
       string[] olines = edit.text.Split('\n');
       int el = e.LineNum - 1;
+      string tabs = "";
+      if (el > 0) {
+        string prev = rgSyntaxHighlight.Replace(olines[el - 1], "");
+        foreach(char c in prev) {
+          if (c == '\t') tabs += "\t";
+          else break;
+        }
+      }
       if (el >= 0 && el < olines.Length) {
-        olines[el] = "<color=red>" + rgSyntaxHighlight.Replace(olines[el], "").Trim() + " </color>";
+        olines[el] = tabs + "<color=red>" + rgSyntaxHighlight.Replace(olines[el], "").Trim() + " </color>";
         string coderes = "";
         for (int i = 0; i < olines.Length - 1; i++)
           coderes += olines[i] + "\n";
