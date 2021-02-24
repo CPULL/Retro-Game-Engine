@@ -20,6 +20,12 @@ TextureImporter:
   - first:
       213: -4975921426429711088
     second: Run adn Debug_5
+  - first:
+      213: -1971552008388434995
+    second: Run adn Debug_6
+  - first:
+      213: 4358510007886617481
+    second: Run adn Debug_7
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -73,6 +79,8 @@ TextureImporter:
   textureType: 8
   textureShape: 1
   singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
   maxTextureSizeSet: 0
   compressionQualitySet: 0
   textureFormatSet: 0
@@ -240,6 +248,48 @@ TextureImporter:
       bones: []
       spriteID: 01de66383d9f1fab0800000000000000
       internalID: -4975921426429711088
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Run adn Debug_6
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dc3acc3e4e3a3a4e0800000000000000
+      internalID: -1971552008388434995
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Run adn Debug_7
+      rect:
+        serializedVersion: 2
+        x: 448
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 98b111282c98c7c30800000000000000
+      internalID: 4358510007886617481
       vertices: []
       indices: 
       edges: []
