@@ -50,8 +50,12 @@ Rom editor: Add a button to remove all selected lines
 Do the video showing the new code editor
 Replace old code editor with the new one
 
-Run, Pause, Run step, Restart, Stop, View Variables, View memory
 
 Implement breakpoints
-Remove the old palette.
-Replace the old color commands with a way to get the best palette color.
+View Variables
+View memory
+Arcade in debug: Run
+Arcade in debug: Pause
+Arcade in debug: Run step
+Arcade in debug: Restart
+Arcade in debug: Stop
