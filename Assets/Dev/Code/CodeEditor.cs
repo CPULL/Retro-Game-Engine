@@ -11,6 +11,7 @@ public class CodeEditor : MonoBehaviour {
   public Scrollbar Scroll;
   public TextMeshProUGUI EditText;
   public TextMeshProUGUI LineNumbers;
+  public RectTransform LineNumbersRT;
   public TextMeshProUGUI Result;
   public TextMeshProUGUI CurrentLineText;
   public TMP_FontAsset MonoFont;
@@ -181,6 +182,14 @@ public class CodeEditor : MonoBehaviour {
       RectTransform rt = t.GetComponent<RectTransform>();
       rt.sizeDelta = new Vector2(1248, 1.1625f * fontSize);
     }
+
+    // linenum RT width 78, lmargin -4
+    //    text TMP left margin 80
+    Debug.Log(EditText.margin);
+    Vector2 lnsd = LineNumbersRT.sizeDelta;
+    lnsd.x = (int)(3.44444444f * fontSize + 2.22222222222f);
+    LineNumbersRT.sizeDelta = lnsd;
+    EditText.margin = new Vector4((int)(3.333333333f * fontSize + 14.66666666666f), 0, 0, 0);
   }
 
   int tabSize = 2;
