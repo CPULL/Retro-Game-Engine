@@ -102,6 +102,29 @@ public class Variables {
     count = 0;
     pointers.Clear();
   }
+
+
+  public string GetFormattedValues() {
+    string res = "";
+
+    foreach (string key in pointers.Keys) {
+      Value val = vars[pointers[key]];
+      string line = "";
+      switch (val.type) {
+        case VT.None:   line = "<color=#20f350>NUL</color> "; break;
+        case VT.Int:    line = "<color=#20f350>INT</color> "; break;
+        case VT.Float:  line = "<color=#20f350>FLT</color> "; break;
+        case VT.String: line = "<color=#20f350>STR</color> "; break;
+        case VT.Array:  line = "<color=#20f350>ARR</color> "; break;
+      }
+      string name = key;
+      while (name.Length < 16) name += " ";
+      if (name.Length > 16) name = name.Substring(0, 16);
+      line += name + "  <color=#0fe4f3>" + val.ToDebugStr() + "</color>\n";
+      res += line;
+    }
+    return res;
+  }
 }
 
 
@@ -587,4 +610,14 @@ public struct Value {
     }
     return variables.Get(aVals[pos]);
   }
+
+  internal string ToDebugStr() {
+    if (type == VT.None) return "";
+    if (type == VT.Int) return iVal.ToString();
+    if (type == VT.Float) return fVal.ToString("F3");
+    if (type == VT.String) return sVal;
+    if (type == VT.Array) return "[" + aVals?.Length + "]";
+    return "<i>unknown</i>";
+  }
+
 }

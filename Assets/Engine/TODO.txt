@@ -53,6 +53,6 @@ View Variables
 View memory
 Arcade in debug: Run
 Arcade in debug: Pause
-Arcade in debug: Run step
+Arcade in debug: Run step -> split in Complete step and Complete frame
 Arcade in debug: Restart
 Arcade in debug: Stop

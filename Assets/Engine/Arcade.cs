@@ -43,6 +43,7 @@ public class Arcade : MonoBehaviour {
   readonly System.Globalization.CultureInfo culture = new System.Globalization.CultureInfo("en-US");
   public Material RGEPalette;
   readonly Color[] palette = new Color[256];
+  public bool running = false;
 
   public enum Keys {
     L = 0,  Lu = 1,  Ld = 2,
@@ -63,6 +64,7 @@ public class Arcade : MonoBehaviour {
   int lastScreenH;
 
   private void Update() {
+    running = false;
     if (updateDelay < 0) return;
     if (updateDelay > 0) {
       updateDelay -= Time.deltaTime;
@@ -103,6 +105,7 @@ public class Arcade : MonoBehaviour {
     }
 
 
+    running = true;
     FpsTime += Time.deltaTime;
     if (FpsTime > 1f) {
       FpsTime -= 1f;
@@ -184,6 +187,7 @@ public class Arcade : MonoBehaviour {
   void CompleteFrame() {
     FpsFrames++;
     texture.Apply();
+    if (varsCallback != null) varsCallback(variables);
   }
 
 
@@ -475,7 +479,9 @@ public class Arcade : MonoBehaviour {
     }
   }
 
-  public void LoadCode(CodeNode code, Variables vars, ByteChunk romdata) { // Labels too
+  Action<Variables> varsCallback = null;
+
+  public void LoadCode(CodeNode code, Variables vars, ByteChunk romdata, Action<Variables> varsCB) { // Labels too
     Col.UsePalette(false);
     Col.SetDefaultPalette();
     RGEPalette.SetInt("_UsePalette", 0);
@@ -484,6 +490,7 @@ public class Arcade : MonoBehaviour {
     CompleteFrame();
     variables = vars;
     labels.Clear();
+    varsCallback = varsCB;
 
     try {
       Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
@@ -654,6 +661,10 @@ public class Arcade : MonoBehaviour {
       texture.Apply();
       Debug.Log("Error in loading! " + e.Message + "\n" + e.StackTrace);
     }
+  }
+
+  public void ReadVariables() {
+    if (varsCallback != null) varsCallback(variables);
   }
 
   private string MemSize(int size) {

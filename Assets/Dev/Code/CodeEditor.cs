@@ -525,7 +525,26 @@ public class CodeEditor : MonoBehaviour {
     if (code == null) return;
 
     // Reset the Arcade, and pass the parsed parts
-    arcade.LoadCode(code, variables, rom);
+    arcade.LoadCode(code, variables, rom, UpdateVariables);
+  }
+
+  public GameObject InspectorVariables;
+  public TMP_InputField InspectorVariablesTxt;
+  public void UpdateVariables(Variables vars) {
+    if (!InspectorVariables.activeSelf) return;
+    InspectorVariablesTxt.SetTextWithoutNotify(vars.GetFormattedValues());
+  }
+
+  public void ShowHideVariables() {
+    if (!arcade.running) {
+      Result.text = "Engine is not running.";
+      return;
+    }
+    InspectorVariables.SetActive(!InspectorVariables.activeSelf);
+    if (InspectorVariables.activeSelf) arcade.ReadVariables();
+  }
+  public void CloseVariables() {
+    InspectorVariables.SetActive(false);
   }
 
   #endregion Run / Debug ***********************************************************************************************************************************************
