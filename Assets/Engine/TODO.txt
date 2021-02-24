@@ -47,9 +47,6 @@ CodeEditor: Add "rom" to current developed project
 Rom editor: Add a button to remove all selected lines
 
 
-Do the video showing the new code editor
-Replace old code editor with the new one
-
 
 Implement breakpoints
 View Variables
