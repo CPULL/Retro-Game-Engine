@@ -53,4 +53,5 @@ Replace old code editor with the new one
 Run, Pause, Run step, Restart, Stop, View Variables, View memory
 
 Implement breakpoints
-Merge NE code with CodeEditor code
+Remove the old palette.
+Replace the old color commands with a way to get the best palette color.

@@ -38,7 +38,6 @@ public class Col {
   }
 
   public static void SetDefaultPalette() {
-    UsingPalette = true;
     Palette[0] = new Color32(0, 0, 0, 255);
     Palette[255] = new Color32(0, 0, 0, 0);
     for (int col = 0; col < 256; col++) {

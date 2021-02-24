@@ -293,6 +293,9 @@ public class Arcade : MonoBehaviour {
   }
 
   public void LoadCartridge(string codefile, string rompath) {
+    Col.UsePalette(false);
+    Col.SetDefaultPalette();
+    RGEPalette.SetInt("_UsePalette", 0);
     if (string.IsNullOrEmpty(codefile)) {
       Write("No cardridge found!", 4, 40, Col.C(5, 1, 0));
       texture.Apply();
@@ -473,13 +476,14 @@ public class Arcade : MonoBehaviour {
   }
 
   public void LoadCode(CodeNode code, Variables vars, ByteChunk romdata) { // Labels too
+    Col.UsePalette(false);
+    Col.SetDefaultPalette();
+    RGEPalette.SetInt("_UsePalette", 0);
     updateDelay = -1;
     Clear(0);
     CompleteFrame();
     variables = vars;
     labels.Clear();
-
-    Col.SetDefaultPalette();
 
     try {
       Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
@@ -1121,7 +1125,7 @@ public class Arcade : MonoBehaviour {
   #endregion Tilemap
 
   bool Execute(CodeNode n) {
-//Debug.Log(n.Format(variables, false);
+Debug.Log(n.Format(variables, false));
     try {
       switch (n.type) {
         case BNF.CLR: {
