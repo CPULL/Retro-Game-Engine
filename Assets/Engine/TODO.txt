@@ -46,7 +46,9 @@ CodeEditor: Add "rom" to current developed project
 
 Rom editor: Add a button to remove all selected lines
 
-
+Add list of int for breakpoints
+Show current line in case we are in debug (stopped mode)
+Show the current selected button
 
 Implement breakpoints
 View memory
