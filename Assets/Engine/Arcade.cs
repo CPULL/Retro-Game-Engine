@@ -187,7 +187,7 @@ public class Arcade : MonoBehaviour {
   void CompleteFrame() {
     FpsFrames++;
     texture.Apply();
-    if (varsCallback != null) varsCallback(variables);
+    varsCallback?.Invoke(variables);
   }
 
 
@@ -664,7 +664,7 @@ public class Arcade : MonoBehaviour {
   }
 
   public void ReadVariables() {
-    if (varsCallback != null) varsCallback(variables);
+    varsCallback?.Invoke(variables);
   }
 
   private string MemSize(int size) {

@@ -28,17 +28,15 @@ public class CodeEditor : MonoBehaviour {
     EventSystem.current.SetSelectedGameObject(edit.gameObject);
   }
 
-
   float delay = 1;
   int prevSize = 0;
   private void Update() {
     CurrentLineText.text = curline + "/" + numlines; // FIXME show it somewhere
 
-    if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.Return)) {
+    if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.Delete)) {
       SetUndo();
       UpdateLinePos();
     }
-    if (Input.GetKeyUp(KeyCode.LeftControl) || Input.GetKeyUp(KeyCode.RightControl)) UpdateLinePos();
     if (Input.GetKeyUp(KeyCode.RightCurlyBracket) || (Input.GetKeyUp(KeyCode.RightBracket) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))) {
       SetUndo();
       ParseBlock();
@@ -49,6 +47,14 @@ public class CodeEditor : MonoBehaviour {
 
     // FIXME ctrl+d
     // FIXME ctrl+del
+
+    if (Input.GetMouseButtonDown(0) && Input.mousePosition.x < 80 && overLine > 0 && overLine <= numlines) {
+      Debug.Log("Breakpoint on line: " + overLine);
+      if (breakPoints.Contains(overLine)) breakPoints.Remove(overLine);
+      else breakPoints.Add(overLine);
+      RedrawLineNumbersAndBreakPoints(numlines);
+    }
+
 
 
     delay -= Time.deltaTime;
@@ -76,7 +82,10 @@ public class CodeEditor : MonoBehaviour {
     edit.SetTextWithoutNotify(undos[undopos]);
   }
 
-  readonly List<int> breakPoints = new List<int>() { 5, 11, 12 };
+  readonly List<int> breakPoints = new List<int>();
+
+  public GameObject[] LineBackgroundTemplate;
+  public Transform Background;
 
   void UpdateLinePos() {
     int num = 1;
@@ -89,19 +98,22 @@ public class CodeEditor : MonoBehaviour {
     }
 
     if (numlines != num) {
-      string nums = "";
-      for (int i = 1; i <= num; i++) {
-        if (breakPoints.Contains(i)) {
-          if (i < 10) nums += "<sprite=1>   " + i + "\n";
-          else if (i < 100) nums += "<sprite=1>  " + i + "\n";
-          else if (i < 1000) nums += "<sprite=1> " + i + "\n";
-          else nums += "<sprite=1>" + i + "\n";
+      RedrawLineNumbersAndBreakPoints(num);
+
+      // Update the background lines
+      Background.SetAsFirstSibling();
+      if (Background.childCount > num) {
+        for (int i = num; i < Background.childCount; i++) {
+          GameObject line = Background.GetChild(Background.childCount - 1).gameObject;
+          line.transform.SetParent(null);
+          GameObject.Destroy(line);
         }
-        else
-          nums += i + "\n";
       }
-        
-      LineNumbers.text = nums.Substring(0, nums.Length - 1);
+      while (Background.childCount < num) {
+        BackgroundLine line = Instantiate(LineBackgroundTemplate[Background.childCount & 1], Background).GetComponent<BackgroundLine>();
+        line.lineNumber = Background.childCount;
+        line.CallBack = OverLine;
+      }
     }
     numlines = num;
   }
@@ -121,6 +133,25 @@ public class CodeEditor : MonoBehaviour {
     }
   }
 
+  private void RedrawLineNumbersAndBreakPoints(int num) {
+    string nums = "";
+    for (int i = 1; i <= num; i++) {
+      if (breakPoints.Contains(i)) {
+        if (i < 10) nums += "<sprite=1>   " + i + "\n";
+        else if (i < 100) nums += "<sprite=1>  " + i + "\n";
+        else if (i < 1000) nums += "<sprite=1> " + i + "\n";
+        else nums += "<sprite=1>" + i + "\n";
+      }
+      else
+        nums += i + "\n";
+    }
+    LineNumbers.text = nums.Substring(0, nums.Length - 1);
+  }
+
+  int overLine = 0;
+  void OverLine(int num) {
+    overLine = num;
+  }
 
   void FixFormatting() {
     float s = Scroll.value;
@@ -137,7 +168,7 @@ public class CodeEditor : MonoBehaviour {
   int numlines = 1;
   int curline = 1;
 
-  int fontSize = 28;
+  int fontSize = 24;
   public TMP_Dropdown FontSizeDD;
   public void ChangeFontSize() {
     int.TryParse(FontSizeDD.options[FontSizeDD.value].text.Substring(11), out int newSize);
@@ -146,12 +177,11 @@ public class CodeEditor : MonoBehaviour {
     LineNumbers.fontSize = EditText.fontSize;
     fontSize = newSize;
 
-    foreach (RectTransform rt in BackgroundLines) {
+    foreach (Transform t in Background) {
+      RectTransform rt = t.GetComponent<RectTransform>();
       rt.sizeDelta = new Vector2(1248, 1.1625f * fontSize);
     }
   }
-
-  public RectTransform[] BackgroundLines;
 
   int tabSize = 2;
   public TMP_Dropdown TabSizeDD;
