@@ -46,6 +46,10 @@ public class CodeEditor : MonoBehaviour {
     if (Input.GetKeyUp(KeyCode.Z) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) Undo();
     if (Input.GetKeyUp(KeyCode.Y) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) Redo();
 
+    if ((Input.GetKeyUp(KeyCode.X) || Input.GetKeyUp(KeyCode.C)) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) {
+      GUIUtility.systemCopyBuffer = rgSyntaxHighlight.Replace(GUIUtility.systemCopyBuffer, ""); // Remove the color coding
+    }
+
     // FIXME ctrl+d
     // FIXME ctrl+del
 
@@ -506,11 +510,9 @@ public class CodeEditor : MonoBehaviour {
 
   public Arcade arcade;
   ByteChunk rom = null;
-  enum RunMode { Stopped=0, Runnig=1, Paused=2, RunningAStep=3, RunningAFrame=4, Error=99 };
-  RunMode runMode = RunMode.Stopped;
   public Image[] ButtonsSelection;
 
-  void ShowButton(RunMode m) {
+  void ShowButton(Arcade.RunStatus m) {
     int b = (int)m;
     for (int i = 0; i < ButtonsSelection.Length; i++)
       ButtonsSelection[i].enabled = i == b;
@@ -534,16 +536,36 @@ public class CodeEditor : MonoBehaviour {
   }
 
   public void Run() {
-    ShowButton(RunMode.Runnig);
-    // Compile the code, if errors show them and stop
-    CodeNode code = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
-    if (code == null) {
-      ShowButton(RunMode.Error);
-      return;
+    ShowButton(Arcade.RunStatus.Running);
+    if (arcade.runStatus != Arcade.RunStatus.Paused) {
+      // Compile the code, if errors show them and stop
+      CodeNode code = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
+      if (code == null) {
+        ShowButton(Arcade.RunStatus.Error);
+        return;
+      }
+      // Reset the Arcade, and pass the parsed parts
+      arcade.LoadCode(code, variables, rom, UpdateVariables, CompletedExecutionStep);
     }
+    else {
+      arcade.runStatus = Arcade.RunStatus.Running;
+    }
+  }
 
-    // Reset the Arcade, and pass the parsed parts
-    arcade.LoadCode(code, variables, rom, UpdateVariables);
+  public void Pause() {
+    if (arcade.runStatus == Arcade.RunStatus.Paused) {
+      ShowButton(Arcade.RunStatus.Running);
+      arcade.runStatus = Arcade.RunStatus.Running;
+    }
+    else if (arcade.runStatus == Arcade.RunStatus.Running || arcade.runStatus == Arcade.RunStatus.RunAStep || arcade.runStatus == Arcade.RunStatus.RunAFrame) {
+      ShowButton(Arcade.RunStatus.Paused);
+      arcade.runStatus = Arcade.RunStatus.GoPause;
+    }
+  }
+
+  public void Stop() {
+    ShowButton(Arcade.RunStatus.Stopped);
+    arcade.runStatus = Arcade.RunStatus.Stopped;
   }
 
   public GameObject InspectorVariables;
@@ -551,6 +573,10 @@ public class CodeEditor : MonoBehaviour {
   public void UpdateVariables(Variables vars) {
     if (!InspectorVariables.activeSelf) return;
     InspectorVariablesTxt.SetTextWithoutNotify(vars.GetFormattedValues());
+  }
+
+  public void CompletedExecutionStep(int lineNumber) {
+    Debug.Log("Completed step, we are at line: " + lineNumber);
   }
 
   public void ShowHideVariables() {

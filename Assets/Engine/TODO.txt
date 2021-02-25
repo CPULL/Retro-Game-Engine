@@ -58,3 +58,15 @@ Arcade in debug: Restart
 Arcade in debug: Stop
 
 In Arcade, have  away to pop out the error messages, so we can show them directly in the dev tools
+
+
+
+Start</color> {
+	runs = 1000
+}
+Update {
+	runs--
+	Clr(0)
+	Write(runs, 0, 0, 500c)
+	Wait(0.3)
+}
