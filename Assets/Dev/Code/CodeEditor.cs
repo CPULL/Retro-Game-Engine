@@ -612,6 +612,7 @@ public class CodeEditor : MonoBehaviour {
       if (c == '\n')
         num++;
     RedrawLineNumbersAndBreakPoints(num, lineNumber);
+    if (arcade.LastErrorMessage != null) Result.text = "<color=red>" + arcade.LastErrorMessage + "</color>";
   }
 
   public void ShowHideVariables() {
@@ -624,11 +625,6 @@ public class CodeEditor : MonoBehaviour {
   }
   public void CloseVariables() {
     InspectorVariables.SetActive(false);
-  }
-
-
-  public void AlterBreakPoint(int num) {
-    Debug.Log(num);
   }
 
 

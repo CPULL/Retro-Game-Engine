@@ -49,8 +49,6 @@ Rom editor: Add a button to remove all selected lines
 Implement breakpoints (while running the code)
 View memory
 
-In Arcade, have  away to pop out the error messages, so we can show them directly in the dev tools
-
 
 // Real time debugging
 Start</color> {

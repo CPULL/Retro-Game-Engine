@@ -170,7 +170,7 @@ public class Arcade : MonoBehaviour {
     // No, run and at the end of the step check if we should pause (step or frame)
     if (runStatus == RunStatus.GoPause) {
       runStatus = RunStatus.Paused;
-      execCallback?.Invoke(CurrentLineNumber);
+      execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
       varsCallback?.Invoke(variables);
       return;
     }
@@ -189,7 +189,7 @@ public class Arcade : MonoBehaviour {
       }
       if (runStatus == RunStatus.Stopped || runStatus == RunStatus.Error) {
         CompleteFrame();
-        execCallback?.Invoke(CurrentLineNumber);
+        execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
         varsCallback?.Invoke(variables);
         return;
       }
@@ -238,7 +238,7 @@ public class Arcade : MonoBehaviour {
     varsCallback?.Invoke(variables);
     if (runStatus == RunStatus.RunAFrame || runStatus == RunStatus.RunAStep) {
       runStatus = RunStatus.Paused;
-      execCallback?.Invoke(CurrentLineNumber);
+      execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
       varsCallback?.Invoke(variables);
     }
   }
@@ -332,10 +332,13 @@ public class Arcade : MonoBehaviour {
   public void SelectCartridge(string path) {
     string codefile;
     try { codefile = File.ReadAllText(path); } catch (Exception) {
+      LastErrorMessage = "No cardridge found!\nPath: " + path;
       runStatus = RunStatus.Stopped;
       Write("No cardridge found!", 4, 40, Col.C(5, 1, 0));
       Write("Path: " + path, 4, 50, Col.C(5, 1, 0), 0, 2);
       texture.Apply();
+      execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
+      varsCallback?.Invoke(variables);
       return;
     }
 
@@ -516,9 +519,12 @@ public class Arcade : MonoBehaviour {
           l = 0;
         }
       }
+      LastErrorMessage = "Error in loading! " + e.Message + "\n" + e.Code + "\nLine: " + e.LineNum;
       Write("Error in loading!\n" + msg + "\n" + e.Code + "\nLine: " + e.LineNum, 4, 48, Col.C(5, 1, 0));
       texture.Apply();
       Debug.Log("Error in loading! " + e.Message + "\n" + e.Code + "\nLine: " + e.LineNum + "\n" + e.StackTrace);
+      execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
+      varsCallback?.Invoke(variables);
     } catch (Exception e) {
       runStatus = RunStatus.Error;
       string msg = "";
@@ -532,9 +538,12 @@ public class Arcade : MonoBehaviour {
           l = 0;
         }
       }
+      LastErrorMessage = "Error in loading! " + e.Message;
       Write("Error in loading!\n" + msg, 4, 48, Col.C(5, 1, 0));
       texture.Apply();
       Debug.Log("Error in loading! " + e.Message + "\n" + e.StackTrace);
+      execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
+      varsCallback?.Invoke(variables);
     }
   }
 
@@ -543,6 +552,7 @@ public class Arcade : MonoBehaviour {
   public int CurrentLineNumber { get; private set; } = 0;
   public enum RunStatus { Stopped=0, Running=1, Paused = 2, RunAStep=3, RunAFrame=4, GoPause=10, Error=99 };
   public RunStatus runStatus = RunStatus.Stopped;
+  public string LastErrorMessage = null;
   HashSet<int> breakPoints = null;
   public void SetBreakpoints(HashSet<int> breaks) {
     breakPoints = breaks;
@@ -714,9 +724,12 @@ public class Arcade : MonoBehaviour {
           l = 0;
         }
       }
+      LastErrorMessage = "Error in loading! " + e.Message + "\n" + e.Code + "\nLine: " + e.LineNum;
       Write("Error in loading!\n" + msg + "\n" + e.Code + "\nLine: " + e.LineNum, 4, 48, Col.C(5, 1, 0));
       texture.Apply();
       Debug.Log("Error in loading! " + e.Message + "\n" + e.Code + "\nLine: " + e.LineNum + "\n" + e.StackTrace);
+      execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
+      varsCallback?.Invoke(variables);
     } catch (Exception e) {
       runStatus = RunStatus.Error;
       string msg = "";
@@ -730,9 +743,12 @@ public class Arcade : MonoBehaviour {
           l = 0;
         }
       }
+      LastErrorMessage = "Error in loading! " + e.Message;
       Write("Error in loading!\n" + msg, 4, 48, Col.C(5, 1, 0));
       texture.Apply();
       Debug.Log("Error in loading! " + e.Message + "\n" + e.StackTrace);
+      execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
+      varsCallback?.Invoke(variables);
     }
   }
 
@@ -1795,6 +1811,7 @@ public class Arcade : MonoBehaviour {
       }
     } catch (Exception e) {
       runStatus = RunStatus.Error;
+      LastErrorMessage = e.Message + "\nLine: " + CurrentLineNumber;
       Clear(Col.C(5, 0, 0));
       Debug.Log(e.Message + "\n" + e.StackTrace);
       string msg = "";
@@ -1811,6 +1828,7 @@ public class Arcade : MonoBehaviour {
       Write(msg, 2, 2, 0);
       updateDelay = -1;
       stacks.Destroy();
+      execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
       CompleteFrame();
     }
     return false;
