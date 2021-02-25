@@ -656,8 +656,48 @@ public class CodeEditor : MonoBehaviour {
   }
 
   public void SaveText() {
-
+    string code = rgSyntaxHighlight.Replace(edit.text, "").Trim(' ', '\r', '\n');
+    Values.gameObject.SetActive(true);
+    Values.text = code;
+    LoadSubButton.enabled = false;
+    LoadSaveButtons.SetActive(false);
   }
+
+
+  public void LoadTextFilePre() {
+    FileBrowser.Load(LoadTextFilePost, FileBrowser.FileType.Code);
+  }
+  public void LoadTextFilePost(string path) {
+    LoadSaveButtons.SetActive(false);
+    try {
+      string data = System.IO.File.ReadAllText(path);
+      data = data.Replace("\r\n", "\n").Replace('\r', '\n').Trim(' ', '\r', '\n');
+      edit.SetTextWithoutNotify(data);
+      curline = 0;
+      UpdateLinePos();
+    } catch (System.Exception e) {
+      Result.text = e.Message;
+    }
+  }
+
+  public void SaveTextFilePre() {
+    FileBrowser.Save(SaveTextFilePost, FileBrowser.FileType.Cartridges);
+  }
+
+  public void SaveTextFilePost(string path, string name) {
+    LoadSaveButtons.SetActive(false);
+    string code = rgSyntaxHighlight.Replace(edit.text, "").Trim(' ', '\r', '\n');
+    path = System.IO.Path.Combine(path, name);
+    try {
+      if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
+      using System.IO.StreamWriter outputFile = new System.IO.StreamWriter(path);
+      outputFile.Write(code);
+    } catch(System.Exception e) {
+      Result.text = e.Message;
+    }
+  }
+
+
 
   #endregion Load / Save ***********************************************************************************************************************************************
 }

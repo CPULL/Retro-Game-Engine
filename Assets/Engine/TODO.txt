@@ -32,11 +32,10 @@ CodeEditor: Ctrl+H replace
 CodeEditor: Ctrl+D to duplicate line
 CodeEditor: Ctrl+Del to delete line
 
-CodeEditor: Save code, text and binary
-CodeEditor: Load code, text and binary
+CodeEditor: Save code as binary
+CodeEditor: Load code as binary
 
 
 Rom editor: Add a button to remove all selected lines
 View memory
 
-Add perlin noise function with 1, 2, and 3 parameters
