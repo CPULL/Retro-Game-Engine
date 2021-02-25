@@ -53,10 +53,10 @@ public class CodeEditor : MonoBehaviour {
     // FIXME ctrl+del
 
     if (Input.GetMouseButtonDown(0) && Input.mousePosition.x < 80 && overLine > 0 && overLine <= numlines) {
-      Debug.Log("Breakpoint on line: " + overLine);
       if (breakPoints.Contains(overLine)) breakPoints.Remove(overLine);
       else breakPoints.Add(overLine);
       RedrawLineNumbersAndBreakPoints(numlines, 0);
+      arcade.SetBreakpoints(breakPoints);
     }
 
 
@@ -86,7 +86,7 @@ public class CodeEditor : MonoBehaviour {
     edit.SetTextWithoutNotify(undos[undopos]);
   }
 
-  readonly List<int> breakPoints = new List<int>();
+  readonly HashSet<int> breakPoints = new HashSet<int>();
 
   public GameObject[] LineBackgroundTemplate;
   public Transform Background;
@@ -149,8 +149,12 @@ public class CodeEditor : MonoBehaviour {
         else nums += "<nobr><sprite=" + sp + ">" + i + "</nobr>\n";
       }
       else {
-        if (linenum == i)
-          nums += "<nobr><sprite=3>   " + i + "</nobr>\n";
+        if (linenum == i) {
+          if (i < 10) nums += "<nobr><sprite=3>   " + i + "</nobr>\n";
+          else if (i < 100) nums += "<nobr><sprite=3>  " + i + "</nobr>\n";
+          else if (i < 1000) nums += "<nobr><sprite=3> " + i + "</nobr>\n";
+          else nums += "<nobr><sprite=3>" + i + "</nobr>\n";
+        }
         else
           nums += i + "\n";
       }
@@ -548,11 +552,9 @@ public class CodeEditor : MonoBehaviour {
         return;
       }
       // Reset the Arcade, and pass the parsed parts
-      arcade.LoadCode(code, variables, rom, UpdateVariables, CompletedExecutionStep);
+      arcade.LoadCode(code, variables, rom, UpdateVariables, CompletedExecutionStep, breakPoints);
     }
-    else {
-      arcade.runStatus = Arcade.RunStatus.Running;
-    }
+    arcade.runStatus = Arcade.RunStatus.Running;
   }
 
   public void Pause() {

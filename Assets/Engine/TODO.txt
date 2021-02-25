@@ -46,27 +46,21 @@ CodeEditor: Add "rom" to current developed project
 
 Rom editor: Add a button to remove all selected lines
 
-Show current line in case we are in debug (stopped mode)
-Show the current selected button
-
 Implement breakpoints (while running the code)
 View memory
-Arcade in debug: Pause
-Arcade in debug: Complete step
-Arcade in debug: Complete frame
-Arcade in debug: Restart
-Arcade in debug: Stop
 
 In Arcade, have  away to pop out the error messages, so we can show them directly in the dev tools
 
 
-
+// Real time debugging
 Start</color> {
 	runs = 1000
 }
 Update {
 	runs--
 	Clr(0)
-	Write(runs, 0, 0, 500c)
+	Write(runs, 10, 10, 500c)
+	a = Sin(6.28 * runs / 1000)
+	Write(a, 50, 30, 550c)
 	Wait(0.3)
 }

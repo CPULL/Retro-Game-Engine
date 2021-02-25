@@ -62,6 +62,8 @@ public class Arcade : MonoBehaviour {
   float FpsTime = 0;
   int lastScreenW;
   int lastScreenH;
+  CodeNode nodeToRun = null;
+
 
   private void Update() {
     running = false;
@@ -175,11 +177,14 @@ public class Arcade : MonoBehaviour {
 
     bool something = false;
     int numruns = 0;
-    CodeNode n = stacks.GetExecutionNode(this);
-    while (n != null) {
+
+    while (nodeToRun != null) {
       something = true;
-      if (Execute(n)) {
+
+      if (Execute(nodeToRun)) {
         CompleteFrame();
+        nodeToRun = stacks.GetExecutionNode(this);
+        if (runStatus == RunStatus.RunAStep) StepExecuted();
         return; // Skip the execution for now so Unity can actually draw the frame
       }
       if (runStatus == RunStatus.Stopped || runStatus == RunStatus.Error) {
@@ -190,25 +195,41 @@ public class Arcade : MonoBehaviour {
       }
       numruns++;
       if (numruns > 1000) {
-        Write("Possible infinite loop at: " + n.parent.origLineNum + "\n" + n.parent.origLine, 4, 4, Col.C(5, 4, 0), 0);
+        Write("Possible infinite loop at: " + nodeToRun.parent.origLineNum + "\n" + nodeToRun.parent.origLine, 4, 4, Col.C(5, 4, 0), 0);
         CompleteFrame();
+        nodeToRun = stacks.GetExecutionNode(this);
+        if (runStatus == RunStatus.RunAStep) StepExecuted();
         return;
       }
+      nodeToRun = stacks.GetExecutionNode(this);
       if (runStatus == RunStatus.RunAStep) {
-        runStatus = RunStatus.Paused;
-        execCallback?.Invoke(CurrentLineNumber);
-        varsCallback?.Invoke(variables);
+        StepExecuted();
         return;
       }
-      else
-        n = stacks.GetExecutionNode(this);
     }
-    stacks.Destroy();
-    if (updateCode != null)
-      stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
+    nodeToRun = stacks.GetExecutionNode(this);
+    if (nodeToRun == null) {
+      stacks.Destroy();
+      if (updateCode != null)
+        stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
+      nodeToRun = stacks.GetExecutionNode(this);
+    }
+    if (nodeToRun != null && runStatus == RunStatus.RunAStep) StepExecuted();
+
+    if (breakPoints != null && nodeToRun != null && breakPoints.Contains(nodeToRun.origLineNum)) {
+      Debug.Log("Breakpoint on " + nodeToRun.Format(variables, false));
+    }
+
 
     if (something) CompleteFrame();
     else if (FPS != null) FPS.text = "MAX";
+  }
+
+  void StepExecuted() {
+    texture.Apply();
+    runStatus = RunStatus.Paused;
+    execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
+    varsCallback?.Invoke(variables);
   }
 
   void CompleteFrame() {
@@ -522,9 +543,12 @@ public class Arcade : MonoBehaviour {
   public int CurrentLineNumber { get; private set; } = 0;
   public enum RunStatus { Stopped=0, Running=1, Paused = 2, RunAStep=3, RunAFrame=4, GoPause=10, Error=99 };
   public RunStatus runStatus = RunStatus.Stopped;
+  HashSet<int> breakPoints = null;
+  public void SetBreakpoints(HashSet<int> breaks) {
+    breakPoints = breaks;
+  }
 
-
-  public void LoadCode(CodeNode code, Variables vars, ByteChunk romdata, Action<Variables> varsCB, Action<int> execCB) { // Labels too
+  public void LoadCode(CodeNode code, Variables vars, ByteChunk romdata, Action<Variables> varsCB, Action<int> execCB, HashSet<int> breaks) { // Labels too
     Col.UsePalette(false);
     Col.SetDefaultPalette();
     RGEPalette.SetInt("_UsePalette", 0);
@@ -535,6 +559,7 @@ public class Arcade : MonoBehaviour {
     labels.Clear();
     varsCallback = varsCB;
     execCallback = execCB;
+    breakPoints = breaks;
 
     try {
       Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
