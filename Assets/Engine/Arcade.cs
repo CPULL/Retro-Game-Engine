@@ -1981,6 +1981,17 @@ public class Arcade : MonoBehaviour {
       case BNF.SQR: return new Value(Mathf.Sqrt(Evaluate(n.CN1).ToFlt(culture)));
       case BNF.POW: return new Value(Mathf.Pow(Evaluate(n.CN1).ToFlt(culture), Evaluate(n.CN2).ToFlt(culture)));
 
+      case BNF.PERLIN: {
+        if (n.CN2 == null)
+          return new Value(Mathf.PerlinNoise(Evaluate(n.CN1).ToFlt(culture), 0));
+        else if (n.CN3 == null)
+          return new Value(Mathf.PerlinNoise(Evaluate(n.CN1).ToFlt(culture), Evaluate(n.CN2).ToFlt(culture)));
+        else {
+          float z = Evaluate(n.CN3).ToFlt(culture);
+          return new Value(Mathf.PerlinNoise(Evaluate(n.CN1).ToFlt(culture) + z, Evaluate(n.CN2).ToFlt(culture) + z));
+        }
+      }
+
       case BNF.SUBSTRING: {
         string s = Evaluate(n.CN1).ToStr();
         int start = Evaluate(n.CN2).ToInt(culture);

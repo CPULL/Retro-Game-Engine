@@ -204,6 +204,7 @@ public class CodeParser {
   readonly Regex rgAtan2 = new Regex("[\\s]*atan2[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSqrt = new Regex("[\\s]*sqrt[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgPow = new Regex("[\\s]*pow[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgPerlin = new Regex("[\\s]*perlin[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -2248,6 +2249,28 @@ public class CodeParser {
           }
           else
             throw new ParsingException("Invalid Pow(), 2 parameters are required.", origExpression, linenumber + 1 + offsetForErrors);
+        }
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // [perlin] = perlin([EXPR][,[EXPR][,[EXPR]]])
+      line = rgPerlin.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.POW, GenId("PE"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num < 1 || num > 3) {
+          if (noFail) {
+            generatedException = "Invalid Perlin(), 1, 2, or, 3 parameters are required.";
+            n.type = BNF.ERROR;
+            n.sVal = origExpression;
+            nodes[n.id] = n;
+            return n.id;
+          }
+          else
+            throw new ParsingException("Invalid Perlin(), 1, 2, or, 3 parameters are required.", origExpression, linenumber + 1 + offsetForErrors);
         }
         nodes[n.id] = n;
         return n.id;

@@ -404,6 +404,14 @@ public class CodeNode {
         case BNF.SETPALETTECOLOR: return "SetPaletteColor(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3?.ToString() + ", " + CN4?.ToString() + ", " + CN5?.ToString() + ")";
 
         case BNF.MEMCPY: return "MemCpy(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3?.ToString() + ")";
+        case BNF.PERLIN: {
+          if (CN2 == null)
+            return "Perlin(" + CN1?.ToString() + ")";
+          else if (CN3 == null)
+            return "Perlin(" + CN1?.ToString() + ", " + CN2?.ToString() + ")";
+          else
+            return "Perlin(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3?.ToString() + ")";
+        }
 
         case BNF.ERROR: return sVal;
 
@@ -739,6 +747,14 @@ public class CodeNode {
         case BNF.SQR: return "<color=#569CD6>Sqrt(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         case BNF.POW: return "<color=#569CD6>Pow(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         case BNF.MEMCPY: return "<color=#569CD6>MemCpy(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        case BNF.PERLIN: {
+          if (CN2 == null)
+            return "<color=#569CD6>Perlin(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else if (CN3 == null)
+            return "<color=#569CD6>Perlin(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else
+            return "<color=#569CD6>Perlin(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
         case BNF.SOUND: {
           if (CN3 == null)
             return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
@@ -1046,6 +1062,14 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
         case BNF.SQR: return "Sqrt(" + CN1?.Format(variables, coloring) + ")";
         case BNF.POW: return "Pow(" + CN1?.Format(variables, coloring) + ")";
         case BNF.MEMCPY: return "MemCpy(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+        case BNF.PERLIN: {
+          if (CN2 == null)
+            return "Perlin(" + CN1?.Format(variables, coloring) + ")";
+          else if (CN3 == null)
+            return "Perlin(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
+          else
+            return "Perlin(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+        }
         case BNF.SOUND: {
           if (CN3 == null)
             return "Sound(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
@@ -1174,6 +1198,7 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
       case BNF.ATAN2:
       case BNF.SQR:
       case BNF.POW:
+      case BNF.PERLIN:
       case BNF.SUBSTRING:
       case BNF.TRIM:
       case BNF.MUSICPOS:
@@ -1307,6 +1332,7 @@ public enum BNF {
   KEY, KEYx, KEYy,
   SIN, COS, TAN, ATAN2, SQR, POW,
   MEMCPY,
+  PERLIN,
   
   
   SOUND, WAVE, MUTE, VOLUME, PITCH, PAN,
