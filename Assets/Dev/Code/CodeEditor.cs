@@ -506,7 +506,7 @@ public class CodeEditor : MonoBehaviour {
 
   public Arcade arcade;
   ByteChunk rom = null;
-  enum RunMode { Stopped=0, Runnig=1, Paused=2, Error=99 };
+  enum RunMode { Stopped=0, Runnig=1, Paused=2, RunningAStep=3, RunningAFrame=4, Error=99 };
   RunMode runMode = RunMode.Stopped;
   public Image[] ButtonsSelection;
 
@@ -536,8 +536,11 @@ public class CodeEditor : MonoBehaviour {
   public void Run() {
     ShowButton(RunMode.Runnig);
     // Compile the code, if errors show them and stop
-    CodeNode code = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true); 
-    if (code == null) return;
+    CodeNode code = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
+    if (code == null) {
+      ShowButton(RunMode.Error);
+      return;
+    }
 
     // Reset the Arcade, and pass the parsed parts
     arcade.LoadCode(code, variables, rom, UpdateVariables);

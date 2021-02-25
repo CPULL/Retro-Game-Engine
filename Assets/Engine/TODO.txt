@@ -57,3 +57,4 @@ Arcade in debug: Complete frame
 Arcade in debug: Restart
 Arcade in debug: Stop
 
+In Arcade, have  away to pop out the error messages, so we can show them directly in the dev tools

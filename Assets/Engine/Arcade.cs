@@ -118,7 +118,10 @@ public class Arcade : MonoBehaviour {
       return;
     }
 
-    if (stacks.Invalid) return;
+    if (stacks.Invalid) {
+      runStatus = RunStatus.Stopped;
+      return;
+    }
 
     #region Key input
     for (int i = 0; i < inputs.Length; i++) inputs[i] = false;
@@ -160,6 +163,10 @@ public class Arcade : MonoBehaviour {
 
     #endregion
 
+    // Are we paused?
+    if (runStatus == RunStatus.Paused || runStatus == RunStatus.Error || runStatus == RunStatus.Stopped) return; // Yes, wait until we receive a go
+    // No, run and at the end of the step check if we should pause (step or frame)
+
     bool something = false;
     int numruns = 0;
     CodeNode n = stacks.GetExecutionNode(this);
@@ -168,6 +175,17 @@ public class Arcade : MonoBehaviour {
       if (Execute(n)) {
         CompleteFrame();
         return; // Skip the execution for now so Unity can actually draw the frame
+      }
+      if (runStatus == RunStatus.RunAStep) {
+        runStatus = RunStatus.Paused;
+        execCallback?.Invoke(CurrentLineNumber);
+        varsCallback?.Invoke(variables);
+      }
+      if (runStatus == RunStatus.Stopped || runStatus == RunStatus.Error) {
+        CompleteFrame();
+        execCallback?.Invoke(CurrentLineNumber);
+        varsCallback?.Invoke(variables);
+        return;
       }
       numruns++;
       if (numruns > 1000) {
@@ -182,12 +200,18 @@ public class Arcade : MonoBehaviour {
       stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
 
     if (something) CompleteFrame();
+    else if (FPS != null) FPS.text = "MAX";
   }
 
   void CompleteFrame() {
     FpsFrames++;
     texture.Apply();
     varsCallback?.Invoke(variables);
+    if (runStatus == RunStatus.RunAFrame || runStatus == RunStatus.RunAStep) {
+      runStatus = RunStatus.Paused;
+      execCallback?.Invoke(CurrentLineNumber);
+      varsCallback?.Invoke(variables);
+    }
   }
 
 
@@ -480,8 +504,13 @@ public class Arcade : MonoBehaviour {
   }
 
   Action<Variables> varsCallback = null;
+  Action<int> execCallback = null;
+  public int CurrentLineNumber { get; private set; } = 0;
+  public enum RunStatus { Stopped=0, Running=1, RunAStep=2, RunAFrame=3, Paused=4, Error=99 };
+  public RunStatus runStatus = RunStatus.Stopped;
 
-  public void LoadCode(CodeNode code, Variables vars, ByteChunk romdata, Action<Variables> varsCB) { // Labels too
+
+  public void LoadCode(CodeNode code, Variables vars, ByteChunk romdata, Action<Variables> varsCB, Action<int> execCB) { // Labels too
     Col.UsePalette(false);
     Col.SetDefaultPalette();
     RGEPalette.SetInt("_UsePalette", 0);
@@ -491,6 +520,7 @@ public class Arcade : MonoBehaviour {
     variables = vars;
     labels.Clear();
     varsCallback = varsCB;
+    execCallback = execCB;
 
     try {
       Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
@@ -1136,7 +1166,8 @@ public class Arcade : MonoBehaviour {
   #endregion Tilemap
 
   bool Execute(CodeNode n) {
-Debug.Log(n.Format(variables, false));
+//Debug.Log(n.Format(variables, false));
+    CurrentLineNumber = n.origLineNum;
     try {
       switch (n.type) {
         case BNF.CLR: {
@@ -1740,6 +1771,7 @@ Debug.Log(n.Format(variables, false));
     }
     return false;
   }
+  
   readonly Value[] valsToPostIncrement = new Value[32];
   int numValsToPostIncrement = 0;
   readonly Value[] valsToPostDecrement = new Value[32];
