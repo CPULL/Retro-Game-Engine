@@ -39,4 +39,4 @@ CodeEditor: Load code, text and binary
 Rom editor: Add a button to remove all selected lines
 View memory
 
-
+Add perlin noise function with 1, 2, and 3 parameters
