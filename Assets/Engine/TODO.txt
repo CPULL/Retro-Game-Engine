@@ -16,7 +16,6 @@ FUTURE: load/save capabilities
 
 Add "Edit" buttons in RomEdit (music, tilemap)
 
-Add global TryCatch in Dev tools
 Handle loading errors (data size is shorter than expected): music, arcade
 
 
@@ -24,41 +23,20 @@ In music editor add a few empty lines at begin and end of the view, and have som
 
 
 Bug: We had some spurious tiles in a tilemap when the items were deleted
-Bug: wait() should not block the framerate
-
 
 [DECIDE] Rom Editor: have a way to add some raw binary data (loading a file or using some sort of text or hex editor)
 
 
 CodeEditor: Ctrl+F find
 CodeEditor: Ctrl+H replace
+CodeEditor: Ctrl+D to duplicate line
+CodeEditor: Ctrl+Del to delete line
 
 CodeEditor: Save code, text and binary
 CodeEditor: Load code, text and binary
 
-CodeEditor: add Arcade
-CodeEditor: add variables and values
-CodeEditor: add working breakpoints
-CodeEditor: Start/Stop
-CodeEditor: Show errors in a better place
-CodeEditor: Add "rom" to current developed project
-
 
 Rom editor: Add a button to remove all selected lines
-
-Implement breakpoints (while running the code)
 View memory
 
 
-// Real time debugging
-Start</color> {
-	runs = 1000
-}
-Update {
-	runs--
-	Clr(0)
-	Write(runs, 10, 10, 500c)
-	a = Sin(6.28 * runs / 1000)
-	Write(a, 50, 30, 550c)
-	Wait(0.3)
-}

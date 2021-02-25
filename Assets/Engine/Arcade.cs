@@ -184,7 +184,7 @@ public class Arcade : MonoBehaviour {
       if (Execute(nodeToRun)) {
         CompleteFrame();
         nodeToRun = stacks.GetExecutionNode(this);
-        if (runStatus == RunStatus.RunAStep) StepExecuted();
+        StepExecutedCheck();
         return; // Skip the execution for now so Unity can actually draw the frame
       }
       if (runStatus == RunStatus.Stopped || runStatus == RunStatus.Error) {
@@ -198,14 +198,11 @@ public class Arcade : MonoBehaviour {
         Write("Possible infinite loop at: " + nodeToRun.parent.origLineNum + "\n" + nodeToRun.parent.origLine, 4, 4, Col.C(5, 4, 0), 0);
         CompleteFrame();
         nodeToRun = stacks.GetExecutionNode(this);
-        if (runStatus == RunStatus.RunAStep) StepExecuted();
+        StepExecutedCheck();
         return;
       }
       nodeToRun = stacks.GetExecutionNode(this);
-      if (runStatus == RunStatus.RunAStep) {
-        StepExecuted();
-        return;
-      }
+      if (StepExecutedCheck()) return;
     }
     nodeToRun = stacks.GetExecutionNode(this);
     if (nodeToRun == null) {
@@ -214,22 +211,30 @@ public class Arcade : MonoBehaviour {
         stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
       nodeToRun = stacks.GetExecutionNode(this);
     }
-    if (nodeToRun != null && runStatus == RunStatus.RunAStep) StepExecuted();
-
-    if (breakPoints != null && nodeToRun != null && breakPoints.Contains(nodeToRun.origLineNum)) {
-      Debug.Log("Breakpoint on " + nodeToRun.Format(variables, false));
-    }
-
+    StepExecutedCheck();
 
     if (something) CompleteFrame();
     else if (FPS != null) FPS.text = "MAX";
   }
 
-  void StepExecuted() {
-    texture.Apply();
-    runStatus = RunStatus.Paused;
-    execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
-    varsCallback?.Invoke(variables);
+  bool StepExecutedCheck() {
+    if (breakPoints != null && nodeToRun != null && breakPoints.Contains(nodeToRun.origLineNum)) {
+      LastErrorMessage = "Breakpoint on " + nodeToRun.Format(variables, false);
+      texture.Apply();
+      runStatus = RunStatus.Paused;
+      execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
+      varsCallback?.Invoke(variables);
+      runStatus = RunStatus.Paused;
+      return true;
+    }
+    if (nodeToRun != null && runStatus == RunStatus.RunAStep) {
+      texture.Apply();
+      runStatus = RunStatus.Paused;
+      execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
+      varsCallback?.Invoke(variables);
+      return true;
+    }
+    return false;
   }
 
   void CompleteFrame() {
