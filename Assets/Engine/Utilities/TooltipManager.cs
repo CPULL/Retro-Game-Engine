@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 
@@ -22,10 +23,27 @@ public class TooltipManager : MonoBehaviour {
     if (pos.y > 0) pos.y = 0;
     inst.RT.anchoredPosition = pos;
     inst.Msg.text = txt;
+    if (inst.hidingCoroutine != null) {
+      inst.StopCoroutine(inst.hidingCoroutine);
+      inst.hidingCoroutine = null;
+    }
   }
 
   public static void Hide(string txt) {
     if (inst.text != txt) return;
+    inst.timeForHiding = .5f;
+    if (inst.hidingCoroutine == null) inst.hidingCoroutine = inst.StartCoroutine(inst.HideDelayed());
+  }
+
+  float timeForHiding = 1;
+  Coroutine hidingCoroutine = null;
+  readonly WaitForSeconds delay = new WaitForSeconds(.25f);
+  IEnumerator HideDelayed() {
+    while (timeForHiding > 0) {
+      yield return delay;
+      timeForHiding -= .25f;
+    }
     inst.Container.SetActive(false);
+    hidingCoroutine = null;
   }
 }
