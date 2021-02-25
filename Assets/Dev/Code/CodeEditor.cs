@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
@@ -57,7 +56,7 @@ public class CodeEditor : MonoBehaviour {
       Debug.Log("Breakpoint on line: " + overLine);
       if (breakPoints.Contains(overLine)) breakPoints.Remove(overLine);
       else breakPoints.Add(overLine);
-      RedrawLineNumbersAndBreakPoints(numlines);
+      RedrawLineNumbersAndBreakPoints(numlines, 0);
     }
 
 
@@ -103,7 +102,7 @@ public class CodeEditor : MonoBehaviour {
     }
 
     if (numlines != num) {
-      RedrawLineNumbersAndBreakPoints(num);
+      RedrawLineNumbersAndBreakPoints(num, 0);
 
       // Update the background lines
       Background.SetAsFirstSibling();
@@ -130,25 +129,31 @@ public class CodeEditor : MonoBehaviour {
       pos++;
       if (c == '\n') {
         num++;
-        if (num == curline) {
-          edit.stringPosition = pos;
+        if (num == curline + 1) {
+          edit.stringPosition = pos - 1;
           return;
         }
       }
     }
+    edit.stringPosition = int.MaxValue;
   }
 
-  private void RedrawLineNumbersAndBreakPoints(int num) {
+  private void RedrawLineNumbersAndBreakPoints(int num, int linenum = 0) {
     string nums = "";
     for (int i = 1; i <= num; i++) {
       if (breakPoints.Contains(i)) {
-        if (i < 10) nums += "<sprite=1>   " + i + "\n";
-        else if (i < 100) nums += "<sprite=1>  " + i + "\n";
-        else if (i < 1000) nums += "<sprite=1> " + i + "\n";
-        else nums += "<sprite=1>" + i + "\n";
+        char sp = linenum == i ? '4' : '1';
+        if (i < 10) nums += "<nobr><sprite=" + sp + ">   " + i + "</nobr>\n";
+        else if (i < 100) nums += "<nobr><sprite=" + sp + ">  " + i + "</nobr>\n";
+        else if (i < 1000) nums += "<nobr><sprite=" + sp + "> " + i + "</nobr>\n";
+        else nums += "<nobr><sprite=" + sp + ">" + i + "</nobr>\n";
       }
-      else
-        nums += i + "\n";
+      else {
+        if (linenum == i)
+          nums += "<nobr><sprite=3>   " + i + "</nobr>\n";
+        else
+          nums += i + "\n";
+      }
     }
     LineNumbers.text = nums.Substring(0, nums.Length - 1);
   }
@@ -499,13 +504,6 @@ public class CodeEditor : MonoBehaviour {
 
 
 
-
-
-
-
-
-
-
   #region Run / Debug ***********************************************************************************************************************************************
 
   public Arcade arcade;
@@ -529,15 +527,20 @@ public class CodeEditor : MonoBehaviour {
       rom = new ByteChunk();
       ByteReader.ReadBinBlock(path, rom);
       Result.text = "Rom loaded";
-    } catch (Exception e) {
+    } catch (System.Exception e) {
       Result.text = "<color=#ff2e00>Error in loading rom:\n" + e.Message + "</color>";
       rom = null;
     }
   }
 
-  public void Run() {
+  public void Run(bool restart) {
     ShowButton(Arcade.RunStatus.Running);
-    if (arcade.runStatus != Arcade.RunStatus.Paused) {
+    int num = 1;
+    foreach (char c in edit.text)
+      if (c == '\n')
+        num++;
+    RedrawLineNumbersAndBreakPoints(num, 0);
+    if (arcade.runStatus != Arcade.RunStatus.Paused && !restart) {
       // Compile the code, if errors show them and stop
       CodeNode code = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
       if (code == null) {
@@ -556,6 +559,11 @@ public class CodeEditor : MonoBehaviour {
     if (arcade.runStatus == Arcade.RunStatus.Paused) {
       ShowButton(Arcade.RunStatus.Running);
       arcade.runStatus = Arcade.RunStatus.Running;
+      int num = 1;
+      foreach (char c in edit.text)
+        if (c == '\n')
+          num++;
+      RedrawLineNumbersAndBreakPoints(num, 0);
     }
     else if (arcade.runStatus == Arcade.RunStatus.Running || arcade.runStatus == Arcade.RunStatus.RunAStep || arcade.runStatus == Arcade.RunStatus.RunAFrame) {
       ShowButton(Arcade.RunStatus.Paused);
@@ -566,6 +574,23 @@ public class CodeEditor : MonoBehaviour {
   public void Stop() {
     ShowButton(Arcade.RunStatus.Stopped);
     arcade.runStatus = Arcade.RunStatus.Stopped;
+    int num = 1;
+    foreach (char c in edit.text)
+      if (c == '\n')
+        num++;
+    RedrawLineNumbersAndBreakPoints(num, 0);
+  }
+
+  public void RunStep(bool frame) {
+    if (arcade.runStatus != Arcade.RunStatus.Paused) return;
+    if (frame) {
+      ShowButton(Arcade.RunStatus.RunAFrame);
+      arcade.runStatus = Arcade.RunStatus.RunAFrame;
+    }
+    else {
+      ShowButton(Arcade.RunStatus.RunAStep);
+      arcade.runStatus = Arcade.RunStatus.RunAStep;
+    }
   }
 
   public GameObject InspectorVariables;
@@ -576,7 +601,15 @@ public class CodeEditor : MonoBehaviour {
   }
 
   public void CompletedExecutionStep(int lineNumber) {
-    Debug.Log("Completed step, we are at line: " + lineNumber);
+    if (arcade.runStatus == Arcade.RunStatus.Paused)
+      ShowButton(Arcade.RunStatus.Paused);
+    else if (arcade.runStatus == Arcade.RunStatus.Stopped || arcade.runStatus == Arcade.RunStatus.Error)
+      ShowButton(Arcade.RunStatus.Stopped);
+    int num = 1;
+    foreach (char c in edit.text)
+      if (c == '\n')
+        num++;
+    RedrawLineNumbersAndBreakPoints(num, lineNumber);
   }
 
   public void ShowHideVariables() {
@@ -590,7 +623,6 @@ public class CodeEditor : MonoBehaviour {
   public void CloseVariables() {
     InspectorVariables.SetActive(false);
   }
-
 
 
   public void AlterBreakPoint(int num) {

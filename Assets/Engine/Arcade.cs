@@ -182,11 +182,6 @@ public class Arcade : MonoBehaviour {
         CompleteFrame();
         return; // Skip the execution for now so Unity can actually draw the frame
       }
-      if (runStatus == RunStatus.RunAStep) {
-        runStatus = RunStatus.Paused;
-        execCallback?.Invoke(CurrentLineNumber);
-        varsCallback?.Invoke(variables);
-      }
       if (runStatus == RunStatus.Stopped || runStatus == RunStatus.Error) {
         CompleteFrame();
         execCallback?.Invoke(CurrentLineNumber);
@@ -199,7 +194,14 @@ public class Arcade : MonoBehaviour {
         CompleteFrame();
         return;
       }
-      n = stacks.GetExecutionNode(this);
+      if (runStatus == RunStatus.RunAStep) {
+        runStatus = RunStatus.Paused;
+        execCallback?.Invoke(CurrentLineNumber);
+        varsCallback?.Invoke(variables);
+        return;
+      }
+      else
+        n = stacks.GetExecutionNode(this);
     }
     stacks.Destroy();
     if (updateCode != null)
