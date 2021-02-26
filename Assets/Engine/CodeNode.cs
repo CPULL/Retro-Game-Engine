@@ -1140,6 +1140,7 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
     throw new System.Exception(type + " NOT YET DONE!");
   }
 
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0066:Convert switch statement to expression", Justification = "<Pending>")]
   internal bool Evaluable() {
     switch (type) {
       case BNF.REG:

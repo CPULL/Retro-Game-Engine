@@ -28,6 +28,10 @@ public class Variables {
     return vars[reg];
   }
 
+  internal bool Invalid(int reg) {
+    return reg < 0 || reg >= pointers.Count;
+  }
+
   internal string GetRegName(int reg) {
     foreach (string name in pointers.Keys)
       if (pointers[name] == reg) return name;
@@ -104,7 +108,7 @@ public class Variables {
   }
 
 
-  public string GetFormattedValues() {
+  public string GetFormattedValues(out int num) {
     string res = "";
 
     foreach (string key in pointers.Keys) {
@@ -123,6 +127,7 @@ public class Variables {
       line += name + "  <color=#0fe4f3>" + val.ToDebugStr() + "</color>\n";
       res += line;
     }
+    num = pointers.Count;
     return res;
   }
 }

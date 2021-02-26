@@ -634,6 +634,10 @@ public class CodeEditor : MonoBehaviour {
       if (c == '\n')
         num++;
     RedrawLineNumbersAndBreakPoints(num, 0);
+    InspectorVariablesTxt.SetTextWithoutNotify("");
+    VariableEditName.text = "";
+    VariableEditVal.SetTextWithoutNotify("");
+    selectedVar = -1;
   }
 
   public void RunStep(bool frame) {
@@ -650,9 +654,31 @@ public class CodeEditor : MonoBehaviour {
 
   public GameObject InspectorVariables;
   public TMP_InputField InspectorVariablesTxt;
+  public GameObject[] VariableLineTemplate;
+  public Transform BackgroundVariables;
+  int selectedVar = -1;
+  public TextMeshProUGUI VariableEditName;
+  public TMP_InputField VariableEditVal;
+
   public void UpdateVariables(Variables vars) {
     if (!InspectorVariables.activeSelf) return;
-    InspectorVariablesTxt.SetTextWithoutNotify(vars.GetFormattedValues());
+    InspectorVariablesTxt.SetTextWithoutNotify(vars.GetFormattedValues(out int num));
+
+    BackgroundVariables.SetAsFirstSibling();
+    if (BackgroundVariables.childCount > num) {
+      for (int i = num; i < BackgroundVariables.childCount; i++) {
+        GameObject line = BackgroundVariables.GetChild(BackgroundVariables.childCount - 1).gameObject;
+        line.transform.SetParent(null);
+        GameObject.Destroy(line);
+      }
+    }
+    while (BackgroundVariables.childCount < num) {
+      BackgroundLine line = Instantiate(VariableLineTemplate[BackgroundVariables.childCount & 1], BackgroundVariables).GetComponent<BackgroundLine>();
+      line.lineNumber = BackgroundVariables.childCount - 1;
+      line.CallClick = SelectVariable;
+      line.GetComponent<RectTransform>().sizeDelta = new Vector2(640, 1.1625f * 26);
+    }
+    SelectVariable(selectedVar);
   }
 
   public void CompletedExecutionStep(int lineNumber) {
@@ -680,6 +706,24 @@ public class CodeEditor : MonoBehaviour {
     InspectorVariables.SetActive(false);
   }
 
+  public void SelectVariable(int selected) {
+    if (selected != -1) selectedVar = selected;
+    if (selectedVar == -1 || variables.Invalid(selectedVar)) {
+      VariableEditName.text = "<size=19><i>Select variable to edit...</i></size>";
+      VariableEditVal.SetTextWithoutNotify("");
+    }
+    else {
+      Value val = variables.Get(selectedVar);
+      switch (val.type) {
+        case VT.None: VariableEditName.text = "<color=#20f350>NUL</color> " + variables.GetRegName(selectedVar); break;
+        case VT.Int: VariableEditName.text = "<color=#20f350>INT</color> " + variables.GetRegName(selectedVar); break;
+        case VT.Float: VariableEditName.text = "<color=#20f350>FLT</color> " + variables.GetRegName(selectedVar); break;
+        case VT.String: VariableEditName.text = "<color=#20f350>STR</color> " + variables.GetRegName(selectedVar); break;
+        case VT.Array: VariableEditName.text = "<color=#20f350>ARR</color> " + variables.GetRegName(selectedVar); break;
+      }
+      VariableEditVal.SetTextWithoutNotify(val.ToStr());
+    }
+  }
 
 
   #endregion Run / Debug ***********************************************************************************************************************************************
