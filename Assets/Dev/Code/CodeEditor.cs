@@ -52,14 +52,10 @@ public class CodeEditor : MonoBehaviour {
 
     if (Input.GetKeyUp(KeyCode.F) && ctrl) {
       if (FindReplace.activeSelf) Find();
-      else FindReplace.SetActive(true);
-    }
-
-    if (Input.GetKeyUp(KeyCode.H) && ctrl) {
-      if (FindReplace.activeSelf) Replace(false);
       else {
         FindReplace.SetActive(true);
         FindMsg.text = "";
+        EventSystem.current.SetSelectedGameObject(TextToFind.gameObject);
       }
     }
 
@@ -733,7 +729,7 @@ public class CodeEditor : MonoBehaviour {
     string toFind = TextToFind.text.ToLowerInvariant();
     string code = rgSyntaxHighlight.Replace(edit.text, "");
     int pos;
-    if (toFind.Equals(prevTextToFind))
+    if (toFind.Equals(prevTextToFind) && edit.selectionAnchorPosition != edit.selectionFocusPosition)
       pos = code.IndexOf(toFind, prevFinding, System.StringComparison.InvariantCultureIgnoreCase);
     else {
       pos = code.IndexOf(toFind, System.StringComparison.InvariantCultureIgnoreCase);
@@ -753,6 +749,7 @@ public class CodeEditor : MonoBehaviour {
     edit.selectionStringAnchorPosition = pos;
     edit.selectionStringFocusPosition = pos + toFind.Length;
     edit.Select();
+    EventSystem.current.SetSelectedGameObject(edit.gameObject);
   }
 
   public void Replace(bool all) {
