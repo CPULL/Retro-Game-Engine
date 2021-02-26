@@ -4,7 +4,6 @@ Documentation on the Wiki of Github
 Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks" when the sample is regenerated
 
 
-FUTURE: step by step debugger
 FUTURE: precompile Nodes
 FUTURE: Font editor
 FUTURE: Custom fonts
@@ -14,28 +13,25 @@ FUTURE: load/save capabilities
 
 
 
-Add "Edit" buttons in RomEdit (music, tilemap)
 
-Handle loading errors (data size is shorter than expected): music, arcade
-
-
-In music editor add a few empty lines at begin and end of the view, and have some sort of highlighted line on the center
+Arcade: Handle loading errors (data size is shorter than expected): music, arcade
 
 
-Bug: We had some spurious tiles in a tilemap when the items were deleted
-
-[DECIDE] Rom Editor: have a way to add some raw binary data (loading a file or using some sort of text or hex editor)
+Music editor: add a few empty lines at begin and end of the view, and have some sort of highlighted line on the center
 
 
-CodeEditor: Ctrl+F find
-CodeEditor: Ctrl+H replace
+Rom Editor: [DECIDE] have a way to add some raw binary data (loading a file or using some sort of text or hex editor)
+Rom editor: Add a button to remove all selected lines
+Rom editor: Add "Edit" buttons in RomEdit (music, tilemap)
+
+
 CodeEditor: Ctrl+D to duplicate line
 CodeEditor: Ctrl+Del to delete line
-
 CodeEditor: Save code as binary
 CodeEditor: Load code as binary
 
 
-Rom editor: Add a button to remove all selected lines
-View memory
+CodeEditor: View memory
+CodeEditor: alter values of variables
+CodeEditor: real time editing of nodes while debugging
 

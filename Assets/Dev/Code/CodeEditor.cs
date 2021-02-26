@@ -32,6 +32,7 @@ public class CodeEditor : MonoBehaviour {
   int prevSize = 0;
   private void Update() {
     CurrentLineText.text = curline + "/" + numlines; // FIXME show it somewhere
+    bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
 
     if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.Delete)) {
       SetUndo();
@@ -42,11 +43,24 @@ public class CodeEditor : MonoBehaviour {
       ParseBlock();
     }
 
-    if (Input.GetKeyUp(KeyCode.Z) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) Undo();
-    if (Input.GetKeyUp(KeyCode.Y) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) Redo();
+    if (Input.GetKeyUp(KeyCode.Z) && ctrl) Undo();
+    if (Input.GetKeyUp(KeyCode.Y) && ctrl) Redo();
 
-    if ((Input.GetKeyUp(KeyCode.X) || Input.GetKeyUp(KeyCode.C)) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) {
+    if ((Input.GetKeyUp(KeyCode.X) || Input.GetKeyUp(KeyCode.C)) && ctrl) {
       GUIUtility.systemCopyBuffer = rgSyntaxHighlight.Replace(GUIUtility.systemCopyBuffer, ""); // Remove the color coding
+    }
+
+    if (Input.GetKeyUp(KeyCode.F) && ctrl) {
+      if (FindReplace.activeSelf) Find();
+      else FindReplace.SetActive(true);
+    }
+
+    if (Input.GetKeyUp(KeyCode.H) && ctrl) {
+      if (FindReplace.activeSelf) Replace(false);
+      else {
+        FindReplace.SetActive(true);
+        FindMsg.text = "";
+      }
     }
 
     // FIXME ctrl+d
@@ -698,8 +712,84 @@ public class CodeEditor : MonoBehaviour {
   }
 
 
-
   #endregion Load / Save ***********************************************************************************************************************************************
+
+
+  #region Find / Replace ***********************************************************************************************************************************************
+
+  public TMP_InputField TextToFind;
+  public TMP_InputField TextToReplace;
+  public GameObject FindReplace;
+  public TextMeshProUGUI FindMsg;
+  int prevFinding = 0;
+  string prevTextToFind = null;
+
+  public void CloseFindReplace() {
+    FindReplace.SetActive(false);
+    FindMsg.text = "";
+  }
+
+  public void Find() {
+    string toFind = TextToFind.text.ToLowerInvariant();
+    string code = rgSyntaxHighlight.Replace(edit.text, "");
+    int pos;
+    if (toFind.Equals(prevTextToFind))
+      pos = code.IndexOf(toFind, prevFinding, System.StringComparison.InvariantCultureIgnoreCase);
+    else {
+      pos = code.IndexOf(toFind, System.StringComparison.InvariantCultureIgnoreCase);
+      prevTextToFind = toFind;
+    }
+    prevFinding = pos + 1;
+    if (pos == -1) {
+      FindMsg.text = "Text was not found";
+      return;
+    }
+    FindMsg.text = "";
+    edit.SetTextWithoutNotify(code);
+    edit.caretPosition = pos + toFind.Length;
+    edit.stringPosition = pos;
+    edit.selectionAnchorPosition = pos;
+    edit.selectionFocusPosition = pos + toFind.Length;
+    edit.selectionStringAnchorPosition = pos;
+    edit.selectionStringFocusPosition = pos + toFind.Length;
+    edit.Select();
+  }
+
+  public void Replace(bool all) {
+    string toFind = TextToFind.text.ToLowerInvariant();
+    string toReplace = TextToReplace.text;
+    string code = rgSyntaxHighlight.Replace(edit.text, "");
+
+    if (all) {
+      int num = 0;
+      Find();
+      while (prevFinding > 0) {
+        num++;
+        code = code.Substring(0, prevFinding - 1) + toReplace + code.Substring(prevFinding + toFind.Length - 1);
+        edit.SetTextWithoutNotify(code);
+        Find();
+      }
+      if (num == 0)
+        FindMsg.text = "Text not found";
+      else
+        FindMsg.text = "Replaced " + num + " occurrences";
+    }
+    else {
+      if (prevFinding < 1 || code.IndexOf(toFind, prevFinding - 1, System.StringComparison.InvariantCultureIgnoreCase) != prevFinding - 1) {
+        Find();
+        if (prevFinding == 0) {
+          FindMsg.text = "No more occurences";
+          return; // Not found
+        }
+      }
+      // Current selected part is exactly what we are finding: replace
+      code = code.Substring(0, prevFinding - 1) + toReplace + code.Substring(prevFinding + toFind.Length - 1);
+      edit.SetTextWithoutNotify(code);
+      Find();
+    }
+  }
+
+  #endregion Find / Replace ***********************************************************************************************************************************************
 }
 
 
