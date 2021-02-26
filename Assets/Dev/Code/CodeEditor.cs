@@ -26,6 +26,7 @@ public class CodeEditor : MonoBehaviour {
 
     UpdateLinePos();
     EventSystem.current.SetSelectedGameObject(edit.gameObject);
+    VariableEditVal.onEndEdit.AddListener(EditVariableValue);
   }
 
   float delay = 1;
@@ -721,10 +722,39 @@ public class CodeEditor : MonoBehaviour {
         case VT.String: VariableEditName.text = "<color=#20f350>STR</color> " + variables.GetRegName(selectedVar); break;
         case VT.Array: VariableEditName.text = "<color=#20f350>ARR</color> " + variables.GetRegName(selectedVar); break;
       }
-      VariableEditVal.SetTextWithoutNotify(val.ToStr());
+      if (EventSystem.current.currentSelectedGameObject == VariableEditVal.gameObject) return;
+      string v = val.ToStr();
+      if (VariableEditVal.text != v) VariableEditVal.SetTextWithoutNotify(v);
     }
   }
 
+  readonly Regex rgDec = new Regex("^[\\s]*(\\-)?[0-9]+[\\s]*$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
+  readonly Regex rgFlt = new Regex("^[\\s]*(\\-)?[0-9]+\\.[0-9]+[\\s]*$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
+  readonly Regex rgStr = new Regex("^[\\s]*(\")([^\"]*)(\")[\\s]*$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
+
+  public void EditVariableValue(string val) {
+    if (variables == null || variables.Invalid(selectedVar)) return;
+
+    if (rgDec.IsMatch(val)) { // -> int
+      int.TryParse(val, out int v);
+      variables.Set(selectedVar, v);
+    }
+    else if (rgFlt.IsMatch(val)) { // -> float
+      float.TryParse(val, out float v);
+      variables.Set(selectedVar, v);
+    }
+    else if (rgStr.IsMatch(val)) { // -> string
+      string v = rgStr.Match(val).Groups[2].Value.Replace("\\\"", "\"");
+      variables.Set(selectedVar, v);
+    }
+    else if (!string.IsNullOrWhiteSpace(val)) { // Assume it is a string
+      variables.Set(selectedVar, val);
+    }
+    else { // -> NUL
+      variables.Set(selectedVar);
+    }
+    SelectVariable(selectedVar); // To update visuals
+  }
 
   #endregion Run / Debug ***********************************************************************************************************************************************
 
