@@ -27,6 +27,7 @@ public class CodeEditor : MonoBehaviour {
     UpdateLinePos();
     EventSystem.current.SetSelectedGameObject(edit.gameObject);
     VariableEditVal.onEndEdit.AddListener(EditVariableValue);
+    CompilationStatus.text = "<color=#80feef><i>No code</i></color>";
   }
 
   float delay = 1;
@@ -271,7 +272,8 @@ public class CodeEditor : MonoBehaviour {
   }
 
   readonly CodeParser cp = new CodeParser();
-  readonly Variables variables = new Variables();
+  readonly Variables runVariables = new Variables();
+  readonly Variables compVariables = new Variables();
   readonly Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)|(\\<color=red\\>)|", RegexOptions.IgnoreCase);
   readonly Regex rgCommentSL = new Regex("(//.*)$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
   readonly Regex rgCommentML = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
@@ -304,6 +306,8 @@ public class CodeEditor : MonoBehaviour {
     CodeNode compiled = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
     if (compiled == null) return;
     ParseBlock(compiled, 0, int.MaxValue);
+    lastCompile = System.DateTime.Now;
+    UpdateCompilationStatus();
   }
 
   void ParseBlock(CodeNode compiled, int start, int end) {
@@ -381,10 +385,10 @@ public class CodeEditor : MonoBehaviour {
         continue;
       }
 
-      clines[i] = compiledLine.Format(variables, true, comments[i].comment, comments[i].type);
+      clines[i] = compiledLine.Format(compVariables, true, comments[i].comment, comments[i].type);
 
       // Understand the required indent
-      string l = rgCommentSL.Replace(compiledLine.Format(variables, false), "").Trim();
+      string l = rgCommentSL.Replace(compiledLine.Format(compVariables, false), "").Trim();
       if (indent < 0) indent = 0;
       if (rgBlockOpen.IsMatch(l)) {
         if (increaseone > 0) {
@@ -513,15 +517,21 @@ public class CodeEditor : MonoBehaviour {
    * 
    */
 
+  public void CodeChange() {
+    lastEdit = System.DateTime.Now;
 
-
+    if (lastEdit > lastCompile)
+      Result.text = "You should compile";
+    else
+      Result.text = "Last code is compiled";
+  }
 
   public CodeNode CompileCode(string code, bool checkCompleteness, int startOffset = 0) {
     // Get all lines, produce an aggregated string, and do the full parsing.
-    variables.Clear();
+    compVariables.Clear();
     CodeNode result = null;
     try {
-      result = cp.Parse(code, variables, true, !checkCompleteness, startOffset);
+      result = cp.Parse(code, compVariables, true, !checkCompleteness, startOffset);
       if (checkCompleteness && !result.HasNode(BNF.Config) && !result.HasNode(BNF.Data) && !result.HasNode(BNF.Start) && !result.HasNode(BNF.Update) && !result.HasNode(BNF.Functions)) {
         Result.text = "No executable code found (Start, Update, Functions, Config, or Data)";
         return null;
@@ -605,8 +615,15 @@ public class CodeEditor : MonoBehaviour {
         ShowButton(Arcade.RunStatus.Error);
         return;
       }
+      lastCompile = System.DateTime.Now;
+      if (lastEdit > lastCompile)
+        Result.text = "You should compile";
+      else
+        Result.text = "Last code is compiled";
+
+      runVariables.CopyValuesFrom(compVariables);
       // Reset the Arcade, and pass the parsed parts
-      arcade.LoadCode(code, variables, rom, UpdateVariables, CompletedExecutionStep, breakPoints);
+      arcade.LoadCode(code, runVariables, rom, UpdateVariables, CompletedExecutionStep, breakPoints);
     }
     arcade.runStatus = Arcade.RunStatus.Running;
   }
@@ -660,6 +677,7 @@ public class CodeEditor : MonoBehaviour {
   int selectedVar = -1;
   public TextMeshProUGUI VariableEditName;
   public TMP_InputField VariableEditVal;
+  public TextMeshProUGUI CompilationStatus;
 
   public void UpdateVariables(Variables vars) {
     if (!InspectorVariables.activeSelf) return;
@@ -709,18 +727,18 @@ public class CodeEditor : MonoBehaviour {
 
   public void SelectVariable(int selected) {
     if (selected != -1) selectedVar = selected;
-    if (selectedVar == -1 || variables.Invalid(selectedVar)) {
+    if (selectedVar == -1 || runVariables.Invalid(selectedVar)) {
       VariableEditName.text = "<size=19><i>Select variable to edit...</i></size>";
       VariableEditVal.SetTextWithoutNotify("");
     }
     else {
-      Value val = variables.Get(selectedVar);
+      Value val = runVariables.Get(selectedVar);
       switch (val.type) {
-        case VT.None: VariableEditName.text = "<color=#20f350>NUL</color> " + variables.GetRegName(selectedVar); break;
-        case VT.Int: VariableEditName.text = "<color=#20f350>INT</color> " + variables.GetRegName(selectedVar); break;
-        case VT.Float: VariableEditName.text = "<color=#20f350>FLT</color> " + variables.GetRegName(selectedVar); break;
-        case VT.String: VariableEditName.text = "<color=#20f350>STR</color> " + variables.GetRegName(selectedVar); break;
-        case VT.Array: VariableEditName.text = "<color=#20f350>ARR</color> " + variables.GetRegName(selectedVar); break;
+        case VT.None: VariableEditName.text = "<color=#20f350>NUL</color> " + runVariables.GetRegName(selectedVar); break;
+        case VT.Int: VariableEditName.text = "<color=#20f350>INT</color> " + runVariables.GetRegName(selectedVar); break;
+        case VT.Float: VariableEditName.text = "<color=#20f350>FLT</color> " + runVariables.GetRegName(selectedVar); break;
+        case VT.String: VariableEditName.text = "<color=#20f350>STR</color> " + runVariables.GetRegName(selectedVar); break;
+        case VT.Array: VariableEditName.text = "<color=#20f350>ARR</color> " + runVariables.GetRegName(selectedVar); break;
       }
       if (EventSystem.current.currentSelectedGameObject == VariableEditVal.gameObject) return;
       string v = val.ToStr();
@@ -733,27 +751,64 @@ public class CodeEditor : MonoBehaviour {
   readonly Regex rgStr = new Regex("^[\\s]*(\")([^\"]*)(\")[\\s]*$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
 
   public void EditVariableValue(string val) {
-    if (variables == null || variables.Invalid(selectedVar)) return;
+    if (runVariables == null || runVariables.Invalid(selectedVar)) return;
 
     if (rgDec.IsMatch(val)) { // -> int
       int.TryParse(val, out int v);
-      variables.Set(selectedVar, v);
+      runVariables.Set(selectedVar, v);
     }
     else if (rgFlt.IsMatch(val)) { // -> float
       float.TryParse(val, out float v);
-      variables.Set(selectedVar, v);
+      runVariables.Set(selectedVar, v);
     }
     else if (rgStr.IsMatch(val)) { // -> string
       string v = rgStr.Match(val).Groups[2].Value.Replace("\\\"", "\"");
-      variables.Set(selectedVar, v);
+      runVariables.Set(selectedVar, v);
     }
     else if (!string.IsNullOrWhiteSpace(val)) { // Assume it is a string
-      variables.Set(selectedVar, val);
+      runVariables.Set(selectedVar, val);
     }
     else { // -> NUL
-      variables.Set(selectedVar);
+      runVariables.Set(selectedVar);
     }
     SelectVariable(selectedVar); // To update visuals
+  }
+
+  System.DateTime lastEdit;
+  System.DateTime lastCompile;
+  System.DateTime lastDeploy;
+  CodeNode compiledCode = null;
+  CodeNode deplayedCode = null;
+  bool codeHasErrors = false;
+
+  /*
+  No code -> No code
+  Code but not compiled -> Compile
+  Code compiled but different code running -> New code not deployed
+  Code but not compiled and different code running -> Compile the new code
+   
+   */
+
+  void UpdateCompilationStatus() {
+    if (compiledCode == null) {
+      if (string.IsNullOrWhiteSpace(edit.text)) {
+        CompilationStatus.text = "<color=#80feef><i>No code</i></color>";
+      }
+      else {
+        CompilationStatus.text = "<color=#feef80><i>You should compile</i></color>";
+      }
+    }
+    else {
+      if (codeHasErrors) {
+        CompilationStatus.text = "<color=#fe2f40><i>Fix code errors</i></color>";
+      }
+      else if (lastEdit > lastCompile)
+        CompilationStatus.text = "<color=#5eefc0><i>Compile the new code</i></color>";
+      else if (lastCompile > lastDeploy)
+        CompilationStatus.text = "<color=#8eefa0><i>New code not deployed</i></color>";
+      else
+        CompilationStatus.text = "<color=#3efe60><i>Code is deployed</i></color>";
+    }
   }
 
   #endregion Run / Debug ***********************************************************************************************************************************************

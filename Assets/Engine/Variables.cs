@@ -130,6 +130,31 @@ public class Variables {
     num = pointers.Count;
     return res;
   }
+
+  public void CopyValuesFrom(Variables src) {
+    foreach(string name in pointers.Keys) {
+      int reg = src.GetRegByName(name);
+      if (reg == -1) continue;
+      vars[pointers[name]].Assign(src.Get(reg));
+    }
+
+    foreach (string name in pointers.Keys) {
+      if (vars[pointers[name]].type != VT.Array) continue;
+      int reg = src.GetRegByName(name);
+      if (reg == -1) continue;
+      Value v = src.Get(reg);
+      for (int i = 0; i < vars[pointers[name]].aVals.Length; i++) {
+        string sr = src.GetRegName(v.aVals[i]);
+        if (!pointers.ContainsKey(sr)) continue;
+        vars[pointers[name]].aVals[i] = GetRegByName(sr);
+      }
+    }
+  }
+
+  private int GetRegByName(string name) {
+    if (!pointers.ContainsKey(name)) return -1;
+    return pointers[name];
+  }
 }
 
 
@@ -139,7 +164,6 @@ public struct Value {
 
   public MD mode;
   public int idx; // Used for reg and mem
-
   public VT type;
   public int iVal;
   public float fVal;
@@ -625,4 +649,13 @@ public struct Value {
     return "<i>unknown</i>";
   }
 
+  internal void Assign(Value src) {
+    mode = src.mode;
+    type = src.type;
+    iVal = src.iVal;
+    fVal = src.fVal;
+    sVal = src.sVal;
+    if (src.aVals == null) aVals = null;
+    else aVals = new int[src.aVals.Length];
+  }
 }
