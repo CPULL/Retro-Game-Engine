@@ -33,12 +33,13 @@ public class CodeEditor : MonoBehaviour {
   private void Update() {
     CurrentLineText.text = curline + "/" + numlines; // FIXME show it somewhere
     bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+    bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
     if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.Delete)) {
       SetUndo();
       UpdateLinePos();
     }
-    if (Input.GetKeyUp(KeyCode.RightCurlyBracket) || (Input.GetKeyUp(KeyCode.RightBracket) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))) {
+    if (Input.GetKeyUp(KeyCode.RightCurlyBracket) || (Input.GetKeyUp(KeyCode.RightBracket) && shift)) {
       SetUndo();
       ParseBlock();
     }
@@ -58,9 +59,15 @@ public class CodeEditor : MonoBehaviour {
         EventSystem.current.SetSelectedGameObject(TextToFind.gameObject);
       }
     }
+    if (Input.GetKeyUp(KeyCode.Escape) && FindReplace.activeSelf) {
+      FindReplace.SetActive(false);
+      EventSystem.current.SetSelectedGameObject(edit.gameObject);
+    }
 
     // FIXME ctrl+d
     // FIXME ctrl+del
+    if (Input.GetKeyDown(KeyCode.D) && ctrl) DuplicateDelete(false);
+    if (Input.GetKeyDown(KeyCode.K) && ctrl && shift) DuplicateDelete(true);
 
     if (Input.GetMouseButtonDown(0) && Input.mousePosition.x < 80 && overLine > 0 && overLine <= numlines) {
       if (breakPoints.Contains(overLine)) breakPoints.Remove(overLine);
@@ -68,8 +75,6 @@ public class CodeEditor : MonoBehaviour {
       RedrawLineNumbersAndBreakPoints(numlines, 0);
       arcade.SetBreakpoints(breakPoints);
     }
-
-
 
     delay -= Time.deltaTime;
     if (delay < 0 && edit.text.Length != prevSize) {
@@ -146,6 +151,44 @@ public class CodeEditor : MonoBehaviour {
       }
     }
     edit.stringPosition = int.MaxValue;
+  }
+
+  void DuplicateDelete(bool delete) {
+    // Find the current line number
+    curline = -1;
+    int num = 1;
+    int pos = 0;
+    edit.SetTextWithoutNotify(edit.text.Replace("\r\n", "\n").Replace("\r", "\n"));
+    string txt = edit.text;
+    foreach (char c in txt) {
+      pos++;
+      if (c == '\n') num++;
+      if (pos == edit.stringPosition) curline = num;
+    }
+    if (curline == -1) {
+      curline = 0;
+      return;
+    }
+    int posStart = txt.LastIndexOf('\n', edit.stringPosition - 1) + 1;
+    int posEnd = txt.IndexOf('\n', edit.stringPosition);
+
+    if (delete) { // true: Delete the whole line
+      if (posStart == 0 && posEnd == -1) txt = "";
+      else if (posStart == 0 && posEnd != -1) txt = txt.Substring(posEnd + 1);
+      else if (posStart != 0 && posEnd == -1) { txt = txt.Substring(0, posStart); if (txt[txt.Length - 1] == '\n') txt = txt.Substring(0, txt.Length - 1); }
+      else txt = txt.Substring(0, posStart) + txt.Substring(posEnd - 1);
+      edit.SetTextWithoutNotify(txt);
+    }
+    else { // false: Copy the whole line
+      if (posStart == 0 && posEnd == -1) txt += "\n" + txt;
+      else if (posStart == 0 && posEnd != -1) txt = txt.Substring(0, posEnd + 1) + txt;
+      else if (posStart != 0 && posEnd == -1) txt += (txt[txt.Length - 1] == '\n' ? "" : "\n") + txt.Substring(posStart);
+      else txt = txt.Substring(0, posStart) + txt.Substring(posStart, posEnd - posStart + 1) + txt.Substring(posStart);
+      edit.SetTextWithoutNotify(txt);
+    }
+
+    // Redraw the linenumbers
+    RedrawLineNumbersAndBreakPoints(num);
   }
 
   private void RedrawLineNumbersAndBreakPoints(int num, int linenum = 0) {
