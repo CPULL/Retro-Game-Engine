@@ -17,9 +17,9 @@ Name: Shadow of the Beast
 Start {
 	usepalette(1)
 	clr(000c)
-	write("Shadow of the Beast", 60,50, 401c)
-	write("RGE demo by CPU", 76,60,c350)
-	write("Use left and right to walk", 54,100, 134c, 0, 1)
+	write("Shadow of the Beast", 80,50, 401c)
+	write("RGE demo by CPU", 96,60,c350)
+	write("Use left and right to walk", 74,100, 134c, 0, 1)
 	frame
 	wait(1)
 	

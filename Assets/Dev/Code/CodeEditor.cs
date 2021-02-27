@@ -718,7 +718,7 @@ public class CodeEditor : MonoBehaviour {
   }
 
   public void CompletedExecutionStep(int lineNumber) {
-    if (arcade.LastErrorMessage != null) {
+    if (arcade.LastErrorMessage != null && arcade.runStatus == Arcade.RunStatus.Error) {
       Result.text = "<color=red>" + arcade.LastErrorMessage + "</color>";
       ShowButton(Arcade.RunStatus.Stopped);
       return;
@@ -732,6 +732,7 @@ public class CodeEditor : MonoBehaviour {
       if (c == '\n')
         num++;
     RedrawLineNumbersAndBreakPoints(num, lineNumber);
+    if (arcade.LastErrorMessage != null) Result.text = arcade.LastErrorMessage; // It can be a simple breakpoint
   }
 
   public void ShowHideVariables() {

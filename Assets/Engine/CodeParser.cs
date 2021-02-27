@@ -76,6 +76,7 @@ public class CodeParser {
     "name",
     "pan",
     "pitch",
+    "perlin",
     "playmusic",
     "pow",
     "ram",
@@ -335,7 +336,7 @@ public class CodeParser {
 
       // Then the sections
       bool atLeastOne = false;
-      for (int linenumber = 0; linenumber < lines.Length; linenumber++) {
+      for (linenumber = 0; linenumber < lines.Length; linenumber++) {
         string line = lines[linenumber];
 
         Match m = rgName.Match(line);
@@ -2877,8 +2878,8 @@ public class CodeParser {
   private void ParseConfigBlock(string[] lines, int start, int end, CodeNode config) {
     // Find at what line this starts
     string remaining = "";
-    for (int linenum = start + 1; linenum < end; linenum++) {
-      string clean = lines[linenum].Trim();
+    for (linenumber = start + 1; linenumber < end; linenumber++) {
+      string clean = lines[linenumber].Trim().ToLowerInvariant();
       // Remove the comments and some unwanted chars
       clean = rgMLBacktick.Replace(clean, "'");
       // Find Screen and Ram
@@ -2899,7 +2900,7 @@ public class CodeParser {
         char unit = (m.Groups[2].Value.Trim().ToLowerInvariant() + " ")[0];
         if (unit == 'k') size *= 1024;
         if (unit == 'm') size *= 1024 * 1024;
-        CodeNode n = new CodeNode(BNF.Ram, null, linenum) { iVal = size };
+        CodeNode n = new CodeNode(BNF.Ram, null, linenumber) { iVal = size };
         config.Add(n);
       }
       else if (clean.IndexOf("palette") != -1) { // PALETTE ****************************************************************** PALETTE
@@ -2907,7 +2908,7 @@ public class CodeParser {
         clean = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
         Match m = rgConfPalette.Match(clean);
         int.TryParse(m.Groups[1].Value.Trim(), out int on);
-        CodeNode n = new CodeNode(BNF.PaletteConfig, null, linenum) { iVal = on };
+        CodeNode n = new CodeNode(BNF.PaletteConfig, null, linenumber) { iVal = on };
         config.Add(n);
       }
       else
