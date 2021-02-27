@@ -211,6 +211,21 @@ public class Arcade : MonoBehaviour {
         stacks.AddStack(updateCode, null, updateCode.origLine, updateCode.origLineNum);
       nodeToRun = stacks.GetExecutionNode(this);
     }
+    if (codeUpdated) {
+      CompleteFrame();
+      stacks.Destroy();
+      stacks.AddStack(updateCodeUpdated, null, updateCodeUpdated.origLine, updateCodeUpdated.origLineNum);
+      updateCode = updateCodeUpdated;
+      variables = updatedVars;
+      breakPoints = updatedBreaks;
+      updateCodeUpdated = null;
+      updatedVars = null;
+      updatedBreaks = null;
+      codeUpdated = false;
+      CompleteFrame();
+      StepExecutedCheck();
+      return;
+    }
     StepExecutedCheck();
 
     if (something) CompleteFrame();
@@ -754,6 +769,19 @@ public class Arcade : MonoBehaviour {
       Debug.Log("Error in loading! " + e.Message + "\n" + e.StackTrace);
       execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
       varsCallback?.Invoke(variables);
+    }
+  }
+
+  CodeNode updateCodeUpdated = null;
+  Variables updatedVars = null;
+  HashSet<int> updatedBreaks = null;
+  bool codeUpdated = false;
+  public void UpdateCode(CodeNode newcode, Variables newvars, HashSet<int> newbreaks) {
+    updateCodeUpdated = newcode.Get(BNF.Update);
+    if (updateCodeUpdated != null) {
+      updatedVars = newvars;
+      updatedBreaks = newbreaks;
+      codeUpdated = true;
     }
   }
 

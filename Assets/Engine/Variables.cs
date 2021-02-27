@@ -132,13 +132,14 @@ public class Variables {
   }
 
   public void CopyValuesFrom(Variables src) {
-    foreach(string name in pointers.Keys) {
+    Clear();
+    foreach(string name in src.pointers.Keys) {
       int reg = src.GetRegByName(name);
       if (reg == -1) continue;
-      vars[pointers[name]].Assign(src.Get(reg));
+      vars[Add(name)].Assign(src.Get(reg));
     }
 
-    foreach (string name in pointers.Keys) {
+    foreach (string name in src.pointers.Keys) {
       if (vars[pointers[name]].type != VT.Array) continue;
       int reg = src.GetRegByName(name);
       if (reg == -1) continue;
@@ -644,7 +645,7 @@ public struct Value {
     if (type == VT.None) return "";
     if (type == VT.Int) return iVal.ToString();
     if (type == VT.Float) return fVal.ToString("F3");
-    if (type == VT.String) return sVal;
+    if (type == VT.String) return "\"" + sVal.Replace("\"", "\\\"") + "\"";
     if (type == VT.Array) return "[" + aVals?.Length + "]";
     return "<i>unknown</i>";
   }

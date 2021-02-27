@@ -40,14 +40,17 @@ public class CodeEditor : MonoBehaviour {
     if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.Delete)) {
       SetUndo();
       UpdateLinePos();
+      CodeChange();
     }
-    if (Input.GetKeyUp(KeyCode.RightCurlyBracket) || (Input.GetKeyUp(KeyCode.RightBracket) && shift)) {
+    if (Input.GetKeyDown(KeyCode.RightCurlyBracket) || (Input.GetKeyDown(KeyCode.RightBracket) && shift)) {
       SetUndo();
       ParseBlock();
+      CodeChange();
     }
 
-    if (Input.GetKeyUp(KeyCode.Z) && ctrl) Undo();
-    if (Input.GetKeyUp(KeyCode.Y) && ctrl) Redo();
+    if (Input.GetKeyUp(KeyCode.Z) && ctrl) { Undo(); CodeChange(); }
+    if (Input.GetKeyUp(KeyCode.Y) && ctrl) { Redo(); CodeChange(); }
+
 
     if ((Input.GetKeyUp(KeyCode.X) || Input.GetKeyUp(KeyCode.C)) && ctrl) {
       GUIUtility.systemCopyBuffer = rgSyntaxHighlight.Replace(GUIUtility.systemCopyBuffer, ""); // Remove the color coding
@@ -75,7 +78,9 @@ public class CodeEditor : MonoBehaviour {
       if (breakPoints.Contains(overLine)) breakPoints.Remove(overLine);
       else breakPoints.Add(overLine);
       RedrawLineNumbersAndBreakPoints(numlines, 0);
-      arcade.SetBreakpoints(breakPoints);
+      if (lastEdit <= lastDeploy && arcade.runStatus != Arcade.RunStatus.Stopped && arcade.runStatus != Arcade.RunStatus.Error) {
+        arcade.SetBreakpoints(breakPoints);
+      }
     }
 
     delay -= Time.deltaTime;
@@ -156,6 +161,7 @@ public class CodeEditor : MonoBehaviour {
   }
 
   void DuplicateDelete(bool delete) {
+    CodeChange();
     // Find the current line number
     curline = -1;
     int num = 1;
@@ -299,13 +305,17 @@ public class CodeEditor : MonoBehaviour {
   }
 
 
-  public void Parse(bool optimize) {
+  public void CompileCode(bool optimize) {
     SetUndo();
     cp.SetOptimize(optimize);
     CompileContainer.SetActive(false);
-    CodeNode compiled = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
-    if (compiled == null) return;
-    ParseBlock(compiled, 0, int.MaxValue);
+    compiledCode = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
+    if (compiledCode == null) {
+      codeHasErrors = true;
+      UpdateCompilationStatus();
+      return;
+    }
+    ParseBlock(compiledCode, 0, int.MaxValue);
     lastCompile = System.DateTime.Now;
     UpdateCompilationStatus();
   }
@@ -459,7 +469,7 @@ public class CodeEditor : MonoBehaviour {
     SetLinePos();
   }
 
-  string PrintLine(int tabs, string line, bool addNL) { // 
+  string PrintLine(int tabs, string line, bool addNL) {
     string tab = "";
     for (int t = 0; t < tabs; t++) tab += '\t';
     string code = tab + line;
@@ -519,16 +529,13 @@ public class CodeEditor : MonoBehaviour {
 
   public void CodeChange() {
     lastEdit = System.DateTime.Now;
-
-    if (lastEdit > lastCompile)
-      Result.text = "You should compile";
-    else
-      Result.text = "Last code is compiled";
+    UpdateCompilationStatus();
   }
 
   public CodeNode CompileCode(string code, bool checkCompleteness, int startOffset = 0) {
     // Get all lines, produce an aggregated string, and do the full parsing.
     compVariables.Clear();
+    codeHasErrors = false;
     CodeNode result = null;
     try {
       result = cp.Parse(code, compVariables, true, !checkCompleteness, startOffset);
@@ -608,22 +615,31 @@ public class CodeEditor : MonoBehaviour {
       if (c == '\n')
         num++;
     RedrawLineNumbersAndBreakPoints(num, 0);
-    if (arcade.runStatus != Arcade.RunStatus.Paused && !restart) {
+
+    if (lastCompile > lastDeploy && deployedCode != compiledCode && 
+      (arcade.runStatus == Arcade.RunStatus.Running || arcade.runStatus == Arcade.RunStatus.Paused || arcade.runStatus == Arcade.RunStatus.RunAFrame || arcade.runStatus == Arcade.RunStatus.RunAStep)) {
+      // Pause or run. Replace the code, using a specific function. Only the update and the variables will be replaced
+      runVariables.CopyValuesFrom(compVariables);
+      deployedCode = compiledCode;
+      lastDeploy = System.DateTime.Now;
+      arcade.UpdateCode(deployedCode, runVariables, breakPoints);
+      UpdateCompilationStatus();
+    }
+    else if (arcade.runStatus != Arcade.RunStatus.Paused && !restart) {
       // Compile the code, if errors show them and stop
-      CodeNode code = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
-      if (code == null) {
+      compiledCode = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
+      if (compiledCode == null) {
         ShowButton(Arcade.RunStatus.Error);
+        codeHasErrors = true;
         return;
       }
-      lastCompile = System.DateTime.Now;
-      if (lastEdit > lastCompile)
-        Result.text = "You should compile";
-      else
-        Result.text = "Last code is compiled";
-
       runVariables.CopyValuesFrom(compVariables);
+      deployedCode = compiledCode;
+      lastCompile = System.DateTime.Now; ;
+      lastDeploy = lastCompile;
+      UpdateCompilationStatus();
       // Reset the Arcade, and pass the parsed parts
-      arcade.LoadCode(code, runVariables, rom, UpdateVariables, CompletedExecutionStep, breakPoints);
+      arcade.LoadCode(deployedCode, runVariables, rom, UpdateVariables, CompletedExecutionStep, breakPoints);
     }
     arcade.runStatus = Arcade.RunStatus.Running;
   }
@@ -778,7 +794,7 @@ public class CodeEditor : MonoBehaviour {
   System.DateTime lastCompile;
   System.DateTime lastDeploy;
   CodeNode compiledCode = null;
-  CodeNode deplayedCode = null;
+  CodeNode deployedCode = null;
   bool codeHasErrors = false;
 
   /*
@@ -790,7 +806,10 @@ public class CodeEditor : MonoBehaviour {
    */
 
   void UpdateCompilationStatus() {
-    if (compiledCode == null) {
+    if (codeHasErrors) {
+      CompilationStatus.text = "<color=#fe2f40><i>Fix code errors</i></color>";
+    }
+    else if (compiledCode == null) {
       if (string.IsNullOrWhiteSpace(edit.text)) {
         CompilationStatus.text = "<color=#80feef><i>No code</i></color>";
       }
@@ -799,10 +818,7 @@ public class CodeEditor : MonoBehaviour {
       }
     }
     else {
-      if (codeHasErrors) {
-        CompilationStatus.text = "<color=#fe2f40><i>Fix code errors</i></color>";
-      }
-      else if (lastEdit > lastCompile)
+      if (lastEdit > lastCompile)
         CompilationStatus.text = "<color=#5eefc0><i>Compile the new code</i></color>";
       else if (lastCompile > lastDeploy)
         CompilationStatus.text = "<color=#8eefa0><i>New code not deployed</i></color>";

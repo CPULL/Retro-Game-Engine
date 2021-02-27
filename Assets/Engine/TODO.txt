@@ -31,17 +31,3 @@ CodeEditor: Load code as binary
 BUG: Config->Screen is not correctly parsed/formatted (to debug)
 
 CodeEditor: View memory
-CodeEditor: real time editing of nodes while debugging
-
-Code replacement
-Check the time of the last compile and the last code edit
-If the code edit is after the compile, recompile and:
-> if not compiling just show errors but do nothing arcade side
-> set the values of the new variables by getting the variables with the same name in the previous variables
-> replace the code when the frame is completed
-
-WHEN?
-if running or paused, replace if code compiles at end of frame. When compiling with button or re-clicking on run/reload
-if not running, run the code only if clicking the run button, if not do not replace anything
-
-
