@@ -863,7 +863,7 @@ public class CodeEditor : MonoBehaviour {
 
 
   public void LoadTextFilePre() {
-    FileBrowser.Load(LoadTextFilePost, FileBrowser.FileType.Code);
+    FileBrowser.Load(LoadTextFilePost, FileBrowser.FileType.Cartridges);
   }
   public void LoadTextFilePost(string path) {
     LoadSaveButtons.SetActive(false);

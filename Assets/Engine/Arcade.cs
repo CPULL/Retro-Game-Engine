@@ -378,6 +378,7 @@ public class Arcade : MonoBehaviour {
   }
 
   public void LoadCartridge(string codefile, string rompath) {
+    ResetArcade();
     Col.UsePalette(false);
     Col.SetDefaultPalette();
     RGEPalette.SetInt("_UsePalette", 0);
@@ -579,6 +580,7 @@ public class Arcade : MonoBehaviour {
   }
 
   public void LoadCode(CodeNode code, Variables vars, ByteChunk romdata, Action<Variables> varsCB, Action<int> execCB, HashSet<int> breaks) { // Labels too
+    ResetArcade();
     Col.UsePalette(false);
     Col.SetDefaultPalette();
     RGEPalette.SetInt("_UsePalette", 0);
@@ -1195,6 +1197,34 @@ public class Arcade : MonoBehaviour {
       sprites[num].Parent(SpritesFrontLayer);
     else
       sprites[num].Parent(Layers[order]);
+  }
+
+  void ResetArcade() {
+    // Remove sprites
+    for (int i = 0; i < sprites.Length; i++) {
+      Grob g = sprites[i];
+      if (g != null) {
+        Destroy(g.gameObject);
+        sprites[i] = null;
+      }
+    }
+    // Recreate first sprite
+    sprites[0] = Instantiate(SpriteTemplate, Layers[0]).GetComponent<Grob>();
+    sprites[0].gameObject.name = "Sprite 0";
+    sprites[0].gameObject.SetActive(true);
+    sprites[0].Set(16, 16, LogoTexture, false);
+    sprites[0].Pos(0, 8, scaleW, scaleH, true);
+    // Remove tilemaps
+    foreach (TMap tm in tilemaps.Values) {
+      Destroy(tm.gameObject);
+    }
+    tilemaps.Clear();
+    // Clean up textures
+    labelTextures.Clear();
+    // Reset audio
+    audioManager.Init();
+    // Garbage collection
+    GC.Collect(4);
   }
 
   #endregion Sprites

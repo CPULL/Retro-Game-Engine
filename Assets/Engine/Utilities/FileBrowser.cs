@@ -20,7 +20,7 @@ public class FileBrowser : MonoBehaviour {
   public Button LoadButton;
   public Button SaveButton;
   public TMP_InputField FileName;
-  public enum FileType { Music, Pics, Cartridges, Rom, Code, All };
+  public enum FileType { Music, Pics, Cartridges, Rom, All };
   FileType fileType;
   string lastFolder;
   bool load = true;
@@ -119,9 +119,6 @@ public class FileBrowser : MonoBehaviour {
             break;
           case FileType.Rom:
             if (ext != ".rom") continue;
-            break;
-          case FileType.Code:
-            if (ext != ".txt" && ext != ".rgel") continue;
             break;
           case FileType.All: break; // In this case all is good
         }

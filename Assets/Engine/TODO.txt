@@ -29,3 +29,6 @@ CodeEditor: Save code as binary
 CodeEditor: Load code as binary
 
 CodeEditor: View memory
+
+
+SotB rom looks like not good
