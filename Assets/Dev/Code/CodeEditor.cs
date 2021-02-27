@@ -642,6 +642,7 @@ public class CodeEditor : MonoBehaviour {
       arcade.LoadCode(deployedCode, runVariables, rom, UpdateVariables, CompletedExecutionStep, breakPoints);
     }
     arcade.runStatus = Arcade.RunStatus.Running;
+    EventSystem.current.SetSelectedGameObject(arcade.gameObject);
   }
 
   public void Pause() {
@@ -717,6 +718,11 @@ public class CodeEditor : MonoBehaviour {
   }
 
   public void CompletedExecutionStep(int lineNumber) {
+    if (arcade.LastErrorMessage != null) {
+      Result.text = "<color=red>" + arcade.LastErrorMessage + "</color>";
+      ShowButton(Arcade.RunStatus.Stopped);
+      return;
+    }
     if (arcade.runStatus == Arcade.RunStatus.Paused)
       ShowButton(Arcade.RunStatus.Paused);
     else if (arcade.runStatus == Arcade.RunStatus.Stopped || arcade.runStatus == Arcade.RunStatus.Error)
@@ -726,7 +732,6 @@ public class CodeEditor : MonoBehaviour {
       if (c == '\n')
         num++;
     RedrawLineNumbersAndBreakPoints(num, lineNumber);
-    if (arcade.LastErrorMessage != null) Result.text = "<color=red>" + arcade.LastErrorMessage + "</color>";
   }
 
   public void ShowHideVariables() {

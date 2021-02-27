@@ -86,6 +86,7 @@ public class Arcade : MonoBehaviour {
       }
       sprites[0].Pos(0, 0, scaleW, scaleH, false);
       updateDelay = 0;
+      Col.UsePalette(false);
       RGEPalette.SetInt("_UsePalette", Col.UsePalette() ? 1 : 0);
     }
 
@@ -475,6 +476,7 @@ public class Arcade : MonoBehaviour {
         CodeNode paldef = data.Get(BNF.PaletteConfig);
         if (paldef != null) {
           Col.UsePalette(paldef.iVal != 0);
+          RGEPalette.SetInt("_UsePalette", paldef.iVal != 0 ? 1 : 0);
         }
 
         // LABELS *************************************************************************************************************** LABELS
@@ -678,6 +680,7 @@ public class Arcade : MonoBehaviour {
         CodeNode paldef = data.Get(BNF.PaletteConfig);
         if (paldef != null) {
           Col.UsePalette(paldef.iVal != 0);
+          RGEPalette.SetInt("_UsePalette", paldef.iVal != 0 ? 1 : 0);
         }
 
         // LABELS *************************************************************************************************************** LABELS
@@ -1832,7 +1835,13 @@ public class Arcade : MonoBehaviour {
           return false;
         }
 
-        case BNF.USEPALETTE: { Col.UsePalette(Evaluate(n.CN1).ToBool(culture)); HandlePostIncrementDecrement(); return false; }
+        case BNF.USEPALETTE: {
+          bool use = Evaluate(n.CN1).ToBool(culture);
+          Col.UsePalette(use);
+          RGEPalette.SetInt("_UsePalette", use ? 1 : 0);
+          HandlePostIncrementDecrement();
+          return false; 
+        }
         case BNF.SETPALETTECOLOR: {
           if (n.children.Count == 1) Col.SetPalette(mem, Evaluate(n.CN1).ToInt(culture), 0);
           if (n.children.Count == 2) Col.SetPalette(mem, Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture));
@@ -1864,8 +1873,10 @@ public class Arcade : MonoBehaviour {
         case BNF.NOP: return false;
 
         default: {
+          runStatus = RunStatus.Error;
           Clear(Col.C(1, 0, 0));
           Write("Not handled code:\n " + n.type + "\n" + n, 2, 2, Col.C(5, 5, 0));
+          LastErrorMessage = "Not handled code:\n " + n.type;
           updateDelay = -1;
           stacks.Destroy();
           CompleteFrame();
