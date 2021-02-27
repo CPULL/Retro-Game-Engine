@@ -31,4 +31,3 @@ CodeEditor: Load code as binary
 CodeEditor: View memory
 
 
-We are parsing the ELSE in the prong way in SotB code

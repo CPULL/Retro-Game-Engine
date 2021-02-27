@@ -51,6 +51,9 @@
     stack.valid = true;
     stack.node = node;
     if (node.type == BNF.Start || node.type == BNF.Update) node.type = BNF.BLOCK;
+    else if (node.type == BNF.ELSE) {
+      stack.node = node.CN1;
+    }
     stack.cond = cond;
     stack.origLine = origline;
     stack.origLineNum = origlinenum;

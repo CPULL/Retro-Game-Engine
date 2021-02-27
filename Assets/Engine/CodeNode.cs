@@ -248,7 +248,7 @@ public class CodeNode {
           if (CN3 != null) res += id + " else { ..." + CN3.ToString() + "... }";
           break;
         }
-        case BNF.ELSE: res += id + "else { ..." + (children.Count - 1) + "... }"; break;
+        case BNF.ELSE: res += id + "else { ..." + (children.Count) + "... }"; break;
         case BNF.WHILE: res += id + "while (" + CN1.ToString() + ") { ..." + (children.Count - 1) + "... }"; break;
 
         case BNF.SCREEN: {
