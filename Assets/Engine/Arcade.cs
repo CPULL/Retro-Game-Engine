@@ -398,10 +398,10 @@ public class Arcade : MonoBehaviour {
       CodeNode config = res.Get(BNF.Config);
       if (config != null) {
         // Screen ************************************************************************************************************** Screen
-        CodeNode scrconf = config.Get(BNF.ScrConfig);
+        CodeNode scrconf = config.Get(BNF.SCREEN);
         if (scrconf != null) {
-          sw = (int)scrconf.fVal;
-          sh = scrconf.iVal;
+          sw = Evaluate(scrconf.CN1).ToInt(culture);
+          sh = Evaluate(scrconf.CN2).ToInt(culture);
           if (sw < 160) sw = 160;
           if (sw > 320) sw = 320;
           if (sh < 100) sh = 100;
@@ -410,7 +410,7 @@ public class Arcade : MonoBehaviour {
           hm1 = sh - 1;
           scaleW = rt.sizeDelta.x / sw;
           scaleH = rt.sizeDelta.y / sh;
-          useFilter = scrconf.sVal == "*";
+          useFilter = Evaluate(scrconf.CN3).ToBool(culture);
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
             filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
           };
@@ -602,10 +602,10 @@ public class Arcade : MonoBehaviour {
       CodeNode config = code.Get(BNF.Config);
       if (config != null) {
         // Screen ************************************************************************************************************** Screen
-        CodeNode scrconf = config.Get(BNF.ScrConfig);
+        CodeNode scrconf = config.Get(BNF.SCREEN);
         if (scrconf != null) {
-          sw = (int)scrconf.fVal;
-          sh = scrconf.iVal;
+          sw = Evaluate(scrconf.CN1).ToInt(culture);
+          sh = Evaluate(scrconf.CN2).ToInt(culture);
           if (sw < 160) sw = 160;
           if (sw > 320) sw = 320;
           if (sh < 100) sh = 100;
@@ -614,7 +614,7 @@ public class Arcade : MonoBehaviour {
           hm1 = sh - 1;
           scaleW = rt.sizeDelta.x / sw;
           scaleH = rt.sizeDelta.y / sh;
-          useFilter = scrconf.sVal == "*";
+          useFilter = Evaluate(scrconf.CN3).ToBool(culture);
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
             filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
           };

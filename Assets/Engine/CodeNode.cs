@@ -271,12 +271,6 @@ public class CodeNode {
         }
         break;
 
-        case BNF.ScrConfig:
-          res += id + "screencfg(" +
-                  (int)fVal + ", " + iVal +
-                  (sVal == "*" ? ",f" : "") +
-                  ")";
-          break;
         case BNF.Ram: res += id + "ram(" + iVal + ")"; break;
         case BNF.Rom: res += id + "rom(" + iVal + ")"; break;
         case BNF.PaletteConfig: res += id + "Palette(" + iVal + ")"; break;
@@ -659,7 +653,6 @@ public class CodeNode {
         }
         case BNF.WAIT: return "<color=#569CD6>Wait(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         case BNF.DESTROY: return "<color=#569CD6>Destroy(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
-        case BNF.ScrConfig:
         case BNF.SCREEN: {
           if (CN3 == null)
             return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
@@ -974,7 +967,6 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
         }
         case BNF.WAIT: return "Wait(" + CN1?.Format(variables, coloring) + ")";
         case BNF.DESTROY: return "Destroy(" + CN1?.Format(variables, coloring) + ")";
-        case BNF.ScrConfig:
         case BNF.SCREEN: {
           if (CN3 == null)
             return "Screen(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
@@ -1299,7 +1291,6 @@ public enum BNF {
   FunctionCall,
   RETURN,
   Params,
-  ScrConfig,
   PaletteConfig,
   Ram,
   Rom, // This is used to store the data

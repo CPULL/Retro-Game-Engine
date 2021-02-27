@@ -28,6 +28,4 @@ Rom editor: Add "Edit" buttons in RomEdit (music, tilemap)
 CodeEditor: Save code as binary
 CodeEditor: Load code as binary
 
-BUG: Config->Screen is not correctly parsed/formatted (to debug)
-
 CodeEditor: View memory

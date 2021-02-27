@@ -212,7 +212,6 @@ public class CompiledNode {
         }
         case BNF.WAIT: return "Wait(" + CN1?.Format() + ")";
         case BNF.DESTROY: return "Destroy(" + CN1?.Format() + ")";
-        case BNF.ScrConfig:
         case BNF.SCREEN: {
           if (CN3 == null)
             return "Screen(" + CN1?.Format() + ", " + CN2?.Format() + ")";

@@ -248,7 +248,6 @@ public class CodeParser {
   readonly Regex rgLabel = new Regex("[\\s]*[a-z][a-z0-9_]+:[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgLabelGet = new Regex("[\\s]*label[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgConfScreen = new Regex("screen[\\s]*\\([\\s]*([0-9]+)[\\s]*,[\\s]*([0-9]+)[\\s]*(,[\\s]*[fn])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgConfRam = new Regex("ram[\\s]*\\([\\s]*([0-9]+)[\\s]*([bkm])?[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgConfPalette = new Regex("palette[\\s]*\\([\\s]*([0-1])[\\s]*\\)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
@@ -972,7 +971,7 @@ public class CodeParser {
       return;
     }
 
-    // [SCREEN] width, heigth, tiles, filter
+    // [SCREEN] width, heigth, filter
     if (expected.IsGood(Expected.Val.Statement) && rgScreen.IsMatch(line)) {
       Match m = rgScreen.Match(line);
       CodeNode node = new CodeNode(BNF.SCREEN, line, linenumber);
@@ -2886,12 +2885,11 @@ public class CodeParser {
       if (clean.IndexOf("screen") != -1) { // ScreenCfg ***************************************************************** ScreenCfg
         int pos = clean.IndexOf(")");
         clean = clean.Substring(0, pos + 1).Trim(' ', '\n').ToLowerInvariant();
-        Match m = rgConfScreen.Match(clean);
-        int.TryParse(m.Groups[1].Value.Trim(), out int w);
-        int.TryParse(m.Groups[2].Value.Trim(), out int h);
-        bool filter = (!string.IsNullOrEmpty(m.Groups[3].Value) && m.Groups[3].Value.IndexOf('f') != -1);
-        CodeNode n = new CodeNode(BNF.ScrConfig, null, linenum) { fVal = w, iVal = h, sVal = (filter ? "*" : "") };
-        config.Add(n);
+        Match m = rgScreen.Match(clean);
+        CodeNode n = new CodeNode(BNF.SCREEN, clean, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num == 2 || num == 3)  config.Add(n);
       }
       else if (clean.IndexOf("ram") != -1) { // RAM ****************************************************************** RAM
         int pos = clean.IndexOf(")");
