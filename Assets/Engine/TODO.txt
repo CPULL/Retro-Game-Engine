@@ -32,7 +32,7 @@ BUG: if (keyUd && var > 1) --> invalid expression
 Start {
 	UsePalette(1)
 	for (i = 1, i < 255, i++) {
-		SetPalette(i, i / 2, i, 0, )
+		SetPalette(i, i, i, 0, )
 	}
 	Clr(0)
 	speed = 0.01
@@ -54,7 +54,7 @@ Update {
 	if (keyL) speed -= 0.001
 	if (keyR) speed += 0.001
 	if (keyUd && size > 1) size -= 1
-	if (keyDd ) size += 1
+	if (keyDd) size += 1
 }
 
 Config {

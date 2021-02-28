@@ -69,20 +69,19 @@
           float2 uv = IN.uv;
           fixed4 col = tex2D(_MainTex, uv);
           col.a *= UnityGet2DClipping(IN.worldPosition.xy, _ClipRect);
-          if (col.a == 0 || _UsePalette == 0) return col;
-
-          uint h = ((uint)(col.r * 256) - 4) / 8;
-          uint l = ((uint)(col.g * 256) - 4) / 8;
-          if (h > 15 && l > 15) return __Transp;
-          col = _Colors[h * 16 + l];
-          if (h == 0 && l == 0) col = __Black;
+          if (col.a != 0 && _UsePalette != 0) {
+            uint h = ((uint)(col.r * 256) - 4) / 8;
+            uint l = ((uint)(col.g * 256) - 4) / 8;
+            if (h > 15 && l > 15) return __Transp;
+            col = _Colors[h * 16 + l];
+            if (h == 0 && l == 0) col = __Black;
+          }
 
           if (_Luma == 0 && _Contrast == 0) return col;
           if (_Luma < -1) _Luma = -1;
           if (_Luma > 1) _Luma = 1;
           if (_Contrast < -1) _Contrast = -1;
           if (_Contrast > 1) _Contrast = 1;
-
           col.rgb = ((col.rgb - 0.5f) * (_Contrast + 1)) + 0.5f;
           col.rgb += _Luma;
 
