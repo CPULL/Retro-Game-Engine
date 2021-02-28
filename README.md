@@ -8,7 +8,7 @@
  The computer is high-level and offers a powerful features in a simple mode.
  
  ## How it is done
- It is done with Unity (2020.1 at current time).
+ It is done with Unity (2020.2 at current time).
  The hardware specification and the software structure  is inspired by old computers consoles (like C64, Genesys, and Super NES.) but with a modern touch you find in contemporary game engines.
 
 
