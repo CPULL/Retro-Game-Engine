@@ -195,7 +195,7 @@ public class Arcade : MonoBehaviour {
         return;
       }
       numruns++;
-      if (numruns > 1000) {
+      if (numruns > 1024 * 256) {
         Write("Possible infinite loop at: " + nodeToRun.parent.origLineNum + "\n" + nodeToRun.parent.origLine, 4, 4, Col.C(5, 4, 0), 0);
         CompleteFrame();
         nodeToRun = stacks.GetExecutionNode(this);
@@ -2122,7 +2122,7 @@ public class Arcade : MonoBehaviour {
           if (sn.type == BNF.RETURN) return Evaluate(sn);
           Execute(sn);
           numruns++;
-          if (numruns > 1000) {
+          if (numruns > 1024 * 256) {
             Write("Possible infinite loop at: " + sn.parent.origLineNum + "\n" + sn.parent.origLine, 4, 4, 48, 0);
             CompleteFrame();
             return new Value();

@@ -397,7 +397,10 @@ public class CodeNode {
         }
 
         case BNF.USEPALETTE: return "UsePalette(" + CN1?.ToString() + ")";
-        case BNF.SETPALETTECOLOR: return "SetPaletteColor(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3?.ToString() + ", " + CN4?.ToString() + ", " + CN5?.ToString() + ")";
+        case BNF.SETPALETTECOLOR: {
+          if (CN5 == null) return "SetPaletteColor(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3?.ToString() + ", " + CN4?.ToString() + ")";
+          else return "SetPaletteColor(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3?.ToString() + ", " + CN4?.ToString() + ", " + CN5?.ToString() + ")";
+        }
 
         case BNF.MEMCPY: return "MemCpy(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3?.ToString() + ")";
         case BNF.PERLIN: {
@@ -812,9 +815,10 @@ public class CodeNode {
         case BNF.NOP: return "";
         case BNF.USEPALETTE: return "<color=#569CD6>UsePalette(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         case BNF.SETPALETTECOLOR:
-          return "<color=#569CD6>SetPalette(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          if (CN5 == null)  return "<color=#569CD6>SetPalette(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + 
+              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else return "<color=#569CD6>SetPalette(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         case BNF.ERROR: return "<color=#ff2010>" + sVal + "</color>";
       }
 
@@ -1128,9 +1132,14 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
         case BNF.NOP: return "";
         case BNF.USEPALETTE: return "UsePalette(" + CN1?.Format(variables, coloring) + ")";
         case BNF.SETPALETTECOLOR:
+          if (CN5 == null)
           return "SetPalette(" + CN1?.Format(variables, coloring) + ", " +
             CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ", " +
-            CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
+            CN4?.Format(variables, coloring) + ")";
+          else
+            return "SetPalette(" + CN1?.Format(variables, coloring) + ", " +
+              CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ", " +
+              CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
         case BNF.ERROR: return sVal;
       }
 
