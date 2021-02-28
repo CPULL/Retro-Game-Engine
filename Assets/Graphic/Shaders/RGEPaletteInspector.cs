@@ -7,7 +7,7 @@ public class RGEPaletteInspector : MonoBehaviour {
   public List<Color> Colors = new List<Color>(256);
 }
 
-
+#if UNITY_EDITOR
 [CustomEditor(typeof(RGEPaletteInspector))]
 public class DbgE : Editor {
   public override void OnInspectorGUI() {
@@ -27,3 +27,4 @@ public class DbgE : Editor {
     }
   }
 }
+#endif

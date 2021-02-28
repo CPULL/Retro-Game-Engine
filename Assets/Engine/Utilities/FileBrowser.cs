@@ -77,7 +77,7 @@ public class FileBrowser : MonoBehaviour {
 
   private void ShowFolder(string path) {
     currentpath = path;
-    PathText.text = path;
+    PathText.text = path.Replace("\\", "/");
     FileInfoText1.gameObject.SetActive(false);
     FileInfoText2.gameObject.SetActive(false);
     foreach (Transform t in Items)
