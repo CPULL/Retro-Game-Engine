@@ -304,7 +304,7 @@ public class Arcade : MonoBehaviour {
     }
     else {
       // Load Game.Cartridge
-      SelectCartridge(Application.dataPath + "/../Cartridges/Shadow of the Beast.cartridge");
+      SelectCartridge(Application.dataPath + "/../Cartridges/Game.cartridge");
     }
     texture.Apply();
     for (int i = 0; i < 256; i++)
