@@ -255,7 +255,6 @@ public class Audio : MonoBehaviour {
   const float o11th = 1f / 11f;
   const float o255th = 1f / 255f;
 
-
   void OnAudioRead(float[] data, int channel) {
     if (channels[channel].clip == null) return;
     switch (channels[channel].wave) {
@@ -379,17 +378,17 @@ public class Audio : MonoBehaviour {
         float p = channels[channel].phase;
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+          if (channels[channel].position >= samplerate) channels[channel].position -= samplerate;
           float pos = .25f * channels[channel].freq * channels[channel].position * oneOversamplerate;
 
           float y =
             1.0f * Mathf.Sin(piP2 * pos) +
-            0.1f * Mathf.Sin(piP2 * pos * 4 + p) +
-            0.05f * Mathf.Sin(piP2 * pos * 8 + p * p) +
-            0.02f * Mathf.Sin(piP2 * pos * 16 + p * p * p) +
-            0.01f * Mathf.Sin(piP2 * pos * 32 + p * p * p * p);
-          y *= 0.88f;
-          y += .001f * (Squirrel3Norm((int)pos, seed) + Squirrel3Norm((int)pos, (uint)pos));
+            0.2f * Mathf.Sin(piP2 * pos / 2 + p) +
+            0.1f * Mathf.Sin(piP2 * pos / 4 + p * p) +
+            0.05f * Mathf.Sin(piP2 * pos / 8 + p * p * p) +
+            0.02f * Mathf.Sin(piP2 * pos / 16 + p * p * p * p);
+          y *= 0.85f;
+          y += .003f * (Mathf.PerlinNoise(pos, pos) - .5f);
           if (y < -1f) y = -1f;
           if (y > 1f) y = 1f;
           data[i] = y;
@@ -403,7 +402,7 @@ public class Audio : MonoBehaviour {
         seed++;
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+          if (channels[channel].position >= samplerate) channels[channel].position -= samplerate;
           float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           data[i] = Squirrel3Norm((int)pos, seed);
         }
@@ -411,12 +410,18 @@ public class Audio : MonoBehaviour {
 
       case Waveform.PinkNoise:
         seed++;
+        float sr2 = samplerate / 2f;
+        float np = channels[channel].phase * .1f;
+        float pn = 1 - channels[channel].phase * .2f;
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
-          data[i] = Squirrel3Norm((int)pos, seed);
-          if (i > 0 && Mathf.Abs(data[i - 1] - data[i]) > .5f) data[i] *= -.5f;
+          if (channels[channel].position >= samplerate) channels[channel].position -= samplerate;
+          float pos;
+          if (channels[channel].position < sr2)
+            pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
+          else
+            pos = channels[channel].freq * (samplerate - channels[channel].position) * oneOversamplerate;
+          data[i] = np * Squirrel3Norm((int)pos, seed) + pn * (Mathf.PerlinNoise(pos, seed / 1000f) - .5f);
         }
         break;
 
@@ -447,31 +452,12 @@ public class Audio : MonoBehaviour {
         break;
 
       case Waveform.SoftNoise:
-        seed++;
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+          if (channels[channel].position >= samplerate) channels[channel].position -= samplerate;
           float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
-          if ((i % 3) == 0) {
-            float x = pos * .25f;
-            data[i] = Mathf.Sin(2 * Mathf.PI * x);
-          }
-          else
-            data[i] = Squirrel3Norm((int)pos, seed) * .75f;
-          if (i > 0 && Mathf.Abs(data[i] - data[i - 1]) > .01f) data[i] = .05f * data[i] + .95f * data[i - 1];
-        }
-
-        for (int t = 0; t < 2; t++) {
-          for (int i = 1; i < data.Length - 1; i++)
-            data[i] = (data[i] + data[i - 1] + data[i + 1]) * .333f;
-          for (int i = 2; i < data.Length - 2; i++)
-            data[i] = (data[i] + data[i - 1] + data[i + 1] + data[i - 2] + data[i + 2]) * .2f;
-          for (int i = 1; i < data.Length - 1; i++)
-            data[i] = (data[i] + data[i - 1] + data[i + 1]) * .3333f;
-        }
-        for (int i = 0; i < 16; i++) {
-          data[i] *= .5f * (i + 16) / 16f;
-          data[data.Length - i - 1] *= .5f * (i + 16) / 16f;
+          data[i] = ((channels[channel].phase * Mathf.PerlinNoise(pos, 0) - .5f) * 1.8f +
+            (1 - channels[channel].phase) * (Mathf.PerlinNoise(pos, channels[channel].phase) - .5f) * 1.8f) * .5f;
         }
         break;
 
