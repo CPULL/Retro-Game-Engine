@@ -266,6 +266,7 @@ public class Arcade : MonoBehaviour {
 
 
   private void Start() {
+    Col.InitPalette(RGEPalette);
     texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
       filterMode = FilterMode.Point
     };
@@ -1291,7 +1292,7 @@ public class Arcade : MonoBehaviour {
   #endregion Tilemap
 
   bool Execute(CodeNode n) {
-Debug.Log(n.Format(variables, false));
+// Debug.Log(n.Format(variables, false));
     CurrentLineNumber = n.origLineNum;
     try {
       switch (n.type) {
@@ -1845,10 +1846,14 @@ Debug.Log(n.Format(variables, false));
         case BNF.SETPALETTECOLOR: {
           if (n.children.Count == 1) Col.SetPalette(mem, Evaluate(n.CN1).ToInt(culture), 0);
           if (n.children.Count == 2) Col.SetPalette(mem, Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture));
+          if (n.children.Count == 4)
+            Col.SetPalette(Evaluate(n.CN1).ToByte(culture),
+                           Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture),
+                           Evaluate(n.CN4).ToByte(culture), 255);
           else
-           Col.SetPalette(Evaluate(n.CN1).ToByte(culture), 
-                          Evaluate(n.CN1).ToByte(culture),  Evaluate(n.CN2).ToByte(culture), 
-                          Evaluate(n.CN3).ToByte(culture), Evaluate(n.CN4).ToByte(culture));
+            Col.SetPalette(Evaluate(n.CN1).ToByte(culture), 
+                          Evaluate(n.CN2).ToByte(culture), Evaluate(n.CN3).ToByte(culture), 
+                          Evaluate(n.CN4).ToByte(culture), Evaluate(n.CN5).ToByte(culture));
           HandlePostIncrementDecrement();
           return false; 
         }
@@ -1997,6 +2002,8 @@ Debug.Log(n.Format(variables, false));
       case BNF.OPmul: return Evaluate(n.CN1).Mul(Evaluate(n.CN2), culture);
       case BNF.OPdiv: return Evaluate(n.CN1).Div(Evaluate(n.CN2), culture);
       case BNF.OPmod: return Evaluate(n.CN1).Mod(Evaluate(n.CN2), culture);
+      case BNF.OPland: return Evaluate(n.CN1).And(Evaluate(n.CN2), culture);
+      case BNF.OPlor: return Evaluate(n.CN1).Or(Evaluate(n.CN2), culture);
       case BNF.OPand: return Evaluate(n.CN1).And(Evaluate(n.CN2), culture);
       case BNF.OPor: return Evaluate(n.CN1).Or(Evaluate(n.CN2), culture);
       case BNF.OPxor: return Evaluate(n.CN1).Xor(Evaluate(n.CN2), culture);

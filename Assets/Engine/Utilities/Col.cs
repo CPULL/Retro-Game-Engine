@@ -26,6 +26,7 @@ public class Col {
   readonly static Color[] PaletteFloat = new Color[256];
   readonly static Color32[] PaletteIndex = new Color32[256];
   static bool UsingPalette;
+  static Material RGEPalette;
 
   internal static Color[] GetPalette() {
     for (int i = 0; i < 256; i++)
@@ -87,11 +88,13 @@ public class Col {
   public static void SetPalette(int col, byte r, byte g, byte b, byte a) {
     if (col < 1 || col > 254) return;
     Palette[col] = new Color32(r, g, b, a);
+    RGEPalette.SetColorArray("_Colors", GetPalette());
   }
 
   public static void SetPalette(int col, Color32 c) {
     if (col < 1 || col > 254) return;
     Palette[col] = c;
+    RGEPalette.SetColorArray("_Colors", GetPalette());
   }
 
   public static Color32 GetColor(byte col) {
@@ -260,7 +263,8 @@ public class Col {
 
   private static Texture2D[] paletteTextures;
 
-  public static void InitPalette() {
+  public static void InitPalette(Material m) {
+    RGEPalette = m;
     paletteTextures = new Texture2D[256];
     Color32[] cols = new Color32[16];
     for (int i = 0; i < 256; i++) {

@@ -152,6 +152,8 @@ public class CodeNode {
         case BNF.OPxor: res += "(" + CN1?.ToString() + "^" + CN2?.ToString() + ")"; break;
         case BNF.OPlsh: res += "(" + CN1?.ToString() + "<<" + CN2?.ToString() + ")"; break;
         case BNF.OPrsh: res += "(" + CN1?.ToString() + ">>" + CN2?.ToString() + ")"; break;
+        case BNF.OPland: res += "(" + CN1?.ToString() + "&&" + CN2?.ToString() + ")"; break;
+        case BNF.OPlor: res += "(" + CN1?.ToString() + "||" + CN2?.ToString() + ")"; break;
 
         case BNF.ASSIGN: res += CN1?.ToString() + " = " + CN2?.ToString(); break;
         case BNF.ASSIGNsum: res += CN1?.ToString() + " += " + CN2?.ToString(); break;
@@ -560,6 +562,8 @@ public class CodeNode {
         case BNF.OPmul: return CN1?.Format(variables, coloring) + " <color=#66aCe6>*</color> " + CN2?.Format(variables, coloring);
         case BNF.OPdiv: return CN1?.Format(variables, coloring) + " <color=#66aCe6>/</color> " + CN2?.Format(variables, coloring);
         case BNF.OPmod: return CN1?.Format(variables, coloring) + " <color=#66aCe6>%</color> " + CN2?.Format(variables, coloring);
+        case BNF.OPland: return CN1?.Format(variables, coloring) + " <color=#66aCe6>&&</color> " + CN2?.Format(variables, coloring);
+        case BNF.OPlor: return CN1?.Format(variables, coloring) + " <color=#66aCe6>||</color> " + CN2?.Format(variables, coloring);
         case BNF.OPand: return CN1?.Format(variables, coloring) + " <color=#66aCe6>&</color> " + CN2?.Format(variables, coloring);
         case BNF.OPor: return CN1?.Format(variables, coloring) + " <color=#66aCe6>|</color> " + CN2?.Format(variables, coloring);
         case BNF.OPxor: return CN1?.Format(variables, coloring) + " <color=#66aCe6>^</color> " + CN2?.Format(variables, coloring);
@@ -874,6 +878,8 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
         case BNF.OPmul: return CN1?.Format(variables, coloring) + " * " + CN2?.Format(variables, coloring);
         case BNF.OPdiv: return CN1?.Format(variables, coloring) + " / " + CN2?.Format(variables, coloring);
         case BNF.OPmod: return CN1?.Format(variables, coloring) + " % " + CN2?.Format(variables, coloring);
+        case BNF.OPland: return CN1?.Format(variables, coloring) + " && " + CN2?.Format(variables, coloring);
+        case BNF.OPlor: return CN1?.Format(variables, coloring) + " || " + CN2?.Format(variables, coloring);
         case BNF.OPand: return CN1?.Format(variables, coloring) + " & " + CN2?.Format(variables, coloring);
         case BNF.OPor: return CN1?.Format(variables, coloring) + " | " + CN2?.Format(variables, coloring);
         case BNF.OPxor: return CN1?.Format(variables, coloring) + " ^ " + CN2?.Format(variables, coloring);
@@ -1154,6 +1160,8 @@ CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(var
       case BNF.OPmul:
       case BNF.OPdiv:
       case BNF.OPmod:
+      case BNF.OPland:
+      case BNF.OPlor:
       case BNF.OPand:
       case BNF.OPor:
       case BNF.OPxor:
@@ -1303,7 +1311,7 @@ public enum BNF {
   COLOR, PAL, LUMA, CONTRAST,
   STR,
   MEM, MEMlong, MEMlongb, MEMlongi, MEMlongf, MEMlongs, MEMchar,
-  OPpar, OPsum, OPsub, OPmul, OPdiv, OPmod, OPand, OPor, OPxor, OPlsh, OPrsh,
+  OPpar, OPsum, OPsub, OPmul, OPdiv, OPmod, OPand, OPor, OPxor, OPlsh, OPrsh, OPland, OPlor,
   LABG, // This is a function to calculate a label from a string
   CASTb, CASTi, CASTf, CASTs,
   UOneg, UOinv, UOsub,

@@ -127,34 +127,33 @@ public class WaveformEditor : MonoBehaviour {
     if (ext == "ogg") at = AudioType.OGGVORBIS;
     if (ext == "mp3") at = AudioType.MPEG;
 
-    using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(url, at)) {
-      yield return www.SendWebRequest();
-      AudioClip pcm = DownloadHandlerAudioClip.GetContent(www);
-      int freq = pcm.frequency;
-      float diff = freq / 22050f;
-      int len = (int)(pcm.samples / diff);
+    using UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(url, at);
+    yield return www.SendWebRequest();
+    AudioClip pcm = DownloadHandlerAudioClip.GetContent(www);
+    int freq = pcm.frequency;
+    float diff = freq / 22050f;
+    int len = (int)(pcm.samples / diff);
 
-      float[] res = new float[pcm.samples * pcm.channels];
-      rawPCM = new byte[len];
-      pcm.GetData(res, 0);
+    float[] res = new float[pcm.samples * pcm.channels];
+    rawPCM = new byte[len];
+    pcm.GetData(res, 0);
 
-      for (int i = 0; i < len; i++) {
-        // we need to mix all the values from the pos in the new array to the pos+1
-        int srcpos1 = (int)(i * diff);
-        int srcpos2 = (int)((i + 1) * diff);
+    for (int i = 0; i < len; i++) {
+      // we need to mix all the values from the pos in the new array to the pos+1
+      int srcpos1 = (int)(i * diff);
+      int srcpos2 = (int)((i + 1) * diff);
 
-        float val = 0;
-        for (int p = 0; p < srcpos2 - srcpos1; p++)
-          for (int c = 0; c < pcm.channels; c++)
-            val += res[srcpos1 + p * pcm.channels + c];
-        val /= pcm.channels * (srcpos2 - srcpos1);
-        if (val < -1) val = -1;
-        if (val > 1) val = 1;
-        rawPCM[i] = (byte)(255 * (val + 1) * .5f);
-      }
-      wave = Waveform.PCM;
-      UpdateWaveforms();
+      float val = 0;
+      for (int p = 0; p < srcpos2 - srcpos1; p++)
+        for (int c = 0; c < pcm.channels; c++)
+          val += res[srcpos1 + p * pcm.channels + c];
+      val /= pcm.channels * (srcpos2 - srcpos1);
+      if (val < -1) val = -1;
+      if (val > 1) val = 1;
+      rawPCM[i] = (byte)(255 * (val + 1) * .5f);
     }
+    wave = Waveform.PCM;
+    UpdateWaveforms();
   }
 
 
@@ -681,7 +680,6 @@ public class WaveformEditor : MonoBehaviour {
       byte len4 = data[pos++];
       int len = (len1 << 24) + (len2 << 16) + (len3 << 8) + len4;
       rawPCM = new byte[len];
-      int step = 1 + len / 25;
       for (int i = 0; i < len; i++) {
         rawPCM[i] = data[pos++];
       }

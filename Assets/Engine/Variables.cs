@@ -483,6 +483,22 @@ public struct Value {
     return this;
   }
 
+  internal Value LAnd(Value s, System.Globalization.CultureInfo culture) {
+    mode = MD.Dir;
+    type = VT.Int;
+    if (ToBool(culture) && s.ToBool(culture)) iVal = -1;
+    else iVal = 0;
+    return this;
+  }
+
+  internal Value LOr(Value s, System.Globalization.CultureInfo culture) {
+    mode = MD.Dir;
+    type = VT.Int;
+    if (ToBool(culture) || s.ToBool(culture)) iVal = -1;
+    else iVal = 0;
+    return this;
+  }
+
   internal Value And(Value s, System.Globalization.CultureInfo culture) {
     mode = MD.Dir;
     if (type != VT.Int || s.type != VT.Int) {

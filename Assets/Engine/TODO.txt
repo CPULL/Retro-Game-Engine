@@ -26,4 +26,37 @@ Rom editor: Add "Edit" buttons in RomEdit (music, tilemap)
 CodeEditor: View memory
 CodeEditor: [DECIDE] remove compiled code nodes or implement binary save
 
-Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks" when the sample is regenerated
+BUG: if (keyUd && var > 1) --> invalid expression
+
+
+Start {
+	UsePalette(1)
+	for (i = 1, i < 255, i++) {
+		SetPalette(i, i / 2, i, 0, )
+	}
+	Clr(0)
+	speed = 0.01
+	size = 8
+}
+
+Update {
+	z += speed
+	for (x = 0, x * size < 256, x++) {
+		for (y = 0, y * size < 256, y++) {
+			col = Perlin(x * 0.1, y * 0.1, z) * 254 + 1
+			x1 = x * size
+			y1 = y * size
+			x2 = x1 + size - 1
+			y2 = y1 + size - 1
+			Box(x1, y1, x2, y2, col, col)
+		}
+	}
+	if (keyL) speed -= 0.001
+	if (keyR) speed += 0.001
+	if (keyUd && size > 1) size -= 1
+	if (keyDd ) size += 1
+}
+
+Config {
+	Screen(256, 256)
+}
