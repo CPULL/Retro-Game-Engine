@@ -1,16 +1,14 @@
 **************** TODO ********************************************************************************
 
 Documentation on the Wiki of Github
-Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks" when the sample is regenerated
 
 
-FUTURE: precompile Nodes
 FUTURE: Font editor
 FUTURE: Custom fonts
 FUTURE: Favorites in FileBrowser
 FUTURE: map keys
 FUTURE: load/save capabilities
-
+FUTURE: mouse support in Arcade
 
 
 
@@ -25,8 +23,7 @@ Rom editor: Add a button to remove all selected lines
 Rom editor: Add "Edit" buttons in RomEdit (music, tilemap)
 
 
-CodeEditor: Save code as binary
-CodeEditor: Load code as binary
-
 CodeEditor: View memory
+CodeEditor: [DECIDE] remove compiled code nodes or implement binary save
 
+Audio: have the wave generation to be perfectly cyclic so we will avoid "thicks" when the sample is regenerated
