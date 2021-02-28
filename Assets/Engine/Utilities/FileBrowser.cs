@@ -53,7 +53,7 @@ public class FileBrowser : MonoBehaviour {
 
   internal static bool IsVisible() {
     if (inst == null) return false;
-    return inst.gameObject.activeSelf;
+    return inst.FileBrowserContents.activeSelf;
   }
 
   public static void Save(Action<string, string> action, FileType ft) {

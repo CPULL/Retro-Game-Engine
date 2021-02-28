@@ -1,4 +1,4 @@
-Name: Game
+Name: Your Game
 Start {
 	clr(c000)
 	write("Nothing here", 10, 10, c401)
@@ -25,7 +25,7 @@ update {
 
 Config {
 	screen(256,180)
-	ram(1k)
+	ram(1m)
 }
 
 Data {
