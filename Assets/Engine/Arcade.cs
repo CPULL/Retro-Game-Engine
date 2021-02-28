@@ -90,8 +90,8 @@ public class Arcade : MonoBehaviour {
       RGEPalette.SetInt("_UsePalette", Col.UsePalette() ? 1 : 0);
     }
 
-    int nowScreenW = (int)rt.sizeDelta.x;
-    int nowScreenH = (int)rt.sizeDelta.y;
+    int nowScreenW = (int)rt.rect.width;
+    int nowScreenH = (int)rt.rect.height;
     if (nowScreenW != lastScreenW || nowScreenH != lastScreenH) {
       lastScreenW = (int)(nowScreenW * (Minimized ? .333333f : 1));
       lastScreenH = (int)(nowScreenH * (Minimized ? .333333f : 1));
@@ -277,8 +277,8 @@ public class Arcade : MonoBehaviour {
     Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
     Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9, Col.C(1, 5, 2));
 
-    lastScreenW = (int)rt.sizeDelta.x;
-    lastScreenH = (int)rt.sizeDelta.y;
+    lastScreenW = (int)rt.rect.width;
+    lastScreenH = (int)rt.rect.height;
     scaleW = lastScreenW / 256f;
     scaleH = lastScreenW / 160f;
 
@@ -304,7 +304,7 @@ public class Arcade : MonoBehaviour {
     }
     else {
       // Load Game.Cartridge
-      SelectCartridge(Application.dataPath + "/../Cartridges/Game.cartridge");
+      SelectCartridge(Application.dataPath + "/../Cartridges/Shadow of the Beast.cartridge");
     }
     texture.Apply();
     for (int i = 0; i < 256; i++)
@@ -323,8 +323,8 @@ public class Arcade : MonoBehaviour {
     sh = 180;
     wm1 = sw - 1;
     hm1 = sh - 1;
-    scaleW = rt.sizeDelta.x / sw;
-    scaleH = rt.sizeDelta.y / sh;
+    scaleW = rt.rect.width / sw;
+    scaleH = rt.rect.height / sh;
     useFilter = false;
     texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
       filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
@@ -410,8 +410,8 @@ public class Arcade : MonoBehaviour {
           if (sh > 256) sh = 256;
           wm1 = sw - 1;
           hm1 = sh - 1;
-          scaleW = rt.sizeDelta.x / sw;
-          scaleH = rt.sizeDelta.y / sh;
+          scaleW = rt.rect.width / sw;
+          scaleH = rt.rect.height / sh;
           useFilter = Evaluate(scrconf.CN3).ToBool(culture);
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
             filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
@@ -616,8 +616,8 @@ public class Arcade : MonoBehaviour {
           if (sh > 256) sh = 256;
           wm1 = sw - 1;
           hm1 = sh - 1;
-          scaleW = rt.sizeDelta.x / sw;
-          scaleH = rt.sizeDelta.y / sh;
+          scaleW = rt.rect.width / sw;
+          scaleH = rt.rect.height / sh;
           useFilter = Evaluate(scrconf.CN3).ToBool(culture);
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
             filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
@@ -1291,7 +1291,7 @@ public class Arcade : MonoBehaviour {
   #endregion Tilemap
 
   bool Execute(CodeNode n) {
-//Debug.Log(n.Format(variables, false));
+Debug.Log(n.Format(variables, false));
     CurrentLineNumber = n.origLineNum;
     try {
       switch (n.type) {
@@ -1637,8 +1637,8 @@ public class Arcade : MonoBehaviour {
           if (sh > 256) sh = 256;
           wm1 = sw - 1;
           hm1 = sh - 1;
-          scaleW = rt.sizeDelta.x / sw;
-          scaleH = rt.sizeDelta.y / sh;
+          scaleW = rt.rect.width / sw;
+          scaleH = rt.rect.height / sh;
           texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
             filterMode = n.CN3 == null || Evaluate(n.CN3).ToInt(culture) == 0 ? FilterMode.Point : FilterMode.Bilinear
           };

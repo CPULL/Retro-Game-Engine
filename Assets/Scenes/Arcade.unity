@@ -4024,7 +4024,7 @@ MonoBehaviour:
   - {fileID: 346232817}
   - {fileID: 1699777875}
   - {fileID: 1152471457}
-  Minimized: 0
+  Minimized: 1
 --- !u!1 &1142433307
 GameObject:
   m_ObjectHideFlags: 0

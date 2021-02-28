@@ -25,7 +25,7 @@ Start {
 	
 	lumaval = 0
 	while(lumaval > -1) {
-		lumaval -= deltaTime / 2
+		lumaval -= deltaTime
 		Luma(lumaval)
 		frame
 	}
@@ -80,7 +80,7 @@ Start {
 	image(moon:, 220, 8, 48, 48)
 	
 	while(lumaval < 0) {
-		lumaval += deltaTime / 2
+		lumaval += deltaTime
 		Luma(lumaval)
 		frame
 	}
