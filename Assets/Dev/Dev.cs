@@ -22,6 +22,17 @@ public class Dev : MonoBehaviour {
     Col.InitPalette(RGEPalette);
   }
 
+  private void Update() {
+    if (Input.GetKeyDown(KeyCode.F11)) {
+      FullScreenMode mode = Screen.fullScreenMode;
+      if (mode == FullScreenMode.ExclusiveFullScreen) mode = FullScreenMode.FullScreenWindow;
+      else if (mode == FullScreenMode.FullScreenWindow) mode = FullScreenMode.Windowed;
+      else if (mode == FullScreenMode.MaximizedWindow) mode = FullScreenMode.FullScreenWindow;
+      else mode = FullScreenMode.MaximizedWindow;
+      Screen.fullScreenMode = mode;
+    }
+  }
+
   public void CodeEditor() {
     EmptyEditor.SetActive(false);
     for (int i = 0; i < Selection.Length; i++)

@@ -107,6 +107,16 @@ public class Arcade : MonoBehaviour {
       }
     }
 
+    if (Input.GetKeyDown(KeyCode.F11)) {
+      FullScreenMode mode = UnityEngine.Screen.fullScreenMode;
+      if (mode == FullScreenMode.ExclusiveFullScreen) mode = FullScreenMode.FullScreenWindow;
+      else if (mode == FullScreenMode.FullScreenWindow) mode = FullScreenMode.Windowed;
+      else if (mode == FullScreenMode.MaximizedWindow) mode = FullScreenMode.FullScreenWindow;
+      else mode = FullScreenMode.MaximizedWindow;
+      UnityEngine.Screen.fullScreenMode = mode;
+      if (FPS != null) FPS.text = mode.ToString();
+      FpsTime = -1;
+    }
 
     running = true;
     FpsTime += Time.deltaTime;
