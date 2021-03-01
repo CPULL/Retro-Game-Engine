@@ -31,6 +31,9 @@ public class Dev : MonoBehaviour {
       else mode = FullScreenMode.MaximizedWindow;
       Screen.fullScreenMode = mode;
     }
+    if (Input.GetKeyUp(KeyCode.Escape) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
+      UnityEngine.SceneManagement.SceneManager.LoadScene("Loader");
+    }
   }
 
   public void CodeEditor() {

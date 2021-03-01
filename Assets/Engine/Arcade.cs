@@ -117,6 +117,9 @@ public class Arcade : MonoBehaviour {
       if (FPS != null) FPS.text = mode.ToString();
       FpsTime = -1;
     }
+    if (Input.GetKeyUp(KeyCode.Escape) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
+      SceneManager.LoadScene("Loader");
+    }
 
     running = true;
     FpsTime += Time.deltaTime;
