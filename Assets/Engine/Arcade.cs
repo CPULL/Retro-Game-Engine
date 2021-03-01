@@ -1114,11 +1114,13 @@ public class Arcade : MonoBehaviour {
     }
   }
 
-  void Image(int pointer, int px, int py, int w, int h, int startx = 0, int starty = 0) {
+  void Image(int pointer, int px, int py, int w = 0, int h = 0, int startx = 0, int starty = 0) {
     int pos;
     int imw = (mem[pointer] << 8) + mem[pointer + 1];
     int imh = (mem[pointer + 2] << 8) + mem[pointer + 3];
     if (imw < 8 || imh < 8) throw new Exception("Invalid image");
+    if (w == 0) w = imw;
+    if (h == 0) h = imh;
     for (int y = 0; y < h; y++)
       for (int x = 0; x < w; x++) {
         int dx = x + px;
@@ -1576,15 +1578,15 @@ public class Arcade : MonoBehaviour {
           Value addr = Evaluate(n.CN1);
           Value px = Evaluate(n.CN2);
           Value py = Evaluate(n.CN3);
-          Value w = Evaluate(n.CN4);
-          Value h = Evaluate(n.CN5);
-          if (n.children.Count > 5) {
+          if (n.children.Count == 7) {
+            Value w = Evaluate(n.CN4);
+            Value h = Evaluate(n.CN5);
             Value startx = Evaluate(n.CN6);
             Value starty = Evaluate(n.CN7);
             Image(addr.ToInt(culture), px.ToInt(culture), py.ToInt(culture), w.ToInt(culture), h.ToInt(culture), startx.ToInt(culture), starty.ToInt(culture));
           }
           else
-            Image(addr.ToInt(culture), px.ToInt(culture), py.ToInt(culture), w.ToInt(culture), h.ToInt(culture));
+            Image(addr.ToInt(culture), px.ToInt(culture), py.ToInt(culture));
           HandlePostIncrementDecrement();
         }
         break;

@@ -692,7 +692,7 @@ public class SpriteEditor : MonoBehaviour {
     int num = w * h;
     yield return PBar.Progress(1);
     for (int i = 0; i < num; i += 4) {
-      yield return PBar.Progress(1 + i);
+      if (i % 64 == 0) yield return PBar.Progress(1 + i);
       res += pixels[i].Get().ToString("X2");
       if (i + 1 < num) res += pixels[i + 1].Get().ToString("X2");
       if (i + 2 < num) res += pixels[i + 2].Get().ToString("X2");

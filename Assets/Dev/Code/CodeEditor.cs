@@ -283,8 +283,8 @@ public class CodeEditor : MonoBehaviour {
   readonly Regex rgSyntaxHighlight = new Regex("(\\<color=#[0-9a-f]{6}\\>)|(\\</color\\>)|(\\<mark=#[0-9a-f]{8}\\>)|(\\</mark\\>)|(\\<b\\>)|(\\</b\\>)|(\\<i\\>)|(\\</i\\>)|(\\<color=red\\>)|", RegexOptions.IgnoreCase);
   readonly Regex rgCommentSL = new Regex("(//.*)$", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
   readonly Regex rgCommentML = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
-  readonly Regex rgCommentMLs = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
-  readonly Regex rgCommentMLe = new Regex("(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(5));
+  readonly Regex rgCommentMLs = new Regex("/\\*(?:(?!\\*/)(?:.|[\r\n]+))*", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(10));
+  readonly Regex rgCommentMLe = new Regex("(?:(?!\\*/)(?:.|[\r\n]+))*\\*/", RegexOptions.IgnoreCase | RegexOptions.Multiline, System.TimeSpan.FromSeconds(10));
   readonly Regex rgBlockOpen = new Regex("(?<!//.*?)\\{", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
   readonly Regex rgBlockClose = new Regex("(?<!//.*?)\\}", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(5));
   readonly Regex rgString = new Regex("(\")([^\"]*)(\")", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));

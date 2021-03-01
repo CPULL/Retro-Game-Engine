@@ -864,8 +864,8 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.IMAGE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 5 && num != 7) throw new ParsingException("Invalid Image(), wrong number of parameters (either 5 or 7 parameters are required.)" +
-            "\n<color=#44C6B0>Image(<i>pointer</i>, <i>posx</i>, <i>posy</i>, <i>width</i>, <i>height</i>, [<i>startx</i>, <i>starty</i>)</color>", origExpression, linenumber + 1 + offsetForErrors);
+      if (num != 3 && num != 7) throw new ParsingException("Invalid Image(), wrong number of parameters (either 3 or 7 parameters are required.)" +
+            "\n<color=#44C6B0>Image(<i>pointer</i>, <i>posx</i>, <i>posy</i>, [<i>width</i>, <i>height</i>, <i>startx</i>, <i>starty</i>])</color>", origExpression, linenumber + 1 + offsetForErrors);
       parent.Add(node);
       return;
     }
@@ -2169,34 +2169,56 @@ public class CodeParser {
       });
       if (atLeastOneReplacement) continue;
 
-      // _i => QI
-      line = rgCastI.Replace(line, m => {
-        atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.CASTi, GenId("QI"), origForException, linenumber);
-        string child = m.Groups[1].Value.Trim();
-        n.Add(nodes[child]);
-        nodes[n.id] = n;
-        return n.id;
-      });
-      if (atLeastOneReplacement) continue;
-
       // _i => QB
       line = rgCastB.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.CASTb, GenId("QB"), origForException, linenumber);
         string child = m.Groups[1].Value.Trim();
-        n.Add(nodes[child]);
+        CodeNode sn = nodes[child];
+        if (optimizeCode) {
+          if (sn.type == BNF.INT) { sn.iVal = (sn.iVal == 0 ? 0 : -1); return sn.id; };
+          if (sn.type == BNF.FLT) { sn.type = BNF.INT;  sn.iVal = (sn.fVal == 0 ? 0 : -1); return sn.id; };
+          if (sn.type == BNF.STR) { sn.type = BNF.INT; sn.iVal = ( string.IsNullOrWhiteSpace(sn.sVal) ? 0 : -1); return sn.id; };
+        }
+        CodeNode n = new CodeNode(BNF.CASTb, GenId("QB"), origForException, linenumber);
+        n.Add(sn);
         nodes[n.id] = n;
         return n.id;
       });
       if (atLeastOneReplacement) continue;
 
       // _i => QI
+      line = rgCastI.Replace(line, m => {
+        atLeastOneReplacement = true;
+        string child = m.Groups[1].Value.Trim();
+        CodeNode sn = nodes[child];
+        if (optimizeCode) {
+          if (sn.type == BNF.INT) return sn.id;
+          if (sn.type == BNF.FLT) { sn.type = BNF.INT; sn.iVal = (int)sn.fVal; return sn.id; };
+          if (sn.type == BNF.STR) { sn.type = BNF.INT;
+            if (float.TryParse(sn.sVal, out sn.fVal)) sn.iVal = (int)sn.fVal;
+            int.TryParse(sn.sVal, out sn.iVal);
+            return sn.id; 
+          };
+        }
+        CodeNode n = new CodeNode(BNF.CASTf, GenId("QI"), origForException, linenumber);
+        n.Add(sn);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // _f => QF
       line = rgCastF.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.CASTf, GenId("QF"), origForException, linenumber);
         string child = m.Groups[1].Value.Trim();
-        n.Add(nodes[child]);
+        CodeNode sn = nodes[child];
+        if (optimizeCode) {
+          if (sn.type == BNF.INT) { sn.type = BNF.FLT; sn.fVal = sn.iVal; return sn.id; }
+          if (sn.type == BNF.FLT) { return sn.id; };
+          if (sn.type == BNF.STR) { sn.type = BNF.FLT; float.TryParse(sn.sVal, out sn.fVal); return sn.id; };
+        }
+        CodeNode n = new CodeNode(BNF.CASTf, GenId("QF"), origForException, linenumber);
+        n.Add(sn);
         nodes[n.id] = n;
         return n.id;
       });
@@ -2205,14 +2227,19 @@ public class CodeParser {
       // _s => QS
       line = rgCastS.Replace(line, m => {
         atLeastOneReplacement = true;
-        CodeNode n = new CodeNode(BNF.CASTs, GenId("QS"), origForException, linenumber);
         string child = m.Groups[1].Value.Trim();
-        n.Add(nodes[child]);
+        CodeNode sn = nodes[child];
+        if (optimizeCode) {
+          if (sn.type == BNF.INT) { sn.type = BNF.STR; sn.sVal = sn.iVal.ToString(); return sn.id; }
+          if (sn.type == BNF.FLT) { sn.type = BNF.STR; sn.sVal = sn.fVal.ToString(); return sn.id; }
+          if (sn.type == BNF.STR) { return sn.id; };
+        }
+        CodeNode n = new CodeNode(BNF.CASTs, GenId("QS"), origForException, linenumber);
+        n.Add(sn);
         nodes[n.id] = n;
         return n.id;
       });
       if (atLeastOneReplacement) continue;
-
 
       // < => `LTx¶
       line = rgCMPlt.Replace(line, m => {
@@ -2437,6 +2464,99 @@ public class CodeParser {
         if (!lf && !rf) { l.type = BNF.INT; l.iVal >>= r.iVal; }
       }
       break;
+
+
+      case BNF.OPor: {
+        int lv, rv;
+        switch(l.type) {
+          case BNF.INT: lv = l.iVal; break;
+          case BNF.FLT: lv = (int)l.fVal; break;
+          case BNF.STR: int.TryParse(l.sVal, out lv); break;
+          default: return r;
+        }
+        switch (r.type) {
+          case BNF.INT: rv = r.iVal; break;
+          case BNF.FLT: rv = (int)r.fVal; break;
+          case BNF.STR: int.TryParse(r.sVal, out rv); break;
+          default: return l;
+        }
+        l.type = BNF.INT;
+        l.iVal = lv | rv;
+      }
+      break;
+      case BNF.OPlor: {
+        int lv, rv;
+        switch (l.type) {
+          case BNF.INT: lv = l.iVal; break;
+          case BNF.FLT: lv = (int)l.fVal; break;
+          case BNF.STR: int.TryParse(l.sVal, out lv); break;
+          default: return r;
+        }
+        switch (r.type) {
+          case BNF.INT: rv = r.iVal; break;
+          case BNF.FLT: rv = (int)r.fVal; break;
+          case BNF.STR: int.TryParse(r.sVal, out rv); break;
+          default: return l;
+        }
+        l.type = BNF.INT;
+        l.iVal = lv | rv;
+        if (l.iVal != 0) l.iVal = -1;
+      }
+      break;
+      case BNF.OPand: {
+        int lv, rv;
+        switch (l.type) {
+          case BNF.INT: lv = l.iVal; break;
+          case BNF.FLT: lv = (int)l.fVal; break;
+          case BNF.STR: int.TryParse(l.sVal, out lv); break;
+          default: return r;
+        }
+        switch (r.type) {
+          case BNF.INT: rv = r.iVal; break;
+          case BNF.FLT: rv = (int)r.fVal; break;
+          case BNF.STR: int.TryParse(r.sVal, out rv); break;
+          default: return l;
+        }
+        l.type = BNF.INT;
+        l.iVal = lv & rv;
+      }
+      break;
+      case BNF.OPland: {
+        int lv, rv;
+        switch (l.type) {
+          case BNF.INT: lv = l.iVal; break;
+          case BNF.FLT: lv = (int)l.fVal; break;
+          case BNF.STR: int.TryParse(l.sVal, out lv); break;
+          default: return r;
+        }
+        switch (r.type) {
+          case BNF.INT: rv = r.iVal; break;
+          case BNF.FLT: rv = (int)r.fVal; break;
+          case BNF.STR: int.TryParse(r.sVal, out rv); break;
+          default: return l;
+        }
+        l.type = BNF.INT;
+        l.iVal = lv & rv;
+        if (l.iVal != 0) l.iVal = -1;
+      }
+      break;
+
+      case BNF.CASTb: { 
+
+      }
+      break;
+      case BNF.CASTi: { 
+      }
+      break;
+      case BNF.CASTf: { 
+      }
+      break;
+      case BNF.CASTs: { 
+      }
+      break;
+
+
+
 
       default: return null;
     }
