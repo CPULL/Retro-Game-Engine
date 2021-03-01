@@ -625,8 +625,9 @@ public class CodeEditor : MonoBehaviour {
       arcade.UpdateCode(deployedCode, runVariables, breakPoints);
       UpdateCompilationStatus();
     }
-    else if (arcade.runStatus != Arcade.RunStatus.Paused && !restart) {
+    else if (restart || arcade.runStatus == Arcade.RunStatus.Stopped || arcade.runStatus == Arcade.RunStatus.Error) {
       // Compile the code, if errors show them and stop
+      arcade.runStatus = Arcade.RunStatus.Stopped;
       compiledCode = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
       if (compiledCode == null) {
         ShowButton(Arcade.RunStatus.Error);

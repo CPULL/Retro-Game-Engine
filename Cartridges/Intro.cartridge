@@ -46,8 +46,10 @@ update{
 		if (time>1) {
 			time-=deltaTime * 2.5
 			luma(-1)
-			if (time<=1) {
+			if (time<=1.1) {
 				image(UnityLogo:, 70,102)
+			}
+			if (time<=1) {
 				image(UnityName1:, 140,102)
 				image(UnityName2:, 140+64,102)
 			}
