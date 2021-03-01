@@ -199,7 +199,7 @@ public class CodeNode {
         break;
 
         case BNF.LINE:
-          res += id + "line(" +
+          res += id + "Line(" +
             CN1.ToString() + ", " +
             CN2.ToString() + ", " +
             CN3.ToString() + ", " +
@@ -208,7 +208,7 @@ public class CodeNode {
           break;
 
         case BNF.BOX:
-          res += id + "line(" +
+          res += id + "Box(" +
             CN1.ToString() + ", " +
             CN2.ToString() + ", " +
             CN3.ToString() + ", " +
@@ -221,7 +221,7 @@ public class CodeNode {
           break;
 
         case BNF.CIRCLE:
-          res += id + "circle(" +
+          res += id + "Circle(" +
             CN1.ToString() + ", " +
             CN2.ToString() + ", " +
             CN3.ToString() + ", " +
@@ -413,6 +413,43 @@ public class CodeNode {
         }
 
         case BNF.ERROR: return sVal;
+
+        case BNF.Console: {
+          res += id + "Console(" + CN1.ToString();
+          if (CN2 != null) res += ", " + CN2.ToString();
+          res += ")";
+        }
+        break;
+
+        case BNF.UIWrite: {
+          res += id + "UIWrite(" +
+            CN1.ToString() + ", " +
+            CN2.ToString() + ", " +
+            CN3.ToString() + ", " +
+            CN4.ToString();
+          if (children.Count > 4) res += ", " + CN5.ToString();
+          res += ")";
+        }
+        break;
+
+        case BNF.UIClr: res += id + "UIClr(" + CN1?.ToString() + ")"; break;
+
+        case BNF.UILine: res += id + "UILine(" + CN1.ToString() + ", " + CN2.ToString() + ", " +
+              CN3.ToString() + ", " + CN4.ToString() + ", " + CN5.ToString() + ")";
+          break;
+
+        case BNF.UIBox: res += id + "UIBox(" + CN1.ToString() + ", " + CN2.ToString() + ", " +
+            CN3.ToString() + ", " + CN4.ToString() + ", " + CN5.ToString();
+          if (children.Count > 5) res += ", " + CN6.ToString();
+          res += ")";
+          break;
+
+        case BNF.UIImage: {
+          res = "UIImage(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3?.ToString();
+          if (children.Count > 3) res += ", " + CN4?.ToString() + ", " + CN5?.ToString() + ", " + CN6?.ToString() + ", " + CN7?.ToString();
+          res += ")";
+          return res;
+        }
 
         default:
           res += "[[Missing:" + type + "]]";
@@ -820,6 +857,52 @@ public class CodeNode {
           else return "<color=#569CD6>SetPalette(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
               CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         case BNF.ERROR: return "<color=#ff2010>" + sVal + "</color>";
+
+        case BNF.UIClr: return "<color=#569CD6>ClrUI(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        case BNF.Console: return "<color=#569CD6>Console(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        case BNF.UIWrite: { // UIWrite(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
+          if (children.Count <= 4)
+            return "<color=#569CD6>UIWrite(</color>" +
+              CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else if (children.Count == 5)
+            return "<color=#569CD6>UIWrite(</color>" +
+              CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else
+            return "<color=#569CD6>UIWrite(</color>" +
+              CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+              CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
+        case BNF.UILine: {
+          return "<color=#569CD6>UILine(</color>" +
+            CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
+        case BNF.UIBox: {
+          if (children.Count == 5)
+            return "<color=#569CD6>UIBox(</color>" +
+              CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else
+            return "<color=#569CD6>UIBox(</color>" +
+              CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+              CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
+        case BNF.UIImage: {
+          if (children.Count == 3)
+            return "<color=#569CD6>UIImage(</color>" +
+            CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else
+            return "<color=#569CD6>UIImage(</color>" +
+              CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+              CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN7?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
+
       }
 
     else
@@ -1141,6 +1224,52 @@ public class CodeNode {
               CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ", " +
               CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
         case BNF.ERROR: return sVal;
+
+
+        case BNF.UIClr: return "UIClr(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.Console: return "Console(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.UIWrite: { // UIWrite(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
+          if (children.Count <= 4)
+            return "UIWrite(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ")";
+          else if (children.Count == 5)
+            return "UIWrite(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5.Format(variables, coloring) + ")";
+          else
+            return "UIWrite(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " +
+              CN5?.Format(variables, coloring) + ", " + CN6?.Format(variables, coloring) + ")";
+        }
+        case BNF.UILine: {
+          return "UILine(" +
+            CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+            CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
+        }
+        case BNF.UIBox: {
+          if (children.Count == 5)
+            return "UIBox(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
+          else
+            return "UIBox(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " +
+              CN5?.Format(variables, coloring) + ", " + CN6?.Format(variables, coloring) + ")";
+        }
+        case BNF.UIImage: {
+          if (children.Count == 3)
+            return "UIImage(" +
+            CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+            CN3?.Format(variables, coloring) + ")";
+          else
+            return "UIImage(" +
+              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " +
+              CN5?.Format(variables, coloring) + ", " + CN6?.Format(variables, coloring) + ", " + CN7?.Format(variables, coloring) + ")";
+        }
       }
 
 
@@ -1342,14 +1471,13 @@ public enum BNF {
   SIN, COS, TAN, ATAN2, SQR, POW,
   MEMCPY,
   PERLIN,
-  
-  
   SOUND, WAVE, MUTE, VOLUME, PITCH, PAN,
   MUSICLOAD, MUSICPLAY, MUSICSTOP, MUSICPOS, MUSICVOICES,
   TILEMAP, TILEPOS, TILESET, TILEGET, TILEGETROT,
   NOP,
   USEPALETTE,
   SETPALETTECOLOR,
+  Console, UIClr, UIWrite, UILine, UIBox, UIImage,
 }
 
 public enum VT {

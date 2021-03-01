@@ -105,6 +105,7 @@ public class CodeParser {
     "write",
     "luma",
     "contrast",
+    "console", "uiwrite", "uiline", "uibox", "uiclr", "uiimage",
   };
 
   #region Regex
@@ -177,15 +178,20 @@ public class CodeParser {
   readonly Regex rgAssXor = new Regex("[\\s]*\\^=[^(\\-=)]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgClr = new Regex("[\\s]*clr[\\s]*\\((.+)\\)[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
+  readonly Regex rgClrUI = new Regex("[\\s]*uiclr[\\s]*\\((.+)\\)[\\s]*", RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace, TimeSpan.FromSeconds(1));
   readonly Regex rgFrame = new Regex("frame", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgLuma = new Regex("[\\s]*luma[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgContrast = new Regex("[\\s]*contrast[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgWrite = new Regex("[\\s]*write[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgWriteUI = new Regex("[\\s]*UIwrite[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgConsole = new Regex("[\\s]*console[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgLine = new Regex("[\\s]*line[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgLineUI = new Regex("[\\s]*uiline[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgGetP = new Regex("[\\s]*getp[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSetP = new Regex("[\\s]*setp[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBox = new Regex("[\\s]*box[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgBoxUI = new Regex("[\\s]*uibox[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgCircle = new Regex("[\\s]*circle[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgIncC = new Regex("^([^\\s\\(\\)\\+\\-\\*/%&\\|\\^]*)\\+\\+[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDecC = new Regex("^([^\\s\\(\\)\\+\\-\\*/%&\\|\\^]*)\\-\\-[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -200,6 +206,7 @@ public class CodeParser {
   readonly Regex rgWait = new Regex("[\\s]*wait[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDestroy = new Regex("[\\s]*destroy[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgImage = new Regex("[\\s]*image[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgImageUI = new Regex("[\\s]*uiimage[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMemCpy = new Regex("[\\s]*memcpy[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSin = new Regex("[\\s]*sin[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -766,12 +773,35 @@ public class CodeParser {
       return;
     }
 
+    // [UICLR] = UIclr([EXPR])
+    if (expected.IsGood(Expected.Val.Statement) && rgClrUI.IsMatch(line)) {
+      Match m = rgClrUI.Match(line);
+      if (m.Groups.Count < 2) throw new ParsingException("Invalid UIClr() command.", "", linenumber + 1 + offsetForErrors);
+      CodeNode node = new CodeNode(BNF.UIClr, line, linenumber);
+      node.Add(ParseExpression(m.Groups[1].Value));
+      parent.Add(node);
+      return;
+    }
+
     // [CLR] = clr([EXPR])
     if (expected.IsGood(Expected.Val.Statement) && rgClr.IsMatch(line)) {
       Match m = rgClr.Match(line);
       if (m.Groups.Count < 2) throw new ParsingException("Invalid Clr() command.", "", linenumber + 1 + offsetForErrors);
       CodeNode node = new CodeNode(BNF.CLR, line, linenumber);
       node.Add(ParseExpression(m.Groups[1].Value));
+      parent.Add(node);
+      return;
+    }
+
+    // [UIWRITE] = write([EXPR], [EXPR], [EXPR], [EXPR], [EXPR]) ; text, x, y, col(front), [col(back), size]
+    if (expected.IsGood(Expected.Val.Statement) && rgWriteUI.IsMatch(line)) {
+      Match m = rgWriteUI.Match(line);
+      if (m.Groups.Count < 2) throw new ParsingException("Invalid UIWrite() command.");
+      CodeNode node = new CodeNode(BNF.UIWrite, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num < 4) throw new ParsingException("Invalid UIWrite(), not enough parameters.", origForException, linenumber + 1 + offsetForErrors);
+      if (num > 6) throw new ParsingException("Invalid UIWrite(), too many parameters.", origForException, linenumber + 1 + offsetForErrors);
       parent.Add(node);
       return;
     }
@@ -823,6 +853,17 @@ public class CodeParser {
       return;
     }
 
+    // [UILINE] = UIline([EXPR], [EXPR], [EXPR], [EXPR], [EXPR])
+    if (expected.IsGood(Expected.Val.Statement) && rgLineUI.IsMatch(line)) {
+      Match m = rgLineUI.Match(line);
+      CodeNode node = new CodeNode(BNF.UILine, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 5) throw new ParsingException("Invalid UILine(), invalid parameters, 5 are required.\n<color=#44C6B0>UILine(<i>x1</i>, <i>y1</i>, <i>x2</i>, <i>y2</i>, <i>color</i>)</color>", origForException, linenumber + 1 + offsetForErrors);
+      parent.Add(node);
+      return;
+    }
+
     // [LINE] = line([EXPR], [EXPR], [EXPR], [EXPR], [EXPR])
     if (expected.IsGood(Expected.Val.Statement) && rgLine.IsMatch(line)) {
       Match m = rgLine.Match(line);
@@ -830,6 +871,18 @@ public class CodeParser {
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
       if (num != 5) throw new ParsingException("Invalid Line(), invalid parameters, 5 are required.\n<color=#44C6B0>Line(<i>x1</i>, <i>y1</i>, <i>x2</i>, <i>y2</i>, <i>color</i>)</color>", origForException, linenumber + 1 + offsetForErrors);
+      parent.Add(node);
+      return;
+    }
+
+    // [UIBOX] = UIbox([EXP], [EXP], [EXP], [EXP], [EXP], [[EXP]])
+    if (expected.IsGood(Expected.Val.Statement) && rgBoxUI.IsMatch(line)) {
+      Match m = rgBoxUI.Match(line);
+      CodeNode node = new CodeNode(BNF.UIBox, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num < 5) throw new ParsingException("Invalid UIBox(), not enough parameters.", origForException, linenumber + 1 + offsetForErrors);
+      if (num > 6) throw new ParsingException("Invalid UIBox(), too many parameters.", origForException, linenumber + 1 + offsetForErrors);
       parent.Add(node);
       return;
     }
@@ -854,6 +907,18 @@ public class CodeParser {
       int num = ParsePars(node, pars);
       if (num < 5) throw new ParsingException("Invalid Circle(), not enough parameters.", origForException, linenumber + 1 + offsetForErrors);
       if (num > 6) throw new ParsingException("Invalid Circle(), too many parameters.", origForException, linenumber + 1 + offsetForErrors);
+      parent.Add(node);
+      return;
+    }
+
+    // [UIImage] = UIImage(???)
+    if (expected.IsGood(Expected.Val.Statement) && rgImageUI.IsMatch(line)) {
+      Match m = rgImageUI.Match(line);
+      CodeNode node = new CodeNode(BNF.UIImage, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 3 && num != 7) throw new ParsingException("Invalid UIImage(), wrong number of parameters (either 3 or 7 parameters are required.)" +
+            "\n<color=#44C6B0>UIImage(<i>pointer</i>, <i>posx</i>, <i>posy</i>, [<i>width</i>, <i>height</i>, <i>startx</i>, <i>starty</i>])</color>", origExpression, linenumber + 1 + offsetForErrors);
       parent.Add(node);
       return;
     }

@@ -16,7 +16,7 @@ public class Arcade : MonoBehaviour {
   public Audio audioManager;
   public Texture2D LogoTexture;
   Texture2D texture, textureUI;
-  byte[] rawPixels, rawUI;
+  byte[] rawPixels, rawUI, rawTarget;
   readonly CodeParser cp = new CodeParser();
   int sw = 256;
   int sh = 160;
@@ -44,6 +44,7 @@ public class Arcade : MonoBehaviour {
   public Material RGEPalette;
   readonly Color[] palette = new Color[256];
   public bool running = false;
+  bool uiUpdated = false;
 
   public enum Keys {
     L = 0,  Lu = 1,  Ld = 2,
@@ -263,6 +264,11 @@ public class Arcade : MonoBehaviour {
     FpsFrames++;
     texture.LoadRawTextureData(rawPixels);
     texture.Apply();
+    if (uiUpdated) {
+      textureUI.LoadRawTextureData(rawUI);
+      textureUI.Apply();
+      uiUpdated = false;
+    }
     varsCallback?.Invoke(variables);
     if (runStatus == RunStatus.RunAFrame || runStatus == RunStatus.RunAStep) {
       runStatus = RunStatus.Paused;
@@ -277,13 +283,14 @@ public class Arcade : MonoBehaviour {
     texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
     Screen.texture = texture;
     rawPixels = texture.GetRawTextureData();
+    rawTarget = rawPixels;
     textureUI = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
     UI.texture = textureUI;
     rawUI = textureUI.GetRawTextureData();
-    rawUI = new byte[sw * sh * 4];
     Clear(0);
     ClearUI(255);
-    textureUI.Apply();
+    uiUpdated = true;
+    CompleteFrame();
 
     Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
     Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
@@ -339,18 +346,20 @@ public class Arcade : MonoBehaviour {
     scaleW = rt.rect.width / sw;
     scaleH = rt.rect.height / sh;
     useFilter = false;
-    texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
-      filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
-    };
+    texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point };
     Screen.texture = texture;
     rawPixels = texture.GetRawTextureData();
+    rawTarget = rawPixels;
+    textureUI = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point };
+    UI.texture = textureUI;
+    rawUI = textureUI.GetRawTextureData();
     sprites[0].Pos(0, 8, scaleW, scaleH, true);
     Clear(0);
+    ClearUI(255);
     Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
     Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
     Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9, Col.C(1, 5, 2));
     Write("Run your code or Debug", 8, 48, Col.C(5, 4, 0));
-    texture.Apply();
     for (int i = 0; i < 256; i++)
       palette[i] = Col.GetColor((byte)i);
     RGEPalette.SetColorArray("_Colors", palette);
@@ -360,6 +369,8 @@ public class Arcade : MonoBehaviour {
     RGEPalette.SetFloat("_Contrast", 0);
     runStatus = RunStatus.Stopped;
     CurrentLineNumber = 0;
+    uiUpdated = true;
+    CompleteFrame();
   }
 
   public void SelectCartridge(string path) {
@@ -425,11 +436,13 @@ public class Arcade : MonoBehaviour {
           scaleW = rt.rect.width / sw;
           scaleH = rt.rect.height / sh;
           useFilter = Evaluate(scrconf.CN3).ToBool(culture);
-          texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
-            filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
-          };
+          texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point };
           Screen.texture = texture;
           rawPixels = texture.GetRawTextureData();
+          rawTarget = rawPixels;
+          textureUI = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point };
+          UI.texture = textureUI;
+          rawUI = textureUI.GetRawTextureData();
         }
         sprites[0].Pos(0, 8, scaleW, scaleH, true);
 
@@ -447,6 +460,7 @@ public class Arcade : MonoBehaviour {
 
       // Redraw
       Clear(0);
+      ClearUI(255);
       Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
       Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
       Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9, Col.C(1, 5, 2));
@@ -599,6 +613,7 @@ public class Arcade : MonoBehaviour {
     RGEPalette.SetInt("_UsePalette", 0);
     updateDelay = -1;
     Clear(0);
+    ClearUI(255);
     CompleteFrame();
     variables = vars;
     labels.Clear();
@@ -630,11 +645,13 @@ public class Arcade : MonoBehaviour {
           scaleW = rt.rect.width / sw;
           scaleH = rt.rect.height / sh;
           useFilter = Evaluate(scrconf.CN3).ToBool(culture);
-          texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
-            filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
-          };
+          texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point };
           Screen.texture = texture;
           rawPixels = texture.GetRawTextureData();
+          rawTarget = rawPixels;
+          textureUI = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point };
+          UI.texture = textureUI;
+          rawUI = textureUI.GetRawTextureData();
         }
         sprites[0].Pos(0, 8, scaleW, scaleH, true);
 
@@ -652,6 +669,7 @@ public class Arcade : MonoBehaviour {
 
       // Redraw
       Clear(0);
+      ClearUI(255);
       Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
       Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
       Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9, Col.C(1, 5, 2));
@@ -825,25 +843,25 @@ public class Arcade : MonoBehaviour {
   void SetPixel(int x, int y, byte col) {
     if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
     Color32 c = Col.GetColor(col);
-    rawPixels[(x + sw * (hm1 - y)) * 4] = c.r;
-    rawPixels[(x + sw * (hm1 - y)) * 4 + 1] = c.g;
-    rawPixels[(x + sw * (hm1 - y)) * 4 + 2] = c.b;
-    rawPixels[(x + sw * (hm1 - y)) * 4 + 3] = c.a;
+    rawTarget[(x + sw * (hm1 - y)) * 4] = c.r;
+    rawTarget[(x + sw * (hm1 - y)) * 4 + 1] = c.g;
+    rawTarget[(x + sw * (hm1 - y)) * 4 + 2] = c.b;
+    rawTarget[(x + sw * (hm1 - y)) * 4 + 3] = c.a;
   }
 
   void SetPixel(int x, int y, Color32 c) {
     if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
-    rawPixels[(x + sw * (hm1 - y)) * 4] = c.r;
-    rawPixels[(x + sw * (hm1 - y)) * 4 + 1] = c.g;
-    rawPixels[(x + sw * (hm1 - y)) * 4 + 2] = c.b;
-    rawPixels[(x + sw * (hm1 - y)) * 4 + 3] = c.a;
+    rawTarget[(x + sw * (hm1 - y)) * 4] = c.r;
+    rawTarget[(x + sw * (hm1 - y)) * 4 + 1] = c.g;
+    rawTarget[(x + sw * (hm1 - y)) * 4 + 2] = c.b;
+    rawTarget[(x + sw * (hm1 - y)) * 4 + 3] = c.a;
   }
 
   void SetPixel(int x, int y, byte r, byte g, byte b) {
     if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
-    rawPixels[(x + sw * (hm1 - y)) * 4] = r;
-    rawPixels[(x + sw * (hm1 - y)) * 4 + 1] = g;
-    rawPixels[(x + sw * (hm1 - y)) * 4 + 2] = b;
+    rawTarget[(x + sw * (hm1 - y)) * 4] = r;
+    rawTarget[(x + sw * (hm1 - y)) * 4 + 1] = g;
+    rawTarget[(x + sw * (hm1 - y)) * 4 + 2] = b;
   }
 
   void Luma(float v) {
@@ -890,7 +908,7 @@ public class Arcade : MonoBehaviour {
         for (int w = 0; w < 8; w++) {
           if ((gliph[h] & (1 << (7 - w))) != 0)
             SetPixel(pos + w, y + h, frontc);
-          else if (back != 255)
+          else if (back != 255 || rawTarget == rawUI)
             SetPixel(pos + w, y + h, backc);
         }
       }
@@ -919,7 +937,7 @@ public class Arcade : MonoBehaviour {
         for (int w = 0; w < 6; w++) {
           if ((gliph[h] & (1 << (7 - w))) != 0)
             SetPixel(pos + w, y + h, frontc);
-          else if (back != 255)
+          else if (back != 255 || rawTarget == rawUI)
             SetPixel(pos + w, y + h, backc);
         }
       }
@@ -1007,6 +1025,7 @@ public class Arcade : MonoBehaviour {
   }
 
   void ClearUI(byte col) {
+    uiUpdated = true;
     Color32 pixel = Col.GetColor(col);
     int size = sw * sh * 4;
     for (int i = 0; i < size; i+=4) {
@@ -1015,7 +1034,6 @@ public class Arcade : MonoBehaviour {
       rawUI[i + 2] = pixel.b;
       rawUI[i + 3] = pixel.a;
     }
-    textureUI.LoadRawTextureData(rawUI);
   }
 
   void Line(int x1, int y1, int x2, int y2, byte col) {
@@ -1150,11 +1168,10 @@ public class Arcade : MonoBehaviour {
         byte col = mem[pos];
         if (col != 255) {
           Color32 pixel = Col.GetColor(col);
-          rawPixels[(dx + sw * dy) * 4] = pixel.r;
-          rawPixels[(dx + sw * dy) * 4 + 1] = pixel.g;
-          rawPixels[(dx + sw * dy) * 4 + 2] = pixel.b;
-          rawPixels[(dx + sw * dy) * 4 + 3] = pixel.a;
-          //FIXME          texture.SetPixel(dx, hm1 - dy, pixel);
+          rawTarget[(dx + sw * dy) * 4] = pixel.r;
+          rawTarget[(dx + sw * dy) * 4 + 1] = pixel.g;
+          rawTarget[(dx + sw * dy) * 4 + 2] = pixel.b;
+          rawTarget[(dx + sw * dy) * 4 + 3] = pixel.a;
         }
       }
   }
@@ -1330,6 +1347,14 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
+        case BNF.UIClr: {
+          uiUpdated = true;
+          Value tmp = Evaluate(n.CN1);
+          ClearUI(tmp.ToByte(culture));
+          HandlePostIncrementDecrement();
+        }
+        break;
+
         case BNF.FRAME: {
           CompleteFrame();
           return true; // We will skip to the next frame
@@ -1351,6 +1376,29 @@ public class Arcade : MonoBehaviour {
           }
           else
             Write(a.ToStr(), b.ToInt(culture), c.ToInt(culture), d.ToByte(culture));
+          HandlePostIncrementDecrement();
+        }
+        break;
+
+        case BNF.UIWrite: {
+          Value a = Evaluate(n.CN1);
+          Value b = Evaluate(n.CN2);
+          Value c = Evaluate(n.CN3);
+          Value d = Evaluate(n.CN4);
+          rawTarget = rawUI;
+          uiUpdated = true;
+          if (n.children.Count > 5) {
+            Value e = Evaluate(n.CN5);
+            Value f = Evaluate(n.CN6);
+            Write(a.ToStr(), b.ToInt(culture), c.ToInt(culture), d.ToByte(culture), e.ToByte(culture), f.ToByte(culture));
+          }
+          else if (n.children.Count > 4) {
+            Value e = Evaluate(n.CN5);
+            Write(a.ToStr(), b.ToInt(culture), c.ToInt(culture), d.ToByte(culture), e.ToByte(culture));
+          }
+          else
+            Write(a.ToStr(), b.ToInt(culture), c.ToInt(culture), d.ToByte(culture));
+          rawTarget = rawPixels;
           HandlePostIncrementDecrement();
         }
         break;
@@ -1560,6 +1608,20 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
+        case BNF.UILine: {
+          Value x1 = Evaluate(n.CN1);
+          Value y1 = Evaluate(n.CN2);
+          Value x2 = Evaluate(n.CN3);
+          Value y2 = Evaluate(n.CN4);
+          Value col = Evaluate(n.CN5);
+          rawTarget = rawUI;
+          uiUpdated = true;
+          Line(x1.ToInt(culture), y1.ToInt(culture), x2.ToInt(culture), y2.ToInt(culture), col.ToByte(culture));
+          rawTarget = rawPixels;
+          HandlePostIncrementDecrement();
+        }
+        break;
+
         case BNF.BOX: {
           Value x1 = Evaluate(n.CN1);
           Value y1 = Evaluate(n.CN2);
@@ -1572,6 +1634,25 @@ public class Arcade : MonoBehaviour {
           }
           else
             Box(x1.ToInt(culture), y1.ToInt(culture), x2.ToInt(culture), y2.ToInt(culture), col.ToByte(culture));
+          HandlePostIncrementDecrement();
+        }
+        break;
+
+        case BNF.UIBox: {
+          Value x1 = Evaluate(n.CN1);
+          Value y1 = Evaluate(n.CN2);
+          Value x2 = Evaluate(n.CN3);
+          Value y2 = Evaluate(n.CN4);
+          Value col = Evaluate(n.CN5);
+          rawTarget = rawUI;
+          uiUpdated = true;
+          if (n.children.Count > 5) {
+            Value back = Evaluate(n.CN6);
+            Box(x1.ToInt(culture), y1.ToInt(culture), x2.ToInt(culture), y2.ToInt(culture), col.ToByte(culture), back.ToByte(culture));
+          }
+          else
+            Box(x1.ToInt(culture), y1.ToInt(culture), x2.ToInt(culture), y2.ToInt(culture), col.ToByte(culture));
+          rawTarget = rawPixels;
           HandlePostIncrementDecrement();
         }
         break;
@@ -1605,6 +1686,26 @@ public class Arcade : MonoBehaviour {
           }
           else
             Image(addr.ToInt(culture), px.ToInt(culture), py.ToInt(culture));
+          HandlePostIncrementDecrement();
+        }
+        break;
+
+        case BNF.UIImage: {
+          Value addr = Evaluate(n.CN1);
+          Value px = Evaluate(n.CN2);
+          Value py = Evaluate(n.CN3);
+          rawTarget = rawUI;
+          uiUpdated = true;
+          if (n.children.Count == 7) {
+            Value w = Evaluate(n.CN4);
+            Value h = Evaluate(n.CN5);
+            Value startx = Evaluate(n.CN6);
+            Value starty = Evaluate(n.CN7);
+            Image(addr.ToInt(culture), px.ToInt(culture), py.ToInt(culture), w.ToInt(culture), h.ToInt(culture), startx.ToInt(culture), starty.ToInt(culture));
+          }
+          else
+            Image(addr.ToInt(culture), px.ToInt(culture), py.ToInt(culture));
+          rawTarget = rawPixels;
           HandlePostIncrementDecrement();
         }
         break;
@@ -1667,11 +1768,13 @@ public class Arcade : MonoBehaviour {
           hm1 = sh - 1;
           scaleW = rt.rect.width / sw;
           scaleH = rt.rect.height / sh;
-          texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
-            filterMode = n.CN3 == null || Evaluate(n.CN3).ToInt(culture) == 0 ? FilterMode.Point : FilterMode.Bilinear
-          };
+          texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = n.CN3 == null || Evaluate(n.CN3).ToInt(culture) == 0 ? FilterMode.Point : FilterMode.Bilinear };
           Screen.texture = texture;
           rawPixels = texture.GetRawTextureData();
+          rawTarget = rawPixels;
+          textureUI = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = n.CN3 == null || Evaluate(n.CN3).ToInt(culture) == 0 ? FilterMode.Point : FilterMode.Bilinear };
+          UI.texture = textureUI;
+          rawUI = textureUI.GetRawTextureData();
           HandlePostIncrementDecrement();
         }
         break;
