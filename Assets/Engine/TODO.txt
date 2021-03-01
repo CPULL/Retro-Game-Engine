@@ -27,7 +27,10 @@ CodeEditor: View memory
 CodeEditor: [DECIDE] remove compiled code nodes or implement binary save
 
 
-Remove 000x and 000b as modes
+
+BUG: else if does not work.
+BUG: Also the if(step==3) is not valid for some reasons
+
 
 
 Start {

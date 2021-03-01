@@ -88,9 +88,6 @@ public static class NoiseS3D {
 	/// </summary>
 	/// <returns>double</returns>
 	/// <param name="x">x coordinate parameter for the noise function.</param>
-	/// <param name="y">y coordinate parameter for the noise function.</param>
-	/// <param name="z">z coordinate parameter for the noise function.</param>
-	/// <param name="w">w coordinate parameter for the noise function.</param>
 	public static double Noise(double x) {
 		return Noise(x, 0);
 	}
@@ -101,8 +98,6 @@ public static class NoiseS3D {
 	/// <returns>double</returns>
 	/// <param name="x">x coordinate parameter for the noise function.</param>
 	/// <param name="y">y coordinate parameter for the noise function.</param>
-	/// <param name="z">z coordinate parameter for the noise function.</param>
-	/// <param name="w">w coordinate parameter for the noise function.</param>
 	public static double Noise(double x, double y) {
 		double n0, n1, n2;
 		double F2 = 0.5 * (Math.Sqrt(3.0) - 1.0);
@@ -159,7 +154,6 @@ public static class NoiseS3D {
 	/// <param name="x">x coordinate parameter for the noise function.</param>
 	/// <param name="y">y coordinate parameter for the noise function.</param>
 	/// <param name="z">z coordinate parameter for the noise function.</param>
-	/// <param name="w">w coordinate parameter for the noise function.</param>
 	public static double Noise(double x, double y, double z) {
 		double n0, n1, n2, n3;
 		

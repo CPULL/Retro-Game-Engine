@@ -1,0 +1,35 @@
+Name: Intro
+
+start {
+	clr(0)
+	wait(1, 1)
+	luma(-1)
+	Write("R     G    E     ", 41, 56, 132c)
+	Write("Retro Game Engine", 40, 55, 550c)
+	for(i=-1.0, i<0, i+=.05) {
+		luma(i)
+		frame
+	}
+	luma(0)
+	step=0
+}
+
+update{
+	if (keyfd) step++
+	if(step==0) {
+	}
+	else if(step==1) {
+		write("*1"+step,0,0,500c)
+	}
+	else if(step==2) {
+		write(" *2"+step,0,0,500c)
+	}
+	else if(step==3) {
+		write("  *3"+step,0,0,500c)
+	}
+}
+
+
+Config {
+	screen(320,256)
+}
