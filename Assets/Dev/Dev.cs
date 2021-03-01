@@ -24,12 +24,7 @@ public class Dev : MonoBehaviour {
 
   private void Update() {
     if (Input.GetKeyDown(KeyCode.F11)) {
-      FullScreenMode mode = Screen.fullScreenMode;
-      if (mode == FullScreenMode.ExclusiveFullScreen) mode = FullScreenMode.FullScreenWindow;
-      else if (mode == FullScreenMode.FullScreenWindow) mode = FullScreenMode.Windowed;
-      else if (mode == FullScreenMode.MaximizedWindow) mode = FullScreenMode.FullScreenWindow;
-      else mode = FullScreenMode.MaximizedWindow;
-      Screen.fullScreenMode = mode;
+      Screen.fullScreen = !Screen.fullScreen;
     }
     if (Input.GetKeyUp(KeyCode.Escape) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
       UnityEngine.SceneManagement.SceneManager.LoadScene("Loader");

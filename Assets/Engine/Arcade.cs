@@ -108,14 +108,7 @@ public class Arcade : MonoBehaviour {
     }
 
     if (Input.GetKeyDown(KeyCode.F11)) {
-      FullScreenMode mode = UnityEngine.Screen.fullScreenMode;
-      if (mode == FullScreenMode.ExclusiveFullScreen) mode = FullScreenMode.FullScreenWindow;
-      else if (mode == FullScreenMode.FullScreenWindow) mode = FullScreenMode.Windowed;
-      else if (mode == FullScreenMode.MaximizedWindow) mode = FullScreenMode.FullScreenWindow;
-      else mode = FullScreenMode.MaximizedWindow;
-      UnityEngine.Screen.fullScreenMode = mode;
-      if (FPS != null) FPS.text = mode.ToString();
-      FpsTime = -1;
+      UnityEngine.Screen.fullScreen = !UnityEngine.Screen.fullScreen;
     }
     if (Input.GetKeyUp(KeyCode.Escape) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))) {
       SceneManager.LoadScene("Loader");
