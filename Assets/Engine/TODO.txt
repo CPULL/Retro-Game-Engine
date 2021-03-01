@@ -27,24 +27,25 @@ CodeEditor: View memory
 CodeEditor: [DECIDE] remove compiled code nodes or implement binary save
 
 
-
+Remove 000x and 000b as modes
 
 
 Start {
 	UsePalette(1)
 	for (i = 1, i < 255, i++) {
-		SetPalette(i, i, i, 0, )
+		SetPalette(i, i / 2 + 120, i, 0)
 	}
 	Clr(0)
-	speed = 0.01
+	speed = 0.05
 	size = 8
+	xb=0
 }
 
 Update {
 	z += speed
 	for (x = 0, x * size < 256, x++) {
 		for (y = 0, y * size < 256, y++) {
-			col = Perlin(x * 0.1, y * 0.1, z) * 254 + 1
+			col = Perlin(x * 0.1 + xb, y * 0.1, z) * 254 + 1
 			x1 = x * size
 			y1 = y * size
 			x2 = x1 + size - 1
@@ -56,6 +57,8 @@ Update {
 	if (keyR) speed += 0.001
 	if (keyUd && size > 1) size -= 1
 	if (keyDd) size += 1
+	if (keyAd) xb -= 0.1
+	if (keyBd) xb += 0.1
 }
 
 Config {

@@ -295,6 +295,7 @@ public class Arcade : MonoBehaviour {
     sprites[0].Set(16, 16, LogoTexture, false);
     sprites[0].Pos(0, 8, scaleW, scaleH, true);
     audioManager.Init();
+    NoiseS3D.octaves = 2;
 
     if (DevMode) {
       DevStart();
@@ -2064,13 +2065,20 @@ public class Arcade : MonoBehaviour {
       case BNF.POW: return new Value(Mathf.Pow(Evaluate(n.CN1).ToFlt(culture), Evaluate(n.CN2).ToFlt(culture)));
 
       case BNF.PERLIN: {
-        if (n.CN2 == null)
-          return new Value(Mathf.PerlinNoise(Evaluate(n.CN1).ToFlt(culture), 0));
-        else if (n.CN3 == null)
-          return new Value(Mathf.PerlinNoise(Evaluate(n.CN1).ToFlt(culture), Evaluate(n.CN2).ToFlt(culture)));
+        if (n.CN2 == null) {
+          float x = Evaluate(n.CN1).ToFlt(culture);
+          return new Value((float)(1 + NoiseS3D.NoiseCombinedOctaves(x)) * .5f);
+        }
+        else if (n.CN3 == null) {
+          float x = Evaluate(n.CN1).ToFlt(culture);
+          float y = Evaluate(n.CN2).ToFlt(culture);
+          return new Value((float)(1 + NoiseS3D.NoiseCombinedOctaves(x, y)) * .5f);
+        }
         else {
+          float x = Evaluate(n.CN1).ToFlt(culture);
+          float y = Evaluate(n.CN2).ToFlt(culture);
           float z = Evaluate(n.CN3).ToFlt(culture);
-          return new Value(Mathf.PerlinNoise(Evaluate(n.CN1).ToFlt(culture) + z, Evaluate(n.CN2).ToFlt(culture) + z));
+          return new Value((float)(1 + NoiseS3D.NoiseCombinedOctaves(x, y, z)) * .5f);
         }
       }
 
