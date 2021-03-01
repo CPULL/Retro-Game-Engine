@@ -99,8 +99,8 @@ public class Arcade : MonoBehaviour {
       scaleH = lastScreenH / (float)sh;
 
       // update the height according to the aspect ratio
-      float heightAccordingToWidth = nowScreenW / 16.0f * 9.0f;
-      UnityEngine.Screen.SetResolution(nowScreenW, Mathf.RoundToInt(heightAccordingToWidth), false, 0);
+      float heightAccordingToWidth = UnityEngine.Screen.width / 16.0f * 9.0f;
+      UnityEngine.Screen.SetResolution(UnityEngine.Screen.width, Mathf.RoundToInt(heightAccordingToWidth), false, 0);
 
       foreach (Grob s in sprites) {
         if (s != null && !s.notDefined) s.ResetScale(scaleW, scaleH);

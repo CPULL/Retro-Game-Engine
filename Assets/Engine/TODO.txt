@@ -26,7 +26,8 @@ Rom editor: Add "Edit" buttons in RomEdit (music, tilemap)
 CodeEditor: View memory
 CodeEditor: [DECIDE] remove compiled code nodes or implement binary save
 
-BUG: if (keyUd && var > 1) --> invalid expression
+
+
 
 
 Start {
