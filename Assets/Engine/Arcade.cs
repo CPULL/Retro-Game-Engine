@@ -295,7 +295,7 @@ public class Arcade : MonoBehaviour {
     sprites[0].Set(16, 16, LogoTexture, false);
     sprites[0].Pos(0, 8, scaleW, scaleH, true);
     audioManager.Init();
-    NoiseS3D.octaves = 2;
+    NoiseS3D.Octaves = 2;
 
     if (DevMode) {
       DevStart();

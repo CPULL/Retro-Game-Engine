@@ -10,7 +10,7 @@ public static class NoiseS3D {
 	/// <summary> 
 	///  The seed for the noise function. Randomized at startup by default.
 	/// </summary>
-	public static int seed {
+	public static int Seed {
 		get {
 			return seed_;
 		}
@@ -21,11 +21,11 @@ public static class NoiseS3D {
 		}
 	}
 	
-	private static int[][] grad3 = {new int[]{1,1,0}, new int[]{-1,1,0}, new int[]{1,-1,0}, new int[]{-1,-1,0},
+	private readonly static int[][] grad3 = {new int[]{1,1,0}, new int[]{-1,1,0}, new int[]{1,-1,0}, new int[]{-1,-1,0},
 		new int[]{1,0,1}, new int[]{-1,0,1}, new int[]{1,0,-1}, new int[]{-1,0,-1},
 		new int[]{0,1,1}, new int[]{0,-1,1}, new int[]{0,1,-1}, new int[]{0,-1,-1}};
 	
-	private static int[][] grad4 = {new int[]{0,1,1,1}, new int[]{0,1,1,-1},  new int[]{0,1,-1,1},  new int[]{0,1,-1,-1},
+	private readonly static int[][] grad4 = {new int[]{0,1,1,1}, new int[]{0,1,1,-1},  new int[]{0,1,-1,1},  new int[]{0,1,-1,-1},
 		new int[]{0,-1,1,1},new int[] {0,-1,1,-1},new int[] {0,-1,-1,1},new int[] {0,-1,-1,-1},
 		new int[]{1,0,1,1}, new int[]{1,0,1,-1},  new int[]{1,0,-1,1},  new int[]{1,0,-1,-1},
 		new int[]{-1,0,1,1},new int[] {-1,0,1,-1},new int[] {-1,0,-1,1},new int[] {-1,0,-1,-1},
@@ -37,7 +37,7 @@ public static class NoiseS3D {
 	private static int[] p = null;
 	
 	private static int[] perm_ = null;
-	private static int[] perm {
+	private static int[] Perm {
 		get {
 			if(perm_ == null)
 				SetupNoise();
@@ -57,7 +57,7 @@ public static class NoiseS3D {
 	}
 	
 	
-	private static int[][] simplex = {
+	private readonly static int[][] simplex = {
 		new int[]{0,1,2,3}, new int[]{0,1,3,2}, new int[]{0,0,0,0}, new int[]{0,2,3,1}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{1,2,3,0},
 		new int[]{0,2,1,3}, new int[]{0,0,0,0}, new int[]{0,3,1,2}, new int[]{0,3,2,1}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{1,3,2,0},
 		new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{0,0,0,0},
@@ -68,16 +68,13 @@ public static class NoiseS3D {
 		new int[]{2,1,0,3}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{3,1,0,2}, new int[]{0,0,0,0}, new int[]{3,2,0,1}, new int[]{3,2,1,0}};
 	
 	
-	private static int fastfloor(double x) {
-		return x > 0 ? (int)x : (int)x - 1;
-	}
-	private static double dot(int[] g, double x, double y) {
+	private static double Dot(int[] g, double x, double y) {
 		return g[0] * x + g[1] * y;
 	}
-	private static double dot(int[] g, double x, double y, double z) {
+	private static double Dot(int[] g, double x, double y, double z) {
 		return g[0] * x + g[1] * y + g[2] * z;
 	}
-	private static double dot(int[] g, double x, double y, double z, double w) {
+	private static double Dot(int[] g, double x, double y, double z, double w) {
 		return g[0] * x + g[1] * y + g[2] * z + g[3] * w;
 	}
 	
@@ -110,8 +107,8 @@ public static class NoiseS3D {
 		double n0, n1, n2;
 		double F2 = 0.5 * (Math.Sqrt(3.0) - 1.0);
 		double s = (x + y) * F2;
-		int i = fastfloor(x + s);
-		int j = fastfloor(y + s);
+		int i = (x + s) > 0 ? (int)(x + s) : (int)(x + s) - 1;
+		int j = (y + s) > 0 ? (int)(y + s) : (int)(y + s) - 1;
 		double G2 = (3.0 - Math.Sqrt(3.0)) / 6.0;
 		double t = (i + j) * G2;
 		double X0 = i - t;
@@ -129,27 +126,27 @@ public static class NoiseS3D {
 		
 		int ii = i & 255;
 		int jj = j & 255;
-		int gi0 = perm[ii + perm[jj]] % 12;
-		int gi1 = perm[ii + i1 + perm[jj + j1]] % 12;
-		int gi2 = perm[ii + 1 + perm[jj + 1]] % 12;
+		int gi0 = Perm[ii + Perm[jj]] % 12;
+		int gi1 = Perm[ii + i1 + Perm[jj + j1]] % 12;
+		int gi2 = Perm[ii + 1 + Perm[jj + 1]] % 12;
 		
 		double t0 = 0.5 - x0 * x0 - y0 * y0;
 		if(t0 < 0) n0 = 0.0;
 		else {
 			t0 *= t0;
-			n0 = t0 * t0 * dot(grad3[gi0], x0, y0);
+			n0 = t0 * t0 * Dot(grad3[gi0], x0, y0);
 		}
 		double t1 = 0.5 - x1 * x1 - y1 * y1;
 		if(t1 < 0) n1 = 0.0;
 		else {
 			t1 *= t1;
-			n1 = t1 * t1 * dot(grad3[gi1], x1, y1);
+			n1 = t1 * t1 * Dot(grad3[gi1], x1, y1);
 		}
 		double t2 = 0.5 - x2 * x2 - y2 * y2;
 		if(t2 < 0) n2 = 0.0;
 		else {
 			t2 *= t2;
-			n2 = t2 * t2 * dot(grad3[gi2], x2, y2);
+			n2 = t2 * t2 * Dot(grad3[gi2], x2, y2);
 		}
 		
 		return 70.0 * (n0 + n1 + n2);
@@ -168,9 +165,10 @@ public static class NoiseS3D {
 		
 		double F3 = 1.0 / 3.0;
 		double s = (x + y + z) * F3;
-		int i = fastfloor(x + s);
-		int j = fastfloor(y + s);
-		int k = fastfloor(z + s);
+		int i = (x + s) > 0 ? (int)(x + s) : (int)(x + s) - 1;
+		int j = (y + s) > 0 ? (int)(y + s) : (int)(y + s) - 1;
+		int k = (z + s) > 0 ? (int)(z + s) : (int)(z + s) - 1;
+
 		double G3 = 1.0 / 6.0;
 		double t = (i + j + k) * G3;
 		double X0 = i - t;
@@ -201,34 +199,34 @@ public static class NoiseS3D {
 		int ii = i & 255;
 		int jj = j & 255;
 		int kk = k & 255;
-		int gi0 = perm[ii + perm[jj + perm[kk]]] % 12;
-		int gi1 = perm[ii + i1 + perm[jj + j1 + perm[kk + k1]]] % 12;
-		int gi2 = perm[ii + i2 + perm[jj + j2 + perm[kk + k2]]] % 12;
-		int gi3 = perm[ii + 1 + perm[jj + 1 + perm[kk + 1]]] % 12;
+		int gi0 = Perm[ii + Perm[jj + Perm[kk]]] % 12;
+		int gi1 = Perm[ii + i1 + Perm[jj + j1 + Perm[kk + k1]]] % 12;
+		int gi2 = Perm[ii + i2 + Perm[jj + j2 + Perm[kk + k2]]] % 12;
+		int gi3 = Perm[ii + 1 + Perm[jj + 1 + Perm[kk + 1]]] % 12;
 		
 		double t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
 		if(t0 < 0) n0 = 0.0;
 		else {
 			t0 *= t0;
-			n0 = t0 * t0 * dot(grad3[gi0], x0, y0, z0);
+			n0 = t0 * t0 * Dot(grad3[gi0], x0, y0, z0);
 		}
 		double t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
 		if(t1 < 0) n1 = 0.0;
 		else {
 			t1 *= t1;
-			n1 = t1 * t1 * dot(grad3[gi1], x1, y1, z1);
+			n1 = t1 * t1 * Dot(grad3[gi1], x1, y1, z1);
 		}
 		double t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
 		if(t2 < 0) n2 = 0.0;
 		else {
 			t2 *= t2;
-			n2 = t2 * t2 * dot(grad3[gi2], x2, y2, z2);
+			n2 = t2 * t2 * Dot(grad3[gi2], x2, y2, z2);
 		}
 		double t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
 		if(t3 < 0) n3 = 0.0;
 		else {
 			t3 *= t3;
-			n3 = t3 * t3 * dot(grad3[gi3], x3, y3, z3);
+			n3 = t3 * t3 * Dot(grad3[gi3], x3, y3, z3);
 		}
 		
 		return 32.0 * (n0 + n1 + n2 + n3);
@@ -249,10 +247,10 @@ public static class NoiseS3D {
 		double n0, n1, n2, n3, n4;
 		
 		double s = (x + y + z + w) * F4;
-		int i = fastfloor(x + s);
-		int j = fastfloor(y + s);
-		int k = fastfloor(z + s);
-		int l = fastfloor(w + s);
+		int i = (x + s) > 0 ? (int)(x + s) : (int)(x + s) - 1;
+		int j = (y + s) > 0 ? (int)(y + s) : (int)(y + s) - 1;
+		int k = (z + s) > 0 ? (int)(z + s) : (int)(z + s) - 1;
+		int l = (w + s) > 0 ? (int)(w + s) : (int)(w + s) - 1;
 		double t = (i + j + k + l) * G4;
 		double X0 = i - t;
 		double Y0 = j - t;
@@ -309,41 +307,41 @@ public static class NoiseS3D {
 		int jj = j & 255;
 		int kk = k & 255;
 		int ll = l & 255;
-		int gi0 = perm[ii + perm[jj + perm[kk + perm[ll]]]] % 32;
-		int gi1 = perm[ii + i1 + perm[jj + j1 + perm[kk + k1 + perm[ll + l1]]]] % 32;
-		int gi2 = perm[ii + i2 + perm[jj + j2 + perm[kk + k2 + perm[ll + l2]]]] % 32;
-		int gi3 = perm[ii + i3 + perm[jj + j3 + perm[kk + k3 + perm[ll + l3]]]] % 32;
-		int gi4 = perm[ii + 1 + perm[jj + 1 + perm[kk + 1 + perm[ll + 1]]]] % 32;
+		int gi0 = Perm[ii + Perm[jj + Perm[kk + Perm[ll]]]] % 32;
+		int gi1 = Perm[ii + i1 + Perm[jj + j1 + Perm[kk + k1 + Perm[ll + l1]]]] % 32;
+		int gi2 = Perm[ii + i2 + Perm[jj + j2 + Perm[kk + k2 + Perm[ll + l2]]]] % 32;
+		int gi3 = Perm[ii + i3 + Perm[jj + j3 + Perm[kk + k3 + Perm[ll + l3]]]] % 32;
+		int gi4 = Perm[ii + 1 + Perm[jj + 1 + Perm[kk + 1 + Perm[ll + 1]]]] % 32;
 		
 		double t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0 - w0 * w0;
 		if(t0 < 0) n0 = 0.0;
 		else {
 			t0 *= t0;
-			n0 = t0 * t0 * dot(grad4[gi0], x0, y0, z0, w0);
+			n0 = t0 * t0 * Dot(grad4[gi0], x0, y0, z0, w0);
 		}
 		double t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1 - w1 * w1;
 		if(t1 < 0) n1 = 0.0;
 		else {
 			t1 *= t1;
-			n1 = t1 * t1 * dot(grad4[gi1], x1, y1, z1, w1);
+			n1 = t1 * t1 * Dot(grad4[gi1], x1, y1, z1, w1);
 		}
 		double t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2 - w2 * w2;
 		if(t2 < 0) n2 = 0.0;
 		else {
 			t2 *= t2;
-			n2 = t2 * t2 * dot(grad4[gi2], x2, y2, z2, w2);
+			n2 = t2 * t2 * Dot(grad4[gi2], x2, y2, z2, w2);
 		}
 		double t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3 - w3 * w3;
 		if(t3 < 0) n3 = 0.0;
 		else {
 			t3 *= t3;
-			n3 = t3 * t3 * dot(grad4[gi3], x3, y3, z3, w3);
+			n3 = t3 * t3 * Dot(grad4[gi3], x3, y3, z3, w3);
 		}
 		double t4 = 0.6 - x4 * x4 - y4 * y4 - z4 * z4 - w4 * w4;
 		if(t4 < 0) n4 = 0.0;
 		else {
 			t4 *= t4;
-			n4 = t4 * t4 * dot(grad4[gi4], x4, y4, z4, w4);
+			n4 = t4 * t4 * Dot(grad4[gi4], x4, y4, z4, w4);
 		}
 		return 27.0 * (n0 + n1 + n2 + n3 + n4);
 	}
@@ -355,7 +353,7 @@ public static class NoiseS3D {
 	/// Number of octaves to use when generating combined noise octaves, higher number of octaves result in less blurry, more cloudy noise;
 	/// Value is clamped between 1 and 10. Higher values take longer to compute.
 	/// </summary>
-	public static int octaves {
+	public static int Octaves {
 		get {
 			return octaves_;
 		}
@@ -378,7 +376,7 @@ public static class NoiseS3D {
 		double amplitude = 1.0;
 		double totalAmplitude = 0.0;
 		
-		for(int o = 0; o < octaves; o++) {
+		for(int o = 0; o < Octaves; o++) {
 			amplitude *= falloff;
 			totalAmplitude += amplitude;
 			finalNoiseValue += noiseValues[o] * amplitude;
@@ -388,33 +386,33 @@ public static class NoiseS3D {
 	}
 	
 	private static double[] GetNoiseValues(double x, double y, double z, double w, int dimension) {
-		double[] noiseValues = new double[octaves];
+		double[] noiseValues = new double[Octaves];
 		double freq = 1.0;
 		
 		switch(dimension) {
 		case 1:
-			for(int o = 0; o < octaves; o++) {
+			for(int o = 0; o < Octaves; o++) {
 				noiseValues[o] = Noise(x * freq);
 				freq *= 2.0;
 			}
 			break;
 			
 		case 2:
-			for(int o = 0; o < octaves; o++) {
+			for(int o = 0; o < Octaves; o++) {
 				noiseValues[o] = Noise(x * freq, y * freq);
 				freq *= 2.0;
 			}
 			break;
 			
 		case 3:
-			for(int o = 0; o < octaves; o++) {
+			for(int o = 0; o < Octaves; o++) {
 				noiseValues[o] = Noise(x * freq, y * freq, z * freq);
 				freq *= 2.0;
 			}
 			break;
 			
 		case 4:
-			for(int o = 0; o < octaves; o++) {
+			for(int o = 0; o < Octaves; o++) {
 				noiseValues[o] = Noise(x * freq, y * freq, z * freq, w * freq);
 				freq *= 2.0;
 			}
@@ -486,7 +484,7 @@ public static class NoiseS3D {
 	static bool needsFakeBuffer = true;
 	
 	private static void SetShaderVars(ComputeShader shader, Vector2 noiseOffset, bool normalize, float noiseScale, int kernel) {
-		shader.SetInt("octaves", octaves);
+		shader.SetInt("octaves", Octaves);
 		shader.SetFloat("falloff", falloff);
 		
 		shader.SetInt("normalize", System.Convert.ToInt32(normalize));
@@ -517,8 +515,8 @@ public static class NoiseS3D {
 		return tex;
 	}
 	
-	private static string shaderPath = "Graphics/Shaders/NoiseS3DGPU";
-	private static string noShaderMsg = "Could not find the noise compute shader. Did you move/rename any of the files?";
+	private readonly static string shaderPath = "Graphics/Shaders/NoiseS3DGPU";
+	private readonly static string noShaderMsg = "Could not find the noise compute shader. Did you move/rename any of the files?";
 	
 	/// <summary> 
 	/// Uses the GPU to generate a RenderTexture where the pixels in the texture represent noise.
@@ -532,9 +530,10 @@ public static class NoiseS3D {
 	/// <param name="noiseScale"> Value to scale the noise coordinates by. </param>
 	/// <param name="normalize"> Whether or not to remap the noise from (-1, 1) to (0, 1). </param>
 	public static RenderTexture GetNoiseRenderTexture(int width, int height, float noiseOffsetX = 0, float noiseOffsetY = 0, float noiseScale = 0.01f, bool normalize = true) {
-		RenderTexture retTex = new RenderTexture(width, height, 0);
-		retTex.enableRandomWrite = true;
-		retTex.Create();
+    RenderTexture retTex = new RenderTexture(width, height, 0) {
+      enableRandomWrite = true
+    };
+    retTex.Create();
 		
 		ComputeShader shader = Resources.Load(shaderPath) as ComputeShader;
 		if(shader == null) {
@@ -549,8 +548,8 @@ public static class NoiseS3D {
 		SetShaderVars(shader, new Vector2(noiseOffsetX, noiseOffsetY), normalize, noiseScale, kernel);
 		shader.SetInts("reses", resInts);
 		
-		ComputeBuffer permBuffer = new ComputeBuffer(perm.Length, 4);
-		permBuffer.SetData(perm);
+		ComputeBuffer permBuffer = new ComputeBuffer(Perm.Length, 4);
+		permBuffer.SetData(Perm);
 		shader.SetBuffer(kernel, "perm", permBuffer);
 		
 		shader.Dispatch(kernel, Mathf.CeilToInt(width / 16f), Mathf.CeilToInt(height / 16f), 1);
@@ -598,8 +597,8 @@ public static class NoiseS3D {
 		SetShaderVars(shader, Vector2.zero, normalize, noiseScale, kernel);
 		shader.SetInts("dimension", 1);
 		
-		ComputeBuffer permBuffer = new ComputeBuffer(perm.Length, 4);
-		permBuffer.SetData(perm);
+		ComputeBuffer permBuffer = new ComputeBuffer(Perm.Length, 4);
+		permBuffer.SetData(Perm);
 		shader.SetBuffer(kernel, "perm", permBuffer);
 		
 		ComputeBuffer posBuffer = new ComputeBuffer(positions.Length, 4);
@@ -639,8 +638,8 @@ public static class NoiseS3D {
 		SetShaderVars(shader, Vector2.zero, normalize, noiseScale, kernel);
 		shader.SetInt("dimension", 2);
 		
-		ComputeBuffer permBuffer = new ComputeBuffer(perm.Length, 4);
-		permBuffer.SetData(perm);
+		ComputeBuffer permBuffer = new ComputeBuffer(Perm.Length, 4);
+		permBuffer.SetData(Perm);
 		shader.SetBuffer(kernel, "perm", permBuffer);
 		
 		ComputeBuffer posBuffer = new ComputeBuffer(positions.Length, 8);
@@ -680,8 +679,8 @@ public static class NoiseS3D {
 		SetShaderVars(shader, Vector2.zero, normalize, noiseScale, kernel);
 		shader.SetInt("dimension", 3);
 		
-		ComputeBuffer permBuffer = new ComputeBuffer(perm.Length, 4);
-		permBuffer.SetData(perm);
+		ComputeBuffer permBuffer = new ComputeBuffer(Perm.Length, 4);
+		permBuffer.SetData(Perm);
 		shader.SetBuffer(kernel, "perm", permBuffer);
 		
 		ComputeBuffer posBuffer = new ComputeBuffer(positions.Length, 12);
@@ -721,8 +720,8 @@ public static class NoiseS3D {
 		SetShaderVars(shader, Vector2.zero, normalize, noiseScale, kernel);
 		shader.SetInt("dimension", 4);
 		
-		ComputeBuffer permBuffer = new ComputeBuffer(perm.Length, 4);
-		permBuffer.SetData(perm);
+		ComputeBuffer permBuffer = new ComputeBuffer(Perm.Length, 4);
+		permBuffer.SetData(Perm);
 		shader.SetBuffer(kernel, "perm", permBuffer);
 		
 		ComputeBuffer posBuffer = new ComputeBuffer(positions.Length, 16);
