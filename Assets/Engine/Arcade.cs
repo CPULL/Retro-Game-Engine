@@ -16,8 +16,7 @@ public class Arcade : MonoBehaviour {
   public Audio audioManager;
   public Texture2D LogoTexture;
   Texture2D texture, textureUI;
-  Color32[] pixels, pixelsUI;
-  byte[] raw, rawUI;
+  byte[] rawPixels, rawUI;
   readonly CodeParser cp = new CodeParser();
   int sw = 256;
   int sh = 160;
@@ -262,6 +261,7 @@ public class Arcade : MonoBehaviour {
 
   void CompleteFrame() {
     FpsFrames++;
+    texture.LoadRawTextureData(rawPixels);
     texture.Apply();
     varsCallback?.Invoke(variables);
     if (runStatus == RunStatus.RunAFrame || runStatus == RunStatus.RunAStep) {
@@ -276,11 +276,10 @@ public class Arcade : MonoBehaviour {
     Col.InitPalette(RGEPalette);
     texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
     Screen.texture = texture;
-    pixels = texture.GetPixels32();
-    raw = new byte[sw * sh * 4];
+    rawPixels = texture.GetRawTextureData();
     textureUI = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
     UI.texture = textureUI;
-    pixelsUI = textureUI.GetPixels32();
+    rawUI = textureUI.GetRawTextureData();
     rawUI = new byte[sw * sh * 4];
     Clear(0);
     ClearUI(255);
@@ -344,8 +343,7 @@ public class Arcade : MonoBehaviour {
       filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
     };
     Screen.texture = texture;
-    pixels = texture.GetPixels32();
-    raw = new byte[sw * sh * 4];
+    rawPixels = texture.GetRawTextureData();
     sprites[0].Pos(0, 8, scaleW, scaleH, true);
     Clear(0);
     Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
@@ -431,8 +429,7 @@ public class Arcade : MonoBehaviour {
             filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
           };
           Screen.texture = texture;
-          pixels = texture.GetPixels32();
-          raw = new byte[sw * sh * 4];
+          rawPixels = texture.GetRawTextureData();
         }
         sprites[0].Pos(0, 8, scaleW, scaleH, true);
 
@@ -444,7 +441,7 @@ public class Arcade : MonoBehaviour {
           memsize = memdef.iVal;
         }
         else {
-          memsize = 256 * 1024;
+          memsize = 1 * 1024;
         }
       }
 
@@ -637,8 +634,7 @@ public class Arcade : MonoBehaviour {
             filterMode = useFilter ? FilterMode.Bilinear : FilterMode.Point
           };
           Screen.texture = texture;
-          pixels = texture.GetPixels32();
-          raw = new byte[sw * sh * 4];
+          rawPixels = texture.GetRawTextureData();
         }
         sprites[0].Pos(0, 8, scaleW, scaleH, true);
 
@@ -828,15 +824,26 @@ public class Arcade : MonoBehaviour {
 
   void SetPixel(int x, int y, byte col) {
     if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
-    Color32 pixel = Col.GetColor(col);
-    pixels[x + sw * y] = pixel;
-    texture.SetPixel(x, hm1 - y, pixel);
+    Color32 c = Col.GetColor(col);
+    rawPixels[(x + sw * (hm1 - y)) * 4] = c.r;
+    rawPixels[(x + sw * (hm1 - y)) * 4 + 1] = c.g;
+    rawPixels[(x + sw * (hm1 - y)) * 4 + 2] = c.b;
+    rawPixels[(x + sw * (hm1 - y)) * 4 + 3] = c.a;
   }
 
-  void SetPixel(int x, int y, Color32 pixel) {
+  void SetPixel(int x, int y, Color32 c) {
     if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
-    pixels[x + sw * y] = pixel;
-    texture.SetPixel(x, hm1 - y, pixel);
+    rawPixels[(x + sw * (hm1 - y)) * 4] = c.r;
+    rawPixels[(x + sw * (hm1 - y)) * 4 + 1] = c.g;
+    rawPixels[(x + sw * (hm1 - y)) * 4 + 2] = c.b;
+    rawPixels[(x + sw * (hm1 - y)) * 4 + 3] = c.a;
+  }
+
+  void SetPixel(int x, int y, byte r, byte g, byte b) {
+    if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
+    rawPixels[(x + sw * (hm1 - y)) * 4] = r;
+    rawPixels[(x + sw * (hm1 - y)) * 4 + 1] = g;
+    rawPixels[(x + sw * (hm1 - y)) * 4 + 2] = b;
   }
 
   void Luma(float v) {
@@ -850,20 +857,10 @@ public class Arcade : MonoBehaviour {
     RGEPalette.SetFloat("_Contrast", v);
   }
 
-  void SetPixel(int x, int y, byte r, byte g, byte b) {
-    if (x < 0 || x > wm1 || y < 0 || y > hm1) return;
-    Color32 pixel = pixels[x + sw * y];
-    pixel.r = r;
-    pixel.g = g;
-    pixel.b = b;
-    pixels[x + sw * y] = pixel;
-    texture.SetPixel(x, hm1 - y, pixel);
-  }
-
   int GetPixel(int x, int y) {
-    if (x < 0 || x > wm1 || y < 0 || y > hm1) return 0;
+    if (x < 0 || x > wm1 || y < 0 || y > hm1) return 255;
     Color32 pixel = texture.GetPixel(x, hm1 - y);
-    return ((pixel.r / 85) << 4) + ((pixel.g / 85) << 2) + (pixel.b / 85);
+    return Col.GetColorByte(pixel);
   }
 
   void Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0) {
@@ -1001,12 +998,12 @@ public class Arcade : MonoBehaviour {
     Color32 pixel = Col.GetColor(col);
     int size = sw * sh * 4;
     for (int i = 0; i < size; i+=4) {
-      raw[i + 0] = pixel.r;
-      raw[i + 1] = pixel.g;
-      raw[i + 2] = pixel.b;
-      raw[i + 3] = 255;
+      rawPixels[i + 0] = pixel.r;
+      rawPixels[i + 1] = pixel.g;
+      rawPixels[i + 2] = pixel.b;
+      rawPixels[i + 3] = 255;
     }
-    texture.LoadRawTextureData(raw);
+    texture.LoadRawTextureData(rawPixels);
   }
 
   void ClearUI(byte col) {
@@ -1153,8 +1150,11 @@ public class Arcade : MonoBehaviour {
         byte col = mem[pos];
         if (col != 255) {
           Color32 pixel = Col.GetColor(col);
-          pixels[dx + sw * dy] = pixel;
-          texture.SetPixel(dx, hm1 - dy, pixel);
+          rawPixels[(dx + sw * dy) * 4] = pixel.r;
+          rawPixels[(dx + sw * dy) * 4 + 1] = pixel.g;
+          rawPixels[(dx + sw * dy) * 4 + 2] = pixel.b;
+          rawPixels[(dx + sw * dy) * 4 + 3] = pixel.a;
+          //FIXME          texture.SetPixel(dx, hm1 - dy, pixel);
         }
       }
   }
@@ -1671,8 +1671,7 @@ public class Arcade : MonoBehaviour {
             filterMode = n.CN3 == null || Evaluate(n.CN3).ToInt(culture) == 0 ? FilterMode.Point : FilterMode.Bilinear
           };
           Screen.texture = texture;
-          pixels = texture.GetPixels32();
-          raw = new byte[sw * sh * 4];
+          rawPixels = texture.GetRawTextureData();
           HandlePostIncrementDecrement();
         }
         break;
