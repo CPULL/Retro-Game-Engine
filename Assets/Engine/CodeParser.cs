@@ -115,6 +115,7 @@ public class CodeParser {
 
   readonly Regex rgOpenBracket = new Regex("[\\s]*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgBlockOpen = new Regex(".*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
+  readonly Regex rgBlockOpenAlone = new Regex("^[\\s]*\\{[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
   readonly Regex rgBlockClose = new Regex("^[\\s]*\\}[\\s]*$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
   readonly Regex rgTag = new Regex("([\\s]*`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
@@ -1415,7 +1416,7 @@ public class CodeParser {
 
         // Check what of the 4 cases we are in
         if (!string.IsNullOrWhiteSpace(after)) {
-          if (rgBlockOpen.IsMatch(after)) { // ************************************* 1 block open same line ***********************************************************
+          if (rgBlockOpenAlone.IsMatch(after)) { // ************************************* 1 block open same line ***********************************************************
             node.iVal = 1;
             CodeNode b = new CodeNode(BNF.BLOCK, after, pos);
             int end = FindEndOfBlock(lines, linenumber);
