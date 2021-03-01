@@ -853,6 +853,17 @@ public class CodeParser {
       return;
     }
 
+    // [Console] = Console([EXPR][, [EXPR]])
+    if (expected.IsGood(Expected.Val.Statement) && rgConsole.IsMatch(line)) {
+      Match m = rgConsole.Match(line);
+      CodeNode node = new CodeNode(BNF.Console, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 1 && num != 2) throw new ParsingException("Invalid Console(), 1 or 2 parameters are required.\n<color=#44C6B0>Console(<i>test</i>[, <i>color</i>])</color>", origForException, linenumber + 1 + offsetForErrors);
+      parent.Add(node);
+      return;
+    }
+
     // [UILINE] = UIline([EXPR], [EXPR], [EXPR], [EXPR], [EXPR])
     if (expected.IsGood(Expected.Val.Statement) && rgLineUI.IsMatch(line)) {
       Match m = rgLineUI.Match(line);

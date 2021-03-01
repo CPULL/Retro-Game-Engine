@@ -881,6 +881,27 @@ public class Arcade : MonoBehaviour {
     return Col.GetColorByte(pixel);
   }
 
+  void Console(string txt, byte color = 0) {
+    int line = sw * 32;
+    int size = sw * sh * 4;
+    for (int i = size - 4; i >= line; i -= 4) {
+      rawUI[i + 0] = rawUI[i + 0 - line];
+      rawUI[i + 1] = rawUI[i + 1 - line];
+      rawUI[i + 2] = rawUI[i + 2 - line];
+      rawUI[i + 3] = rawUI[i + 3 - line];
+    }
+    for (int i = 0; i < line; i += 4) {
+      rawUI[i + 0] = 0;
+      rawUI[i + 1] = 0;
+      rawUI[i + 2] = 0;
+      rawUI[i + 3] = 0;
+    }
+    rawTarget = rawUI;
+    Write(txt, 0, sh - 8, color);
+    rawTarget = rawPixels;
+    uiUpdated = true;
+  }
+
   void Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0) {
     if (mode == 1) Write6(txt, x, y, col, back);
     else if (mode == 2) WriteC(txt, x, y, col, back);
@@ -1359,6 +1380,15 @@ public class Arcade : MonoBehaviour {
           CompleteFrame();
           return true; // We will skip to the next frame
         }
+
+        case BNF.Console: {
+          if (n.CN2 == null)
+            Console(Evaluate(n.CN1).ToStr());
+          else
+            Console(Evaluate(n.CN1).ToStr(), Evaluate(n.CN2).ToByte(culture));
+          HandlePostIncrementDecrement();
+        }
+        break;
 
         case BNF.WRITE: {
           Value a = Evaluate(n.CN1);
