@@ -10,13 +10,14 @@ public class Arcade : MonoBehaviour {
   const float updateTime = .5f;
   public bool DevMode = false;
   public RawImage Screen;
+  public RawImage UI;
   public RectTransform rt;
   public TextMeshProUGUI FPS;
   public Audio audioManager;
   public Texture2D LogoTexture;
-  Texture2D texture;
-  Color32[] pixels;
-  byte[] raw;
+  Texture2D texture, textureUI;
+  Color32[] pixels, pixelsUI;
+  byte[] raw, rawUI;
   readonly CodeParser cp = new CodeParser();
   int sw = 256;
   int sh = 160;
@@ -273,13 +274,18 @@ public class Arcade : MonoBehaviour {
 
   private void Start() {
     Col.InitPalette(RGEPalette);
-    texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) {
-      filterMode = FilterMode.Point
-    };
+    texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
     Screen.texture = texture;
     pixels = texture.GetPixels32();
     raw = new byte[sw * sh * 4];
+    textureUI = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+    UI.texture = textureUI;
+    pixelsUI = textureUI.GetPixels32();
+    rawUI = new byte[sw * sh * 4];
     Clear(0);
+    ClearUI(255);
+    textureUI.Apply();
+
     Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
     Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
     Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9, Col.C(1, 5, 2));
@@ -1001,6 +1007,18 @@ public class Arcade : MonoBehaviour {
       raw[i + 3] = 255;
     }
     texture.LoadRawTextureData(raw);
+  }
+
+  void ClearUI(byte col) {
+    Color32 pixel = Col.GetColor(col);
+    int size = sw * sh * 4;
+    for (int i = 0; i < size; i+=4) {
+      rawUI[i + 0] = pixel.r;
+      rawUI[i + 1] = pixel.g;
+      rawUI[i + 2] = pixel.b;
+      rawUI[i + 3] = pixel.a;
+    }
+    textureUI.LoadRawTextureData(rawUI);
   }
 
   void Line(int x1, int y1, int x2, int y2, byte col) {
