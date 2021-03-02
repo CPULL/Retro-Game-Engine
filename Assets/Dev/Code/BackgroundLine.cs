@@ -1,8 +1,10 @@
 using System;
+using TMPro;
 using UnityEngine;
 
 public class BackgroundLine : MonoBehaviour {
   public int lineNumber = 0;
+  public TextMeshProUGUI Text;
   public Action<int> CallBack { get; internal set; }
   public Action<int> CallClick { get; internal set; }
   bool over = false;

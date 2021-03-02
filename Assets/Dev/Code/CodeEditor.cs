@@ -670,7 +670,6 @@ public class CodeEditor : MonoBehaviour {
       if (c == '\n')
         num++;
     RedrawLineNumbersAndBreakPoints(num, 0);
-    InspectorVariablesTxt.SetTextWithoutNotify("");
     VariableEditName.text = "";
     VariableEditVal.SetTextWithoutNotify("");
     selectedVar = -1;
@@ -689,31 +688,36 @@ public class CodeEditor : MonoBehaviour {
   }
 
   public GameObject InspectorVariables;
-  public TMP_InputField InspectorVariablesTxt;
+  public Transform InspectorVariablesContents;
   public GameObject[] VariableLineTemplate;
-  public Transform BackgroundVariables;
   int selectedVar = -1;
   public TextMeshProUGUI VariableEditName;
   public TMP_InputField VariableEditVal;
   public TextMeshProUGUI CompilationStatus;
 
+  float varUpdate = .25f;
   public void UpdateVariables(Variables vars) {
     if (!InspectorVariables.activeSelf) return;
-    InspectorVariablesTxt.SetTextWithoutNotify(vars.GetFormattedValues(out int num));
+    varUpdate -= Time.deltaTime;
+    if (varUpdate > 0) return;
+    varUpdate = .25f;
 
-    BackgroundVariables.SetAsFirstSibling();
-    if (BackgroundVariables.childCount > num) {
-      for (int i = num; i < BackgroundVariables.childCount; i++) {
-        GameObject line = BackgroundVariables.GetChild(BackgroundVariables.childCount - 1).gameObject;
-        line.transform.SetParent(null);
-        GameObject.Destroy(line);
-      }
+    string[] keys = vars.GetFormattedKeys();
+    while (InspectorVariablesContents.childCount > keys.Length) {
+      GameObject line = InspectorVariablesContents.GetChild(InspectorVariablesContents.childCount - 1).gameObject;
+      line.transform.SetParent(null);
+      Destroy(line);
     }
-    while (BackgroundVariables.childCount < num) {
-      BackgroundLine line = Instantiate(VariableLineTemplate[BackgroundVariables.childCount & 1], BackgroundVariables).GetComponent<BackgroundLine>();
-      line.lineNumber = BackgroundVariables.childCount - 1;
-      line.CallClick = SelectVariable;
-      line.GetComponent<RectTransform>().sizeDelta = new Vector2(640, 1.1625f * 26);
+    for (int i = 0; i < keys.Length; i++) {
+      BackgroundLine line;
+      if (InspectorVariablesContents.childCount > i)
+        line = InspectorVariablesContents.GetChild(i).GetComponent<BackgroundLine>();
+      else {
+        line = Instantiate(VariableLineTemplate[InspectorVariablesContents.childCount & 1], InspectorVariablesContents).GetComponent<BackgroundLine>();
+        line.lineNumber = InspectorVariablesContents.childCount - 1;
+        line.CallClick = SelectVariable;
+      }
+      line.Text.text = vars.GetFormattedValue(keys[i]);
     }
     SelectVariable(selectedVar);
   }

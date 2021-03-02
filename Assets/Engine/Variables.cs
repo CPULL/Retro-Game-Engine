@@ -131,6 +131,31 @@ public class Variables {
     return res;
   }
 
+  public string[] GetFormattedKeys() {
+    string[] keys = new string[pointers.Keys.Count];
+    pointers.Keys.CopyTo(keys, 0);
+    return keys;
+  }
+
+  public string GetFormattedValue(string key) {
+    string res = "";
+    Value val = vars[pointers[key]];
+    string line = "";
+    switch (val.type) {
+      case VT.None:   line = "<color=#20f350>NUL</color>   "; break;
+      case VT.Int:    line = "<color=#20f350>INT</color>   "; break;
+      case VT.Float:  line = "<color=#20f350>FLT</color>   "; break;
+      case VT.String: line = "<color=#20f350>STR</color>   "; break;
+      case VT.Array:  line = "<color=#20f350>ARR</color>   "; break;
+    }
+    string name = key;
+    while (name.Length < 16) name += " ";
+    if (name.Length > 16) name = name.Substring(0, 16);
+    line += name + "  <color=#0fe4f3>" + val.ToDebugStr() + "</color>\n";
+    res += line;
+    return res;
+  }
+
   public void CopyValuesFrom(Variables src) {
     Clear();
     foreach(string name in src.pointers.Keys) {

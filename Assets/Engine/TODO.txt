@@ -26,10 +26,3 @@ Rom editor: Add "Edit" buttons in RomEdit (music, tilemap)
 CodeEditor: View memory
 CodeEditor: [DECIDE] remove compiled code nodes or implement binary save
 
-Arcade: add UI layer
- - clr, write, box, line, image
- - drawui(bool) to switch rendering target
-
- add Console() that will print on the UI, on the last line, and will scroll up the previous part of the UI
-
- Remove all texture.setpixel and getpixel, use only the pixels[] and then update the texture in raw mode at end of frame
