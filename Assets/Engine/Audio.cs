@@ -10,6 +10,11 @@ public class Audio : MonoBehaviour {
   private readonly float[] oscValues = new float[512];
   private float[][] outputs;
 
+  public AudioClip[] Tones;
+  float[][] noiseSamples = new float[10][];
+  int[] nslens = new int[10];
+  public float[] nsvals = new float[10];
+
   void Awake() {
     AudioClip.PCMReaderCallback[] readers = new AudioClip.PCMReaderCallback[8];
     readers[0] = OnAudioRead0;
@@ -42,6 +47,12 @@ public class Audio : MonoBehaviour {
     outputs = new float[channels.Length][];
     for (int i = 0; i < channels.Length; i++)
       outputs[i] = new float[512];
+
+    for (int i = 0; i < 10; i++) {
+      nslens[i] = Tones[i].samples * Tones[i].channels;
+      noiseSamples[i] = new float[nslens[i]];
+      Tones[i].GetData(noiseSamples[i], 0);
+    }
   }
 
   IEnumerator DelayedInit() {
@@ -242,10 +253,12 @@ public class Audio : MonoBehaviour {
 
   }
 
-
+  public float MiP;
+  public float MaP;
 
   const float piP2 = Mathf.PI * 2f;
   const float piH2 = Mathf.PI * .5f;
+  const float piD1 = 1f / Mathf.PI;
   const float piD2 = 2f / Mathf.PI;
   const float piD325 = 3.25f / Mathf.PI;
   const float o3rd = 1f / 3f;
@@ -258,7 +271,8 @@ public class Audio : MonoBehaviour {
   void OnAudioRead(float[] data, int channel) {
     if (channels[channel].clip == null) return;
     switch (channels[channel].wave) {
-      case Waveform.Triangular:
+      // FIXME OK
+      case Waveform.Triangular: {
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
@@ -267,13 +281,16 @@ public class Audio : MonoBehaviour {
           if (data[i] < -1f) data[i] = -1f;
           if (data[i] > 1f) data[i] = 1f;
         }
-        break;
+      }
+      break;
 
-      case Waveform.Saw:
+      // FIXME OK
+      case Waveform.Saw: {
+        int step = (int)(88200 / channels[channel].freq);
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
+          if (channels[channel].position >= step) channels[channel].position -= step;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate - 1; // 0->2
           if (pos == 0)
             data[i] = 0;
           else
@@ -281,185 +298,259 @@ public class Audio : MonoBehaviour {
           if (data[i] < -1f) data[i] = -1f;
           if (data[i] > 1f) data[i] = 1f;
         }
-        break;
+      }
+      break;
 
-      case Waveform.SuperSaw:
+      // FIXME OK
+      case Waveform.SuperSaw: {
+        int step = (int)(220500 / channels[channel].freq);
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
+          if (channels[channel].position >= step) channels[channel].position -= step;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate - 1; // 0->5
+          pos = (pos - 0.02371f) * 0.986957f; // Enforce 0-5 values
           float pt = channels[channel].phase;
-          float pt2 = pt * pt;
+          float v = pt * .1f;
+          float v2 = v * v;
           float y1 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos))) * piD2;
-          float y2 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos * pt))) * piD2;
-          float y3 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos * pt2))) * piD2;
-          float y4 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos * pt2 * pt))) * piD2;
-          float y5 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos * pt2 * pt2))) * piD2;
-          float y6 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(piD2 * pos * pt2 * pt2 * pt))) * piD2;
-          data[i] = (y1 + y2 + y3 + y4 + y5 + y6) * .1666666f;
-          if (data[i] < -1f) data[i] = -1f;
-          if (data[i] > 1f) data[i] = 1f;
-        }
-        break;
+          float y2 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(2 * piD2 * (pos + piD1 * .1f)))) * piD2;
+          float y3 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(3 * piD2 * (pos + piD1 * .083333333333f)))) * piD2;
+          float y4 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(4 * piD2 * (pos + piD1 * .066666666666f)))) * piD2;
+          float y5 = 1f - (piH2 - Mathf.Atan(Mathf.Tan(4 * piD2 * (pos + piD1 * .0625f)))) * piD2;
 
-      case Waveform.Square:
-        for (int i = 0; i < data.Length; i++) {
-          channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
-          pos -= (int)pos;
-          if (pos < channels[channel].phase) {
-            if (channels[channel].phase - pos < .01f) {
-              float tilt = (channels[channel].phase - pos) * 100;
-              data[i] = -.99f * tilt + .99f * (1 - tilt);
-            }
-            else
-              data[i] = .99f;
-          }
-          else {
-            if (pos - channels[channel].phase < .01f) {
-              float tilt = (pos - channels[channel].phase) * 100;
-              data[i] = -.99f * tilt + .99f * (1 - tilt);
-            }
-            else
-              data[i] = -.99f;
-          }
-        }
-        break;
-
-      case Waveform.Sin:
-        for (int i = 0; i < data.Length; i++) {
-          channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
-          data[i] = (Mathf.Sin(2 * Mathf.PI * pos) + Mathf.Sin(2 * Mathf.PI * pos * channels[channel].phase)) * .5f;
-        }
-        break;
-
-      case Waveform.SuperSin: {
-        for (int i = 0; i < data.Length; i++) {
-          channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
-          float w = channels[channel].phase;
-          float s = w * Mathf.Sin(pos);
-          data[i] = piD325 * (Mathf.Sin(w * s) + Mathf.Sin(3 * w * s) * o3rd + Mathf.Sin(5 * w * s) * o5th + Mathf.Sin(7 * w * s) * o7th + Mathf.Sin(9 * w * s) * o9th + Mathf.Sin(11 * w * s) * o11th);
+          data[i] = ((1 - v) * y1 + v * y2 + v2 * y3 + v2 * v2 * y4 + v2 * v2 * v2 * y5) / (1.1f + pt * .2f);
           if (data[i] < -1f) data[i] = -1f;
           if (data[i] > 1f) data[i] = 1f;
         }
       }
       break;
 
-      case Waveform.Bass1:
-        seed++;
+      // FIXME OK
+      case Waveform.Square: {
+        float pow = channels[channel].phase + .5f;
+        int step = (int)(44100 / channels[channel].freq);
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position = 0;
+          if (channels[channel].position > step) channels[channel].position -= step;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate; // 0->1
+          pos = Mathf.Pow(pos, pow);
+          data[i] = .75f * Mathf.Atan(256 * Mathf.Sin(piP2 * pos));
+        }
+      }
+      break;
 
-          float x = channels[channel].position * .0005f;
-          float xf = (channels[channel].position + 31.5f) * channels[channel].freq * .001f;
-          float y = Mathf.Sin(piP2 * Mathf.Sqrt(.25f * xf)) * Mathf.Cos(Mathf.PI * xf * .0001245f) * (-.06f * x + 1000) / 1000;
-          data[i] = y;
+      // FIXME OK
+      case Waveform.Sin: {
+        float pow = channels[channel].phase * .1f + .9f;
+        int step = (int)(44100 / channels[channel].freq);
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          if (channels[channel].position > step) channels[channel].position -= step;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate; // 0->1
+          if (pos > 1) pos -= 1;
+          pos = Mathf.Pow(pos, pow);
+          data[i] = Mathf.Sin(piP2 * pos);
+        }
+      }
+      break;
+
+      // FIXME OK
+      case Waveform.SuperSin: {
+        float ph = channels[channel].phase;
+        int step = (int)(44100 / channels[channel].freq);
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          if (channels[channel].position > step) channels[channel].position -= step;
+          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate; // 0->1
+          if (pos > 1) pos -= 1;
+          float a = Mathf.Sin(piP2 * pos);
+          float b = (Mathf.Sin(piP2 * a * ph) + 2 * a) * .25f;
+          float c = (Mathf.Sin(piH2 * ph * b) + Mathf.Sin(piP2 * a + piP2 * ph) + 3 * a) * .2f;
+          data[i] = (a + b + c) * .3f;
           if (data[i] < -1f) data[i] = -1f;
           if (data[i] > 1f) data[i] = 1f;
         }
-        for (int t = 0; t < 4; t++) {
-          for (int i = 1; i < data.Length - 1; i++)
-            data[i] = (data[i] + data[i - 1] + data[i + 1]) * .333f;
-          for (int i = 2; i < data.Length - 2; i++)
-            data[i] = (data[i] + data[i - 1] + data[i + 1] + data[i - 2] + data[i + 2]) * .2f;
-          for (int i = 1; i < data.Length - 1; i++)
-            data[i] = (data[i] + data[i - 1] + data[i + 1]) * .3333f;
-        }
-        break;
+      }
+      break;
 
-      case Waveform.Bass2:
-        seed++;
-        float p = channels[channel].phase;
+      // FIXME OK
+      case Waveform.Bass1: {
+        float ph = channels[channel].phase;
+        float fu = 8 / channels[channel].freq;
+        float fo = channels[channel].freq / 8;
+        int step = (int)(44100 * fu);
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position -= samplerate;
-          float pos = .25f * channels[channel].freq * channels[channel].position * oneOversamplerate;
-
-          float y =
-            1.0f * Mathf.Sin(piP2 * pos) +
-            0.2f * Mathf.Sin(piP2 * pos / 2 + p) +
-            0.1f * Mathf.Sin(piP2 * pos / 4 + p * p) +
-            0.05f * Mathf.Sin(piP2 * pos / 8 + p * p * p) +
-            0.02f * Mathf.Sin(piP2 * pos / 16 + p * p * p * p);
-          y *= 0.85f;
-          y += .003f * (Mathf.PerlinNoise(pos, pos) - .5f);
-          if (y < -1f) y = -1f;
-          if (y > 1f) y = 1f;
-          data[i] = y;
+          if (channels[channel].position > step) channels[channel].position -= step;
+          float pos = fo * channels[channel].position * oneOversamplerate; // 0->1
+          if (pos > 1) pos -= 1;
+          float a = Mathf.Sin(piP2 * pos);
+          float b = Mathf.Sin(23 * ph * piD2 * pos);
+          data[i] = (.95f * a + .05f * b) * a * 1.8f - .9f;
         }
-        for (int i = 1; i < data.Length; i++) { 
-          data[i] = (data[i] + data[i - 1]) * .5f;
-        }
-        break;
+      }
+      break;
 
-      case Waveform.Noise:
-        seed++;
+      case Waveform.Bass2: {
+        float fu = 4 / channels[channel].freq;
+        float fo = channels[channel].freq / 4;
+        float detune = 1.0293f * channels[channel].phase;
+        int step = (int)(44100 * fu);
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position -= samplerate;
+          if (channels[channel].position > step) channels[channel].position -= step;
+          float pos = fo * channels[channel].position * oneOversamplerate; // 0->1
+          if (pos > 1) pos -= 1;
+          float v =
+            Mathf.Sin(piP2 * pos) + .3f * Mathf.Sin(piP2 * pos * 2) + .15f * Mathf.Sin(piP2 * pos * 3) +
+            Mathf.Sin(piP2 * pos * detune) + .25f * Mathf.Sin(piP2 * pos * 2 * detune) + .125f * Mathf.Sin(piP2 * pos * 3 * detune);
+          data[i] = v * .4f;
+        }
+
+      }
+      break;
+
+      case Waveform.Noise: {
+        seed++;
+        int step = (int)(4410000 / channels[channel].freq);
+        for (int i = 0; i < data.Length; i++) {
+          channels[channel].position++;
+          if (channels[channel].position > step) channels[channel].position -= step;
           float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
           data[i] = Squirrel3Norm((int)pos, seed);
         }
-        break;
+      }
+      break;
 
-      case Waveform.PinkNoise:
-        seed++;
-        float sr2 = samplerate / 2f;
-        float np = channels[channel].phase * .1f;
-        float pn = 1 - channels[channel].phase * .2f;
+      // FIXME OK
+      case Waveform.PinkNoise: { // All at the same level, centered on the phase (1-> all equals, 0-> out higher, 10 -> center higher
+        float ph = channels[channel].phase;
+        if (ph != 1) {
+          MiP = 0;
+          float pf = ph;
+          if (ph > 1) pf = (10 - ph) * .1f;
+          pf = (1 + pf) * (1 + pf);
+          for (int i = 0; i < 10; i++) {
+            float pow = (4.5f - i) / (.1f + pf * pf);
+            nsvals[i] = pow * pow;
+            if (ph < 1) nsvals[i] = (nsvals[i] * nsvals[i] + nsvals[i]) * .5f + .1f;
+            else nsvals[i] = .25f * (6 - ph * .1f) - nsvals[i];
+            if (nsvals[i] < 0) nsvals[i] = 0;
+            MiP += nsvals[i];
+          }
+          for (int i = 0; i < 10; i++)
+            nsvals[i] /= MiP;
+        }
+        else {
+          for (int i = 0; i < 10; i++)
+            nsvals[i] = .1f;
+        }
+
+        int step = (int)(44100 * 160 / channels[channel].freq);
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position -= samplerate;
-          float pos;
-          if (channels[channel].position < sr2)
-            pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
-          else
-            pos = channels[channel].freq * (samplerate - channels[channel].position) * oneOversamplerate;
-          data[i] = np * Squirrel3Norm((int)pos, seed) + pn * (Mathf.PerlinNoise(pos, seed / 1000f) - .5f);
-        }
-        break;
+          if (channels[channel].position > step) channels[channel].position -= step;
 
-      case Waveform.BrownNoise:
-        seed++;
+          float pos = 0.00625f * channels[channel].freq * channels[channel].position * oneOversamplerate; // 0->1
+          if (pos > 1) pos -= 1;
+          data[i] = 0;
+          for (int n = 0; n < 10; n++)
+            data[i] += nsvals[n] * noiseSamples[n][(int)(pos * nslens[n])];
+        }
+      }
+      break;
+
+      // FIXME OK
+      case Waveform.BrownNoise: { // Linear down -> 1: 50%->0%; 0: 50%->25%; 10: 100%->0%
+        /*
+         s = ph<1 ? 50 : 50+ph*5
+         e = ph<1 ? 25-ph*25 : 0
+         */
+
+        float ph = channels[channel].phase;
+        float s = ph <= 1 ? 50 : 50 + (ph - 1) * 5.55f;
+        float e = ph <= 1 ? 25 - ph * 25 : 0;
+        MiP = 0;
+        for (int i = 0; i < 10; i++) {
+          nsvals[i] = (i * .111f) * s + (1 - i * .111f) * e;
+          if (nsvals[i] < 0) nsvals[i] = 0;
+          MiP += nsvals[i];
+        }
+        for (int i = 0; i < 10; i++)
+          nsvals[i] /= MiP;
+
+        int step = (int)(44100 * 160 / channels[channel].freq);
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
-          data[i] = Squirrel3Norm((int)pos, seed);
-          if (i > 1 && Mathf.Abs(data[i - 2] - data[i]) > .5f) data[i] *= -.25f;
-          if (i > 0 && Mathf.Abs(data[i - 1] - data[i]) > .5f) data[i] *= -.25f;
-        }
-        break;
+          if (channels[channel].position > step) channels[channel].position -= step;
 
-      case Waveform.BlackNoise:
-        seed++;
+          float pos = 0.00625f * channels[channel].freq * channels[channel].position * oneOversamplerate; // 0->1
+          if (pos > 1) pos -= 1;
+          data[i] = 0;
+          for (int n = 0; n < 10; n++)
+            data[i] += nsvals[n] * noiseSamples[n][(int)(pos * nslens[n])];
+        }
+      }
+      break;
+
+      // FIXME OK
+      case Waveform.BlackNoise: { // From hi to low decreasing exp. 1: ends at 50%, 10: ends at 100%, 0: only first two
+        /*
+         s = ph<1 ? 25-ph*25 : 0
+         e = ph<1 ? 50 : 50+ph*5
+         */
+
+        float ph = channels[channel].phase;
+        float s = ph <= 1 ? 50 : 50 + (ph - 1) * 5.55f;
+        float e = ph <= 1 ? 25 - ph * 25 : 0;
+        MiP = 0;
+        for (int i = 0; i < 10; i++) {
+          nsvals[i] = (i * .111f) * e + (1 - i * .111f) * s;
+          if (nsvals[i] < 0) nsvals[i] = 0;
+          MiP += nsvals[i];
+        }
+        for (int i = 0; i < 10; i++)
+          nsvals[i] /= MiP;
+
+        int step = (int)(44100 * 160 / channels[channel].freq);
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position = 0;
-          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
-          data[i] = Squirrel3Norm((int)pos, seed);
-          if (i > 3 && Mathf.Abs(data[i - 4] - data[i]) > .5f) data[i] *= -.25f;
-          if (i > 2 && Mathf.Abs(data[i - 3] - data[i]) > .5f) data[i] *= -.25f;
-          if (i > 1 && Mathf.Abs(data[i - 2] - data[i]) > .5f) data[i] *= -.25f;
-          if (i > 0 && Mathf.Abs(data[i - 1] - data[i]) > .5f) data[i] *= -.25f;
-        }
-        break;
+          if (channels[channel].position > step) channels[channel].position -= step;
 
-      case Waveform.SoftNoise:
+          float pos = 0.00625f * channels[channel].freq * channels[channel].position * oneOversamplerate; // 0->1
+          if (pos > 1) pos -= 1;
+          data[i] = 0;
+          for (int n = 0; n < 10; n++)
+            data[i] += nsvals[n] * noiseSamples[n][(int)(pos * nslens[n])];
+        }
+      }
+      break;
+
+      // FIXME OK
+      case Waveform.SoftNoise: { // From low to hi decreasing exponentially. 1: ends at 50%, 10: ends at 0%, 0: only last two
+        float ph = channels[channel].phase;
+        MiP = 0;
+        for (int i = 0; i < 10; i++) {
+          nsvals[i] = 1 / 9f + ph - 4 * Mathf.Log(i + 1);
+          if (nsvals[i] < 0) nsvals[i] = 0;
+          MiP += nsvals[i];
+        }
+        for (int i = 0; i < 10; i++)
+          nsvals[i] /= MiP;
+
+        int step = (int)(44100 * 160 / channels[channel].freq);
         for (int i = 0; i < data.Length; i++) {
           channels[channel].position++;
-          if (channels[channel].position >= samplerate) channels[channel].position -= samplerate;
-          float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
-          data[i] = ((channels[channel].phase * Mathf.PerlinNoise(pos, 0) - .5f) * 1.8f +
-            (1 - channels[channel].phase) * (Mathf.PerlinNoise(pos, channels[channel].phase) - .5f) * 1.8f) * .5f;
+          if (channels[channel].position > step) channels[channel].position -= step;
+
+          float pos = 0.00625f * channels[channel].freq * channels[channel].position * oneOversamplerate; // 0->1
+          if (pos > 1) pos -= 1;
+          data[i] = 0;
+          for (int n = 0; n < 10; n++)
+            data[i] += nsvals[n] * noiseSamples[n][(int)(pos * nslens[n])];
         }
-        break;
+      }
+      break;
 
       case Waveform.Drums:
         seed++;

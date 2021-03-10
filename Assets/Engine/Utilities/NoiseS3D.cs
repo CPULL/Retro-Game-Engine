@@ -50,13 +50,30 @@ public static class NoiseS3D {
 	
 	private static void SetupNoise() {
 		p = new int[256];
-		for(int i = 0; i < 256; i++) p[i] = Mathf.FloorToInt(UnityEngine.Random.value * 256);
+		for(int i = 0; i < 256; i++) p[i] = Squirrel3Norm(i, (uint)DateTime.Now.Millisecond);
 		
 		perm_ = new int[512];
 		for(int i = 0; i < 512; i++) perm_[i] = p[i & 255];
 	}
-	
-	
+
+	const uint NOISE1 = 0xb5297a4d;
+	const uint NOISE2 = 0x68e31da4;
+	const uint NOISE3 = 0x1b56c4e9;
+
+	private static int Squirrel3Norm(int pos, uint seed = 0) {
+		uint n = (uint)pos;
+		n *= NOISE1;
+		n += seed;
+		n ^= n >> 8;
+		n += NOISE2;
+		n ^= n << 8;
+		n *= NOISE3;
+		n ^= n >> 8;
+		return (int)(n & 0xff);
+	}
+
+
+
 	private readonly static int[][] simplex = {
 		new int[]{0,1,2,3}, new int[]{0,1,3,2}, new int[]{0,0,0,0}, new int[]{0,2,3,1}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{1,2,3,0},
 		new int[]{0,2,1,3}, new int[]{0,0,0,0}, new int[]{0,3,1,2}, new int[]{0,3,2,1}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{0,0,0,0}, new int[]{1,3,2,0},
