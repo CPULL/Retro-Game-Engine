@@ -562,14 +562,14 @@ public class CodeNode {
         case BNF.Label: return "<color=#56DC96>" + sVal + ":</color>";
         case BNF.REG: {
           if (variables.Get(Reg).type == VT.Array) {
-            return "<color=#fce916>" + variables.GetRegName(Reg) + "[</color>" +
+            return "<color=#fce916>" + variables.GetName(Reg) + "[</color>" +
               CN1?.Format(variables, coloring) +
               "<color=#fce916>]</color>";
           }
-          return "<color=#f6fC06>" + variables.GetRegName(Reg) + "</color>";
+          return "<color=#f6fC06>" + variables.GetName(Reg) + "</color>";
         }
         case BNF.ARRAY:
-          return "<color=#fce916>" + variables.GetRegName(Reg) + "[</color>" +
+          return "<color=#fce916>" + variables.GetName(Reg) + "[</color>" +
             CN1?.Format(variables, coloring) +
             "<color=#fce916>]</color>";
         case BNF.INT: {
@@ -750,16 +750,14 @@ public class CodeNode {
               CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         }
         case BNF.IMAGE: {
-          if (children.Count < 6)
+          if (children.Count < 4)
             return "<color=#569CD6>Image(</color>" +
-            CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-            CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-            CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+            CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
           else
             return "<color=#569CD6>Image(</color>" +
-              CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-              CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN7?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+              CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + 
+              CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + 
+              CN6?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN7?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         }
         case BNF.FRAME: return "<color=#569CD6>Frame</color>";
         case BNF.DTIME: return "<color=#569CD6>deltatime</color>";
@@ -859,7 +857,12 @@ public class CodeNode {
         case BNF.ERROR: return "<color=#ff2010>" + sVal + "</color>";
 
         case BNF.UIClr: return "<color=#569CD6>ClrUI(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
-        case BNF.Console: return "<color=#569CD6>Console(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        case BNF.Console: {
+          if (CN2 == null)
+            return "<color=#569CD6>Console(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else
+            return "<color=#569CD6>Console(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
         case BNF.UIWrite: { // UIWrite(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
           if (children.Count <= 4)
             return "<color=#569CD6>UIWrite(</color>" +
@@ -1227,7 +1230,12 @@ public class CodeNode {
 
 
         case BNF.UIClr: return "UIClr(" + CN1?.Format(variables, coloring) + ")";
-        case BNF.Console: return "Console(" + CN1?.Format(variables, coloring) + ")";
+        case BNF.Console: {
+          if (CN2 == null)
+            return "Console(" + CN1?.Format(variables, coloring) + ")";
+          else
+            return "Console(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
+        }
         case BNF.UIWrite: { // UIWrite(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
           if (children.Count <= 4)
             return "UIWrite(" +

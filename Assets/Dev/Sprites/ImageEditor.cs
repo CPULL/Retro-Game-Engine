@@ -191,20 +191,13 @@ public class ImageEditor : MonoBehaviour {
     block[1] = (byte)(w & 0xff);
     block[2] = (byte)((h & 0xff00) >> 8);
     block[3] = (byte)(h & 0xff);
-    int num = 2;
     Color32[] tps = ((Texture2D)Picture.texture).GetPixels32();
     yield return PBar.Progress(1);
 
-    for (int y = 0; y < h; y++) {
-      yield return PBar.Progress(num);
-      if ((y & 3) == 0) num += 4;
-      int ty = h - y - 1;
-      for (int x = 0; x < w; x += 4) {
-        int pos = x + w * ty;
-        block[4 + pos + 0] = Col.GetBestColor(tps[pos + 0]);
-        block[4 + pos + 1] = Col.GetBestColor(tps[pos + 1]);
-        block[4 + pos + 2] = Col.GetBestColor(tps[pos + 2]);
-        block[4 + pos + 3] = Col.GetBestColor(tps[pos + 3]);
+    for (int y = h - 1; y >= 0; y--) {
+      for (int x = 0; x < w; x++) {
+        if (x == 0) yield return PBar.Progress(2 + x * y);
+        block[4 + x + w * y] = Col.GetBestColor(tps[x + w * (h - 1 - y)]);
       }
     }
     chunk.AddBlock("Image", LabelType.Image, block);
@@ -253,9 +246,11 @@ public class ImageEditor : MonoBehaviour {
 
     Texture2D texture = new Texture2D(wb, hb, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
     Color32[] tps = texture.GetPixels32();
-    for (int i = 0; i < wb * hb; i++) {
-      if (i % (4 * wb) == 0) yield return PBar.Progress(50 + i / wb);
-      tps[i] = Col.GetColor(res.block[4 + i]);
+    for (int y = hb - 1; y >= 0; y--) {
+      for (int x = 0; x < wb; x++) {
+        if (x == 0) yield return PBar.Progress(50 + x * y);
+        tps[x + wb * (hb - 1 - y)] = Col.GetColor(res.block[4 + x + wb * y]);
+      }
     }
     texture.SetPixels32(tps);
     texture.Apply();

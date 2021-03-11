@@ -38,6 +38,15 @@ public class Variables {
     return "<unknown>";
   }
 
+  internal string GetName(int reg) {
+    foreach (string name in pointers.Keys)
+      if (pointers[name] == reg) {
+        if (name.IndexOf('.') != -1) return name.Substring(name.IndexOf('.') + 1);
+        return name;
+      }
+    return "<unknown>";
+  }
+
   internal void Set(int reg, int v) {
     vars[reg].type = VT.Int;
     vars[reg].iVal = v;

@@ -60,10 +60,10 @@ public class FileBrowser : MonoBehaviour {
     inst.FileBrowserContents.SetActive(true);
     inst.postSaveAction = action;
     inst.LoadButton.interactable = false;
-    inst.SaveButton.interactable = false;
+    inst.SaveButton.interactable = true;
     inst.LoadButton.gameObject.SetActive(false);
     inst.SaveButton.gameObject.SetActive(true);
-    inst.FileName.interactable = false;
+    inst.FileName.interactable = true;
     inst.load = false;
 
     // Does the directory exist?

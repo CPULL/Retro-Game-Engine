@@ -21,7 +21,7 @@ public class Arcade : MonoBehaviour {
   int sw = 256;
   int sh = 160;
   int wm1 = 255;
-  int hm1 = 156;
+  int hm1 = 159;
   float scaleW = 1920f / 256;
   float scaleH = 1080f / 160;
   bool useFilter = false;
@@ -1189,10 +1189,12 @@ public class Arcade : MonoBehaviour {
         byte col = mem[pos];
         if (col != 255) {
           Color32 pixel = Col.GetColor(col);
-          rawTarget[(dx + sw * dy) * 4] = pixel.r;
-          rawTarget[(dx + sw * dy) * 4 + 1] = pixel.g;
-          rawTarget[(dx + sw * dy) * 4 + 2] = pixel.b;
-          rawTarget[(dx + sw * dy) * 4 + 3] = pixel.a;
+          pos = (dx + sw * (hm1 - dy)) * 4;
+          if (pos < 0 || pos + 4 >= rawTarget.Length) continue;
+          rawTarget[pos + 0] = pixel.r;
+          rawTarget[pos + 1] = pixel.g;
+          rawTarget[pos + 2] = pixel.b;
+          rawTarget[pos + 3] = pixel.a;
         }
       }
   }
@@ -1840,20 +1842,17 @@ public class Arcade : MonoBehaviour {
           // Evaluate all parameters and set them
           // Get the function code, run it as stack, no need to collect the final result (it is not called as expression)
           CodeNode fDef = functions[n.sVal];
-          Debug.Log("Executing Function " + fDef.sVal);
           if (fDef.CN1?.children != null) {
             // Evaluate the parameters
             for (int i = 0; i < fDef.CN1.children.Count; i++) {
               CodeNode par = fDef.CN1.children[i];
               CodeNode val = n.CN1.children[i];
-              Debug.Log("Par#" + i + ": " + par);
-              Debug.Log("Val#" + i + ": " + val);
               Value v = Evaluate(val);
               variables.Set(par.Reg, v);
             }
           }
           HandlePostIncrementDecrement(); 
-          stacks.AddStack(n.CN2, null, n.origLine, n.origLineNum);
+          stacks.AddStack(fDef.CN2, null, n.origLine, n.origLineNum);
           return false;
         }
 

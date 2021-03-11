@@ -858,7 +858,7 @@ public class SpriteEditor : MonoBehaviour {
     yield return PBar.Show("Loading", 128, 128 + w * h);
     if (res.block.Length < 2 + w * h) { Dev.inst.HandleError("Invalid data block.\nNot enough data for a sprite"); yield break; }
     for (int i = 0; i < w * h; i++) {
-      if (i % 4 == 0) yield return PBar.Progress(128 + i);
+      if (i % w == 0) yield return PBar.Progress(128 + i);
       pixels[i].Set(res.block[4 + i]);
     }
     PBar.Hide();
