@@ -6020,6 +6020,30 @@ MonoBehaviour:
   - {fileID: 8870417}
   - {fileID: 380041019}
   channels: []
+  Tones:
+  - {fileID: 8300000, guid: ee34da640dac3d748ac4a99c9954996a, type: 3}
+  - {fileID: 8300000, guid: 5b425abb8257f4844af51833457428ab, type: 3}
+  - {fileID: 8300000, guid: 8ba3b266f17b0ac4e953a6d899f5b946, type: 3}
+  - {fileID: 8300000, guid: ec8ee1b6ea234974aa4abde79000a9f1, type: 3}
+  - {fileID: 8300000, guid: 3c033991fa062d64fa54c4012436141f, type: 3}
+  - {fileID: 8300000, guid: 5f26f69b19eb4f54ab7584c18b1b5d20, type: 3}
+  - {fileID: 8300000, guid: 1b91fdecdc0af0f4f95a9b10b3d68806, type: 3}
+  - {fileID: 8300000, guid: 48b346eac0403024180199f836a4e0ed, type: 3}
+  - {fileID: 8300000, guid: a2f833d7436f3a645a184fa73e0aacc3, type: 3}
+  - {fileID: 8300000, guid: 0d521868dafc9c54da823d28cc4125dc, type: 3}
+  nsvals:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  MiP: 0
+  MaP: 0
 --- !u!4 &1794079998
 Transform:
   m_ObjectHideFlags: 0
