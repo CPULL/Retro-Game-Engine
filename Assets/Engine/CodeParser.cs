@@ -280,9 +280,10 @@ public class CodeParser {
   string origExpression;
   string generatedException;
   int offsetForErrors = 0;
+  public bool ParseSingleBlock = false;
 
   string pasersedSectionForException = "";
-  public CodeNode Parse(string file, Variables variables, bool parseDataSection, bool parseSingleBlock, int startOffset = 0) {
+  public CodeNode Parse(string file, Variables variables, bool parseDataSection, int startOffset = 0) {
     offsetForErrors = startOffset;
     try {
       // Start by replacing all the problematic stuff
@@ -431,7 +432,7 @@ public class CodeParser {
         }
       }
 
-      if (!atLeastOne && parseSingleBlock) {
+      if (!atLeastOne && ParseSingleBlock) {
         int end = FindEndOfBlock(lines, 0);
         if (end == -1) throw new ParsingException("\"BLOCK\" section does not end", linenumber + 1 + offsetForErrors);
         ParseBlock(lines, 0, end, res);
@@ -1418,12 +1419,14 @@ public class CodeParser {
           ps.Add(v);
         }
 
-        if (!functions.ContainsKey(fnc)) {
-          throw new ParsingException("The function \"" + fnc + "\"\nis not defined", origForException, linenumber + 1 + offsetForErrors);
-        }
+        if (!ParseSingleBlock) {
+          if (!functions.ContainsKey(fnc)) {
+            throw new ParsingException("The function \"" + fnc + "\"\nis not defined", origForException, linenumber + 1 + offsetForErrors);
+          }
 
-        if ((functions[fnc].CN1 == null && ps.children != null) || (functions[fnc].CN1.children?.Count != ps.children?.Count)) {
-          throw new ParsingException("Function " + fnc + " has a wrong number of parameters", origForException, linenumber + 1 + offsetForErrors);
+          if ((functions[fnc].CN1 == null && ps.children != null) || (functions[fnc].CN1.children?.Count != ps.children?.Count)) {
+            throw new ParsingException("Function " + fnc + " has a wrong number of parameters", origForException, linenumber + 1 + offsetForErrors);
+          }
         }
         return;
       }

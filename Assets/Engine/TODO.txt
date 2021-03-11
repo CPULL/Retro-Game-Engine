@@ -34,4 +34,3 @@ The idea is to have the pos to vary from the min to the max of the cycle. So, no
 BUG: sprites looks missing in Arcade/Dev
 FIXME: function local variables should be removed (set to NULL) at each run
 Add outline for funct rendering (write)
-do not show compile error when a funciton is missing if we parse just a block

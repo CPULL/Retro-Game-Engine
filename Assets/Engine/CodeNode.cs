@@ -1284,7 +1284,6 @@ public class CodeNode {
     throw new System.Exception(type + " NOT YET DONE!");
   }
 
-  [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0066:Convert switch statement to expression", Justification = "<Pending>")]
   internal bool Evaluable() {
     switch (type) {
       case BNF.REG:

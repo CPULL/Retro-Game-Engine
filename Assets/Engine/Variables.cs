@@ -191,6 +191,13 @@ public class Variables {
     return pointers[name];
   }
 
+  internal void NullifyFunction(string funcName) {
+    foreach(string fn in pointers.Keys) {
+      if (fn.IndexOf(funcName) == 0) {
+        vars[pointers[fn]].SetNull();
+      }
+    }
+  }
 }
 
 
@@ -240,6 +247,15 @@ public struct Value {
     iVal = 0;
     fVal = 0;
     sVal = s;
+    aVals = null;
+  }
+
+  public void SetNull() {
+    idx = 0;
+    type = VT.None;
+    iVal = 0;
+    fVal = 0;
+    sVal = null;
     aVals = null;
   }
 

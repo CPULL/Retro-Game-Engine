@@ -412,7 +412,8 @@ public class Arcade : MonoBehaviour {
       return;
     }
     try {
-      CodeNode res = cp.Parse(codefile, variables, rompath == null, false);
+      cp.ParseSingleBlock = false;
+      CodeNode res = cp.Parse(codefile, variables, rompath == null);
       Write("Cartridge:", 4, 39, Col.C(1, 3, 4));
       if (res.sVal == null)
         Write("<no name>", 88, 39, Col.C(5, 3, 1));
@@ -1842,6 +1843,8 @@ public class Arcade : MonoBehaviour {
           // Evaluate all parameters and set them
           // Get the function code, run it as stack, no need to collect the final result (it is not called as expression)
           CodeNode fDef = functions[n.sVal];
+          // Set to NULL all the local variables
+          variables.NullifyFunction(fDef.sVal);
           if (fDef.CN1?.children != null) {
             // Evaluate the parameters
             for (int i = 0; i < fDef.CN1.children.Count; i++) {

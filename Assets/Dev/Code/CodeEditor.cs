@@ -538,7 +538,8 @@ public class CodeEditor : MonoBehaviour {
     codeHasErrors = false;
     CodeNode result = null;
     try {
-      result = cp.Parse(code, compVariables, true, !checkCompleteness, startOffset);
+      cp.ParseSingleBlock = !checkCompleteness;
+      result = cp.Parse(code, compVariables, true, startOffset);
       if (checkCompleteness && !result.HasNode(BNF.Config) && !result.HasNode(BNF.Data) && !result.HasNode(BNF.Start) && !result.HasNode(BNF.Update) && !result.HasNode(BNF.Functions)) {
         Result.text = "No executable code found (Start, Update, Functions, Config, or Data)";
         return null;
