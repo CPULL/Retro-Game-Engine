@@ -144,9 +144,9 @@ public class CodeParser {
   readonly Regex rgMemC = new Regex("\\[[\\s]*(`[a-z]{3,}¶)[\\s]*@c[\\s]*\\]", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgMemUnparsed = new Regex("[\\s]*\\[.+\\][\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
-  readonly Regex rgUOneg = new Regex("(^|(?<![0-9a-z\\)¶]\\s*))(\\!(([a-z0-9]*\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\))|[^(\\-\\+\\*%&\\|\\^]+))", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgUOinv = new Regex("(^|(?<![0-9a-z\\)¶]\\s*))(\\~(([a-z0-9]*\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\))|[^(\\-\\+\\*%&\\|\\^]+))", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-  readonly Regex rgUOsub = new Regex("(^|(?<![0-9a-z\\)¶]\\s*))(\\-(([a-z0-9]*\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\))|[^(\\-\\+\\*%&\\|\\^]+))", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOneg = new Regex("(^|(?<![0-9a-z\\)¶]\\s*))(\\!(([a-z0-9]*\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\))|[^(\\-\\+\\*%&\\|\\^,]+))", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOinv = new Regex("(^|(?<![0-9a-z\\)¶]\\s*))(\\~(([a-z0-9]*\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\))|[^(\\-\\+\\*%&\\|\\^,]+))", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgUOsub = new Regex("(^|(?<![0-9a-z\\)¶]\\s*))(\\-(([a-z0-9]*\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\))|[^(\\-\\+\\*%&\\|\\^,]+))", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgMul = new Regex("(`[a-z]{3,}¶)([\\s]*\\*[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgDiv = new Regex("(`[a-z]{3,}¶)([\\s]*/[\\s]*)(`[a-z]{3,}¶)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
