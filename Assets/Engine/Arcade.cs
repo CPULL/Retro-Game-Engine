@@ -2236,6 +2236,36 @@ public class Arcade : MonoBehaviour {
         }
       }
 
+      case BNF.RANDOM: {
+        if (n.CN1 == null) {
+          return new Value(UnityEngine.Random.Range(0, 1f));
+        }
+        else if (n.CN2 == null) {
+          Value v = Evaluate(n.CN1);
+          if (v.type == VT.Int)
+            return new Value(UnityEngine.Random.Range(0, v.ToInt(culture)));
+          else
+            return new Value(UnityEngine.Random.Range(0, v.ToFlt(culture)));
+        }
+        else {
+          Value v1 = Evaluate(n.CN1);
+          Value v2 = Evaluate(n.CN2);
+          if (v1.type == VT.Int && v2.type == VT.Int)
+            return new Value(UnityEngine.Random.Range(v1.ToInt(culture), v2.ToInt(culture)));
+          else
+            return new Value(UnityEngine.Random.Range(v1.ToFlt(culture), v2.ToFlt(culture)));
+        }
+      }
+
+      case BNF.NOISE: {
+        if (n.CN2 == null) {
+          return new Value(Squirrel3.Int(Evaluate(n.CN1).ToInt(culture)));
+        }
+        else {
+          return new Value(Squirrel3.Int(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture)));
+        }
+      }
+
       case BNF.SUBSTRING: {
         string s = Evaluate(n.CN1).ToStr();
         int start = Evaluate(n.CN2).ToInt(culture);

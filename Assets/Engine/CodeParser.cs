@@ -74,12 +74,14 @@ public class CodeParser {
     "musicvoices",
     "mute",
     "name",
+    "noise",
     "pan",
     "pitch",
     "perlin",
     "playmusic",
     "pow",
     "ram",
+    "random",
     "return",
     "screen",
     "setp",
@@ -216,6 +218,8 @@ public class CodeParser {
   readonly Regex rgSqrt = new Regex("[\\s]*sqrt[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgPow = new Regex("[\\s]*pow[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgPerlin = new Regex("[\\s]*perlin[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgRandom = new Regex("[\\s]*random[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgNoise = new Regex("[\\s]*noise[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1957,6 +1961,30 @@ public class CodeParser {
         string pars = m.Groups[1].Value.Trim();
         int num = ParsePars(n, pars);
         if (num < 1 || num > 3) throw new ParsingException("Invalid Perlin(), 1, 2, or, 3 parameters are required.", origExpression, linenumber + 1 + offsetForErrors);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // [random] = random([[EXPR][,[EXPR]])
+      line = rgRandom.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.RANDOM, GenId("RN"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num > 2) throw new ParsingException("Invalid Random(), too many parameters\n Random() => 0..1 float\n Random(val) => 0..val float or int\nRandom(v1, v2) v1..v2 int or float", origExpression, linenumber + 1 + offsetForErrors);
+        nodes[n.id] = n;
+        return n.id;
+      });
+      if (atLeastOneReplacement) continue;
+
+      // [noise] = noise([EXPR][,[EXPR]])
+      line = rgNoise.Replace(line, m => {
+        atLeastOneReplacement = true;
+        CodeNode n = new CodeNode(BNF.NOISE, GenId("NS"), origForException, linenumber);
+        string pars = m.Groups[1].Value.Trim();
+        int num = ParsePars(n, pars);
+        if (num < 1 || num > 2) throw new ParsingException("Invalid Noise().\n Noise(pos) or Noise(pos, seed) are accepted.", origExpression, linenumber + 1 + offsetForErrors);
         nodes[n.id] = n;
         return n.id;
       });

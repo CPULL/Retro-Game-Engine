@@ -267,6 +267,7 @@ public class Audio : MonoBehaviour {
   const float o9th = 1f / 9f;
   const float o11th = 1f / 11f;
   const float o255th = 1f / 255f;
+  uint seed = 0;
 
   void OnAudioRead(float[] data, int channel) {
     if (channels[channel].clip == null) return;
@@ -417,7 +418,7 @@ public class Audio : MonoBehaviour {
           channels[channel].position++;
           if (channels[channel].position > step) channels[channel].position -= step;
           float pos = channels[channel].freq * channels[channel].position * oneOversamplerate;
-          data[i] = Squirrel3Norm((int)pos, seed);
+          data[i] = Squirrel3.Norm((int)pos, seed);
         }
       }
       break;
@@ -559,10 +560,10 @@ public class Audio : MonoBehaviour {
           channels[channel].position++;
           if (channels[channel].position >= samplerate) channels[channel].position = 0;
 
-          float x = channels[channel].freq * channels[channel].position / 1760 + Squirrel3Norm(channels[channel].position, (uint)channels[channel].freq);
+          float x = channels[channel].freq * channels[channel].position / 1760 + Squirrel3.Norm(channels[channel].position, (uint)channels[channel].freq);
           float y = Mathf.Sin(piP2 * Mathf.Sqrt(.5f * (x + 31.5f))) * Mathf.Cos(Mathf.PI * (x + 31.5f) * .0001245f) * (-.25f * x + 1000) / 1000;
           if (channels[channel].position < 2500 * channels[channel].phase)
-            y += Squirrel3Norm((int)x, seed) * x * maxn * (-.25f * x + 1000) / 1000;
+            y += Squirrel3.Norm((int)x, seed) * x * maxn * (-.25f * x + 1000) / 1000;
           if (x < 64) y *= x / 256;
           if (x < 72) y *= x / 128;
           if (x < 80) y *= x / 64;
@@ -603,25 +604,6 @@ public class Audio : MonoBehaviour {
     channels[channel].position = newPosition;
   }
 
-  const uint NOISE1 = 0xb5297a4d;
-  const uint NOISE2 = 0x68e31da4;
-  const uint NOISE3 = 0x1b56c4e9;
-  const uint CAP = 1 << 30;
-  const float CAP2 = 1 << 29;
-  uint seed = 0;
-
-  float Squirrel3Norm(int pos, uint seed = 0) {
-    uint n = (uint)pos;
-    n *= NOISE1;
-    n += seed;
-    n ^= n >> 8;
-    n += NOISE2;
-    n ^= n << 8;
-    n *= NOISE3;
-    n ^= n >> 8;
-    float res = (n % CAP) / CAP2 - 1f;
-    return res;
-  }
 
   #region commodity delegate functions
   void OnAudioRead0(float[] data) { OnAudioRead(data, 0); }

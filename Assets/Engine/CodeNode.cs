@@ -411,6 +411,20 @@ public class CodeNode {
           else
             return "Perlin(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3?.ToString() + ")";
         }
+        case BNF.RANDOM: {
+          if (CN1 == null)
+            return "Random()";
+          else if (CN2 == null)
+            return "Random(" + CN1?.ToString() + ")";
+          else
+            return "Random(" + CN1?.ToString() + ", " + CN2?.ToString() + ")";
+        }
+        case BNF.NOISE: {
+          if (CN2 == null)
+            return "Noise(" + CN1?.ToString() + ")";
+          else
+            return "Noise(" + CN1?.ToString() + ", " + CN2?.ToString() + ")";
+        }
 
         case BNF.ERROR: return sVal;
 
@@ -790,6 +804,20 @@ public class CodeNode {
           else
             return "<color=#569CD6>Perlin(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         }
+        case BNF.RANDOM: {
+          if (CN1 == null)
+            return "<color=#569CD6>Random()</color>";
+          else if (CN2 == null)
+            return "<color=#569CD6>Random(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else
+            return "<color=#569CD6>Random(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
+        case BNF.NOISE: {
+          if (CN2 == null)
+            return "<color=#569CD6>Noise(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else
+            return "<color=#569CD6>Noise(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
         case BNF.SOUND: {
           if (CN3 == null)
             return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
@@ -1158,6 +1186,20 @@ public class CodeNode {
           else
             return "Perlin(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
         }
+        case BNF.RANDOM: {
+          if (CN1 == null)
+            return "Random()";
+          else if (CN2 == null)
+            return "Random(" + CN1?.Format(variables, coloring) + ")";
+          else
+            return "Random(" + CN1?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+        }
+        case BNF.NOISE: {
+          if (CN1 == null)
+            return "Noise(" + CN1?.Format(variables, coloring) + ")";
+          else
+            return "Noise(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
+        }
         case BNF.SOUND: {
           if (CN3 == null)
             return "Sound(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
@@ -1345,6 +1387,8 @@ public class CodeNode {
       case BNF.SQR:
       case BNF.POW:
       case BNF.PERLIN:
+      case BNF.RANDOM:
+      case BNF.NOISE:
       case BNF.SUBSTRING:
       case BNF.TRIM:
       case BNF.MUSICPOS:
@@ -1477,7 +1521,7 @@ public enum BNF {
   KEY, KEYx, KEYy,
   SIN, COS, TAN, ATAN2, SQR, POW,
   MEMCPY,
-  PERLIN,
+  PERLIN, RANDOM, NOISE,
   SOUND, WAVE, MUTE, VOLUME, PITCH, PAN,
   MUSICLOAD, MUSICPLAY, MUSICSTOP, MUSICPOS, MUSICVOICES,
   TILEMAP, TILEPOS, TILESET, TILEGET, TILEGETROT,

@@ -31,6 +31,7 @@ Test all wave forms and reduce their thiks if any
 The idea is to have the pos to vary from the min to the max of the cycle. So, not necessarily samplerate values
 
 
-BUG: sprites looks missing in Arcade/Dev
 FIXME: function local variables should be removed (set to NULL) at each run
 Add outline for funct rendering (write) ==> Do also a re-write of the code, to support different fonts and some formatting: bold, italic, font size, color, background color, outline color
+Add Rnd function and Noise functions.
+Warn about using non-initialized variables
