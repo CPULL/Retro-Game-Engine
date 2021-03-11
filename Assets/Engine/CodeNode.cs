@@ -884,7 +884,7 @@ public class CodeNode {
               CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         case BNF.ERROR: return "<color=#ff2010>" + sVal + "</color>";
 
-        case BNF.UIClr: return "<color=#569CD6>ClrUI(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        case BNF.UIClr: return "<color=#569CD6>UIClr(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         case BNF.Console: {
           if (CN2 == null)
             return "<color=#569CD6>Console(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";

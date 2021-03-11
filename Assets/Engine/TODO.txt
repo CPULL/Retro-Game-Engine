@@ -35,3 +35,5 @@ FIXME: function local variables should be removed (set to NULL) at each run
 Add outline for funct rendering (write) ==> Do also a re-write of the code, to support different fonts and some formatting: bold, italic, font size, color, background color, outline color
 Add Rnd function and Noise functions.
 Warn about using non-initialized variables
+
+Allow arr[] = {1, 2, 4.5, "6" } and have 4 values in the array
