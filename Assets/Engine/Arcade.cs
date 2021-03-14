@@ -203,7 +203,7 @@ public class Arcade : MonoBehaviour {
       }
       numruns++;
       if (numruns > 1024 * 256) {
-        Write("Possible infinite loop at: " + nodeToRun.parent.origLineNum + "\n" + nodeToRun.parent.origLine, 4, 4, Col.C(5, 4, 0), 0);
+        Write("Possible infinite loop at: " + nodeToRun.parent.origLineNum + "\n" + nodeToRun.parent.origLine, 4, 4, ErrorStyle);
         CompleteFrame();
         nodeToRun = stacks.GetExecutionNode(this);
         StepExecutedCheck();
@@ -277,8 +277,12 @@ public class Arcade : MonoBehaviour {
     }
   }
 
-
   private void Start() {
+    fonts[0] = new Font("Default", 8, 8, font);
+    fonts[1] = new Font("Default6", 6, 8, font6);
+    styles[0] = new FontStyle(fonts[0], Col.C(5, 5, 5), -1, -1);
+    ErrorStyle = new FontStyle(fonts[0], Col.C(5, 0, 0), Col.C(0, 0, 0), -1);
+
     Col.InitPalette(RGEPalette);
     texture = new Texture2D(sw, sh, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
     Screen.texture = texture;
@@ -292,9 +296,13 @@ public class Arcade : MonoBehaviour {
     uiUpdated = true;
     CompleteFrame();
 
-    Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
-    Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
-    Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9, Col.C(1, 5, 2));
+    lastUsedStyle = styles[0];
+    lastUsedStyle.front = Col.C(5, 5, 0);
+    Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8);
+    lastUsedStyle.front = Col.C(1, 2, 3);
+    Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4);
+    lastUsedStyle.front = Col.C(1, 5, 2);
+    Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9);
 
     lastScreenW = (int)rt.rect.width;
     lastScreenH = (int)rt.rect.height;
@@ -356,10 +364,15 @@ public class Arcade : MonoBehaviour {
     sprites[0].Pos(0, 8, scaleW, scaleH, true);
     Clear(0);
     ClearUI(255);
-    Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
-    Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
-    Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9, Col.C(1, 5, 2));
-    Write("Run your code or Debug", 8, 48, Col.C(5, 4, 0));
+    lastUsedStyle = styles[0];
+    lastUsedStyle.front = Col.C(5, 5, 0);
+    Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8);
+    lastUsedStyle.front = Col.C(1, 2, 3);
+    Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4);
+    lastUsedStyle.front = Col.C(1, 5, 2);
+    Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9);
+    lastUsedStyle.front = Col.C(5, 4, 0);
+    Write("Run your code or Debug", 8, 48);
     for (int i = 0; i < 256; i++)
       palette[i] = Col.GetColor((byte)i);
     RGEPalette.SetColorArray("_Colors", palette);
@@ -379,7 +392,9 @@ public class Arcade : MonoBehaviour {
       LastErrorMessage = "No cardridge found!\nPath: " + path;
       runStatus = RunStatus.Stopped;
       Write("No cardridge found!", 4, 40, Col.C(5, 1, 0));
-      Write("Path: " + path, 4, 50, Col.C(5, 1, 0), 0, 2);
+      lastUsedStyle.font = fonts[1];
+      Write("Path: " + path, 4, 50, Col.C(5, 1, 0));
+      lastUsedStyle.font = fonts[0];
       texture.Apply();
       execCallback?.Invoke(nodeToRun == null ? CurrentLineNumber : nodeToRun.origLineNum);
       varsCallback?.Invoke(variables);
@@ -462,6 +477,7 @@ public class Arcade : MonoBehaviour {
       // Redraw
       Clear(0);
       ClearUI(255);
+      lastUsedStyle = styles[0];
       Write("--- MMM Arcade RGE ---", (sw - 22 * 8) / 2, 8, Col.C(5, 5, 0));
       Write("virtual machine", (sw - 15 * 8) / 2, 14 + 4, Col.C(1, 2, 3));
       Write("Retro Game Engine", (sw - 17 * 8) / 2, 14 + 9, Col.C(1, 5, 2));
@@ -903,11 +919,87 @@ public class Arcade : MonoBehaviour {
     uiUpdated = true;
   }
 
-  void Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0) {
-    if (mode == 1) Write6(txt, x, y, col, back);
-    else if (mode == 2) WriteC(txt, x, y, col, back);
-    else if (mode == 3) WriteC6(txt, x, y, col, back);
-    else Write8(txt, x, y, col, back);
+  FontStyle lastUsedStyle, ErrorStyle;
+  FontStyle[] styles = new FontStyle[256];
+  Font[] fonts = new Font[256];
+
+  void Write(string txt, int xx, int yy, byte col) {
+    lastUsedStyle.front = col;
+    Write(txt, xx, yy, lastUsedStyle);
+  }
+  void Write(string txt, int xx, int yy, FontStyle fs = null) {
+    if (fs == null) fs = lastUsedStyle;
+    Font f = fs.font;
+    int w = f.w;
+    int h = f.h;
+    int fw = f.w + 2;
+    int fh = f.h + 2;
+    int px = xx;
+    int py = yy;
+
+    // Get front, outline, and back colors.
+    Color32 fc = Col.GetColor(fs.front);
+    Color32 bc = Col.GetColor(fs.back);
+    Color32 oc = Col.GetColor(fs.outline);
+
+    foreach (char c in txt) {
+      if (c == '\n' || c == '\r') {
+        py += h;
+        px = xx;
+        if (py >= sh) return;
+        continue;
+      }
+      byte[] gliph;
+      if (f.graphs.ContainsKey(c))
+        gliph = f.graphs[c];
+      else
+        gliph = f.graphs['*'];
+
+      for (int y = 0; y < h + 2; y++) {
+        for (int x = 0; x < w + 2; x++) {
+          byte val = gliph[x + fw * y];
+
+          Color32 col;
+          if (val == 2 && !fs.useoutline && fs.useback) col = bc;
+          else if (val == 2 && fs.useoutline) col = oc;
+          else if (val == 0 && fs.useback) col = bc;
+          else if (val == 1) col = fc;
+          else continue;
+
+          SetPixel(px + x - 1, py + y - 1, col);
+        }
+      }
+      px += w;
+      if (px > wm1) return;
+    }
+  }
+
+  void FontLoad(int id, int address) {
+    Font f = new Font("FIXME", 8, 8, font); // FIXME
+  }
+
+  void FontStyle(int id, int fontid, int front, int outline, int back) {
+    if (id < 0 || id >= styles.Length) throw new Exception("Invalid ID for FontStyle: " + id);
+    if (fontid < 0 || fontid >= fonts.Length) throw new Exception("Invalid Font ID for FontStyle: " + id);
+    Font f = fonts[fontid];
+    if (f == null) throw new Exception("Invalid Font " + fontid + " is not defined");
+    if (styles[id] == null) styles[id] = new FontStyle(f, (byte)front, outline, back);
+    else {
+      styles[id].font = f;
+      styles[id].front = (byte)front;
+      if (outline > -1 && outline < 256) {
+        styles[id].useoutline = true;
+        styles[id].outline = (byte)outline;
+      }
+      else
+        styles[id].useoutline = false;
+      if (back > -1 && back < 256) {
+        styles[id].useback = true;
+        styles[id].back = (byte)back;
+      }
+      else
+        styles[id].useback = false;
+    }
   }
 
   void Write8(string txt, int x, int y, byte col, byte back) {
@@ -1394,43 +1486,31 @@ public class Arcade : MonoBehaviour {
         break;
 
         case BNF.WRITE: {
-          Value a = Evaluate(n.CN1);
-          Value b = Evaluate(n.CN2);
-          Value c = Evaluate(n.CN3);
-          Value d = Evaluate(n.CN4);
-          if (n.children.Count > 5) {
-            Value e = Evaluate(n.CN5);
-            Value f = Evaluate(n.CN6);
-            Write(a.ToStr(), b.ToInt(culture), c.ToInt(culture), d.ToByte(culture), e.ToByte(culture), f.ToByte(culture));
+          if (n.CN4 == null)
+            Write(Evaluate(n.CN1).ToStr(), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture));
+          else {
+            int pos = Evaluate(n.CN4).ToInt(culture);
+            if (pos > 0 && pos < 256 && styles[pos] != null)
+              Write(Evaluate(n.CN1).ToStr(), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture), styles[pos]);
+            else
+              Write(Evaluate(n.CN1).ToStr(), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture));
           }
-          else if (n.children.Count > 4) {
-            Value e = Evaluate(n.CN5);
-            Write(a.ToStr(), b.ToInt(culture), c.ToInt(culture), d.ToByte(culture), e.ToByte(culture));
-          }
-          else
-            Write(a.ToStr(), b.ToInt(culture), c.ToInt(culture), d.ToByte(culture));
           HandlePostIncrementDecrement();
         }
         break;
 
         case BNF.UIWrite: {
-          Value a = Evaluate(n.CN1);
-          Value b = Evaluate(n.CN2);
-          Value c = Evaluate(n.CN3);
-          Value d = Evaluate(n.CN4);
           rawTarget = rawUI;
           uiUpdated = true;
-          if (n.children.Count > 5) {
-            Value e = Evaluate(n.CN5);
-            Value f = Evaluate(n.CN6);
-            Write(a.ToStr(), b.ToInt(culture), c.ToInt(culture), d.ToByte(culture), e.ToByte(culture), f.ToByte(culture));
+          if (n.CN4 == null)
+            Write(Evaluate(n.CN1).ToStr(), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture));
+          else {
+            int pos = Evaluate(n.CN4).ToInt(culture);
+            if (pos > 0 && pos < 256 && styles[pos] != null)
+              Write(Evaluate(n.CN1).ToStr(), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture), styles[pos]);
+            else
+              Write(Evaluate(n.CN1).ToStr(), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture));
           }
-          else if (n.children.Count > 4) {
-            Value e = Evaluate(n.CN5);
-            Write(a.ToStr(), b.ToInt(culture), c.ToInt(culture), d.ToByte(culture), e.ToByte(culture));
-          }
-          else
-            Write(a.ToStr(), b.ToInt(culture), c.ToInt(culture), d.ToByte(culture));
           rawTarget = rawPixels;
           HandlePostIncrementDecrement();
         }
@@ -2036,6 +2116,20 @@ public class Arcade : MonoBehaviour {
           return false;
         }
 
+        case BNF.FONTSTYLE: {
+          FontStyle(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture),
+            Evaluate(n.CN3).ToInt(culture), Evaluate(n.CN4).ToInt(culture), Evaluate(n.CN5).ToInt(culture));
+          HandlePostIncrementDecrement();
+          return false;
+        }
+
+        case BNF.FONTLOAD: {
+          FontLoad(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture));
+          HandlePostIncrementDecrement();
+          return false;
+        }
+
+
         case BNF.NOP: return false;
 
         default: {
@@ -2321,7 +2415,7 @@ public class Arcade : MonoBehaviour {
           Execute(sn);
           numruns++;
           if (numruns > 1024 * 256) {
-            Write("Possible infinite loop at: " + sn.parent.origLineNum + "\n" + sn.parent.origLine, 4, 4, 48, 0);
+            Write("Possible infinite loop at: " + sn.parent.origLineNum + "\n" + sn.parent.origLine, 4, 4, ErrorStyle);
             CompleteFrame();
             return new Value();
           }

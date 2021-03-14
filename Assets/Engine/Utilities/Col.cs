@@ -299,6 +299,23 @@ public class Col {
     return colorIndex;
   }
 
+  public static Color32 GetBestColor(int r, int g, int b, int a) {
+    byte colorIndex = 0;
+    int minError = int.MaxValue;
+    for (int i = 0; i < 256; i++) {
+      int dr = r - Palette[i].r;
+      int dg = g - Palette[i].g;
+      int db = b - Palette[i].b;
+      int da = a - Palette[i].a;
+      int error = dr * dr + dg * dg + db * db + da * da;
+      if (error < minError) {
+        minError = error;
+        colorIndex = (byte)i;
+      }
+    }
+    return Palette[colorIndex];
+  }
+
   public static Color32 GetPaletteColor(byte pos) {
     return Palette[pos];
   }

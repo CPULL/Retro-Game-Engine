@@ -185,6 +185,8 @@ public class CodeParser {
   readonly Regex rgLuma = new Regex("[\\s]*luma[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgContrast = new Regex("[\\s]*contrast[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
+  readonly Regex rgFontLoad = new Regex("[\\s]*fontload[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgFontStyle = new Regex("[\\s]*fontstyle[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWrite = new Regex("[\\s]*write[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgWriteUI = new Regex("[\\s]*UIwrite[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgConsole = new Regex("[\\s]*console[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -798,31 +800,54 @@ public class CodeParser {
       return;
     }
 
-    // [UIWRITE] = write([EXPR], [EXPR], [EXPR], [EXPR], [EXPR]) ; text, x, y, col(front), [col(back), size]
+    // [UIWRITE] = write([EXPR], [EXPR], [EXPR][, [EXPR]]) ; text, x, y, [font style]
     if (expected.IsGood(Expected.Val.Statement) && rgWriteUI.IsMatch(line)) {
       Match m = rgWriteUI.Match(line);
       if (m.Groups.Count < 2) throw new ParsingException("Invalid UIWrite() command.");
       CodeNode node = new CodeNode(BNF.UIWrite, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num < 4) throw new ParsingException("Invalid UIWrite(), not enough parameters.", origForException, linenumber + 1 + offsetForErrors);
-      if (num > 6) throw new ParsingException("Invalid UIWrite(), too many parameters.", origForException, linenumber + 1 + offsetForErrors);
+      if (num != 3 && num != 4) throw new ParsingException("Invalid UIWrite(), not enough parameters.\nUIWrite(text, x, y[, fontstyleindex])", origForException, linenumber + 1 + offsetForErrors);
       parent.Add(node);
       return;
     }
 
-    // [WRITE] = write([EXPR], [EXPR], [EXPR], [EXPR], [EXPR]) ; text, x, y, col(front), [col(back), size]
+    // [WRITE] = write([EXPR], [EXPR], [EXPR][, [EXPR]]) ; text, x, y, [font style]
     if (expected.IsGood(Expected.Val.Statement) && rgWrite.IsMatch(line)) {
       Match m = rgWrite.Match(line);
       if (m.Groups.Count < 2) throw new ParsingException("Invalid Write() command.");
       CodeNode node = new CodeNode(BNF.WRITE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num < 4) throw new ParsingException("Invalid Write(), not enough parameters.", origForException, linenumber + 1 + offsetForErrors);
-      if (num > 6) throw new ParsingException("Invalid Write(), too many parameters.", origForException, linenumber + 1 + offsetForErrors);
+      if (num != 3 && num != 4) throw new ParsingException("Invalid Write(), not enough parameters.\nWrite(text, x, y[, fontstyleindex])", origForException, linenumber + 1 + offsetForErrors);
       parent.Add(node);
       return;
     }
+
+    // [FontStyle] = FontStyle([EXPR], [EXPR], [EXPR], [EXPR], [EXPR]) ; id, fontid, front, outline, back
+    if (expected.IsGood(Expected.Val.Statement) && rgFontStyle.IsMatch(line)) {
+      Match m = rgFontStyle.Match(line);
+      if (m.Groups.Count < 2) throw new ParsingException("Invalid Write() command.");
+      CodeNode node = new CodeNode(BNF.FONTSTYLE, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 5) throw new ParsingException("Invalid FontStyle(), 5 parameters expected.\nFontStyle(id, fontid, frontcolor, outlinecolor, backcolor)", origForException, linenumber + 1 + offsetForErrors);
+      parent.Add(node);
+      return;
+    }
+
+    // [FontLoad] = FontStyle([EXPR], [EXPR], [EXPR], [EXPR], [EXPR]) ; id, fontid, front, outline, back
+    if (expected.IsGood(Expected.Val.Statement) && rgFontLoad.IsMatch(line)) {
+      Match m = rgFontLoad.Match(line);
+      if (m.Groups.Count < 2) throw new ParsingException("Invalid Write() command.");
+      CodeNode node = new CodeNode(BNF.FONTLOAD, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 2) throw new ParsingException("Invalid FontLoad(), 2 parameters expected.\nFontLoad(fontid, address)", origForException, linenumber + 1 + offsetForErrors);
+      parent.Add(node);
+      return;
+    }
+
 
     // [SetP] = SetP([EXPR], [EXPR])
     if (expected.IsGood(Expected.Val.Statement) && rgSetP.IsMatch(line)) {

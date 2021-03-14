@@ -186,10 +186,33 @@ public class CodeNode {
           res += id + "Write(" +
             CN1.ToString() + ", " +
             CN2.ToString() + ", " +
-            CN3.ToString() + ", " +
-            CN4.ToString();
-          if (children.Count > 4) res += ", " + CN5.ToString();
+            CN3.ToString();
+          if (CN4 != null) res += ", " + CN4.ToString();
           res += ")";
+        }
+        break;
+        case BNF.UIWrite: {
+          res += id + "UIWrite(" +
+            CN1.ToString() + ", " +
+            CN2.ToString() + ", " +
+            CN3.ToString();
+          if (CN4 != null) res += ", " + CN4.ToString();
+          res += ")";
+        }
+        break;
+
+        case BNF.FONTSTYLE: {
+          res += id + "FontStyle(" +
+            CN1.ToString() + ", " +
+            CN2.ToString() + ", " +
+            CN3.ToString() + ", " +
+            CN4.ToString() + ", " +
+            CN5.ToString() + ")";
+        }
+        break;
+
+        case BNF.FONTLOAD: {
+          res += id + "FontLoad(" + CN1.ToString() + ", " + CN2.ToString() + ")";
         }
         break;
 
@@ -431,17 +454,6 @@ public class CodeNode {
         case BNF.Console: {
           res += id + "Console(" + CN1.ToString();
           if (CN2 != null) res += ", " + CN2.ToString();
-          res += ")";
-        }
-        break;
-
-        case BNF.UIWrite: {
-          res += id + "UIWrite(" +
-            CN1.ToString() + ", " +
-            CN2.ToString() + ", " +
-            CN3.ToString() + ", " +
-            CN4.ToString();
-          if (children.Count > 4) res += ", " + CN5.ToString();
           res += ")";
         }
         break;
@@ -694,20 +706,15 @@ public class CodeNode {
         }
 
         case BNF.CLR: return "<color=#569CD6>Clr(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
-        case BNF.WRITE: { // Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
-          if (children.Count <= 4)
+        case BNF.WRITE: { // Write(string txt, int x, int y, [style])
+          if (CN4 == null)
             return "<color=#569CD6>Write(</color>" +
               CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>)</color>";
-          else if (children.Count == 5)
-            return "<color=#569CD6>Write(</color>" +
-              CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5.Format(variables, coloring) + "<color=#569CD6>)</color>";
+              CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
           else
             return "<color=#569CD6>Write(</color>" +
               CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-              CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         }
         case BNF.WAIT: return "<color=#569CD6>Wait(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         case BNF.DESTROY: return "<color=#569CD6>Destroy(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
@@ -892,19 +899,14 @@ public class CodeNode {
             return "<color=#569CD6>Console(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         }
         case BNF.UIWrite: { // UIWrite(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
-          if (children.Count <= 4)
+          if (CN4 == null)
             return "<color=#569CD6>UIWrite(</color>" +
               CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>)</color>";
-          else if (children.Count == 5)
-            return "<color=#569CD6>UIWrite(</color>" +
-              CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5.Format(variables, coloring) + "<color=#569CD6>)</color>";
+              CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
           else
             return "<color=#569CD6>UIWrite(</color>" +
               CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
-              CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         }
         case BNF.UILine: {
           return "<color=#569CD6>UILine(</color>" +
@@ -933,7 +935,14 @@ public class CodeNode {
               CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
               CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN7?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         }
-
+        case BNF.FONTLOAD: {
+          return "<color=#569CD6>FontLoad(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
+        case BNF.FONTSTYLE: {
+          return "<color=#569CD6>FontStyle(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" +
+            CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
       }
 
     else
@@ -1074,20 +1083,15 @@ public class CodeNode {
         }
 
         case BNF.CLR: return "Clr(" + CN1?.Format(variables, coloring) + ")";
-        case BNF.WRITE: { // Write(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
-          if (children.Count == 4)
+        case BNF.WRITE: { // Write(string txt, int x, int y, [style])
+          if (CN4 == null)
             return "Write(" +
               CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
-              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ")";
-          else if (children.Count == 5)
-            return "Write(" +
-              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
-              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5.Format(variables, coloring) + ")";
+              CN3?.Format(variables, coloring) + ")";
           else
             return "Write(" +
               CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
-              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " +
-              CN5?.Format(variables, coloring) + ", " + CN6?.Format(variables, coloring) + ")";
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ")";
         }
         case BNF.WAIT: return "Wait(" + CN1?.Format(variables, coloring) + ")";
         case BNF.DESTROY: return "Destroy(" + CN1?.Format(variables, coloring) + ")";
@@ -1279,19 +1283,14 @@ public class CodeNode {
             return "Console(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
         }
         case BNF.UIWrite: { // UIWrite(string txt, int x, int y, byte col, byte back = 255, byte mode = 0)
-          if (children.Count <= 4)
+          if (CN4 == null)
             return "UIWrite(" +
               CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
-              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ")";
-          else if (children.Count == 5)
-            return "UIWrite(" +
-              CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
-              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5.Format(variables, coloring) + ")";
+              CN3?.Format(variables, coloring) + ")";
           else
             return "UIWrite(" +
               CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " +
-              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " +
-              CN5?.Format(variables, coloring) + ", " + CN6?.Format(variables, coloring) + ")";
+              CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ")";
         }
         case BNF.UILine: {
           return "UILine(" +
@@ -1320,8 +1319,15 @@ public class CodeNode {
               CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " +
               CN5?.Format(variables, coloring) + ", " + CN6?.Format(variables, coloring) + ", " + CN7?.Format(variables, coloring) + ")";
         }
+        case BNF.FONTLOAD: {
+          return "FontLoad(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
+        }
+        case BNF.FONTSTYLE: {
+          return "FontStyle(" + CN1?.Format(variables, coloring) + ", " +
+            CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ", " +
+            CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
+        }
       }
-
 
     throw new System.Exception(type + " NOT YET DONE!");
   }
@@ -1509,8 +1515,8 @@ public enum BNF {
   IncCmd, DecCmd, IncExp, DecExp,
   BLOCK,
   IF, ELSE, WHILE, FOR,
-  CLR,
-  WRITE, WAIT, DESTROY, SCREEN,
+  FONTLOAD, FONTSTYLE,
+  CLR, WRITE, WAIT, DESTROY, SCREEN,
   SPRITE, SPEN, SPOS, SROT, SPRI, STINT, SSCALE,
   SETP, GETP,
   LINE, BOX, CIRCLE,
