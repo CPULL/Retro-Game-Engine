@@ -257,9 +257,6 @@ public class CodeEditor : MonoBehaviour {
       rt.sizeDelta = new Vector2(1248, 1.1625f * fontSize);
     }
 
-    // linenum RT width 78, lmargin -4
-    //    text TMP left margin 80
-    Debug.Log(EditText.margin);
     Vector2 lnsd = LineNumbersRT.sizeDelta;
     lnsd.x = (int)(3.44444444f * fontSize + 2.22222222222f);
     LineNumbersRT.sizeDelta = lnsd;

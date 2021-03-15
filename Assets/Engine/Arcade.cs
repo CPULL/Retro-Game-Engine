@@ -1302,6 +1302,24 @@ public class Arcade : MonoBehaviour {
   public Transform SpritesFrontLayer;
   public Transform[] Layers;
 
+  void Sprite(int num, int pointer, int px, int py, int sx, int sy, bool filter = false) {
+    if (num < 0 || num > 255) throw new Exception("Invalid sprite number: " + num);
+    int ix = (mem[pointer] << 8) + mem[pointer + 1];
+    int iy = (mem[pointer + 2] << 8) + mem[pointer + 3];
+    if (sprites[num] == null) {
+      sprites[num] = Instantiate(SpriteTemplate, Layers[0]).GetComponent<Grob>();
+      sprites[num].gameObject.SetActive(true);
+      sprites[num].GetComponent<RectTransform>().sizeDelta = Minimized ? new Vector2(.3333333f, .3333333f) : new Vector2(1, 1);
+      sprites[num].gameObject.name = "Sprite " + num;
+    }
+    if (labelTextures.ContainsKey(pointer)) {
+      sprites[num].Set(labelTextures[pointer].width, labelTextures[pointer].height, labelTextures[pointer], filter);
+    }
+    else {
+      labelTextures.Add(pointer, sprites[num].Set(ix, iy, px, py, sx, sy, mem, pointer + 4, filter));
+    }
+  }
+
   void Sprite(int num, int pointer, bool filter = false) {
     if (num < 0 || num > 255) throw new Exception("Invalid sprite number: " + num);
     int sx = (mem[pointer] << 8) + mem[pointer + 1];

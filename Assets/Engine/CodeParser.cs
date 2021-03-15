@@ -1031,8 +1031,9 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.SPRITE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 2 && num != 3) throw new ParsingException("Invalid Sprite(), wrong number of parameters (either 2 or 3 parameters are required.)" +
-            "\n<color=#44C6B0>Sprite(<i>number</i>, <i>address</i>, [<i>use filter</i>])</color>", origExpression, linenumber + 1 + offsetForErrors);
+      if (num != 2 && num != 3 && num != 6 && num != 7) throw new ParsingException("Invalid Sprite(), wrong number of parameters (either 2, 3, 6, or 7 parameters are required.)" +
+          "\n<color=#44C6B0>Sprite(<i>number</i>, <i>address</i>, [<i>use filter</i>])</color>"+
+          "\n<color=#44C6B0>Sprite(<i>number</i>, <i>address</i>, <i>startx</i>, <i>starty</i>, <i>width</i>, <i>height</i>, [<i>use filter</i>])</color>", origExpression, linenumber + 1 + offsetForErrors);
       parent.Add(node);
       return;
     }

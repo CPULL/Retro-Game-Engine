@@ -42,6 +42,39 @@ public class Grob : MonoBehaviour {
     return texture;
   }
 
+  public Texture2D Set(int iw, int ih, int px, int py, int sx, int sy, byte[] data, int pos, bool filter) {
+    notDefined = false;
+    if (sx < 8) sx = 8;
+    if (sx > 64) sx = 64;
+    if (sy < 8) sy = 8;
+    if (sy > 64) sy = 64;
+    w = sx;
+    h = sy;
+    raw = new byte[w * h * 4];
+    texture = new Texture2D(w, h, TextureFormat.RGBA32, false) {
+      filterMode = filter ? FilterMode.Bilinear : FilterMode.Point
+    };
+    int limit = data.Length;
+
+    int dst = 0;
+    for (int y = h - 1; y >= 0; y--) {
+      for (int x = 0; x < w; x++) {
+        int p = pos + px + x + iw * (py + y);
+        if (p >= limit) continue;
+        Color32 col = Col.GetColor(data[p]);
+        raw[dst + 0] = col.r;
+        raw[dst + 1] = col.g;
+        raw[dst + 2] = col.b;
+        raw[dst + 3] = col.a;
+        dst+=4;
+      }
+    }
+    texture.LoadRawTextureData(raw);
+    texture.Apply();
+    sprite.texture = texture;
+    return texture;
+  }
+
   internal void Set(int pw, int ph, Texture2D texture2D, bool filter) {
     if (pw < 8) pw = 8;
     if (pw > 64) pw = 64;
