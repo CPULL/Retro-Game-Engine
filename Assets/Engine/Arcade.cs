@@ -1321,13 +1321,20 @@ public class Arcade : MonoBehaviour {
         labelTextures.Add(p, txt);
       }
     }
+    if (spriteAtlas.ContainsKey(pointer)) spriteAtlas.Remove(pointer);
     spriteAtlas.Add(pointer, vals);
   }
 
-  void Sprite(int num, int pointer, int index, bool filter = false) {
+  void SpriteAtlas(int num, int pointer, int index, bool filter = false) {
     if (!spriteAtlas.ContainsKey(pointer)) throw new Exception("Invalid sprite atlas at location: " + pointer);
     int[] vals = spriteAtlas[pointer];
     if (index < 0 || index >= vals.Length) throw new Exception("Invalid sprite atlas at location: " + pointer + ", the sprite index = " + index + " does not exist");
+    if (sprites[num] == null) {
+      sprites[num] = Instantiate(SpriteTemplate, Layers[0]).GetComponent<Grob>();
+      sprites[num].gameObject.SetActive(true);
+      sprites[num].GetComponent<RectTransform>().sizeDelta = Minimized ? new Vector2(.3333333f, .3333333f) : new Vector2(1, 1);
+      sprites[num].gameObject.name = "Sprite " + num;
+    }
     sprites[num].Set(labelTextures[vals[index]].width, labelTextures[vals[index]].height, labelTextures[vals[index]], filter);
   }
 
@@ -1939,8 +1946,12 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
+        case BNF.CREATEAtl: {
+          CreateAtlas(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture), Evaluate(n.CN4).ToInt(culture), Evaluate(n.CN5).ToBool(culture));
+          return false;
+        }
         case BNF.SPRITEAtl: {
-          Sprite(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture), Evaluate(n.CN4).ToBool(culture));
+          SpriteAtlas(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture), Evaluate(n.CN4).ToBool(culture));
           return false;
         }
         case BNF.SPRITE: {

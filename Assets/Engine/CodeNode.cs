@@ -317,14 +317,30 @@ public class CodeNode {
         }
 
         case BNF.SPRITE: {
-          res += id + "sprite(";
-          res += CN1.ToString() + ", " + CN2.ToString();
-          if (CN3 != null) res += ", " + CN3.ToString();
-          if (CN4 != null) res += ", " + CN4.ToString();
-          if (CN5 != null) res += ", " + CN5.ToString();
-          res += ")";
+          if (CN3 == null)
+            return id + "Sprite(" + CN1?.ToString() + ", " + CN2?.ToString() + ")";
+          else if (CN6 == null)
+            return id + "Sprite(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3.ToString() + ")";
+          else if (CN7 == null)
+            return id + "Sprite(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3.ToString() +
+              CN4?.ToString() + ", " + CN5?.ToString() + ", " + CN6.ToString() + ")";
+          else
+            return id + "Sprite(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3.ToString() +
+              CN4?.ToString() + ", " + CN5?.ToString() + ", " + CN6.ToString() + ", " + CN7.ToString() + ")";
         }
-        break;
+        case BNF.SPRITEAtl: {
+          if (CN4 == null)
+            return id + "SpriteAtl(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3?.ToString() + ")";
+          else
+            return id + "SpriteAtl(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3.ToString() + ", " + CN4.ToString() + ")";
+        }
+        case BNF.CREATEAtl: {
+          if (CN5 == null)
+            return id + "CreateAtlas(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3?.ToString() + ", " + CN4?.ToString() + ")";
+          else
+            return id + "CreateAtlas(" + CN1?.ToString() + ", " + CN2?.ToString() + ", " + CN3?.ToString() + ", " + CN4?.ToString() + ", " + CN5?.ToString() + ")";
+        }
+
         case BNF.DESTROY: return id + "destroy(" + CN1.ToString() + ")";
         case BNF.SPOS:
           return id + "SPos(" +
@@ -722,13 +738,35 @@ public class CodeNode {
           if (CN3 == null)
             return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
           else
-            return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3.Format(variables, coloring) + "<color=#569CD6>)</color>";
+            return "<color=#569CD6>Screen(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         }
+
         case BNF.SPRITE: {
           if (CN3 == null)
             return "<color=#569CD6>Sprite(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else if (CN6 == null)
+            return "<color=#569CD6>Sprite(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else if (CN7 == null)
+            return "<color=#569CD6>Sprite(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) +
+              CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>)</color>";
           else
-            return "<color=#569CD6>Sprite(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3.Format(variables, coloring) + "<color=#569CD6>)</color>";
+            return "<color=#569CD6>Sprite(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) +
+              CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) +
+              "<color=#569CD6>, </color>" + CN7.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
+        case BNF.SPRITEAtl: {
+          if (CN4 == null)
+            return "<color=#569CD6>SpriteAtl(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+          else
+            return "<color=#569CD6>SpriteAtl(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>)</color>";
+        }
+        case BNF.CREATEAtl: {
+          if (CN5 == null)
+            return "<color=#569CD6>CreateAtlas(</color>" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) +
+              ", " + CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ")";
+          else
+            return "<color=#569CD6>CreateAtlas(</color>" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) +
+              ", " + CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
         }
         case BNF.SPEN: return "<color=#569CD6>SpEn(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2.Format(variables, coloring) + "<color=#569CD6>)</color>";
         case BNF.SPOS: {
@@ -1104,8 +1142,29 @@ public class CodeNode {
         case BNF.SPRITE: {
           if (CN3 == null)
             return "Sprite(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
+          else if (CN6 == null)
+            return "Sprite(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+          else if (CN7 == null)
+            return "Sprite(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) +
+              CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ", " + CN6.Format(variables, coloring) + ")";
           else
-            return "Sprite(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3.Format(variables, coloring) + ")";
+            return "Sprite(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) +
+              CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ", " + CN6?.Format(variables, coloring) +
+              ", " + CN7.Format(variables, coloring) + ")";
+        }
+        case BNF.SPRITEAtl: {
+          if (CN4 == null)
+            return "SpriteAtl(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
+          else
+            return "SpriteAtl(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ")";
+        }
+        case BNF.CREATEAtl: {
+          if (CN5 == null)
+            return "CreateAtlas(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) +
+              ", " + CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ")";
+          else
+            return "CreateAtlas(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) +
+              ", " + CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ")";
         }
         case BNF.SPEN: return "SpEn(" + CN1?.Format(variables, coloring) + ", " + CN2.Format(variables, coloring) + ")";
         case BNF.SPOS: {

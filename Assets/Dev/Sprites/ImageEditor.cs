@@ -35,8 +35,8 @@ public class ImageEditor : MonoBehaviour {
     string url = string.Format("file://{0}", path);
 
     using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url)) {
-      yield return www.SendWebRequest();
       yield return PBar.Show("Loading file", 1, 20);
+      yield return www.SendWebRequest();
       Texture2D texture = DownloadHandlerTexture.GetContent(www);
       // Get the top-left part of the image fitting in the sprite size
       yield return PBar.Progress(3);
@@ -183,7 +183,7 @@ public class ImageEditor : MonoBehaviour {
   public IEnumerator SavingBinPost(string path, string name) {
     int w = (int)WidthSlider.value * 8;
     int h = (int)HeightSlider.value * 8;
-    yield return PBar.Show("Saving", 0, 1 + w * h);
+    yield return PBar.Show("Saving", 0, 50 + h);
     ByteChunk chunk = new ByteChunk();
 
     byte[] block = new byte[4 + w * h];
@@ -192,16 +192,18 @@ public class ImageEditor : MonoBehaviour {
     block[2] = (byte)((h & 0xff00) >> 8);
     block[3] = (byte)(h & 0xff);
     Color32[] tps = ((Texture2D)Picture.texture).GetPixels32();
-    yield return PBar.Progress(1);
+    yield return PBar.Progress(10);
 
     for (int y = h - 1; y >= 0; y--) {
       for (int x = 0; x < w; x++) {
-        if (x == 0) yield return PBar.Progress(2 + x * y);
+        if (x == 0 && (y & 1) == 0) yield return PBar.Progress(12 + h - y);
         block[4 + x + w * y] = Col.GetBestColor(tps[x + w * (h - 1 - y)]);
       }
     }
+    yield return PBar.Progress(30 + h);
     chunk.AddBlock("Image", LabelType.Image, block);
 
+    yield return PBar.Progress(40 + h);
     ByteReader.SaveBinBlock(path, name, chunk);
     PBar.Hide();
   }
