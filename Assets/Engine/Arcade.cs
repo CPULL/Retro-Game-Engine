@@ -1302,6 +1302,35 @@ public class Arcade : MonoBehaviour {
   public Transform SpritesFrontLayer;
   public Transform[] Layers;
 
+  Dictionary<int, int[]> spriteAtlas = new Dictionary<int, int[]>();
+
+  void SpriteAtlas(int pointer, int num, int sx, int sy, bool filter = false) {
+    // Load all the textures, and do not assign them to a sprite.
+    int iw = (mem[pointer] << 8) + mem[pointer + 1];
+    int ih = (mem[pointer + 2] << 8) + mem[pointer + 3];
+
+    int nx = iw / sx;
+    int ny = ih / sy;
+    int[] vals = new int[nx * ny];
+    int pos = 0;
+    for (int y = 0; y < ny; y++) {
+      for (int x = 0; x < nx; x++) {
+        Texture2D txt = Grob.DefineTexture(iw, ih, x * sx, y * sy, sx, sy, mem, pointer + 4, filter);
+        int p = pointer + x * sx + iw * y * sy;
+        vals[pos++] = p;
+        labelTextures.Add(p, txt);
+      }
+    }
+    spriteAtlas.Add(pointer, vals);
+  }
+
+  void Sprite(int num, int pointer, int index, bool filter = false) {
+    if (!spriteAtlas.ContainsKey(pointer)) throw new Exception("Invalid sprite atlas at location: " + pointer);
+    int[] vals = spriteAtlas[pointer];
+    if (index < 0 || index >= vals.Length) throw new Exception("Invalid sprite atlas at location: " + pointer + ", the sprite index = " + index + " does not exist");
+    sprites[num].Set(labelTextures[vals[index]].width, labelTextures[vals[index]].height, labelTextures[vals[index]], filter);
+  }
+
   void Sprite(int num, int pointer, int px, int py, int sx, int sy, bool filter = false) {
     if (num < 0 || num > 255) throw new Exception("Invalid sprite number: " + num);
     int ix = (mem[pointer] << 8) + mem[pointer + 1];
@@ -1312,11 +1341,11 @@ public class Arcade : MonoBehaviour {
       sprites[num].GetComponent<RectTransform>().sizeDelta = Minimized ? new Vector2(.3333333f, .3333333f) : new Vector2(1, 1);
       sprites[num].gameObject.name = "Sprite " + num;
     }
-    if (labelTextures.ContainsKey(pointer)) {
+    if (labelTextures.ContainsKey(pointer + px + sx * py)) {
       sprites[num].Set(labelTextures[pointer].width, labelTextures[pointer].height, labelTextures[pointer], filter);
     }
     else {
-      labelTextures.Add(pointer, sprites[num].Set(ix, iy, px, py, sx, sy, mem, pointer + 4, filter));
+      labelTextures.Add(pointer + px + sx * py, sprites[num].Set(ix, iy, px, py, sx, sy, mem, pointer + 4, filter));
     }
   }
 
