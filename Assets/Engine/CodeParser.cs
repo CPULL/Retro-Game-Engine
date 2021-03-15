@@ -224,6 +224,8 @@ public class CodeParser {
   readonly Regex rgNoise = new Regex("[\\s]*noise[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
 
   readonly Regex rgSprite = new Regex("[\\s]*sprite[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgSpriteAtl = new Regex("[\\s]*spriteatl[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+  readonly Regex rgCreateAtl = new Regex("[\\s]*createatlas[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSpos = new Regex("[\\s]*spos[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSrot = new Regex("[\\s]*srot[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
   readonly Regex rgSPen = new Regex("[\\s]*spen[\\s]*\\(((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!)))\\)[\\s]*", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
@@ -1034,6 +1036,30 @@ public class CodeParser {
       if (num != 2 && num != 3 && num != 6 && num != 7) throw new ParsingException("Invalid Sprite(), wrong number of parameters (either 2, 3, 6, or 7 parameters are required.)" +
           "\n<color=#44C6B0>Sprite(<i>number</i>, <i>address</i>, [<i>use filter</i>])</color>"+
           "\n<color=#44C6B0>Sprite(<i>number</i>, <i>address</i>, <i>startx</i>, <i>starty</i>, <i>width</i>, <i>height</i>, [<i>use filter</i>])</color>", origExpression, linenumber + 1 + offsetForErrors);
+      parent.Add(node);
+      return;
+    }
+
+    // [SPRITEAtl] num, width, heigth, pointer[, filter]
+    if (expected.IsGood(Expected.Val.Statement) && rgSpriteAtl.IsMatch(line)) {
+      Match m = rgSpriteAtl.Match(line);
+      CodeNode node = new CodeNode(BNF.SPRITEAtl, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 3 && num != 4) throw new ParsingException("Invalid SpriteAtl(), wrong number of parameters (3 or 4 parameters are required.)" +
+          "\n<color=#44C6B0>SpriteAtl(<i>number</i>, <i>address</i>, i>index</i>, [<i>use filter</i>])</color>", origExpression, linenumber + 1 + offsetForErrors);
+      parent.Add(node);
+      return;
+    }
+
+    // [CreateAtlas] address, number, width, heigth, [filter]
+    if (expected.IsGood(Expected.Val.Statement) && rgCreateAtl.IsMatch(line)) {
+      Match m = rgCreateAtl.Match(line);
+      CodeNode node = new CodeNode(BNF.CREATEAtl, line, linenumber);
+      string pars = m.Groups[1].Value.Trim();
+      int num = ParsePars(node, pars);
+      if (num != 4 && num != 5) throw new ParsingException("Invalid CreateAtlas(), wrong number of parameters (either 4, or 5 parameters are required.)" +
+          "\n<color=#44C6B0>Sprite(<i>address</i>, <i>qunatity</i>, <i>width</i>, <i>height</i>, [<i>use filter</i>])</color>", origExpression, linenumber + 1 + offsetForErrors);
       parent.Add(node);
       return;
     }

@@ -1304,7 +1304,7 @@ public class Arcade : MonoBehaviour {
 
   Dictionary<int, int[]> spriteAtlas = new Dictionary<int, int[]>();
 
-  void SpriteAtlas(int pointer, int num, int sx, int sy, bool filter = false) {
+  void CreateAtlas(int pointer, int num, int sx, int sy, bool filter = false) {
     // Load all the textures, and do not assign them to a sprite.
     int iw = (mem[pointer] << 8) + mem[pointer + 1];
     int ih = (mem[pointer + 2] << 8) + mem[pointer + 3];
@@ -1939,8 +1939,17 @@ public class Arcade : MonoBehaviour {
         }
         break;
 
+        case BNF.SPRITEAtl: {
+          Sprite(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToInt(culture), Evaluate(n.CN4).ToBool(culture));
+          return false;
+        }
         case BNF.SPRITE: {
-          Sprite(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToBool(culture));
+          if (n.CN6 != null)
+            Sprite(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), 
+                   Evaluate(n.CN3).ToInt(culture), Evaluate(n.CN4).ToInt(culture), 
+                   Evaluate(n.CN5).ToInt(culture), Evaluate(n.CN6).ToInt(culture), Evaluate(n.CN7).ToBool(culture));
+          else
+            Sprite(Evaluate(n.CN1).ToInt(culture), Evaluate(n.CN2).ToInt(culture), Evaluate(n.CN3).ToBool(culture));
           HandlePostIncrementDecrement();
           return false;
         }
