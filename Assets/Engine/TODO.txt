@@ -36,5 +36,5 @@ Warn about using non-initialized variables
 
 Allow arr[] = {1, 2, 4.5, "6" } and have 4 values in the array
 
-Have sprite atlas as images.
-When loading the sprite just have the position and size or the sprite
+
+Rewrite the palette editor, and be sure we use it when importing sprites, tilemaps, and images

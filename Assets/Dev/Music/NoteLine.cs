@@ -19,7 +19,7 @@ public class NoteLine : MonoBehaviour {
     return (type & 2) == 2;
   }
 
-  internal void SetValues(NoteData blockNote, Sprite[] sprites,  int[] freqs, string[] notenames, List<Wave> waves) {
+  internal void SetValues(NoteData blockNote, Sprite[] sprites,  float[] freqs, string[] notenames, List<Wave> waves) {
     type = blockNote.NoteType;
     gameObject.SetActive(true);
     ValTxt.fontSize = 18;
@@ -288,7 +288,7 @@ public class NoteLine : MonoBehaviour {
     }
   }
 
-  private string GetNoteVal(NoteData n, int[] freqs, string[] notenames) {
+  private string GetNoteVal(NoteData n, float[] freqs, string[] notenames) {
     int val = n.GetVal(NoteType.Note);
     if (val == 0) {
       val = 440;

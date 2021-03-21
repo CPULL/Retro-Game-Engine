@@ -27,15 +27,19 @@ public class PaletteEditor : MonoBehaviour {
   public RectTransform ColorPickerV;
   readonly ColorImageQuantizer ciq = new ColorImageQuantizer(new MedianCutQuantizer());
   readonly Pixel[] Pixels = new Pixel[256];
-  readonly Color32[] defaultPalette = new Color32[256];
+  readonly Color32[] sourcePalette = new Color32[256];
+  readonly Color32[] targetPalette = new Color32[256];
+  bool usingTarget = true;
 
   void Start() {
     int pos = 0;
     Color[] dp = new Color[256];
+    TargetPaletteTG.SetIsOnWithoutNotify(true);
+    SourcePaletteTG.SetIsOnWithoutNotify(false);
     foreach (Transform t in PaletteContainer) {
       pixels[pos] = t.GetComponent<Pixel>();
-      defaultPalette[pos] = Col.GetColor((byte)pos);
-      dp[pos] = defaultPalette[pos];
+      sourcePalette[pos] = targetPalette[pos] = Col.GetColor((byte)pos);
+      dp[pos] = sourcePalette[pos];
       pixels[pos].Init(pos, (byte)pos, SelectPalettePixel, null, Color.black, Color.red, Color.yellow);
       Pixels[pos] = pixels[pos];
       pos++;
@@ -52,7 +56,7 @@ public class PaletteEditor : MonoBehaviour {
     DoneB.gameObject.SetActive(doneAsActive);
   }
 
-  public void SetColor() {
+  public void SetColor() { // Called if we pick a color from the palette to update the main color in the palette wheel
     byte r = (byte)RSlider.value;
     byte g = (byte)GSlider.value;
     byte b = (byte)BSlider.value;
@@ -82,7 +86,7 @@ public class PaletteEditor : MonoBehaviour {
   }
 
   readonly Regex rghex = new Regex("[0-9a-f]{3,8}", RegexOptions.IgnoreCase, System.TimeSpan.FromSeconds(1));
-  public void SetColorHex() {
+  public void SetColorHex() { // Called by the UI when the Hex color is changed in the input field
     string hex = HexColor.text.Trim();
     if ((hex.Length != 3 && hex.Length != 4 && hex.Length != 6 && hex.Length != 8) || !rghex.IsMatch(hex)) {
       uint hx = (uint)(((byte)RSlider.value << 24) + ((byte)GSlider.value << 16) + ((byte)BSlider.value << 8) + ((byte)ASlider.value));
@@ -278,9 +282,100 @@ public class PaletteEditor : MonoBehaviour {
   }
 
 
-  public RawImage PicOrig;
-  public RawImage PicPalette;
-  public RawImage PicDefault;
+
+
+
+  public void GenerateFromImage() {
+    FileBrowser.Load(GenerateFromImagePost, FileBrowser.FileType.Pics);
+  }
+
+  public void GenerateFromImagePost(string path) {
+    StartCoroutine(GenerateFromImagePostCR(path));
+  }
+  IEnumerator GenerateFromImagePostCR(string path) {
+    string url = string.Format("file://{0}", path);
+    yield return PBar.Show("Loading file", 5, 10);
+
+    using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url)) {
+      yield return www.SendWebRequest();
+      Texture2D texture = DownloadHandlerTexture.GetContent(www);
+      yield return PBar.Progress(5);
+
+      int start = minsel == -1 ? 1 : minsel;
+      int end = maxsel == -1 ? 254 : maxsel;
+
+      Color32[] cols = ciq.CalculatePalette(texture, end - start + 1);
+      Color32[] palette = new Color32[256];
+      for (int i = 0; i < 255; i++)
+        palette[i] = usingTarget ? targetPalette[i] : sourcePalette[i];
+      for (int i = start; i <= end; i++)
+        palette[i] = cols[i - start];
+
+      if (usingTarget)
+        for (int i = 0; i < 256; i++) {
+          targetPalette[i] = palette[i];
+          pixels[i].Set32(palette[i]);
+        }
+      else
+        for (int i = 0; i < 256; i++) {
+          sourcePalette[i] = palette[i];
+          pixels[i].Set32(palette[i]);
+        }
+
+      Texture2D t = ciq.ReduceColors(texture, palette);
+      t.Apply();
+      MainPic.texture = t;
+
+      PBar.Hide();
+    }
+  }
+
+  public Toggle SourcePaletteTG, TargetPaletteTG;
+  public void TogglePalette() {
+    usingTarget = TargetPaletteTG.isOn;
+    if (usingTarget) {
+      for (int i = 0; i < 256; i++) {
+        pixels[i].Set32(targetPalette[i]);
+        Col.SetPalette(i, targetPalette[i]);
+      }
+    }
+    else {
+      for (int i = 0; i < 256; i++) {
+        pixels[i].Set32(sourcePalette[i]);
+        Col.SetPalette(i, sourcePalette[i]);
+      }
+    }
+    RGEPalette.SetColorArray("_Colors", Col.GetPalette());
+  }
+
+  public void SetDefault() {
+    if (usingTarget) {
+      for (int i = 0; i < 256; i++) {
+        targetPalette[i] = Col.GetDefaultColor((byte)i);
+        pixels[i].Set32(targetPalette[i]);
+        Col.SetPalette(i, targetPalette[i]);
+      }
+    }
+    else {
+      for (int i = 0; i < 256; i++) {
+        sourcePalette[i] = Col.GetDefaultColor((byte)i);
+        pixels[i].Set32(sourcePalette[i]);
+        Col.SetPalette(i, sourcePalette[i]);
+      }
+    }
+    RGEPalette.SetColorArray("_Colors", Col.GetPalette());
+  }
+
+
+
+
+
+
+
+
+
+
+  public RawImage MainPic;
   public void LoadFile() {
     FileBrowser.Load(PostLoadImage, FileBrowser.FileType.Pics);
   }
@@ -298,10 +393,10 @@ public class PaletteEditor : MonoBehaviour {
       // Get the top-left part of the image fitting in the sprite size
       yield return PBar.Progress(5);
 
-      float sw = (int)PicSizeH.value * 8;
+      float sw = 8;
       if (sw < 8) sw = 8;
       if (sw > 320) sw = 320;
-      float sh = (int)PicSizeV.value * 4;
+      float sh = 8;
       if (sh < 8) sh = 8;
       if (sh > 256) sh = 256;
       TextureScale.Point(texture, (int)sw, (int)sh);
@@ -309,117 +404,30 @@ public class PaletteEditor : MonoBehaviour {
       texture.Apply();
 
       yield return PBar.Progress(10);
-      PicOrig.texture = texture;
+      MainPic.texture = texture;
 
       Texture2D palText = new Texture2D((int)sw, (int)sh, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
       palText.SetPixels32(texture.GetPixels32());
       palText.Apply();
-      PicPalette.texture = palText;
+      MainPic.texture = palText;
 
       Texture2D defText = new Texture2D((int)sw, (int)sh, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
       defText.SetPixels32(texture.GetPixels32());
       defText.Apply();
-      PicDefault.texture = defText;
+      MainPic.texture = defText;
 
-      ChangePicSizeCompleted();
       PBar.Hide();
     }
   }
-  public GameObject PicSizeVals;
-  public Slider PicSizeH;
-  public Slider PicSizeV;
-  public TextMeshProUGUI PicSizeText;
-  public TextMeshProUGUI PicSizeSubText;
-  public void ChangePicSize() {
-    PicSizeVals.SetActive(true);
-  }
 
-  public void ChangePicSizeCompleted() {
-    PicSizeVals.SetActive(false);
-    float w = (int)PicSizeH.value * 8;
-    if (w < 8) w = 8;
-    if (w > 320) w = 320;
-    float h = (int)PicSizeV.value * 4;
-    if (h < 8) h = 8;
-    if (h > 256) h = 256;
-
-    if (w > h) {
-      h = 512 * h / w;
-      w = 512;
-    }
-    else {
-      w = 512 * w / h;
-      h = 512;
-    }
-    Vector2 size = new Vector2(w, h);
-    PicOrig.GetComponent<RectTransform>().sizeDelta = size;
-    PicPalette.GetComponent<RectTransform>().sizeDelta = size;
-    PicDefault.GetComponent<RectTransform>().sizeDelta = size;
-  }
-
-  public void ChangeScreenSlider() {
-    float w = (int)PicSizeH.value * 8;
-    if (w < 8) w = 8;
-    if (w > 320) w = 320;
-    float h = (int)PicSizeV.value * 4;
-    if (h < 8) h = 8;
-    if (h > 256) h = 256;
-    PicSizeText.text = "Size\n" + w + "x" + h;
-    PicSizeSubText.text = w + "x" + h;
-  }
-
-  public void GenerateBestPalette() {
-    if (PicOrig.texture == null) {
-      Dev.inst.HandleError("No image loaded!");
-      return;
-    }
-    StartCoroutine(GeneratingBestPalette());
-  }
   public void ApplyPalette() {
-    if (PicOrig.texture == null) {
+    if (MainPic.texture == null) {
       Dev.inst.HandleError("No image loaded!");
       return;
     }
     StartCoroutine(ApplyingPalette());
   }
-  public void ApplyDefaultPalette() {
-    if (PicOrig.texture == null) {
-      Dev.inst.HandleError("No image loaded!");
-      return;
-    }
-    StartCoroutine(GeneratingBestPalette());
-  }
 
-  IEnumerator GeneratingBestPalette() {
-    Texture2D texture = (Texture2D)PicOrig.texture;
-    yield return PBar.Show("Generating", 0, 4); ;
-
-    int num = 254;
-    if (minsel != -1 && maxsel != -1) {
-      num = maxsel - minsel + 1;
-    }
-
-    Color32[] colorTable = ciq.CalculatePalette(texture, num);
-    yield return PBar.Progress(1);
-
-    int start = minsel == -1 ? 1 : minsel;
-    int end = maxsel == -1 ? 254 : maxsel;
-    for (int i = start; i <= end; i++)
-      Col.SetPalette(i, colorTable[i - start]);
-    yield return PBar.Progress(2);
-
-    Texture2D newImage = ciq.ReduceColors(texture, colorTable);
-    newImage.Apply();
-    PicPalette.texture = newImage;
-    yield return PBar.Progress(3);
-    newImage = ciq.ReduceColors(texture, defaultPalette);
-    newImage.Apply();
-    PicDefault.texture = newImage;
-    yield return PBar.Progress(4);
-    RGEPalette.SetColorArray("_Colors", Col.GetPalette());
-
-    PBar.Hide();
-  }
 
   public void ShufflePalette() {
     Color32[] tosort = new Color32[254];
@@ -451,8 +459,8 @@ public class PaletteEditor : MonoBehaviour {
   }
 
   IEnumerator ApplyingPalette() {
-    int w = PicOrig.texture.width;
-    int h = PicOrig.texture.height;
+    int w = MainPic.texture.width;
+    int h = MainPic.texture.height;
     yield return PBar.Show("Applying palette", 0, 2 + 2 * h);
 
     Color32[] colors = new Color32[256];
@@ -460,9 +468,9 @@ public class PaletteEditor : MonoBehaviour {
     for (int i = 0; i < 256; i++)
       colors[i] = tmp[i];
 
-    Texture2D newImage = ciq.ReduceColors((Texture2D)PicOrig.texture, colors);
+    Texture2D newImage = ciq.ReduceColors((Texture2D)MainPic.texture, colors);
     PBar.Progress(1);
-    Texture2D palt = (Texture2D)PicPalette.texture;
+    Texture2D palt = (Texture2D)MainPic.texture;
     Color32[] cols = newImage.GetPixels32();
     for (int y = 0; y < h; y++) {
       if (y % 4 == 0) yield return PBar.Progress(1 + y);
@@ -479,28 +487,28 @@ public class PaletteEditor : MonoBehaviour {
       }
     }
     palt.Apply();
-    PicPalette.texture = palt;
+    MainPic.texture = palt;
 
-    newImage = ciq.ReduceColors((Texture2D)PicOrig.texture, defaultPalette);
+    // FIXME newImage = ciq.ReduceColors((Texture2D)PicOrig.texture, defaultPalette);
     PBar.Progress(1 + h);
-    Texture2D pald = (Texture2D)PicDefault.texture;
+    Texture2D pald = (Texture2D)MainPic.texture;
     cols = newImage.GetPixels32();
     for (int y = 0; y < h; y++) {
       if (y % 4 == 0) yield return PBar.Progress(2 + h + y);
       for (int x = 0; x < w; x++) {
         int pos = x + w * y;
         for (int i = 0; i < 256; i++) {
-          if (ColorEqual(cols[pos], defaultPalette[i])) {
+//          if (ColorEqual(cols[pos], defaultPalette[i])) {
             int hi = ((i & 0xF0) >> 4) * 8 + 4;
             int lo = (i & 0xF) * 8 + 4;
             pald.SetPixel(x, y, new Color(hi / 255f, lo / 255f, 0, 255));
             break;
           }
-        }
+//        }
       }
     }
     pald.Apply();
-    PicDefault.texture = pald;
+    MainPic.texture = pald;
 
     RGEPalette.SetColorArray("_Colors", Col.GetPalette()); // Should not be necessary but just in case
     PBar.Hide();
@@ -509,9 +517,7 @@ public class PaletteEditor : MonoBehaviour {
   public Image[] SelectedModes;
 
   public void AlterPaletteMode(int mode) {
-    PicOrig.enabled = mode == 0;
-    PicPalette.enabled = mode == 1;
-    PicDefault.enabled = mode == 2;
+    MainPic.enabled = mode == 0;
     SelectedModes[0].enabled = mode == 0;
     SelectedModes[1].enabled = mode == 1;
     SelectedModes[2].enabled = mode == 2;
@@ -659,7 +665,7 @@ public class PaletteEditor : MonoBehaviour {
   }
 
   public void SaveItemAsRom() {
-    if (PicPalette.texture == null) return;
+    if (MainPic.texture == null) return;
     FileBrowser.Save(SaveItemAsRomPost, FileBrowser.FileType.Rom);
   }
 
@@ -679,7 +685,7 @@ public class PaletteEditor : MonoBehaviour {
     }
     chunk.AddBlock("Palette", LabelType.Palette, block);
 
-    Texture2D pic = (Texture2D)PicPalette.texture;
+    Texture2D pic = (Texture2D)MainPic.texture;
     int w = pic.width;
     int h = pic.height;
     if (w < 8) w = 8;
@@ -770,16 +776,16 @@ public class PaletteEditor : MonoBehaviour {
 
   RomLine currentLine = null;
   public void UpdateItem() {
-    int w = PicPalette.texture.width;
-    int h = PicPalette.texture.height;
+    int w = MainPic.texture.width;
+    int h = MainPic.texture.height;
     switch (currentLine.ltype) {
       case LabelType.Image:
       case LabelType.Sprite:
-        currentLine.Data = SaveImages(w, h, (Texture2D)PicPalette.texture, true);
+        currentLine.Data = SaveImages(w, h, (Texture2D)MainPic.texture, true);
         break;
 
       case LabelType.Tile:
-        currentLine.Data = SaveImages(w, h, (Texture2D)PicPalette.texture, false);
+        currentLine.Data = SaveImages(w, h, (Texture2D)MainPic.texture, false);
         break;
     }
 
@@ -846,8 +852,6 @@ public class PaletteEditor : MonoBehaviour {
   void LoadImages(int w, int h, byte[] data, int start) {
     UpdateItemButton.gameObject.SetActive(true);
     // Change screen size
-    PicSizeH.SetValueWithoutNotify(Mathf.Ceil(w / 8));
-    PicSizeV.SetValueWithoutNotify(Mathf.Ceil(h / 4));
 
     // Load data
     Texture2D palo = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
@@ -863,8 +867,8 @@ public class PaletteEditor : MonoBehaviour {
         int lo = (val & 0xF) * 8 + 4;
         if (SelectedModes[1].enabled)
           rawo[pos] = Col.GetPaletteCol(val);
-        else
-          rawo[pos] = defaultPalette[val];
+//        else
+//          rawo[pos] = defaultPalette[val];
         rawp[pos] = new Color32((byte)hi, (byte)lo, 0, 255);
       }
     }
@@ -874,9 +878,7 @@ public class PaletteEditor : MonoBehaviour {
     palo.Apply();
     palt.Apply();
     pald.Apply();
-    PicOrig.texture = palo;
-    PicPalette.texture = palt;
-    PicDefault.texture = pald;
+    MainPic.texture = palo;
   }
 
   byte[] SaveImages(int w, int h, Texture2D palt, bool saveSize) {
@@ -1129,10 +1131,10 @@ public class PaletteEditor : MonoBehaviour {
       }
     }
     else if (currentLine.ltype == LabelType.Image || currentLine.ltype == LabelType.Sprite) {
-      int w = (int)PicSizeH.value * 8;
+      int w = 8;
       if (w < 8) w = 8;
       if (w > 320) w = 320;
-      int h = (int)PicSizeV.value * 4;
+      int h = 4;
       if (h < 8) h = 8;
       if (h > 256) h = 256;
 
@@ -1141,7 +1143,7 @@ public class PaletteEditor : MonoBehaviour {
       img[1] = (byte)(w & 0xff);
       img[2] = (byte)((h & 0xff00) >> 8);
       img[3] = (byte)(h & 0xff);
-      Color32[] cols = ((Texture2D)PicPalette.texture).GetPixels32();
+      Color32[] cols = ((Texture2D)MainPic.texture).GetPixels32();
       for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
           for (int i = 0; i < 256; i++) {
@@ -1155,15 +1157,15 @@ public class PaletteEditor : MonoBehaviour {
       currentLine.Data = img;
     }
     else if (currentLine.ltype == LabelType.Tile) {
-      int w = (int)PicSizeH.value * 8;
+      int w = 8;
       if (w < 8) w = 8;
       if (w > 320) w = 320;
-      int h = (int)PicSizeV.value * 4;
+      int h = 4;
       if (h < 8) h = 8;
       if (h > 256) h = 256;
 
       byte[] img = new byte[w * h];
-      Color32[] cols = ((Texture2D)PicPalette.texture).GetPixels32();
+      Color32[] cols = ((Texture2D)MainPic.texture).GetPixels32();
       for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
           for (int i = 0; i < 256; i++) {
@@ -1200,3 +1202,21 @@ public class PaletteEditor : MonoBehaviour {
     public int v;
   }
 }
+
+
+
+/*
+!Import image and generate palette (use subset if selected +button to select all/none) -> show resulting image
+!Source palette (+ default palette button +show)
+!Target Palette (+ default palette button +show)
+
+
+Import image and palette from rom (sprite, image, tilemap), convert to target palette, re-save or export
+
+
+save palette as text and rom, export converted roms
+edit manually the palette, including ctrl+c/ctrl+v
+ 
+load palette from file, txt (or immediate) using #rrggbb and #rrggbbaa values
+
+ */

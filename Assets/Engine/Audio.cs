@@ -146,7 +146,7 @@ public class Audio : MonoBehaviour {
 
 
 
-  public void Play(int channel, int freq, float length = -1) {
+  public void Play(int channel, float freq, float length = -1) {
     if (channel < 0 || channel >= channels.Length) throw new System.Exception("Invalid audio channel: " + channel);
     if (freq == 0) return;
     if (freq < 50) freq = 50;
@@ -943,7 +943,7 @@ public struct Channel {
     return vol;
   }
 
-  internal void Play(int frequency, float length) {
+  internal void Play(float frequency, float length) {
     freq = frequency;
     time = 0;
     timeout = length;

@@ -116,6 +116,24 @@ public class Col {
     return alphas[col];
   }
 
+  public static Color32 GetDefaultColor(byte col) {
+    if (col < 216) {
+      byte b = (byte)(col % 6);
+      col -= b;
+      col /= 6;
+      byte g = (byte)(col % 6);
+      col -= g;
+      col /= 6;
+      byte r = (byte)(col % 6);
+      r = (byte)(r * 51f);
+      g = (byte)(g * 51f);
+      b = (byte)(b * 51f);
+      return new Color32(r, g, b, 255);
+    }
+    col = (byte)(col - 216); // -> 0-39
+    return alphas[col];
+  }
+
   public static Color32 GetColorFrom6(byte r, byte g, byte b) {
     r = (byte)(r * 51f);
     g = (byte)(g * 51f);

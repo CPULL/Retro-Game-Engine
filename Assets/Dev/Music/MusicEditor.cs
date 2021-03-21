@@ -86,6 +86,9 @@ public class MusicEditor : MonoBehaviour {
   int row = 0;
   int col = 0;
   bool recording = false;
+  int quickPlayPos = -1;
+  int octave = 4;
+  bool editMode = true;
   float countInForRecording = 0;
   bool playing = false;
   bool repeat = false;
@@ -98,6 +101,9 @@ public class MusicEditor : MonoBehaviour {
   readonly System.Globalization.NumberStyles numberstyle = System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint;
   readonly System.Globalization.CultureInfo culture = new System.Globalization.CultureInfo("en-US");
 
+  public GameObject InfoTooltip;
+  public TextMeshProUGUI InfoTooltipTxt;
+  float infoTooltipDelay = 0;
   #endregion
 
   private void Start() {
@@ -144,6 +150,11 @@ public class MusicEditor : MonoBehaviour {
     autoRepeat -= Time.deltaTime;
     bool textedit = Values.gameObject.activeSelf || FileBrowser.IsVisible();
 
+    if (InfoTooltip.activeSelf) {
+      infoTooltipDelay -= Time.deltaTime;
+      if (infoTooltipDelay<0) InfoTooltip.SetActive(false);
+    }
+
     if (countInForRecording > 0) { // Handle count-in for recording
       countInForRecording -= Time.deltaTime;
       if ((countInForRecording % timeForNextBeat) < timeForNextBeat * .75f)
@@ -173,7 +184,19 @@ public class MusicEditor : MonoBehaviour {
       }
     }
     else {
-      if (recording) PlayBlock();
+      if (recording || quickPlayPos != -1) PlayBlock();
+      if (Input.GetKeyDown(KeyCode.Space)) {
+        if (quickPlayPos == -1) {
+          quickPlayPos = row;
+          currentPlayedMusicLine = row;
+          ShowTooltip("Quick play");
+        }
+        else {
+          row = quickPlayPos;
+          update = true;
+          quickPlayPos = -1;
+        }
+      }
 
       if (!recording && !textedit) {
         if (status == MusicEditorStatus.BlockEdit) {
@@ -238,18 +261,37 @@ public class MusicEditor : MonoBehaviour {
             }
           }
         }
-        
+
+        if (Input.GetKeyDown(KeyCode.LeftAlt) || Input.GetKeyDown(KeyCode.RightAlt)) {
+          editMode = !editMode;
+          if (editMode)
+            ShowTooltip("Edit mode");
+          else
+            ShowTooltip("Free play mode");
+        }
+
+        if (Input.GetKeyDown(KeyCode.F1)) { octave = 0; ShowTooltip("1st Octave"); }
+        if (Input.GetKeyDown(KeyCode.F2)) { octave = 1; ShowTooltip("2nd Octave"); }
+        if (Input.GetKeyDown(KeyCode.F3)) { octave = 2; ShowTooltip("3rd Octave"); }
+        if (Input.GetKeyDown(KeyCode.F4)) { octave = 3; ShowTooltip("4th Octave"); }
+        if (Input.GetKeyDown(KeyCode.F5)) { octave = 4; ShowTooltip("5th Octave"); }
+        if (Input.GetKeyDown(KeyCode.F6)) { octave = 5; ShowTooltip("6th Octave"); }
+        if (Input.GetKeyDown(KeyCode.F7)) { octave = 6; ShowTooltip("7th Octave"); }
+        if (Input.GetKeyDown(KeyCode.F8)) { octave = 7; ShowTooltip("8th Octave"); }
+
         if (!textedit) // Piano keys
           for (int i = 0; i < keyNotes.Length; i++) {
             if (Input.GetKeyDown(keyNotes[i])) {
-              // Set the current cell as note with the given note/frequency, update the text to be the note notation
-              NoteData nd = currentBlock.chs[col][row];
-              nd.Set(NoteType.Note, (short)freqs[i + 24], (byte)noteLen);
-              l.note[col].SetValues(nd, NoteTypeSprites, freqs, noteNames, waves);
-              // Move to the next row
-              if (!recording && row + stepLen < currentBlock.len) { row += stepLen; update = true; }
+              if (editMode) {
+                // Set the current cell as note with the given note/frequency, update the text to be the note notation
+                NoteData nd = currentBlock.chs[col][row];
+                nd.Set(NoteType.Note, (short)freqs[i + octave * 12], (byte)noteLen);
+                l.note[col].SetValues(nd, NoteTypeSprites, freqs, noteNames, waves);
+                // Move to the next row
+                if (!recording && row + stepLen < currentBlock.len) { row += stepLen; update = true; }
+              }
               // Play the actual sound (find the wave that should be used, if none is defined use a basic triangle wave)
-              sounds.Play(col, freqs[i + 24], .25f);
+              sounds.Play(col, freqs[i + octave * 12], .25f);
             }
           }
       }
@@ -308,10 +350,14 @@ public class MusicEditor : MonoBehaviour {
         HideSelection();
         if (CopiedNotes.Count == 0)
           SelInfo.text = "";
-        else if (CopiedNotes.Count == 1)
+        else if (CopiedNotes.Count == 1) {
           SelInfo.text = CopiedNotes.Count + " cell copied";
-        else
+          ShowTooltip(SelInfo.text);
+        }
+        else {
           SelInfo.text = CopiedNotes.Count + " cells copied";
+          ShowTooltip(SelInfo.text);
+        }
       }
       if (Input.GetKeyDown(KeyCode.X) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) { // Ctrl+X
         CopiedNotes.Clear();
@@ -327,12 +373,16 @@ public class MusicEditor : MonoBehaviour {
         HideSelection();
         if (CopiedNotes.Count == 0)
           SelInfo.text = "";
-        else if (CopiedNotes.Count == 1)
-          SelInfo.text = CopiedNotes.Count + " cell copied";
-        else
-          SelInfo.text = CopiedNotes.Count + " cells copied";
-      }
-      if (Input.GetKeyDown(KeyCode.V) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && CopiedNotes.Count > 0) { // Ctrl+V
+        else if (CopiedNotes.Count == 1) {
+          SelInfo.text = CopiedNotes.Count + " cell cut";
+          ShowTooltip(SelInfo.text);
+        }
+        else {
+          SelInfo.text = CopiedNotes.Count + " cells cut";
+          ShowTooltip(SelInfo.text);
+        }
+        }
+        if (Input.GetKeyDown(KeyCode.V) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && CopiedNotes.Count > 0) { // Ctrl+V
                                                                                                                                                // If we have something, paste starting from the current position
         for (int i = 0; i < CopiedNotes.Count && row + i < currentBlock.len; i++) {
           currentBlock.chs[col][row + i].Set(CopiedNotes[i]);
@@ -564,6 +614,10 @@ public class MusicEditor : MonoBehaviour {
     // if note > blen go to next block
     if (currentPlayedMusicLine >= block.len) {
       currentPlayedMusicLine = 0;
+      if (quickPlayPos!=-1) {
+        currentPlayedMusicLine = quickPlayPos;
+        return;
+      }
       if (!repeat) {
         playing = false;
         SetTapeButtonColor(-1);
@@ -1058,7 +1112,7 @@ public class MusicEditor : MonoBehaviour {
   }
 
   int noteLen = 1;
-  int stepLen = 2;
+  int stepLen = 1;
 
   public void ChangeNoteLen(bool up) {
     if (up && noteLen < 16) noteLen++;
@@ -2376,6 +2430,12 @@ public class MusicEditor : MonoBehaviour {
 
   #endregion
 
+  void ShowTooltip(string txt) {
+    InfoTooltip.SetActive(true);
+    infoTooltipDelay = 1;
+    InfoTooltipTxt.text = txt;
+  }
+
   readonly KeyCode[] keyNotes = new KeyCode[] {
     KeyCode.Q, KeyCode.Alpha2, // C4 C4#
     KeyCode.W, KeyCode.Alpha3, // D4 E4b
@@ -2393,98 +2453,103 @@ public class MusicEditor : MonoBehaviour {
   };
 
   readonly string[] noteNames = new string[] {
-    "C2", "C2#",
-    "D2", "E2b",
+    "C0", "C#0",
+    "D0", "Eb0",
+    "E0",
+    "F0", "F#0",
+    "G0", "G#0",
+    "A0", "Bb0",
+    "B0",
+    "C1", "C#1",
+    "D1", "Eb1",
+    "E1",
+    "F1", "F#1",
+    "G1", "G#1",
+    "A1", "Bb1",
+    "B1",
+    "C2", "C#2",
+    "D2", "Eb2",
     "E2",
-    "F2", "F2#",
-    "G2", "G2#",
-    "A3", "B2b",
+    "F2", "F#2",
+    "G2", "G#2",
+    "A2", "Bb2",
     "B2",
-    "C3", "C3#",
-    "D3", "E3b",
+    "C3", "C#3",
+    "D3", "Eb3",
     "E3",
-    "F3", "F3#",
-    "G3", "G3#",
-    "A3", "B3b",
+    "F3", "F#3",
+    "G3", "G#3",
+    "A3", "Bb3",
     "B3",
-    "C4", "C4#",
-    "D4", "E4b",
+    "C4", "C#4",
+    "D4", "Eb4",
     "E4",
-    "F4", "F4#",
-    "G4", "G4#",
-    "A4", "B4b",
+    "F4", "F#4",
+    "G4", "G#4",
+    "A4", "Bb4",
     "B4",
-    "C5", "C5#",
-    "D5", "E5b",
+    "C5", "C#5",
+    "D5", "Eb5",
     "E5",
-    "F5", "F5#",
-    "G5", "G5#",
-    "A5",
-    "C6", "C6#",
-    "D6", "E6b",
+    "F5", "F#5",
+    "G5", "G#5",
+    "A5", "Bb5",
+    "B5",
+    "C6", "C#6",
+    "D6", "Eb6",
     "E6",
-    "F6", "F6#",
-    "G6", "G6#",
-    "A6",
-    "C7", "C7#",
-    "D7", "E7b",
+    "F6", "F#6",
+    "G6", "G#6",
+    "A6", "Bb6",
+    "B6",
+    "C7", "C#7",
+    "D7", "Eb7",
     "E7",
-    "F7", "F7#",
-    "G7", "G7#",
-    "A7",
+    "F7", "F#7",
+    "G7", "G#7",
+    "A7", "Bb7",
+    "B7",
+    "C8", "C#8",
+    "D8", "Eb8",
+    "E8",
+    "F8", "F#8",
+    "G8", "G#8",
+    "A8", "Bb8",
+    "B8",
   };
 
-  readonly int[] freqs = new int[] {
-    65, 69,
-    73, 77,
-    82,
-    87, 92,
-    98, 103,
-    110, 116,
-    123,
-
-    130, 138,
-    146, 155,
-    164,
-    174, 185,
-    196, 207,
-    220, 233,
-    246,
-
-    261, 277,
-    293, 311,
-    329,
-    349, 369,
-    392, 415,
-    440, 466,
-    493,
-
-    523, 554,
-    587, 622,
-    659,
-    698, 739,
-    783, 830,
-    880, 932,
-    987,
-
-    1046, 1108,
-    1174, 1244, 
-    1318,
-    1396, 1479,
-    1567, 1661,
-    1760, 1864,
-    1975,
-
-    2093, 2217,
-    2349, 2489,
-    2637,
-    2793, 2959,
-    3135, 3322,
-    3520, 3729,
-    3951,
+  readonly float[] freqs = new float[] {
+    16.35f, 17.32f, 18.35f, 19.45f,
+    20.6f, 21.83f, 23.12f, 24.5f,
+    25.96f, 27.5f, 29.14f, 30.87f,
+    32.7f, 34.65f, 36.71f, 38.89f,
+    41.2f, 43.65f, 46.25f, 49f,
+    51.91f, 55f, 58.27f, 61.74f,
+    65.41f, 69.3f, 73.42f, 77.78f,
+    82.41f, 87.31f, 92.5f, 98f,
+    103.83f, 110f, 116.54f, 123.47f,
+    130.81f, 138.59f, 146.83f, 155.56f,
+    164.81f, 174.61f, 185f, 196f,
+    207.65f, 220f, 233.08f, 246.94f,
+    261.63f, 277.18f, 293.66f, 311.13f,
+    329.63f, 349.23f, 369.99f, 392f,
+    415.3f, 440f, 466.16f, 493.88f,
+    523.25f, 554.37f, 587.33f, 622.25f,
+    659.25f, 698.46f, 739.99f, 783.99f,
+    830.61f, 880f, 932.33f, 987.77f,
+    1046.5f, 1108.73f, 1174.66f, 1244.51f,
+    1318.51f, 1396.91f, 1479.98f, 1567.98f,
+    1661.22f, 1760f, 1864.66f, 1975.53f,
+    2093f, 2217.46f, 2349.32f, 2489.02f,
+    2637.02f, 2793.83f, 2959.96f, 3135.96f,
+    3322.44f, 3520f, 3729.31f, 3951.07f,
+    4186.01f, 4434.92f, 4698.63f, 4978.03f,
+    5274.04f, 5587.65f, 5919.91f, 6271.93f,
+    6644.88f, 7040f, 7458.62f, 7902.13f,
   };
 }
 
 public enum MusicEditorStatus {
   Idle, Music, BlockList, BlockEdit, Waveforms
 }
+

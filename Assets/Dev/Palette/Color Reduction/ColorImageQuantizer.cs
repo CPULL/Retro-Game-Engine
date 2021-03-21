@@ -132,7 +132,6 @@ public class ColorImageQuantizer {
     return ReduceColors(image, CalculatePalette(image, paletteSize));
   }
 
-
   /// <summary>
   /// Create an image with reduced number of colors using the specified palette.
   /// </summary>

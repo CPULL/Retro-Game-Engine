@@ -97,7 +97,7 @@ public class Dev : MonoBehaviour {
   public void ImageEditor() {
     EmptyEditor.SetActive(false);
     for (int i = 0; i < Selection.Length; i++)
-      Selection[i].enabled = i == 3;
+      Selection[i].enabled = i == 4;
     spriteEditor.gameObject.SetActive(false);
     imageEditor.gameObject.SetActive(true);
     waveformEditor.gameObject.SetActive(false);
@@ -112,7 +112,7 @@ public class Dev : MonoBehaviour {
 
   public void TilemapEditor() {
     for (int i = 0; i < Selection.Length; i++)
-      Selection[i].enabled = i == 4;
+      Selection[i].enabled = i == 5;
     EmptyEditor.SetActive(false);
     spriteEditor.gameObject.SetActive(false);
     imageEditor.gameObject.SetActive(false);
@@ -128,7 +128,7 @@ public class Dev : MonoBehaviour {
 
   public void PaletteEditor() {
     for (int i = 0; i < Selection.Length; i++)
-      Selection[i].enabled = i == 5;
+      Selection[i].enabled = i == 6;
     EmptyEditor.SetActive(false);
     spriteEditor.gameObject.SetActive(false);
     imageEditor.gameObject.SetActive(false);
@@ -144,7 +144,7 @@ public class Dev : MonoBehaviour {
   public void WaveformEditor() {
     EmptyEditor.SetActive(false);
     for (int i = 0; i < Selection.Length; i++)
-      Selection[i].enabled = i == 6;
+      Selection[i].enabled = i == 7;
     spriteEditor.gameObject.SetActive(false);
     imageEditor.gameObject.SetActive(false);
     waveformEditor.gameObject.SetActive(true);
@@ -159,7 +159,7 @@ public class Dev : MonoBehaviour {
   public void MusicEditor() {
     EmptyEditor.SetActive(false);
     for (int i = 0; i < Selection.Length; i++)
-      Selection[i].enabled = i == 7;
+      Selection[i].enabled = i == 8;
     spriteEditor.gameObject.SetActive(false);
     imageEditor.gameObject.SetActive(false);
     waveformEditor.gameObject.SetActive(false);
