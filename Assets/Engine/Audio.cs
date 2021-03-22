@@ -71,6 +71,36 @@ public class Audio : MonoBehaviour {
     StartCoroutine(DelayedInit());
   }
 
+  internal void StopAll() {
+    playing = false;
+    StopAllCoroutines();
+    StartCoroutine(StopAllDelayed());
+    for (int i = 0; i < channels.Length; i++) {
+      channels[i].SetVol(0);
+      channels[i].Play(440, .001f);
+      channels[i].SetVol(1.0f);
+      channels[i].audio.Stop();
+      Stop(i);
+      channels[i].stopnow = true;
+      OnAudioSetPosition(i, 0);
+    }
+  }
+
+  IEnumerator StopAllDelayed() {
+    for (int i = 0; i < channels.Length; i++) {
+      channels[i].SetVol(0);
+      channels[i].Play(440, .001f);
+      channels[i].audio.Stop();
+      Stop(i);
+      channels[i].stopnow = true;
+    }
+    yield return null;
+    for (int i = 0; i < channels.Length; i++) {
+      channels[i].SetVol(1.0f);
+      OnAudioSetPosition(i, 0);
+    }
+  }
+
   public float[] Oscillator {
     get {
       float max = 1;
@@ -151,6 +181,7 @@ public class Audio : MonoBehaviour {
     if (freq == 0) return;
     if (freq < 50) freq = 50;
     if (freq > 18000) freq = 18000;
+    OnAudioSetPosition(channel, 0);
     channels[channel].Play(freq, length);
   }
 
@@ -185,6 +216,7 @@ public class Audio : MonoBehaviour {
         channels[channel].pcmdata[b] = data[start + 11 + b];
       }
     }
+    channels[channel].position = 0;
   }
 
   public void Wave(int channel, byte[] data) {
@@ -207,6 +239,7 @@ public class Audio : MonoBehaviour {
     channels[channel].dv = 0.0117607843f * decay + 0.001f; // 0.001s -> 3s
     channels[channel].sv = sustain / 255f; // % of volume = sv/255
     channels[channel].rv = 0.0117607843f * release + 0.001f; // 0.001s -> 3s
+    channels[channel].position = 0;
   }
 
   private void Update() {
@@ -217,10 +250,11 @@ public class Audio : MonoBehaviour {
 
       if (channels[i].stopnow) {
         channels[i].audio.volume *= .75f;
+        channels[i].audio.Stop();
         if (channels[i].audio.volume <= 0.01f) {
-          channels[i].audio.Stop();
           channels[i].stopnow = false;
         }
+        OnAudioSetPosition(i, 0);
       }
       else {
         channels[i].time += Time.deltaTime;

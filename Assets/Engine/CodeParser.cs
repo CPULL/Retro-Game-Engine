@@ -1183,7 +1183,7 @@ public class CodeParser {
       CodeNode node = new CodeNode(BNF.WAVE, line, linenumber);
       string pars = m.Groups[1].Value.Trim();
       int num = ParsePars(node, pars);
-      if (num != 2 && num != 5) throw new ParsingException("Invalid Wave(), 2 or 7 parameters are expected."+
+      if (num != 2 && num != 7) throw new ParsingException("Invalid Wave(), 2 or 7 parameters are expected."+
             "\n<color=#44C6B0>TilePos(<i>channel</i>, <i>wavetype</i>, <i>phase</i>, <i>attack</i>, <i>decay</i>, <i>sustain</i>, <i>release</i>)</color>" +
             "\n<color=#44C6B0>Wave(<i>channel</i>, <i>address</i>)</color>", origExpression, linenumber + 1 + offsetForErrors);
       parent.Add(node);

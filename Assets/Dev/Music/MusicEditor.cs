@@ -120,7 +120,7 @@ public class MusicEditor : MonoBehaviour {
     int numv = music.NumVoices;
 
     for (int i = 0; i < 128; i++) {
-      BlockLine bl = ContentsBlock.GetChild(i).GetComponent<BlockLine>();
+      BlockLine bl = ContentsBlock.GetChild(i + 7).GetComponent<BlockLine>();
       bl.index = i;
       bl.IndexTxt.text = i.ToString("d2");
       bl.LineButton.onClick.AddListener(() => SelectRow(i));
@@ -169,6 +169,8 @@ public class MusicEditor : MonoBehaviour {
       return;
     }
 
+    bool shift = (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
+
     if (playing && status == MusicEditorStatus.Music) {
       PlayMusic();
     }
@@ -200,8 +202,8 @@ public class MusicEditor : MonoBehaviour {
 
       if (!recording && !textedit) {
         if (status == MusicEditorStatus.BlockEdit) {
-          if (Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
-          if (Input.GetKey(KeyCode.DownArrow) && blines != null && row < currentBlock.len - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
+          if (!shift && Input.GetKey(KeyCode.UpArrow) && blines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
+          if (!shift && Input.GetKey(KeyCode.DownArrow) && blines != null && row < currentBlock.len - 1 && autoRepeat < 0) { row++; update = true; autoRepeat = .1f; }
         }
         else if (status == MusicEditorStatus.Music) {
           if (Input.GetKey(KeyCode.UpArrow) && mlines != null && row > 0 && autoRepeat < 0) { row--; update = true; autoRepeat = .1f; }
@@ -300,10 +302,12 @@ public class MusicEditor : MonoBehaviour {
     // We shoul avoid the keys if we are with wrong lines selected or saving/loading
     // Ctrl+C, Ctrl+V, Ctrl+X, ShiftUp, ShiftDown
     if (!textedit) {
-      if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
+      if (shift) {
+        seldelay -= Time.deltaTime;
 
-        if (Input.GetKeyDown(KeyCode.DownArrow)) {
-          if (selectionYStart == -1 || row > selectionYEnd + 1 || row < selectionYStart - 1) { // No selection
+        if (Input.GetKeyDown(KeyCode.DownArrow) || (Input.GetKey(KeyCode.DownArrow) && seldelay < 0)) {
+          seldelay = .1f;
+          if (selectionYStart == -1 || row > selectionYEnd + 2 || row < selectionYStart - 2) { // No selection
             selectionYStart = row - 1;
             selectionYEnd = row;
             selectionYDir = 1;
@@ -320,8 +324,9 @@ public class MusicEditor : MonoBehaviour {
           ShowSelection();
         }
 
-        if (Input.GetKeyDown(KeyCode.UpArrow)) {
-          if (selectionYStart == -1 || row > selectionYEnd + 1 || row < selectionYStart - 1) { // No selection
+        if (Input.GetKeyDown(KeyCode.UpArrow) || (Input.GetKey(KeyCode.UpArrow) && seldelay < 0)) {
+          seldelay = .1f;
+          if (selectionYStart == -1 || row > selectionYEnd + 2 || row < selectionYStart - 2) { // No selection
             selectionYStart = row;
             selectionYEnd = row + 1;
             selectionYDir = -1;
@@ -337,7 +342,7 @@ public class MusicEditor : MonoBehaviour {
           }
           ShowSelection();
         }
-      }
+      } else seldelay = 0;
       if (Input.GetKeyDown(KeyCode.C) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))) { // Ctrl+C
         CopiedNotes.Clear();
         if (selectionYStart == -1 || selectionYEnd == -1) {
@@ -398,6 +403,8 @@ public class MusicEditor : MonoBehaviour {
     }
   }
 
+  float seldelay = 0;
+
   void ShowSelection() {
     Selection.SetParent(ContentsBlock);
     Selection.SetAsLastSibling();
@@ -408,7 +415,7 @@ public class MusicEditor : MonoBehaviour {
     }
     Vector2 pos = Vector2.zero;
     pos.x = 48 + col * 142;
-    pos.y = -blines[currentBlock.len - 1].GetComponent<RectTransform>().anchoredPosition.y + 32.5f - 32 * selectionYStart;
+    pos.y = -blines[currentBlock.len - 1].GetComponent<RectTransform>().anchoredPosition.y + 477.8f - 32 * selectionYStart;
     SelectionBox.anchoredPosition = pos;
     SelectionBox.sizeDelta = new Vector2(142, 34 * (selectionYEnd - selectionYStart + 1) * .95f);
   }
@@ -432,7 +439,7 @@ public class MusicEditor : MonoBehaviour {
     }
     else if (status == MusicEditorStatus.BlockEdit) {
       bar = scrollBlock;
-      len = currentBlock.len - 14;
+      len = currentBlock.len;
     }
     else if (status == MusicEditorStatus.Waveforms) {
       bar = scrollWaves;
@@ -440,9 +447,46 @@ public class MusicEditor : MonoBehaviour {
     }
     else return;
 
-    if (where < 13) bar.value = 1;
-    else if (where > len) bar.value = 0;
-    else bar.value = -0.0276f * where + 1.333333333333333f;
+//    if (where < 13) bar.value = 1;
+//    if (where > len) bar.value = 0;
+//    else bar.value = -0.0276f * where + 1.333333333333333f;
+//    bar.value = -0.0158f * where + 1;
+
+    bar.value = (0.0001243125f * len - 0.023776f) * where + 1;
+
+
+    // 64 lines 0->1
+    // 64 lines 20->6.840796
+    // 64 lines 40->3.674583
+    // 64 lines 60->0.51287
+    // 64 lines 63->0.03242
+
+
+    // 128 0->1
+    // 128 60>0.5287688
+    // 128 100->0.213911
+    // 128 127->0.001255
+
+    // -0.01582 for 64
+    // -0.007864 for 128
+
+    /*
+     
+     -0.01582 = 64a+b
+     -0.007864 = 128a+b
+     
+
+     64a+0.01582 = -b
+
+     0.01582 - 0.007864= 64a
+     
+    a = 0.0001243125
+    b = -0.023776
+     
+     */
+
+
+
   }
 
   private void ShowSection(MusicEditorStatus mode) {
@@ -1070,6 +1114,14 @@ public class MusicEditor : MonoBehaviour {
     currentBlock.len = len;
     for (int r = 0; r < 128; r++) {
       blines[r].gameObject.SetActive(r < len);
+    }
+    while (currentBlock.chs[0].Count < len) {
+      for (int c = 0; c < currentBlock.chs.Length; c++)
+        currentBlock.chs[c].Add(new NoteData());
+    }
+    if (currentBlock.chs[0].Count > len) {
+      for (int c = 0; c < currentBlock.chs.Length; c++)
+        currentBlock.chs[c].RemoveRange(len, currentBlock.chs[c].Count - len);
     }
 
     if (status == MusicEditorStatus.BlockList) {

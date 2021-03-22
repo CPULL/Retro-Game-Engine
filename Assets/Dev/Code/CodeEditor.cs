@@ -625,6 +625,7 @@ public class CodeEditor : MonoBehaviour {
     }
     else if (restart || arcade.runStatus == Arcade.RunStatus.Stopped || arcade.runStatus == Arcade.RunStatus.Error) {
       // Compile the code, if errors show them and stop
+      arcade.audioManager.StopAll();
       arcade.runStatus = Arcade.RunStatus.Stopped;
       compiledCode = CompileCode(rgSyntaxHighlight.Replace(edit.text, "").Trim(), true);
       if (compiledCode == null) {
@@ -640,6 +641,7 @@ public class CodeEditor : MonoBehaviour {
       // Reset the Arcade, and pass the parsed parts
       arcade.LoadCode(deployedCode, runVariables, rom, UpdateVariables, CompletedExecutionStep, breakPoints);
     }
+    arcade.audioManager.StopAll();
     arcade.runStatus = Arcade.RunStatus.Running;
     EventSystem.current.SetSelectedGameObject(arcade.gameObject);
   }
@@ -663,6 +665,7 @@ public class CodeEditor : MonoBehaviour {
   public void Stop() {
     ShowButton(Arcade.RunStatus.Stopped);
     arcade.runStatus = Arcade.RunStatus.Stopped;
+    arcade.audioManager.StopAll();
     int num = 1;
     foreach (char c in edit.text)
       if (c == '\n')

@@ -388,7 +388,7 @@ public class CodeNode {
           else return "Wave(" +
               CN1?.ToString() + ", " + CN2?.ToString() + ", " +
               CN3?.ToString() + ", " + CN4?.ToString() + ", " +
-              CN5?.ToString() + ", " + CN6?.ToString() + ")";
+              CN5?.ToString() + ", " + CN6?.ToString() + ", " + CN7?.ToString() + ")";
         case BNF.MUTE: return "Mute(" + CN1?.ToString() + ")";
         case BNF.VOLUME:
           if (CN2 == null) return "Volume(" + CN1?.ToString() + ")";
@@ -870,14 +870,13 @@ public class CodeNode {
             return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         }
         case BNF.WAVE: {
-          if (CN5 == null)
-            return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) +
-              "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) +
-              "<color=#569CD6>)</color>";
+          if (CN3 == null)
+            return "<color=#569CD6>Wave(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>)</color>";
           else
-            return "<color=#569CD6>Sound(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) +
-              "<color=#569CD6>, </color>" + CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN5?.Format(variables, coloring) +
-              "<color=#569CD6>)</color>";
+            return "<color=#569CD6>Wave(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN2?.Format(variables, coloring) + "<color=#569CD6>, </color>" + 
+              CN3?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN4?.Format(variables, coloring) + "<color=#569CD6>, </color>" + 
+              CN5?.Format(variables, coloring) + "<color=#569CD6>, </color>" + CN6?.Format(variables, coloring) + "<color=#569CD6>, </color>" + 
+              CN7?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         }
         case BNF.MUTE: return "<color=#569CD6>Mute(</color>" + CN1?.Format(variables, coloring) + "<color=#569CD6>)</color>";
         case BNF.VOLUME: {
@@ -1270,14 +1269,11 @@ public class CodeNode {
             return "Sound(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ")";
         }
         case BNF.WAVE: {
-          if (CN5 == null)
-            return "Sound(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) +
-              ", " + CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) +
-              ")";
+          if (CN3 == null)
+            return "Wave(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ")";
           else
-            return "Sound(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) +
-              ", " + CN3?.Format(variables, coloring) + ", " + CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) +
-              ")";
+            return "Wave(" + CN1?.Format(variables, coloring) + ", " + CN2?.Format(variables, coloring) + ", " + CN3?.Format(variables, coloring) + ", " + 
+              CN4?.Format(variables, coloring) + ", " + CN5?.Format(variables, coloring) + ", " + CN6?.Format(variables, coloring) +", " + CN7?.Format(variables, coloring) + ")";
         }
         case BNF.MUTE: return "Mute(" + CN1?.Format(variables, coloring) + ")";
         case BNF.VOLUME: {
