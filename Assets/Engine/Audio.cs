@@ -57,8 +57,11 @@ public class Audio : MonoBehaviour {
 
   IEnumerator DelayedInit() {
     yield return new WaitForSeconds(.1f);
-    for (int i = 0; i < channels.Length; i++)
-      channels[i].SetVol(0);
+    for (int i = 0; i < channels.Length; i++) {
+      channels[i].SetVol(0f);
+      channels[i].audio.panStereo = 0;
+      channels[i].audio.pitch = 1;
+    }
     yield return null;
     for (int i = 0; i < channels.Length; i++)
       channels[i].Play(440, .001f);
@@ -79,6 +82,8 @@ public class Audio : MonoBehaviour {
       channels[i].SetVol(0);
       channels[i].Play(440, .001f);
       channels[i].SetVol(1.0f);
+      channels[i].audio.panStereo = 0;
+      channels[i].audio.pitch = 1;
       channels[i].audio.Stop();
       Stop(i);
       channels[i].stopnow = true;
@@ -668,6 +673,8 @@ public class Audio : MonoBehaviour {
   int currentPlayedMusicLine = 0;
   int currentPlayedMusicBlock = 0;
 
+
+
   public void LoadMusic(byte[] data, int start) {
     if (music != null)
       music.Clear();
@@ -676,86 +683,92 @@ public class Audio : MonoBehaviour {
 
     int pos = start;
     music.numvoices = data[pos++];
-    int numblocks = data[pos++];
-    int numwaves = data[pos++];
+    for (int i = 0; i < music.numvoices; i++)
+      music.MusicVoices[i] = (byte)i;
     music.numblocks = data[pos++];
-    music.mblocks = new byte[music.numblocks];
-    for (int i = 0; i < music.numblocks; i++)
+    byte numw = data[pos++];
+    byte numm = data[pos++]; /// FIXME ??? what is this?
+    music.mblocks = new byte[numm];
+    for (int i = 0; i < numm; i++)
       music.mblocks[i] = data[pos++];
 
-    for (int i = 0; i < numwaves; i++) {
-      Wave w = new Wave {
-        id = data[pos++],
-        wave = (Waveform)data[pos++],
-        phase = data[pos++] << 8
-      };
-      w.phase += data[pos++];
-      w.phase /= 100f;
+
+    for (int i = 0; i < numw; i++) {
+      Wave w = new Wave();
+      w.id = (byte)(i + 1);
+      w.wave = (Waveform)data[pos++];
+      byte ph = data[pos++];
+      byte pl = data[pos++];
+      w.phase = ((ph << 8) + pl) / 100f;
       w.a = data[pos++];
       w.d = data[pos++];
       w.s = data[pos++];
       w.r = data[pos++];
 
       if (w.wave == Waveform.PCM) {
-        int len = data[pos++];
-        len = (len << 8) + data[pos++];
-        len = (len << 8) + data[pos++];
-        len = (len << 8) + data[pos++];
+        byte len1 = data[pos++];
+        byte len2 = data[pos++];
+        byte len3 = data[pos++];
+        byte len4 = data[pos++];
+
+        int len = (len1 << 24) + (len2 << 16) + (len3 << 8) + (len4 << 0);
         w.rawPCM = new byte[len];
         for (int b = 0; b < len; b++)
           w.rawPCM[b] = data[pos++];
       }
+
       music.waves.Add(w.id, w);
     }
 
-    for (int i = 0; i < numblocks; i++) {
-      Block b = new Block {
-        id = data[pos++],
-        len = data[pos++],
-        bpm = data[pos++]
-      };
+    for (int i = 0; i < music.numblocks; i++) {
+      Block b = new Block();
+      b.id = data[pos++];
+      b.len = data[pos++];
+      b.bpm = data[pos++];
       b.notes = new Note[b.len, music.numvoices];
-      for (int r = 0; r < b.len; r++)
+      for (int r = 0; r < b.len; r++) {
         for (int c = 0; c < music.numvoices; c++) {
-          byte type = data[pos++];
-          Note n = new Note();
-          if ((type & 1) == 1) {
-            n.freq = (short)((short)(data[pos++] << 8) + data[pos++]);
-            n.nlen = data[pos++];
+          byte data1 = data[pos++]; ;
+          Note note = new Note { freq = 0, wave = 0, vol = -1, plen = 255, panlen = 255 };
+          // data1 has the types, according to the required ones read the due amount of bytes
+          if ((data1 & 1) == 1) { // Note
+            byte v0 = data[pos++];
+            byte v1 = data[pos++];
+            byte v2 = data[pos++];
+            note.freq = (short)(v1 + (short)(v0 << 8));
+            note.nlen = v2;
           }
-          else n.freq = 0;
-
-          if ((type & 2) == 2) {
-            n.wave = (byte)((short)(data[pos++] << 8) + data[pos++]);
+          if ((data1 & 2) == 2) { // Wave
+            byte v0 = data[pos++];
+            byte v1 = data[pos++];
+            note.wave = v1;
           }
-          else n.wave = 0;
-
-          if ((type & 4) == 4) {
-            n.vol = NoteData.GetVolVal((short)((short)(data[pos++] << 8) + data[pos++]));
-            n.vlen = data[pos++];
+          if ((data1 & 4) == 4) { // Vol
+            byte v0 = data[pos++];
+            byte v1 = data[pos++];
+            byte v2 = data[pos++];
+            note.vol = (short)(v1 + (short)(v0 << 8));
+            note.nlen = v2;
           }
-          else n.vol = -1;
-
-          if ((type & 8) == 8) {
-            n.pitch = NoteData.GetPitchVal((short)((short)(data[pos++] << 8) + data[pos++]));
-            n.plen = data[pos++];
+          if ((data1 & 8) == 8) { // Pitch
+            byte v0 = data[pos++];
+            byte v1 = data[pos++];
+            byte v2 = data[pos++];
+            note.pitch = (short)(v1 + (short)(v0 << 8));
+            note.nlen = v2;
           }
-          else n.plen = 255;
-
-          if ((type & 8) == 8) {
-            n.pan = NoteData.GetPanVal((short)((short)(data[pos++] << 8) + data[pos++]));
-            n.panlen = data[pos++];
+          if ((data1 & 16) == 16) { // Pan
+            byte v0 = data[pos++];
+            byte v1 = data[pos++];
+            byte v2 = data[pos++];
+            note.pan = (short)(v1 + (short)(v0 << 8));
+            note.nlen = v2;
           }
-          else n.panlen = 255;
-
-          b.notes[r, c] = n;
+          b.notes[r, c] = note;
         }
+      }
       music.blocks.Add(b.id, b);
     }
-    playing = false;
-    timeForNextBeat = 0;
-    currentPlayedMusicLine = 0;
-    currentPlayedMusicBlock = 0;
   }
 
   public void MusicVoices(byte a, byte b = 255, byte c = 255, byte d = 255, byte e = 255, byte f = 255, byte g = 255, byte h = 255) {
@@ -853,7 +866,7 @@ public class Audio : MonoBehaviour {
 
     // Pick block
     int id = music.mblocks[currentPlayedMusicBlock];
-    if (!music.blocks.ContainsKey(id)) throw new System.Exception("INvalid music block ID in music (" + currentPlayedMusicBlock + "th)");
+    if (!music.blocks.ContainsKey(id)) throw new System.Exception("Invalid music block ID in music (" + currentPlayedMusicBlock + "th)");
     Block block = music.blocks[id];
 
     // has block current note?

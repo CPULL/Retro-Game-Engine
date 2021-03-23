@@ -2768,5 +2768,3 @@ public class Arcade : MonoBehaviour {
 
   public bool Minimized = false;
 }
-
-
