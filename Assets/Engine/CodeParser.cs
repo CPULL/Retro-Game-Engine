@@ -1802,7 +1802,7 @@ public class CodeParser {
         atLeastOneReplacement = true;
         string lab = m.Value.Trim().ToLowerInvariant();
         lab = lab.Substring(0, lab.Length - 1);
-        CodeNode n = new CodeNode(BNF.Label, GenId("LBLBLB"), origForException, linenumber) {
+        CodeNode n = new CodeNode(BNF.Label, GenId("LB"), origForException, linenumber) {
           sVal = lab
         };
         nodes[n.id] = n;

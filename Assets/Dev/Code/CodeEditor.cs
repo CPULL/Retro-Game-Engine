@@ -69,8 +69,6 @@ public class CodeEditor : MonoBehaviour {
       EventSystem.current.SetSelectedGameObject(edit.gameObject);
     }
 
-    // FIXME ctrl+d
-    // FIXME ctrl+del
     if (Input.GetKeyDown(KeyCode.D) && ctrl) DuplicateDelete(false);
     if (Input.GetKeyDown(KeyCode.K) && ctrl && shift) DuplicateDelete(true);
 
@@ -526,6 +524,7 @@ public class CodeEditor : MonoBehaviour {
 
   public void CodeChange() {
     lastEdit = System.DateTime.Now;
+    compiledCode = null;
     UpdateCompilationStatus();
   }
 

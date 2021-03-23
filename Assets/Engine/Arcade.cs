@@ -633,7 +633,6 @@ public class Arcade : MonoBehaviour {
     ClearUI(255);
     CompleteFrame();
     variables = vars;
-    labels.Clear();
     varsCallback = varsCB;
     execCallback = execCB;
     breakPoints = breaks;
@@ -827,6 +826,7 @@ public class Arcade : MonoBehaviour {
   HashSet<int> updatedBreaks = null;
   bool codeUpdated = false;
   public void UpdateCode(CodeNode newcode, Variables newvars, HashSet<int> newbreaks) {
+    nodeToRun = null;
     updateCodeUpdated = newcode.Get(BNF.Update);
     if (updateCodeUpdated != null) {
       updatedVars = newvars;
@@ -854,6 +854,37 @@ public class Arcade : MonoBehaviour {
     }
     return m;
   }
+
+  void ResetArcade() {
+    nodeToRun = null;
+    // Remove sprites
+    for (int i = 0; i < sprites.Length; i++) {
+      Grob g = sprites[i];
+      if (g != null) {
+        Destroy(g.gameObject);
+        sprites[i] = null;
+      }
+    }
+    // Recreate first sprite
+    sprites[0] = Instantiate(SpriteTemplate, Layers[0]).GetComponent<Grob>();
+    sprites[0].gameObject.name = "Sprite 0";
+    sprites[0].gameObject.SetActive(true);
+    sprites[0].Set(16, 16, LogoTexture, false);
+    sprites[0].Pos(0, 8, scaleW, scaleH, true);
+    // Remove tilemaps
+    foreach (TMap tm in tilemaps.Values) {
+      Destroy(tm.gameObject);
+    }
+    tilemaps.Clear();
+    // Clean up labels and textures
+    labels.Clear();
+    labelTextures.Clear();
+    // Reset audio
+    audioManager.Init();
+    // Garbage collection
+    GC.Collect(4);
+  }
+
 
   #region Drawing functions ****************************************************************************************************************************************************************************************************
 
@@ -1415,34 +1446,6 @@ public class Arcade : MonoBehaviour {
       sprites[num].Parent(SpritesFrontLayer);
     else
       sprites[num].Parent(Layers[order]);
-  }
-
-  void ResetArcade() {
-    // Remove sprites
-    for (int i = 0; i < sprites.Length; i++) {
-      Grob g = sprites[i];
-      if (g != null) {
-        Destroy(g.gameObject);
-        sprites[i] = null;
-      }
-    }
-    // Recreate first sprite
-    sprites[0] = Instantiate(SpriteTemplate, Layers[0]).GetComponent<Grob>();
-    sprites[0].gameObject.name = "Sprite 0";
-    sprites[0].gameObject.SetActive(true);
-    sprites[0].Set(16, 16, LogoTexture, false);
-    sprites[0].Pos(0, 8, scaleW, scaleH, true);
-    // Remove tilemaps
-    foreach (TMap tm in tilemaps.Values) {
-      Destroy(tm.gameObject);
-    }
-    tilemaps.Clear();
-    // Clean up textures
-    labelTextures.Clear();
-    // Reset audio
-    audioManager.Init();
-    // Garbage collection
-    GC.Collect(4);
   }
 
   #endregion Sprites
